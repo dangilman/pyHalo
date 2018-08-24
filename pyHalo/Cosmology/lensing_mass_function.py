@@ -1,6 +1,7 @@
 from colossus.lss.mass_function import *
-from pyhalo.Cosmology.geometry import *
+from pyHalo.Cosmology.geometry import *
 from scipy.interpolate import interp1d
+from pyHalo.defaults import *
 
 class LensingMassFunction(object):
 
@@ -11,7 +12,7 @@ class LensingMassFunction(object):
             delta_theta_lens = cone_opening_angle
 
         self._cosmo = cosmology
-        self._geometry = Geometry(cosmology,zlens,zsource,delta_theta_lens)
+        self.geometry = Geometry(cosmology, zlens, zsource, delta_theta_lens, cone_opening_angle)
         self._model = model
         self._model_kwargs = model_kwargs
         self._mlow, self._mhigh = mlow, mhigh
@@ -25,17 +26,18 @@ class LensingMassFunction(object):
         self._norm = interp1d(z_range,norm_z)
         self._plaw_index_z = interp1d(z_range,plaw_index_z)
 
+
     def n_objects_at_z(self, z, delta_z):
 
-        return self._nobjects(z) * delta_z * self._delta_z**-1
+        return self._nobjects(z)
 
     def norm_at_z(self, z, delta_z):
 
-        return self._norm(z) * delta_z * self._delta_z**-1
+        return self._norm(z)
 
     def plaw_index_z(self, z, delta_z):
 
-        return self._plaw_index_z(z) * delta_z * self._delta_z**-1
+        return self._plaw_index_z(z)
 
     def dN_dM(self, M, zstart, zend, cone_opening_angle, z_lens):
 
@@ -56,7 +58,7 @@ class LensingMassFunction(object):
         assert delta_z > 0
 
         # get the comoving volume element at redshift z
-        volume_element_comoving = self._geometry.volume_element_comoving(cone_opening_angle, zstart, z_lens, delta_z)
+        volume_element_comoving = self.geometry.volume_element_comoving(zstart, z_lens, delta_z)
 
         return self.dN_dMdV_comoving(M, zstart) * volume_element_comoving
 
@@ -75,7 +77,7 @@ class LensingMassFunction(object):
 
     def _build(self, mlow, mhigh, zsource, cone_opening_angle, zlens):
 
-        nsteps = int(zsource * 0.001 ** -1)
+        nsteps = int(zsource * default_zstep ** -1)
         z_range = np.linspace(0,zsource,nsteps)
         # omit the source redshift for numerical reasons
 

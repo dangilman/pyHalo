@@ -1,5 +1,5 @@
-from pyhalo.Cosmology.cosmology import Cosmology
-from scipy.integrate import quad
+from pyHalo.Cosmology.cosmology import Cosmology
+from colossus.halo.concentration import concentration
 import numpy as np
 from scipy.special import hyp2f1
 
@@ -60,6 +60,71 @@ class LensCosmo(object):
         D_o2 = self.cosmo.D_A(0, z)
 
         return D_12 * D_os * (D_o2 * D_1s) ** -1
+
+    def NFW_params(self, M_200, c, z):
+
+        h = self.cosmo.h
+
+        rho = self.rhoc
+
+        r200 = (3 * M_200 * h * (4 * np.pi * rho * 200) ** -1) ** (1. / 3.) * h * self.cosmo.scale_factor(z)
+
+        rho0_c = 200. / 3 * rho * c ** 3 / (np.log(1 + c) - c / (1 + c))
+
+        rho0 = rho0_c / h ** 2 / self.cosmo.scale_factor(z) ** 3
+
+        rho0_kpc = rho0 * (1000) ** -3
+        r200_kpc = r200 * 1000
+
+        Rs = r200_kpc / c
+
+        return rho0_kpc, Rs, r200_kpc
+
+    def NFW_concentration(self,M,z,model='bullock01',mdef='200c',logmhm=0,
+                                scatter=True,g1=None,g2=None):
+
+        # WDM relation adopted from Ludlow et al
+
+        def zfunc(z_val):
+            return 0.026*z_val - 0.04
+
+        if isinstance(M, float) or isinstance(M, int):
+            c = concentration(M*self.cosmo.h,mdef=mdef,model=model,z=z)
+        else:
+            con = []
+            for i,mi in enumerate(M):
+
+                con.append(concentration(mi*self.cosmo.h,mdef=mdef,model=model,z=z[i]))
+            c = np.array(con)
+
+        if logmhm != 0 and logmhm is not None:
+
+            mhm = 10**logmhm
+            concentration_factor = (1+g1*mhm*M**-1)**g2
+            redshift_factor = (1+z)**zfunc(z)
+
+            c *= redshift_factor * concentration_factor**-1
+
+        # scatter from Dutton, maccio et al 2014
+        if scatter:
+            c = np.random.lognormal(np.log(c),0.13)
+
+        return c
+
+    def convert_fsub_to_norm(self, fsub, cone_diameter, plaw_index, mlow, mhigh):
+
+        R = cone_diameter*0.5
+        area = np.pi*R**2
+
+        # convergence is approximately 1/2 at the Einstein radius, this paramterization assumes
+        # f_darkmatter >> f_baryon at Einstein radius, so convergence fraction in substructure = 0.5 * fsub
+        kappa_sub = 0.5 * fsub
+
+        power = 2 + plaw_index
+        integral = power / (mhigh ** power - mlow ** power)
+
+        return area * kappa_sub * self.sigmacrit * integral
+
 
 
 
