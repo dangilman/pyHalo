@@ -50,7 +50,7 @@ class BrokenPowerLaw(object):
         self.break_index = break_index
 
         if break_index > 0:
-            raise ValueError('Break index should be a positive number (otherwise mass function gets steeper (unphysical)')
+            raise ValueError('Break index should be a negative number (otherwise mass function gets steeper (unphysical)')
 
         self._unbroken_masses = self._plaw.draw()
 
@@ -62,6 +62,6 @@ class BrokenPowerLaw(object):
         mbreak = 10**self.log_m_break
         ratio = mbreak * self._unbroken_masses**-1
         u = np.random.rand(int(len(self._unbroken_masses)))
-        func = (1 + ratio) ** -self.break_index
+        func = (1 + ratio) ** self.break_index
 
         return self._unbroken_masses[np.where(u < func)]

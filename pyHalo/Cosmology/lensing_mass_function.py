@@ -16,30 +16,39 @@ class LensingMassFunction(object):
         self._model = model
         self._model_kwargs = model_kwargs
         self._mlow, self._mhigh = mlow, mhigh
-        self._M = np.logspace(mlow,mhigh,50)
 
-        n_objects_z, norm_z, plaw_index_z, z_range, delta_z = self._build(mlow, mhigh, zsource, cone_opening_angle,
-                                                                 zlens)
+        n_objects_z, norm_z, plaw_index_z, z_range, delta_z = self._build(mlow, mhigh, zsource, zlens)
+
 
         self._delta_z = delta_z
         self._nobjects = interp1d(z_range,n_objects_z)
         self._norm = interp1d(z_range,norm_z)
         self._plaw_index_z = interp1d(z_range,plaw_index_z)
 
+    def norm_at_z_density(self, z, delta_z, units='comoving'):
+
+        norm = self.norm_at_z(z)
+
+        if units == 'comoving':
+            a_scale = 1
+        elif units == 'physical':
+            a_scale = self._cosmo.scale_factor(z) ** -3
+
+        return a_scale * norm * self.geometry.volume_element_comoving(z, self.geometry._zlens, delta_z) ** -1
 
     def n_objects_at_z(self, z, delta_z):
 
-        return self._nobjects(z)
+        return self._nobjects(z) * default_zstep * delta_z **-1
 
-    def norm_at_z(self, z, delta_z):
+    def norm_at_z(self, z):
 
         return self._norm(z)
 
-    def plaw_index_z(self, z, delta_z):
+    def plaw_index_z(self, z):
 
         return self._plaw_index_z(z)
 
-    def dN_dM(self, M, zstart, zend, cone_opening_angle, z_lens):
+    def dN_dM(self, M, zstart, zend, z_lens):
 
         """
 
@@ -75,10 +84,10 @@ class LensingMassFunction(object):
 
         return a_cube*self._dN_dMdV_physical(M, z)
 
-    def _build(self, mlow, mhigh, zsource, cone_opening_angle, zlens):
+    def _build(self, mlow, mhigh, zsource, zlens):
 
         nsteps = int(zsource * default_zstep ** -1)
-        z_range = np.linspace(0,zsource,nsteps)
+        z_range = np.linspace(default_zstart,zsource,nsteps)
         # omit the source redshift for numerical reasons
 
         delta_z = z_range[1]
@@ -87,8 +96,7 @@ class LensingMassFunction(object):
         for i, zi in enumerate(z_range):
             zstart = zi
             zend = zi + delta_z
-            ni, normi, indexi = self._mass_function_params(mlow, mhigh, zstart, zend, cone_opening_angle,
-                                                           zlens)
+            ni, normi, indexi = self._mass_function_params(mlow, mhigh, zstart, zend, zlens)
             n.append(ni)
             norm.append(normi)
             index.append(indexi)
@@ -96,7 +104,7 @@ class LensingMassFunction(object):
         return np.array(n), np.array(norm), np.array(index), z_range, delta_z
 
 
-    def _mass_function_params(self, mlow, mhigh, zstart, zend, cone_opening_angle, z_lens):
+    def _mass_function_params(self, mlow, mhigh, zstart, zend, z_lens):
 
         """
         :param mlow: min mass in solar masses
@@ -115,9 +123,9 @@ class LensingMassFunction(object):
         """
         log_mlow = np.log10(mlow)
         log_mhigh = np.log10(mhigh)
-        M = np.logspace(log_mlow,log_mhigh,25)
+        M = np.logspace(log_mlow, log_mhigh, 100)
 
-        dN_dM = self.dN_dM(M, zstart, zend, cone_opening_angle, z_lens)
+        dN_dM = self.dN_dM(M, zstart, zend, z_lens)
 
         N_objects, norm, plaw_index = self._mass_function_moment(M, dN_dM, 0, mlow, mhigh)
 

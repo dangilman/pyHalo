@@ -11,6 +11,8 @@ class Geometry(object):
         self._cosmo = cosmology
         self._lens_cosmo = LensCosmo(z_lens,z_source)
         self._reduced_to_phys = self._lens_cosmo.D_s * self._lens_cosmo.D_ds**-1
+        if delta_theta_lens is None:
+            delta_theta_lens = -cone_opening_angle
         self.delta_theta_lens = delta_theta_lens
         self.cone_opening_angle = cone_opening_angle
 
@@ -102,7 +104,7 @@ class Geometry(object):
         :param z:
         :return: integrand element in comoving Mpc (for use in scipy.integrate quad)
         """
-        area_comoving = self._angle_to_comoving_area(z_lens, self.delta_theta_lens, z)
+        area_comoving = self._angle_to_comoving_area(z_lens, z)
 
         return area_comoving * self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z)
 
