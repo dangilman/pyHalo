@@ -26,7 +26,9 @@ class LOSPowerLaw(object):
 
         pargs = copy(self._parameterization_args)
 
-        pargs['normalization'] = self._lensing_mass_func.norm_at_z(zstart)
+        pargs['normalization'] = self._lensing_mass_func.norm_at_z_biased(zstart, self._parameterization_args['parent_m200'],
+                                                                          self._delta_z)
+        #pargs['normalization'] = self._lensing_mass_func.norm_at_z(zstart, delta_z = self._delta_z)
         pargs['power_law_index'] = self._lensing_mass_func.plaw_index_z(zstart)
 
         mfunc = BrokenPowerLaw(**pargs)
@@ -41,8 +43,9 @@ class LOSPowerLaw(object):
 
             pargs = copy(self._parameterization_args)
             pargs['power_law_index'] = self._lensing_mass_func.plaw_index_z(z)
-            pargs['normalization'] = self._lensing_mass_func.norm_at_z(z)
-
+            pargs['normalization'] = self._lensing_mass_func.norm_at_z_biased(z, self._parameterization_args[
+                'parent_m200'], self._delta_z)
+            #pargs['normalization'] = self._lensing_mass_func.norm_at_z(z, delta_z=self._delta_z)
             mfunc = BrokenPowerLaw(**pargs)
 
             m = mfunc.draw()
@@ -75,7 +78,7 @@ class LOSPowerLaw(object):
     def _mfunc(self,args):
 
         args_mfunc = {}
-        required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow_los', 'log_mhigh_los']
+        required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow_los', 'log_mhigh_los', 'parent_m200']
 
         for key in required_keys:
 
@@ -137,7 +140,7 @@ class LOSPowerLaw(object):
 
 def _redshift_range_LOS(zmin, zmax, zlens, zstep):
 
-    nsteps = (zmax - zmin) * zstep**-1
+    nsteps = int((zmax - zmin) * zstep**-1)
     zvalues = np.linspace(zmin, zmax, nsteps)
 
     # remove anything too close to main lens plane

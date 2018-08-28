@@ -15,6 +15,7 @@ class MainLensPowerLaw(object):
     def __call__(self):
 
         masses = self._mass_func_parameterization.draw()
+
         x, y, r2d, r3d = self._spatial_parameterization.draw(len(masses))
 
         return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(

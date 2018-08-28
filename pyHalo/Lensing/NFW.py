@@ -26,6 +26,7 @@ class NFWLensing(object):
             z = 1e-4
 
         rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
+
         rho0_mpc = rho0 * 1000**3
         Rs_mpc = Rs * 0.001
 
@@ -49,3 +50,4 @@ class NFWLensing(object):
 
         rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
         return 4*np.pi*rho0*Rs**3*(np.log(1+c)-c*(1+c)**-1)
+

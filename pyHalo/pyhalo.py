@@ -92,7 +92,8 @@ class pyHalo(object):
     def _build_los(self, args):
 
         mfunc_LOS = self._LOS_mass_func(args)
-        los = LOSPowerLaw(args, mfunc_LOS, self.zlens, default_zstep)
+
+        los = LOSPowerLaw(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
         if 'mdef_los' not in args.keys():
             raise ValueError('specify mass definition for line of sight halos with mdef_los.')
         mdef = args['mdef_los']
@@ -155,16 +156,17 @@ class pyHalo(object):
         return mdef_args
 
 if False:
+
     h = pyHalo(0.5,1.5)
 
-    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':6,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':6,
+    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':6,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':0,
                                'parent_m200': 10**13, 'parent_c':3,'mdef':'TNFW','break_index':-1.3,'c_scale':60,
                                     'c_power':-0.17, 'r_tidal':'0.4Rs', 'break_index':-1.3,'c_scale':60,'c_power':-0.17,
-                            'cone_opening_angle':3}
+                            'cone_opening_angle':6}
 
     real = h.render('composite_powerlaw',halo_args)
 
-    print(real[0].lensing_quantities())
+    print(len(real[0].x))
 
 
 

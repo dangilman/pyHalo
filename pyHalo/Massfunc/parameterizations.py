@@ -2,7 +2,7 @@ import numpy as np
 
 class PowerLaw(object):
 
-    def __init__(self, power_law_index = None, log_mlow = None, log_mhigh = None, Nhalos_mean = None, normalization = None):
+    def __init__(self, power_law_index = None, log_mlow = None, log_mhigh = None, normalization = None):
 
         if power_law_index > 0:
             raise ValueError('you have specified a power law index which is greater than zero, this is unphysical.')
@@ -11,9 +11,7 @@ class PowerLaw(object):
 
         self._mL, self._mH = 10 ** log_mlow, 10 ** log_mhigh
 
-        if Nhalos_mean is None:
-            assert normalization is not None
-            Nhalos_mean = self._moment(normalization, self._mL, self._mH, 0)
+        Nhalos_mean = self._moment(normalization, self._mL, self._mH, 0)
 
         self.norm = normalization
 
@@ -40,10 +38,10 @@ class PowerLaw(object):
 
 class BrokenPowerLaw(object):
 
-    def __init__(self, power_law_index = None, log_mlow = None, log_mhigh = None, Nhalos_mean = None, normalization = None,
+    def __init__(self, power_law_index = None, log_mlow = None, log_mhigh = None, normalization = None,
                  log_m_break = None, break_index = None, **kwargs):
 
-        self._plaw = PowerLaw(power_law_index, log_mlow, log_mhigh, Nhalos_mean, normalization)
+        self._plaw = PowerLaw(power_law_index, log_mlow, log_mhigh, normalization)
 
         self.log_m_break = log_m_break
 

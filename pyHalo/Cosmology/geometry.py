@@ -1,6 +1,7 @@
 import numpy as np
 from pyHalo.Cosmology.lens_cosmo import LensCosmo
 from scipy.integrate import quad
+from pyHalo.defaults import distance_resolution_MPC
 
 class Geometry(object):
 
@@ -17,6 +18,8 @@ class Geometry(object):
         self.cone_opening_angle = cone_opening_angle
 
         self._zlens, self._zsource = z_lens, z_source
+
+        self._min_delta_z = self._delta_z_comoving(distance_resolution_MPC, self._zlens)
 
     def lens_cone_angle(self, z, z_lens):
         """
@@ -64,6 +67,10 @@ class Geometry(object):
         volume_comoving = self.volume_element_comoving(z, z_lens, delta_z)
 
         return self._cosmo.scale_factor(z) ** 3 * volume_comoving
+
+    def delta_R_fromz(self, z):
+
+        return self._cosmo.T_xy(min(z,self._zlens),max(z,self._zlens))
 
     def angle_to_physicalradius(self, z, z_lens):
 
@@ -113,6 +120,14 @@ class Geometry(object):
         delta_comoving = self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z) * delta_z
 
         return delta_comoving
+
+    def _delta_z_comoving(self, delta_R, z):
+
+        # for small delta_R
+        delta_R_physical = delta_R * self._cosmo.scale_factor(z)
+        dz = delta_R_physical * (self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z)) ** -1
+
+        return dz
 
     def _angle_to_arcsec_area(self, z_lens, z):
 

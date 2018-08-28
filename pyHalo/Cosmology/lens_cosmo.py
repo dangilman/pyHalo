@@ -155,7 +155,3 @@ class LensCosmo(object):
         return area * kappa_sub * self.sigmacrit * integral
 
 
-
-
-
-
