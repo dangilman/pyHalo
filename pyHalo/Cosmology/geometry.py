@@ -116,12 +116,12 @@ class Geometry(object):
 
     def _angle_to_arcsec_area(self, z_lens, z):
 
-        # because light rays go in straght lines with the hubble flow
-        area_comoving = self._angle_to_comoving_area(z_lens, z)
-
         if z==0:
             return 0
-        area_radians = area_comoving * self._cosmo.T_xy(0, z)**-2
+
+        r = self.angle_to_physicalradius(z, z_lens)
+
+        area_radians = np.pi * r ** 2 * self._cosmo.D_A(0,z) ** -2
 
         return area_radians * self._cosmo.arcsec ** -2
 
@@ -149,4 +149,4 @@ class Geometry(object):
 
         area_comoving = self._angle_to_comoving_area(z, z_lens)
 
-        return np.pi * (area_comoving * self._cosmo.scale_factor(z)) ** 2
+        return np.pi * area_comoving * (self._cosmo.scale_factor(z)) ** 2

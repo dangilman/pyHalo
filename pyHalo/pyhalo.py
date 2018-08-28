@@ -154,16 +154,17 @@ class pyHalo(object):
 
         return mdef_args
 
-h = pyHalo(0.5,1.5)
+if False:
+    h = pyHalo(0.5,1.5)
 
-halo_args = {'mdef_main':'TNFW','mdef_los':'NFW','fsub':0.01,'log_mlow':6,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':6,
-                           'parent_m200': 10**13, 'parent_c':3,'mdef':'TNFW','break_index':-1.3,'c_scale':60,
-                                'c_power':-0.17, 'r_tidal':'0.4Rs', 'break_index':-1.3,'c_scale':60,'c_power':-0.17,
-                        'cone_opening_angle':5}
+    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':6,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':6,
+                               'parent_m200': 10**13, 'parent_c':3,'mdef':'TNFW','break_index':-1.3,'c_scale':60,
+                                    'c_power':-0.17, 'r_tidal':'0.4Rs', 'break_index':-1.3,'c_scale':60,'c_power':-0.17,
+                            'cone_opening_angle':3}
 
-real = h.render('composite_powerlaw',halo_args)
-print(len(real[0].masses))
-print(real[0].lensing_quantities())
+    real = h.render('composite_powerlaw',halo_args)
+
+    print(real[0].lensing_quantities())
 
 
 

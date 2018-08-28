@@ -2,6 +2,7 @@ from colossus.lss.mass_function import *
 from pyHalo.Cosmology.geometry import *
 from scipy.interpolate import interp1d
 from pyHalo.defaults import *
+from colossus.lss.bias import twoHaloTerm, haloBias
 
 class LensingMassFunction(object):
 
@@ -19,11 +20,21 @@ class LensingMassFunction(object):
 
         n_objects_z, norm_z, plaw_index_z, z_range, delta_z = self._build(mlow, mhigh, zsource, zlens)
 
-
         self._delta_z = delta_z
         self._nobjects = interp1d(z_range,n_objects_z)
         self._norm = interp1d(z_range,norm_z)
         self._plaw_index_z = interp1d(z_range,plaw_index_z)
+        self._z_range = z_range
+
+    def total_los(self):
+
+        n = 0
+        for z in self._z_range:
+
+            n += self.n_objects_at_z(z,self._delta_z)
+
+        return n
+
 
     def norm_at_z_density(self, z, delta_z, units='comoving'):
 
@@ -38,7 +49,7 @@ class LensingMassFunction(object):
 
     def n_objects_at_z(self, z, delta_z):
 
-        return self._nobjects(z) * default_zstep * delta_z **-1
+        return self._nobjects(z) * default_zstep * delta_z ** -1
 
     def norm_at_z(self, z):
 
@@ -47,6 +58,22 @@ class LensingMassFunction(object):
     def plaw_index_z(self, z):
 
         return self._plaw_index_z(z)
+
+    def twohaloterm(self, r, M, z, mdef='200c'):
+
+        h = self._cosmo.h
+        M_h = M * h
+
+        rho_2h = twoHaloTerm(r, M_h, z, mdef=mdef)
+
+        return rho_2h * h **-2
+
+    def linear_bias(self, M, z, mdef='200c'):
+
+        h = self._cosmo.h
+        M_h = M * h
+
+        return haloBias(M_h, z, mdef=mdef)
 
     def dN_dM(self, M, zstart, zend, z_lens):
 

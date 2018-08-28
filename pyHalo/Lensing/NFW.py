@@ -22,6 +22,9 @@ class NFWLensing(object):
         :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
         """
 
+        if z < 1e-4:
+            z = 1e-4
+
         rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
         rho0_mpc = rho0 * 1000**3
         Rs_mpc = Rs * 0.001
