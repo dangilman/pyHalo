@@ -11,11 +11,15 @@ class PowerLaw(object):
 
         self._mL, self._mH = 10 ** log_mlow, 10 ** log_mhigh
 
-        Nhalos_mean = self._moment(normalization, self._mL, self._mH, 0)
+        if normalization <= 0:
+            self.norm = 0
+            self.Nhalos_mean = 0
+        else:
+            Nhalos_mean = self._moment(normalization, self._mL, self._mH, 0)
 
-        self.norm = normalization
+            self.norm = normalization
 
-        self.Nhalos_mean =Nhalos_mean
+            self.Nhalos_mean = Nhalos_mean
 
     def draw(self):
 
@@ -56,6 +60,9 @@ class BrokenPowerLaw(object):
 
         if self.log_m_break == 0:
             return self._unbroken_masses
+
+        if len(self._unbroken_masses) == 0:
+            return np.array([])
 
         mbreak = 10**self.log_m_break
         ratio = mbreak * self._unbroken_masses**-1

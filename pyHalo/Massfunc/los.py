@@ -3,7 +3,7 @@ from copy import copy
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
 from pyHalo.Spatial.uniform import LensConeUniform
-from pyHalo.defaults import default_zstart
+from pyHalo.defaults import default_zstart, default_z_round
 
 class LOSPowerLaw(object):
 
@@ -104,7 +104,7 @@ class LOSPowerLaw(object):
                 if key == 'zmin':
                     args_mfunc['zmin'] = default_zstart
                 else:
-                    args_mfunc['zmax'] = self._lensing_mass_func.geometry._zsource
+                    args_mfunc['zmax'] = self._lensing_mass_func.geometry._zsource - default_zstart
 
         if args_mfunc['log_m_break'] == 0:
             args_mfunc['break_index'] = 0
@@ -137,13 +137,12 @@ class LOSPowerLaw(object):
 
         return x, y, r2d, r3d
 
-
 def _redshift_range_LOS(zmin, zmax, zlens, zstep):
 
     nsteps = int((zmax - zmin) * zstep**-1)
     zvalues = np.linspace(zmin, zmax, nsteps)
 
-    # remove anything too close to main lens plane
-    zvalues = zvalues[np.where(np.absolute(zvalues - zlens) > zstep)]
+    zvalues = np.round(zvalues, default_z_round)
+    zvalues[np.where(np.absolute(zvalues - zlens) <= 0.01)] = zlens
 
     return zvalues, zstep

@@ -10,6 +10,9 @@ class LensConeUniform(object):
 
     def draw(self,N, z_plane):
 
+        if N == 0:
+            return [], [], [], []
+
         if z_plane > self._cosmo_geometry._zlens:
 
             new_area = self._cosmo_geometry._angle_to_arcsec_area(self._cosmo_geometry._lens_cosmo.z_lens, z_plane)
@@ -32,8 +35,10 @@ class Uniform(object):
 
         self.rmax2d_arcsec = rmax2d_arcsec
 
-    def draw(self,N, z_plane, rescale=1):
+    def draw(self, N, z_plane, rescale=1):
 
+        if N == 0:
+            return [], [], [], []
         angle = np.random.uniform(0, 2 * np.pi, int(N))
         r = np.random.uniform(0, (self.rmax2d_arcsec * rescale) ** 2, int(N))
 

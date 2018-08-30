@@ -166,7 +166,7 @@ if False:
 
     real = h.render('composite_powerlaw',halo_args)
 
-    print(len(real[0].x))
+    #print(len(real[0].x))
 
 
 
