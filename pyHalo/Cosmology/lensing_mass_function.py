@@ -66,7 +66,11 @@ class LensingMassFunction(object):
 
         if delta_R >= 100:
             return norm_unbiased
+        elif z == self.geometry._zlens:
+            return norm_unbiased
         else:
+
+            delta_R = max(delta_R, 1e-4)
             boost = 1 + self.twohaloterm(delta_R,M_halo,z)
             return norm_unbiased * boost
 

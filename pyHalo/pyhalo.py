@@ -159,7 +159,7 @@ if False:
 
     h = pyHalo(0.5,1.5)
 
-    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':6,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':0,
+    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':7,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':0,
                                'parent_m200': 10**13, 'parent_c':3,'mdef':'TNFW','break_index':-1.3,'c_scale':60,
                                     'c_power':-0.17, 'r_tidal':'0.4Rs', 'break_index':-1.3,'c_scale':60,'c_power':-0.17,
                             'cone_opening_angle':6}

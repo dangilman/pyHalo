@@ -60,7 +60,16 @@ class LOSPowerLaw(object):
             if len(m) > 0:
                 redshifts += [z]*len(m)
 
+        redshifts = self._round_redshifts(redshifts, self._lensing_mass_func.geometry._zlens)
+
         return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(redshifts)
+
+    def _round_redshifts(self,zvalues,zlens):
+
+        zvalues = np.round(zvalues,default_z_round)
+        zvalues[np.where(np.absolute(zvalues - zlens) <= 0.01)] = zlens
+
+        return zvalues
 
     def _set_kwargs(self, args):
 
@@ -141,8 +150,5 @@ def _redshift_range_LOS(zmin, zmax, zlens, zstep):
 
     nsteps = int((zmax - zmin) * zstep**-1)
     zvalues = np.linspace(zmin, zmax, nsteps)
-
-    zvalues = np.round(zvalues, default_z_round)
-    zvalues[np.where(np.absolute(zvalues - zlens) <= 0.01)] = zlens
 
     return zvalues, zstep

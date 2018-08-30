@@ -73,15 +73,28 @@ class MainLensPowerLaw(object):
 
             args_mfunc['normalization'] = args['norm_A0']
 
+        elif 'norm_area_10' in args.keys():
+            # number of 10 ** 10 solar mass halos per kpc ^ 2
+            raise Exception('not yet implemented')
+
+
         elif 'fsub' in args.keys():
 
-            args_mfunc['normalization'] = self._lens_cosmo.convert_fsub_to_norm(args['fsub'],args['cone_opening_angle'],
+            norm_0 = self._lens_cosmo.convert_fsub_to_norm(args['fsub'],args['cone_opening_angle'],
                                                                                        args_mfunc[
                                                                                            'power_law_index'],
                                                                                        10 ** args_mfunc[
                                                                                            'log_mlow'],
                                                                                        10 ** args_mfunc[
                                                                                            'log_mhigh'])
+            ml, mh, index = 10 ** args_mfunc['log_mlow'], 10 ** args_mfunc['log_mhigh'], \
+                            args_mfunc['power_law_index']
+            denom = mh ** (2 + index) - ml ** (2 + index)
+            denom_norm = (10 ** 10) ** (2 + index) - (10 ** 6) ** (2 + index)
+            rescale = denom * denom_norm ** -1
+
+            args_mfunc['normalization'] = norm_0 * rescale
+
         else:
             raise ValueError('must either specify the normalization "norm_A0" direclty, or specify the mass fraction'
                              'in substructure at the Einstein radius "fsub".')
@@ -99,3 +112,4 @@ class MainLensPowerLaw(object):
                 args_mfunc[key] = args[key]
 
         return args_spatial, args_mfunc
+
