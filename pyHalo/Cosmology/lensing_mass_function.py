@@ -35,7 +35,7 @@ class LensingMassFunction(object):
             norm = self.norm_at_z(z,self._delta_z)
             plaw_idx = self.plaw_index_z(z)
             dNdM = norm*self._M ** plaw_idx
-            n+=self._mass_function_moment(self._M, dNdM, 0, self._mlow, self._mhigh)
+            n += self._mass_function_moment(self._M, dNdM, 0, self._mlow, self._mhigh)[0]
 
         return n
 
