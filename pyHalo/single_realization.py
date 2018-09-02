@@ -51,11 +51,13 @@ class Realization(object):
 
 
     def filter(self, thetax, thetay, mindis_front = 0.5, mindis_back = 0.5, logmasscut_front = 6, logmasscut_back = 8,
-               back_scale_z = 1):
+               back_scale_z = 0):
 
         masses, x, y, mdefs, mdef_args, r2d, r3d, redshifts = [], [], [], [], [], [], [], []
         start = True
         for zi in self._unique_redshifts:
+
+            ray_angle_atz_x, ray_angle_atz_y = [], []
 
             inds_at_z = np.where(self.redshifts == zi)[0]
             x_at_z = self.x[inds_at_z]
@@ -68,8 +70,9 @@ class Realization(object):
             r2dz = self.r2d[inds_at_z]
             r3dz = self.r3d[inds_at_z]
 
-            ray_angle_atz_x = self.geometry.ray_angle_atz(thetax, zi, self.geometry._zlens)
-            ray_angle_atz_y = self.geometry.ray_angle_atz(thetay, zi, self.geometry._zlens)
+            for tx, ty in zip(thetax, thetay):
+                ray_angle_atz_x.append(self.geometry.ray_angle_atz(tx, zi, self.geometry._zlens))
+                ray_angle_atz_y.append(self.geometry.ray_angle_atz(ty, zi, self.geometry._zlens))
 
             if zi <= self.geometry._zlens:
 
@@ -77,12 +80,18 @@ class Realization(object):
 
                 inds_m_low = np.where(masses_at_z < 10 ** logmasscut_front)[0]
 
-                dr = ((x_at_z[inds_m_low] - ray_angle_atz_x) ** 2 +
-                      (y_at_z[inds_m_low] - ray_angle_atz_y) ** 2) ** 0.5
+                keep_inds_dr = []
 
-                keep_inds_dr = np.where(dr <= mindis_front)[0]
+                for idx in inds_m_low:
 
+                    for (anglex, angley) in zip(ray_angle_atz_x, ray_angle_atz_y):
 
+                        dr = ((x_at_z[idx] - anglex) ** 2 +
+                          (y_at_z[idx] - angley) ** 2) ** 0.5
+
+                        if dr <= mindis_front:
+                            keep_inds_dr.append(idx)
+                            break
             else:
 
                 if back_scale_z > 0:
@@ -96,12 +105,21 @@ class Realization(object):
                 keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
 
                 inds_m_low = np.where(masses_at_z < 10 ** logmasscut_back)[0]
-                dr = ((x_at_z[inds_m_low] - ray_angle_atz_x) ** 2 +
-                      (y_at_z[inds_m_low] - ray_angle_atz_y) ** 2) ** 0.5
 
-                keep_inds_dr = np.where(dr <= mindis_back * scale)[0]
+                keep_inds_dr = []
 
-            keep_inds = np.append(keep_inds_mass, keep_inds_dr)
+                for idx in inds_m_low:
+
+                    for (anglex, angley) in zip(ray_angle_atz_x, ray_angle_atz_y):
+
+                        dr = ((x_at_z[idx] - anglex) ** 2 +
+                              (y_at_z[idx] - angley) ** 2) ** 0.5
+
+                        if dr <= mindis_back * scale:
+                            keep_inds_dr.append(idx)
+                            break
+
+            keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
             if start:
                 masses = np.array(masses_at_z[keep_inds])

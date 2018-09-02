@@ -3,5 +3,12 @@ distance_resolution_MPC = 1
 default_z_round = 2
 default_z_step = 0.01
 
-default_mass_function = 'reed07'
+default_mass_function = 'sheth99'
+
+if default_mass_function == 'despali16':
+    default_mdef = '200c'
+if default_mass_function == 'reed07':
+    default_mdef = 'fof'
+if default_mass_function == 'sheth99':
+    default_mdef = 'fof'
 

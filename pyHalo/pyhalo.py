@@ -11,7 +11,7 @@ from pyHalo.single_realization import Realization
 class pyHalo(object):
 
     def __init__(self, zlens, zsource, cosmo_args = {},
-                 halo_mass_function_args={'model':'reed07'}):
+                 halo_mass_function_args=None):
 
         self.zlens = zlens
         self.zsource = zsource
@@ -19,6 +19,8 @@ class pyHalo(object):
         self._cosmology = Cosmology(**cosmo_args)
         self._lens_cosmo = LensCosmo(zlens, zsource)
 
+        if halo_mass_function_args is None:
+            halo_mass_function_args = {'model':default_mass_function, 'mdef': default_mdef}
         self._halo_mass_function_args = halo_mass_function_args
 
     def render(self, type, args, nrealizations=1):
@@ -49,7 +51,7 @@ class pyHalo(object):
 
             self.halo_mass_function = LensingMassFunction(self._cosmology, 10 ** logLOS_mlow, 10 ** logLOS_mhigh, self.zlens, self.zsource,
                                                           cone_opening_angle=args['cone_opening_angle'],
-                                                          **self._halo_mass_function_args)
+                                                          model_kwargs=self._halo_mass_function_args)
 
             self._geometry = self.halo_mass_function.geometry
 
@@ -170,8 +172,8 @@ if False:
 
     real = h.render('composite_powerlaw',halo_args)
     print(len(real[0].x))
-    #newreal = real[0].filter(1,0, logmasscut_back=8, back_scale_z=0)
-    #print(len(newreal.x))
+    newreal = real[0].filter(np.array([30.72,20.4]), np.array([40.3, -0.6]), logmasscut_front=11, logmasscut_back=11, back_scale_z=0)
+    print(len(newreal.x))
     #print(newreal.x)
     #print(len(real[0].x))
 

@@ -7,14 +7,13 @@ from colossus.lss.bias import twoHaloTerm, haloBias
 class LensingMassFunction(object):
 
     def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
-                 delta_theta_lens=None,model='reed07',model_kwargs={}):
+                 delta_theta_lens=None, model_kwargs={'model':'despali16', 'mdef':'200c'}):
 
         if delta_theta_lens is None:
             delta_theta_lens = cone_opening_angle
 
         self._cosmo = cosmology
         self.geometry = Geometry(cosmology, zlens, zsource, delta_theta_lens, cone_opening_angle)
-        self._model = model
         self._model_kwargs = model_kwargs
         self._mlow, self._mhigh = mlow, mhigh
         self._M = np.logspace(np.log10(mlow), np.log10(mhigh), 100)
@@ -181,7 +180,7 @@ class LensingMassFunction(object):
 
         M_h = M*h
 
-        return h ** 3 * massFunction(M_h, z, q_out='dndlnM', model=self._model, **self._model_kwargs) * M_h ** -1
+        return h ** 3 * massFunction(M_h, z, q_out='dndlnM', **self._model_kwargs) * M_h ** -1
 
     def _dN_dMdV_comoving_deltaFunc(self, M, z, component_fraction):
 
