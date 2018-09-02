@@ -19,7 +19,7 @@ class LensConeUniform(object):
 
             r = (new_area / np.pi) ** 0.5
 
-            rmax_0 = self._uni.rmax2d_arcsec * 2
+            rmax_0 = self._uni.rmax2d_arcsec
             rescale = r / rmax_0
 
         else:
