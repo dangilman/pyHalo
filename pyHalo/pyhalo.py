@@ -19,7 +19,7 @@ class pyHalo(object):
         self._cosmology = Cosmology(**cosmo_args)
         self._lens_cosmo = LensCosmo(zlens, zsource)
 
-        self.halo_mass_function_args = halo_mass_function_args
+        self._halo_mass_function_args = halo_mass_function_args
 
     def render(self, type, args, nrealizations=1):
 
@@ -37,15 +37,19 @@ class pyHalo(object):
             if 'log_mlow_los' not in args.keys():
                 assert 'log_mlow' in args.keys()
                 logLOS_mlow = args['log_mlow']
+            else:
+                logLOS_mlow = args['log_mlow_los']
             if 'log_mhigh_los' not in args.keys():
                 assert 'log_mhigh' in args.keys()
                 logLOS_mhigh = args['log_mhigh']
+            else:
+                logLOS_mhigh = args['log_mhigh_los']
 
             assert 'cone_opening_angle' in args.keys()
 
-            self.halo_mass_function = LensingMassFunction(self._cosmology, 10**logLOS_mlow, 10**logLOS_mhigh, self.zlens, self.zsource,
-                                                      cone_opening_angle=args['cone_opening_angle'],
-                                                          **self.halo_mass_function_args)
+            self.halo_mass_function = LensingMassFunction(self._cosmology, 10 ** logLOS_mlow, 10 ** logLOS_mhigh, self.zlens, self.zsource,
+                                                          cone_opening_angle=args['cone_opening_angle'],
+                                                          **self._halo_mass_function_args)
 
             self._geometry = self.halo_mass_function.geometry
 
@@ -159,13 +163,16 @@ if False:
 
     h = pyHalo(0.5,1.5)
 
-    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':7,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':0,
+    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':6,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':0,
                                'parent_m200': 10**13, 'parent_c':3,'mdef':'TNFW','break_index':-1.3,'c_scale':60,
                                     'c_power':-0.17, 'r_tidal':'0.4Rs', 'break_index':-1.3,'c_scale':60,'c_power':-0.17,
                             'cone_opening_angle':6}
 
     real = h.render('composite_powerlaw',halo_args)
-
+    print(len(real[0].x))
+    #newreal = real[0].filter(1,0, logmasscut_back=8, back_scale_z=0)
+    #print(len(newreal.x))
+    #print(newreal.x)
     #print(len(real[0].x))
 
 

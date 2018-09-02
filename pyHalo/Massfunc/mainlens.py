@@ -24,7 +24,7 @@ class MainLensPowerLaw(object):
     def _spatial(self,args):
 
         args_spatial = {}
-        args_spatial['rmax2d'] = args['cone_opening_angle']
+        args_spatial['rmax2d'] = 0.5*args['cone_opening_angle']
 
         if 'parent_m200' in args and 'parent_c' in args.keys():
             rho0_kpc, parent_Rs, parent_r200 = self._lens_cosmo.NFW_params_physical(args['parent_m200'],
@@ -76,7 +76,6 @@ class MainLensPowerLaw(object):
         elif 'norm_area_10' in args.keys():
             # number of 10 ** 10 solar mass halos per kpc ^ 2
             raise Exception('not yet implemented')
-
 
         elif 'fsub' in args.keys():
 

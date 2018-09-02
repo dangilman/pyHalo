@@ -30,12 +30,14 @@ class LensingMassFunction(object):
     def total_los(self):
 
         n = 0
+
         for z in self._z_range:
 
             norm = self.norm_at_z(z,self._delta_z)
             plaw_idx = self.plaw_index_z(z)
             dNdM = norm*self._M ** plaw_idx
-            n += self._mass_function_moment(self._M, dNdM, 0, self._mlow, self._mhigh)[0]
+            N, norm_fit, index = self._mass_function_moment(self._M, dNdM, 0, self._mlow, self._mhigh)
+            n += N
 
         return n
 
@@ -64,9 +66,7 @@ class LensingMassFunction(object):
 
         norm_unbiased = self.norm_at_z(z, delta_z)
 
-        if delta_R >= 100:
-            return norm_unbiased
-        elif z == self.geometry._zlens:
+        if delta_R >= 3 or delta_R < 0.5:
             return norm_unbiased
         else:
 
@@ -126,13 +126,11 @@ class LensingMassFunction(object):
 
     def _build(self, mlow, mhigh, zsource, zlens):
 
-        nsteps = int((zsource - default_zstart) * self.geometry._min_delta_z ** -1)
-        z_range = np.linspace(default_zstart,zsource,nsteps)
-        # omit the source redshift for numerical reasons
-
-        delta_z = z_range[1]
-
+        nsteps = (zsource - 2*default_zstart) * self.geometry._min_delta_z ** -1
+        z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
+        delta_z = z_range[1] - z_range[0]
         n, norm, index = [], [], []
+
         for i, zi in enumerate(z_range):
             zstart = zi
             zend = zi + delta_z
@@ -142,7 +140,6 @@ class LensingMassFunction(object):
             index.append(indexi)
 
         return np.array(norm), np.array(index), z_range, delta_z
-
 
     def _mass_function_params(self, mlow, mhigh, zstart, zend, z_lens):
 
@@ -161,8 +158,6 @@ class LensingMassFunction(object):
 
         units of norm are therefore M_sun ^ -1
         """
-        log_mlow = np.log10(mlow)
-        log_mhigh = np.log10(mhigh)
 
         #dN_dM = self.dN_dM(M, zstart, zend, z_lens)
         dN_dMdV = self.dN_dMdV_comoving(self._M, zstart)

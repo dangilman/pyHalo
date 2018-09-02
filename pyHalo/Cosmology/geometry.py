@@ -21,6 +21,24 @@ class Geometry(object):
 
         self._min_delta_z = self._delta_z_comoving(distance_resolution_MPC, self._zlens)
 
+    def ray_angle_atz(self, theta, z, z_lens):
+
+        dT_z = self._cosmo.T_xy(0, z)
+        if z <= z_lens:
+            return theta * dT_z
+
+        delta_DA_z = self._cosmo.D_A(0, z)
+        delta_DA_zlens_z = self._cosmo.D_A(z_lens, z)
+
+        # convert reduced deflection angle to physical deflection angle
+        angle_deflection_reduced = theta
+        angle_deflection = angle_deflection_reduced * self._reduced_to_phys
+
+        # subtract the main deflector deflection
+        theta = (theta - angle_deflection * delta_DA_zlens_z * delta_DA_z**-1)
+
+        return theta
+
     def lens_cone_angle(self, z, z_lens):
         """
 
@@ -97,7 +115,7 @@ class Geometry(object):
             # subtract the main deflector deflection
             R = R_in - angle_deflection * self._cosmo.D_A(z_lens, z)
 
-        return R
+        return 0.5 * R
 
     def angle_to_comovingradius(self, z, z_lens):
 

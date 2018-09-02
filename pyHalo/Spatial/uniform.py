@@ -6,7 +6,7 @@ class LensConeUniform(object):
 
         self._cosmo_geometry = cosmo_geometry
 
-        self._uni = Uniform(cone_opening_angle)
+        self._uni = Uniform(cone_opening_angle * 0.5)
 
     def draw(self,N, z_plane):
 
@@ -19,7 +19,7 @@ class LensConeUniform(object):
 
             r = (new_area / np.pi) ** 0.5
 
-            rmax_0 = self._uni.rmax2d_arcsec
+            rmax_0 = self._uni.rmax2d_arcsec * 2
             rescale = r / rmax_0
 
         else:
@@ -45,6 +45,7 @@ class Uniform(object):
         x = r ** .5 * np.cos(angle)
         y = r ** .5 * np.sin(angle)
         r2d = (x ** 2 + y ** 2) ** .5
+
         zcoord = np.random.uniform(0, (self.rmax2d_arcsec ** 2 - r2d ** 2) ** 0.5)
 
         return x, y, r2d, np.sqrt(zcoord ** 2 + r2d ** 2)

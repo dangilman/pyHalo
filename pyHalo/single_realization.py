@@ -49,6 +49,84 @@ class Realization(object):
 
         return lensing
 
+
+    def filter(self, thetax, thetay, mindis_front = 0.5, mindis_back = 0.5, logmasscut_front = 6, logmasscut_back = 8,
+               back_scale_z = 1):
+
+        masses, x, y, mdefs, mdef_args, r2d, r3d, redshifts = [], [], [], [], [], [], [], []
+        start = True
+        for zi in self._unique_redshifts:
+
+            inds_at_z = np.where(self.redshifts == zi)[0]
+            x_at_z = self.x[inds_at_z]
+            y_at_z = self.y[inds_at_z]
+            masses_at_z = self.masses[inds_at_z]
+
+            mdefs_z = [self.mdefs[idx] for idx in inds_at_z]
+            mdef_args_z = [self.mass_def_args[idx] for idx in inds_at_z]
+
+            r2dz = self.r2d[inds_at_z]
+            r3dz = self.r3d[inds_at_z]
+
+            ray_angle_atz_x = self.geometry.ray_angle_atz(thetax, zi, self.geometry._zlens)
+            ray_angle_atz_y = self.geometry.ray_angle_atz(thetay, zi, self.geometry._zlens)
+
+            if zi <= self.geometry._zlens:
+
+                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_front)[0]
+
+                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_front)[0]
+
+                dr = ((x_at_z[inds_m_low] - ray_angle_atz_x) ** 2 +
+                      (y_at_z[inds_m_low] - ray_angle_atz_y) ** 2) ** 0.5
+
+                keep_inds_dr = np.where(dr <= mindis_front)[0]
+
+
+            else:
+
+                if back_scale_z > 0:
+                    area_full = np.pi * self.geometry.cone_opening_angle ** 2
+                    area_small = np.pi * self.geometry._angle_to_arcsec_area(self.geometry._zlens, zi)
+                    ratio = (area_small / area_full) ** 0.5
+                    scale = ratio * back_scale_z
+                else:
+                    scale = 1
+
+                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
+
+                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_back)[0]
+                dr = ((x_at_z[inds_m_low] - ray_angle_atz_x) ** 2 +
+                      (y_at_z[inds_m_low] - ray_angle_atz_y) ** 2) ** 0.5
+
+                keep_inds_dr = np.where(dr <= mindis_back * scale)[0]
+
+            keep_inds = np.append(keep_inds_mass, keep_inds_dr)
+
+            if start:
+                masses = np.array(masses_at_z[keep_inds])
+                x = np.array(x_at_z[keep_inds])
+                y = np.array(y_at_z[keep_inds])
+                r2d = np.array(r2dz[keep_inds])
+                r3d = np.array(r3dz[keep_inds])
+                redshifts = np.array([zi]*len(keep_inds))
+                start = False
+
+            else:
+                masses = np.append(masses, masses_at_z[keep_inds])
+                x = np.append(x, x_at_z[keep_inds])
+                y = np.append(y, y_at_z[keep_inds])
+                r2d = np.append(r2d, r2dz[keep_inds])
+                r3d = np.append(r3d, r3dz[keep_inds])
+                redshifts = np.append(redshifts, np.array([zi]*len(keep_inds)))
+
+            mdefs += [mdefs_z[idx] for idx in keep_inds]
+            mdef_args += [mdef_args_z[idx] for idx in keep_inds]
+
+        return Realization(np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), mdefs, redshifts,
+                                        mdef_args, self.geometry)
+
+
     def lensing_quantities(self, mass_sheet_correction = True):
 
         kwargs_lens = []
