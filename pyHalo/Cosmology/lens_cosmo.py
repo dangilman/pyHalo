@@ -56,30 +56,40 @@ class LensCosmo(object):
 
         return D_12 * D_os * (D_o2 * D_1s) ** -1
 
-    def NFW_params_physical(self, M_200, c, z):
+    def nfw_physical2angle(self, M, c, z):
         """
+        converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
+        :param M: mass enclosed 200 \rho_crit
+        :param c: NFW concentration parameter (r200/r_s)
+        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
+        """
+        D_d = self.cosmo.D_A(0, z)
+        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
+        Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
+        theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
+        eps_crit = self.get_epsiloncrit(z, self.z_source)
+        return Rs_angle, theta_Rs / eps_crit / self.D_d / self.cosmo.arcsec
 
-        :param M_200:
-        :param c:
-        :param z:
-        :return: kpc units
+    def _nfwParam_physical_Mpc(self, M, c, z):
+        """
+        returns the NFW parameters in physical units
+        :param M: physical mass in M_sun
+        :param c: concentration
+        :return:
         """
         h = self.cosmo.h
+        a_z = self.cosmo.scale_factor(z)
 
-        rho = self.rhoc
+        r200 = self.r200_M(M * h) * h * a_z  # physical radius r200
+        rho0 = self.rho0_c(c) / h**2 / a_z**3 # physical density in M_sun/Mpc**3
+        Rs = r200/c
+        return rho0, Rs, r200
 
-        r200 = (3 * M_200 * h * (4 * numpy.pi * rho * 200) ** -1) ** (1. / 3.) * h * self.cosmo.scale_factor(z)
+    def NFW_params_physical(self, M, c, z):
 
-        rho0_c = 200. / 3 * rho * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
+        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
 
-        rho0 = rho0_c / h ** 2 / self.cosmo.scale_factor(z) ** 3
-
-        rho0_kpc = rho0 * (1000) ** -3
-        r200_kpc = r200 * 1000
-
-        Rs = r200_kpc / c
-
-        return rho0_kpc, Rs, r200_kpc
+        return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
     def NFW_truncation(self,M,c,r3d,z,zlens):
 
@@ -92,6 +102,22 @@ class LensCosmo(object):
             r200_arcsec = r200_kpc * self.cosmo.kpc_per_asec(z) ** -1
 
             return r200_arcsec
+
+    def rho0_c(self, c):
+        """
+        computes density normalization as a function of concentration parameter
+        :return: density normalization in h^2/Mpc^3 (comoving)
+        """
+        return 200. / 3 * self.rhoc * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
+
+    def r200_M(self, M):
+        """
+        computes the radius R_200 of a halo of mass M in comoving distances M/h
+        :param M: halo mass in M_sun/h
+        :type M: float or numpy array
+        :return: radius R_200 in comoving Mpc/h
+        """
+        return (3 * M / (4 * numpy.pi * self.rhoc * 200)) ** (1. / 3.)
 
     def point_mass_fac(self,z):
         """

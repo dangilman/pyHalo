@@ -1,4 +1,5 @@
 import numpy as np
+from colossus.halo.profile_nfw import NFWProfile
 
 class NFWLensing(object):
 
@@ -19,6 +20,23 @@ class NFWLensing(object):
 
         return kwargs
 
+    def nfw_params_physical_colossus(self, m, c, z, mdef='200c'):
+
+        h = self.lens_cosmo.cosmo.h
+
+        m_h = m * h
+
+        nfw = NFWProfile(m_h, c, z, mdef)
+        # retuns the physical density and scale radius in kpc
+        # units are: h^2 M_sun / kpc ^ 3, kpc / h
+        rhos_h2, rs_hinv = nfw.fundamentalParameters(m_h, c, z, mdef=mdef)
+
+        rhos = rhos_h2 * h ** -2
+
+        rs = rs_hinv * h
+
+        return rhos, rs, rs*c
+
     def nfw_physical2angle(self, m, c, z):
         """
         converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
@@ -30,21 +48,8 @@ class NFWLensing(object):
         if z < 1e-4:
             z = 1e-4
 
-        rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
-
-        rho0_mpc = rho0 * 1000**3
-        Rs_mpc = Rs * 0.001
-
-        Rs_angle = Rs_mpc / self.lens_cosmo.cosmo.D_A(0,z) / self.lens_cosmo.cosmo.arcsec #Rs in asec
-
-        tRs = rho0_mpc * (4 * Rs_mpc ** 2 * (1 + np.log(1. / 2.)))
-
-        eps_crit = self.lens_cosmo.get_epsiloncrit(z,self.lens_cosmo.z_source)
-        dA = self.lens_cosmo.cosmo.D_A(0, z)
-
-        theta_Rs = tRs / eps_crit / dA / self.lens_cosmo.cosmo.arcsec
-
-        return theta_Rs, Rs_angle
+        theta_rs, rs_angle = self.lens_cosmo.nfw_physical2angle(m, c, z)
+        return theta_rs, rs_angle
 
     def M_physical(self, m, c, z):
         """
@@ -55,4 +60,6 @@ class NFWLensing(object):
 
         rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
         return 4*np.pi*rho0*Rs**3*(np.log(1+c)-c*(1+c)**-1)
+
+
 
