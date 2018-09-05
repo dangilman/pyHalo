@@ -2,7 +2,12 @@ import numpy as np
 
 class NFWLensing(object):
 
-    def __init__(self, lens_cosmo):
+    def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
+
+        if lens_cosmo is None:
+            from pyHalo.Cosmology.lens_cosmo import LensCosmo
+            lens_cosmo = LensCosmo(zlens, z_source)
+
         self.lens_cosmo = lens_cosmo
 
     def params(self, x, y, mass, concentration, redshift):

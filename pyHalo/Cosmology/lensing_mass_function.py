@@ -7,7 +7,8 @@ from colossus.lss.bias import twoHaloTerm, haloBias
 class LensingMassFunction(object):
 
     def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
-                 delta_theta_lens=None, model_kwargs={'model':'despali16', 'mdef':'200c'}):
+                 delta_theta_lens=None, model_kwargs={'model':'sheth99'},
+                 use_lookup_table=True):
 
         if delta_theta_lens is None:
             delta_theta_lens = cone_opening_angle
@@ -19,7 +20,17 @@ class LensingMassFunction(object):
         self._M = np.logspace(np.log10(mlow), np.log10(mhigh), 100)
 
         # densities
-        norm_z_dV, plaw_index_z, z_range, delta_z = self._build(mlow, mhigh, zsource, zlens)
+        if use_lookup_table:
+
+            if model_kwargs['model'] == 'sheth99':
+                from pyHalo.Cosmology.lookup_tables import lookup_sheth99 as table
+            else:
+                raise ValueError('lookup table '+model_kwargs['model']+' not found.')
+
+            norm_z_dV, plaw_index_z, z_range, delta_z = table.norm_z_dV, table.plaw_index_z, table.z_range, \
+                                                        table.delta_z*np.ones_like(table.norm_z_dV)
+        else:
+            norm_z_dV, plaw_index_z, z_range, delta_z = self._build(mlow, mhigh, zsource, zlens)
 
         self._delta_z = delta_z
         self._norm_dV = interp1d(z_range,norm_z_dV)
@@ -263,4 +274,3 @@ class LensingMassFunction(object):
         dn_dlogm_h *= h**3
 
         return dn_dlogm_h / m_h
-
