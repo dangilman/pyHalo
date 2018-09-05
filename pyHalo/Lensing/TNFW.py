@@ -35,17 +35,8 @@ class TNFWLensing(object):
         :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
         """
 
-        rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
-        rho0_mpc = rho0 * 1000**3
-        Rs_mpc = Rs * 0.001
+        if z < 1e-4:
+            z = 1e-4
 
-        Rs_angle = Rs_mpc / self.lens_cosmo.cosmo.D_A(0,z) / self.lens_cosmo.cosmo.arcsec #Rs in asec
-
-        tRs = rho0_mpc * (4 * Rs_mpc ** 2 * (1 + np.log(1. / 2.)))
-
-        eps_crit = self.lens_cosmo.get_epsiloncrit(z,self.lens_cosmo.z_source)
-        dA = self.lens_cosmo.cosmo.D_A(0, z)
-
-        theta_Rs = tRs / eps_crit / dA / self.lens_cosmo.cosmo.arcsec
-
-        return theta_Rs, Rs_angle
+        theta_rs, rs_angle = self.lens_cosmo.nfw_physical2angle(m, c, z)
+        return theta_rs, rs_angle
