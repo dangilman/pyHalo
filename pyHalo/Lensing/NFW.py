@@ -48,7 +48,7 @@ class NFWLensing(object):
         if z < 1e-4:
             z = 1e-4
 
-        theta_rs, rs_angle = self.lens_cosmo.nfw_physical2angle(m, c, z)
+        rs_angle, theta_rs = self.lens_cosmo.nfw_physical2angle(m, c, z)
         return theta_rs, rs_angle
 
     def M_physical(self, m, c, z):
@@ -60,6 +60,9 @@ class NFWLensing(object):
 
         rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
         return 4*np.pi*rho0*Rs**3*(np.log(1+c)-c*(1+c)**-1)
+
+n = NFWLensing(zlens = 0.5, z_source=1.5)
+print(n.nfw_physical2angle(10**9,9,0.5))
 
 
 

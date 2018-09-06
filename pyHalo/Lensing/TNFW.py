@@ -38,5 +38,5 @@ class TNFWLensing(object):
         if z < 1e-4:
             z = 1e-4
 
-        theta_rs, rs_angle = self.lens_cosmo.nfw_physical2angle(m, c, z)
+        rs_angle, theta_rs = self.lens_cosmo.nfw_physical2angle(m, c, z)
         return theta_rs, rs_angle
