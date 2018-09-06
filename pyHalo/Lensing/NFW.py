@@ -60,9 +60,3 @@ class NFWLensing(object):
 
         rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
         return 4*np.pi*rho0*Rs**3*(np.log(1+c)-c*(1+c)**-1)
-
-n = NFWLensing(zlens = 0.5, z_source=1.5)
-print(n.nfw_physical2angle(10**9,9,0.5))
-
-
-
