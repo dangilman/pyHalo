@@ -61,7 +61,9 @@ class Cosmology(object):
 
     def E_z(self,z):
 
-        return self.astropy.E_z(z)
+        a = self.a_z(z)
+
+        return np.sqrt(self.astropy.Om0 * a ** -3 + (1 - self.astropy.Om0))
 
     def a_z(self, z):
         """

@@ -30,6 +30,11 @@ class LensCosmo(object):
 
         return epsilon_crit
 
+    def rhoc_comoving(self, z):
+
+        Ez = self.cosmo.E_z(z)
+        return self.rhoc * Ez ** 2
+
     def get_sigmacrit(self,z):
 
         return self.get_epsiloncrit(z,self.z_source)*(0.001)**2*self.cosmo.kpc_per_asec(z)**2
@@ -108,6 +113,7 @@ class LensCosmo(object):
         computes density normalization as a function of concentration parameter
         :return: density normalization in h^2/Mpc^3 (comoving)
         """
+
         return 200. / 3 * self.rhoc * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
 
     def r200_M(self, M):
@@ -117,6 +123,7 @@ class LensCosmo(object):
         :type M: float or numpy array
         :return: radius R_200 in comoving Mpc/h
         """
+
         return (3 * M / (4 * numpy.pi * self.rhoc * 200)) ** (1. / 3.)
 
     def point_mass_fac(self,z):
