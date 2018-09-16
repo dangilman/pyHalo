@@ -7,7 +7,7 @@ from colossus.lss.bias import twoHaloTerm
 class LensingMassFunction(object):
 
     def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
-                 delta_theta_lens=None, model_kwargs={'model':'reed07'},
+                 delta_theta_lens=None, model_kwargs={'model':'sheth99'},
                  use_lookup_table=False, two_halo_term = True):
 
         if delta_theta_lens is None:
