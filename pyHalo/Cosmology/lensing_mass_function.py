@@ -2,13 +2,13 @@ from colossus.lss.mass_function import *
 from pyHalo.Cosmology.geometry import *
 from scipy.interpolate import interp1d
 from pyHalo.defaults import *
-from colossus.lss.bias import twoHaloTerm, haloBias
+from colossus.lss.bias import twoHaloTerm
 
 class LensingMassFunction(object):
 
     def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
-                 delta_theta_lens=None, model_kwargs={'model':'sheth99'},
-                 use_lookup_table=True):
+                 delta_theta_lens=None, model_kwargs={'model':'reed07'},
+                 use_lookup_table=False, two_halo_term = True):
 
         if delta_theta_lens is None:
             delta_theta_lens = cone_opening_angle
@@ -18,17 +18,23 @@ class LensingMassFunction(object):
         self._model_kwargs = model_kwargs
         self._mlow, self._mhigh = mlow, mhigh
         self._M = np.logspace(np.log10(mlow), np.log10(mhigh), 100)
+        self._two_halo_term = two_halo_term
 
         # densities
         if use_lookup_table:
 
             if model_kwargs['model'] == 'sheth99':
                 from pyHalo.Cosmology.lookup_tables import lookup_sheth99 as table
+            elif model_kwargs['model'] == 'reed07':
+                from pyHalo.Cosmology.lookup_tables import lookup_reed07 as table
+            elif model_kwargs['model'] == 'despali16':
+                model_kwargs.update({'mdef':'200c'})
+                from pyHalo.Cosmology.lookup_tables import lookup_despali16 as table
             else:
                 raise ValueError('lookup table '+model_kwargs['model']+' not found.')
 
             norm_z_dV, plaw_index_z, z_range, delta_z = table.norm_z_dV, table.plaw_index_z, table.z_range, \
-                                                        table.delta_z*np.ones_like(table.norm_z_dV)
+                                                        table.delta_z
         else:
             norm_z_dV, plaw_index_z, z_range, delta_z = self._build(mlow, mhigh, zsource, zlens)
 
@@ -76,6 +82,10 @@ class LensingMassFunction(object):
 
         norm_unbiased = self.norm_at_z(z, delta_z)
 
+        if self._two_halo_term is False:
+
+            return norm_unbiased
+
         if delta_R >= 3 or delta_R < 0.5:
             return norm_unbiased
         else:
@@ -97,42 +107,6 @@ class LensingMassFunction(object):
         rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) * self._cosmo._colossus_cosmo.rho_m(z) ** -1
 
         return rho_2h * h ** -2
-
-    def dN_dM(self, M, zstart, zend, z_lens):
-
-        """
-
-        :param M: Mass in solar masses
-        :param zstart: start redshift
-        :param zend: end redshift
-        :param cone_opening_angle:
-        :param z_lens:
-        :param delta_theta_lens: reduced lens deflection angle
-        :return: the mass function in units [N * M_sun ^ -1]
-        """
-        if zstart == 0:
-            zstart = 1e-4
-
-        delta_z = zend - zstart
-        assert delta_z > 0
-
-        # get the comoving volume element at redshift z
-        volume_element_comoving = self.geometry.volume_element_comoving(zstart, z_lens, delta_z)
-
-        return self.dN_dMdV_comoving(M, zstart) * volume_element_comoving
-
-    def dN_dMdV_comoving(self, M, z):
-
-        """
-        :param M: m (in physical units, no little h)
-        :param z: redshift
-        :return: differential number per unit mass per cubic Mpc (comoving)
-        [N * M_sun ^ -1 * Mpc ^ -3]
-        """
-
-        a_cube = self._cosmo.scale_factor(z)**3
-
-        return a_cube*self._dN_dMdV_physical(M, z)
 
     def _build(self, mlow, mhigh, zsource, zlens):
 
@@ -178,7 +152,7 @@ class LensingMassFunction(object):
 
         return N_objects_dV, norm_dV, plaw_index_dV
 
-    def _dN_dMdV_physical(self, M, z):
+    def dN_dMdV_comoving(self, M, z):
 
         """
         :param M: m (in physical units, no little h)
@@ -193,7 +167,7 @@ class LensingMassFunction(object):
 
         return h ** 3 * massFunction(M_h, z, q_out='dndlnM', **self._model_kwargs) * M_h ** -1
 
-    def _dN_dMdV_comoving_deltaFunc(self, M, z, component_fraction):
+    def dN_dMdV_comoving_deltaFunc(self, M, z, component_fraction):
 
         """
 
@@ -250,27 +224,3 @@ class LensingMassFunction(object):
 
         return unit_h * self._cosmo.h ** -1
 
-    def _dN_dMdV_example(self, M, z):
-
-        """
-        :param M: M (physical m200, in solar masses, no little h)
-        :param z: redshift
-        :return: differential number per unit mass per cubic Mpc (physical? comoving?)
-        [N * M_sun ^ -1 * Mpc ^ -3]
-
-        The intention is that the quantity returned times a small delta_M is the number of halos within a
-        cubic megaparsec (physical) in the mass range [M, M + delta_M] in physical solar masses
-        """
-
-        # h = 0.679
-        h = self._cosmo.h
-
-        # convert M to M/h units
-        m_h = M * h
-
-        dn_dlogm_h = massFunction(m_h, z, q_out='dndlnM', model='reed07')
-
-        # convert (Mpc / h)^-3 to Mpc^-3
-        dn_dlogm_h *= h**3
-
-        return dn_dlogm_h / m_h

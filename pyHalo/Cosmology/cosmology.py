@@ -102,16 +102,6 @@ class Cosmology(object):
 
         return T_xy
 
-    def physical_distance_z1z2(self,z1,z2):
-
-        a1 = (1+z1)**-1
-        a2 = (1+z2)**-1
-
-        d1 = self.T_xy(0,z1)
-        d2 = self.T_xy(0,z2)
-
-        return d2 - d1
-
     def D_xy(self, z_observer, z_source):
         """
         angular diamter distance in units of Mpc

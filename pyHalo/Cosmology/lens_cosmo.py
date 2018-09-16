@@ -14,7 +14,7 @@ class LensCosmo(object):
         # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
         self.sigmacrit = self.epsilon_crit * (0.001) ** 2 * self.cosmo.kpc_per_asec(z_lens) ** 2
         # critical density of the universe in M_sun Mpc^-3
-        self.rhoc = self.cosmo.astropy.critical_density0.value * self.cosmo.density_to_MsunperMpc * self.cosmo.h**-2
+        self.rhoc = self.cosmo.astropy.critical_density0.value * self.cosmo.density_to_MsunperMpc
         # lensing distances
         self.D_d, self.D_s, self.D_ds = self.cosmo.D_A(0, z_lens), self.cosmo.D_A(0, z_source), self.cosmo.D_A(z_lens, z_source)
         # hubble distance in Mpc
@@ -85,8 +85,8 @@ class LensCosmo(object):
         h = self.cosmo.h
         a_z = self.cosmo.scale_factor(z)
 
-        r200 = self.r200_M(M * h) * h * a_z  # physical radius r200
-        rho0 = self.rho0_c(c) / h**2 / a_z**3 # physical density in M_sun/Mpc**3
+        r200 = self.r200_M(M * h) * a_z / h   # physical radius r200
+        rho0 = self.rho0_c(c) * h**2 / a_z**3 # physical density in M_sun/Mpc**3
         Rs = r200/c
         return rho0, Rs, r200
 

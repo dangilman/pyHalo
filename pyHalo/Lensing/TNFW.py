@@ -9,7 +9,7 @@ class TNFWLensing(object):
 
     def params(self, x, y, mass, concentration, redshift, r_trunc):
 
-        theta_Rs, Rs_angle = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
+        Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
 
         kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
                   'center_x':x, 'center_y':y, 'r_trunc':r_trunc}

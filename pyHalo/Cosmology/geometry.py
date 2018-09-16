@@ -39,26 +39,6 @@ class Geometry(object):
 
         return theta
 
-    def lens_cone_angle(self, z, z_lens):
-        """
-
-        :param z: redshift
-        :param z_lens: lens redshift
-        :param delta_theta_lens: lens deflection angle (reduced)
-        :return: angular size (in arcsec) of lens cone at redshift z
-        """
-
-        if z <= z_lens:
-            return self.cone_opening_angle
-
-        R_physical = self.angle_to_physicalradius(z, z_lens)
-
-        R_radians = R_physical*self._cosmo.D_A(0,z)**-1
-
-        R_arcsec = R_radians * self._cosmo.arcsec**-1
-
-        return R_arcsec
-
     def volume_element_comoving(self, z, z_lens, delta_z):
         """
 
@@ -79,12 +59,6 @@ class Geometry(object):
             volume_element = area_comoving * self._delta_R_comoving(z, delta_z)
 
         return volume_element
-
-    def volume_element_physical(self, z, z_lens, delta_z):
-
-        volume_comoving = self.volume_element_comoving(z, z_lens, delta_z)
-
-        return self._cosmo.scale_factor(z) ** 3 * volume_comoving
 
     def delta_R_fromz(self, z):
 
