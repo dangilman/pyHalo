@@ -132,7 +132,7 @@ class LensCosmo(object):
         :param z:
         :return:
         """
-        const = 4 * self.cosmo.G * self.cosmo.c ** -2 * self.D_A(z, self.z_source) * (self.D_A(z) * self.D_s) ** -1
+        const = 4 * self.cosmo.G * self.cosmo.c ** -2 * self.cosmo.D_A(z, self.z_source) * (self.cosmo.D_A(0, z) * self.cosmo.D_A(0, self.z_source)) ** -1
         return self.cosmo.arcsec ** -1 * const ** .5
 
     def NFW_concentration(self,M,z,model='bullock01',mdef='200c',logmhm=0,
@@ -186,5 +186,4 @@ class LensCosmo(object):
         integral = power / (mhigh ** power - mlow ** power)
 
         return area * kappa_sub * self.sigmacrit * integral
-
 

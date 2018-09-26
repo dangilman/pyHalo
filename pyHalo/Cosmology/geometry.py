@@ -23,9 +23,8 @@ class Geometry(object):
 
     def ray_angle_atz(self, theta, z, z_lens):
 
-        dT_z = self._cosmo.T_xy(0, z)
         if z <= z_lens:
-            return theta * dT_z
+            return theta
 
         delta_DA_z = self._cosmo.D_A(0, z)
         delta_DA_zlens_z = self._cosmo.D_A(z_lens, z)
