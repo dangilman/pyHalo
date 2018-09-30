@@ -28,6 +28,9 @@ class LOSPowerLaw(object):
 
         pargs['normalization'] = self._lensing_mass_func.norm_at_z_biased(zstart, self._parameterization_args['parent_m200'],
                                                                           self._delta_z)
+
+        pargs['normalization'] *= pargs['LOS_normalization']
+
         #pargs['normalization'] = self._lensing_mass_func.norm_at_z(zstart, delta_z = self._delta_z)
         pargs['power_law_index'] = self._lensing_mass_func.plaw_index_z(zstart)
 
@@ -45,6 +48,7 @@ class LOSPowerLaw(object):
             pargs['power_law_index'] = self._lensing_mass_func.plaw_index_z(z)
             pargs['normalization'] = self._lensing_mass_func.norm_at_z_biased(z, self._parameterization_args[
                 'parent_m200'], self._delta_z)
+            pargs['normalization'] *= pargs['LOS_normalization']
             #pargs['normalization'] = self._lensing_mass_func.norm_at_z(z, delta_z=self._delta_z)
             mfunc = BrokenPowerLaw(**pargs)
 
@@ -87,9 +91,18 @@ class LOSPowerLaw(object):
     def _mfunc(self,args):
 
         args_mfunc = {}
-        required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow_los', 'log_mhigh_los', 'parent_m200']
+        required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow_los',
+                         'log_mhigh_los', 'parent_m200', 'LOS_normalization']
 
         for key in required_keys:
+
+            if key == 'LOS_normalization':
+
+                if key in args.keys():
+                    args_mfunc['LOS_normalization'] = args[key]
+                else:
+                    args_mfunc['LOS_normalization'] = 1
+                continue
 
             if key == 'log_mlow_los':
 

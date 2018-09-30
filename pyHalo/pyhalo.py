@@ -136,7 +136,7 @@ class pyHalo(object):
 
         elif model_name == 'line_of_sight':
 
-            mdef_los, los = self._build_main(model_args)
+            mdef_los, los = self._build_los(model_args)
 
             executables = [los]
             mdefs = [mdef_los]
