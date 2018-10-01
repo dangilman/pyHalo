@@ -51,7 +51,7 @@ class Realization(object):
 
 
     def filter(self, thetax, thetay, mindis_front = 0.5, mindis_back = 0.5, logmasscut_front = 6, logmasscut_back = 8,
-               back_scale_z = 0):
+               back_scale_z = 0, source_x = 0, source_y = 0):
 
         masses, x, y, mdefs, mdef_args, r2d, r3d, redshifts = [], [], [], [], [], [], [], []
         start = True
@@ -71,8 +71,17 @@ class Realization(object):
             r3dz = self.r3d[inds_at_z]
 
             for tx, ty in zip(thetax, thetay):
-                ray_angle_atz_x.append(self.geometry.ray_angle_atz(tx, zi, self.geometry._zlens))
-                ray_angle_atz_y.append(self.geometry.ray_angle_atz(ty, zi, self.geometry._zlens))
+
+                angle_x_atz = self.geometry.ray_angle_atz(tx, zi, self.geometry._zlens)
+                angle_y_atz = self.geometry.ray_angle_atz(ty, zi, self.geometry._zlens)
+
+                if zi > self.geometry._zlens:
+
+                    angle_x_atz += source_x
+                    angle_y_atz += source_y
+
+                ray_angle_atz_x.append(angle_x_atz)
+                ray_angle_atz_y.append(angle_y_atz)
 
             if zi <= self.geometry._zlens:
 
