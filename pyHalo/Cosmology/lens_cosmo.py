@@ -20,6 +20,33 @@ class LensCosmo(object):
         # hubble distance in Mpc
         self._d_hubble = self.cosmo.c * self.cosmo.Mpc * 0.001 * (self.cosmo.h * 100)
 
+    def mthermal_to_halfmode(self, m_thermal):
+
+        """
+        Converts a (fully thermalized) thermal relic particle of mass m [keV] to
+        the half-mode mass scale in solar masses (no little h)
+        :param m: thermal relic particle mass in keV
+        :return: half mode mass in solar masses
+        """
+        # scaling of 3.3 keV from Viel et al
+        norm_h = (2 * 10**8) * 3 ** 3.33 # units M / h
+        norm = norm_h / self.cosmo.h
+
+        return norm * m_thermal ** -3.33
+
+    def halfmode_to_thermal(self, m_half_mode):
+
+        """
+        Converts a half mode mass in units of solar masses (no little h) to the mass of
+        the corresponding thermal relic particle in keV
+        :param m: half mode mass in solar masses
+        :return: thermal relic particle mass in keV
+        """
+        norm_h = (2 * 10 ** 8) * 3 ** 3.33  # units M / h
+        norm = norm_h / self.cosmo.h
+
+        return (m_half_mode / norm) ** (-1 / 3.33)
+
     def get_epsiloncrit(self,z1,z2):
 
         D_ds = self.cosmo.D_A(z1, z2)
@@ -186,3 +213,4 @@ class LensCosmo(object):
         integral = power / (mhigh ** power - mlow ** power)
 
         return area * kappa_sub * self.sigmacrit * integral
+
