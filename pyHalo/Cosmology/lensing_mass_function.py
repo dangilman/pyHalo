@@ -167,7 +167,7 @@ class LensingMassFunction(object):
 
         return h ** 3 * massFunction(M_h, z, q_out='dndlnM', **self._model_kwargs) * M_h ** -1
 
-    def dN_dMdV_comoving_deltaFunc(self, M, z, component_fraction):
+    def dN_dV_comoving_deltaFunc(self, M, z, component_fraction):
 
         """
 

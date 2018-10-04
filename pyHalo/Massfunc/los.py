@@ -5,6 +5,111 @@ from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
 from pyHalo.Spatial.uniform import LensConeUniform
 from pyHalo.defaults import default_zstart, default_z_round
 
+class LOSDelta(object):
+
+    def __init__(self, args, lensing_mass_func, zlens, zstep):
+
+        self._lensing_mass_func = lensing_mass_func
+        spatial_args, parameterization_args = self._set_kwargs(args)
+
+        zmin, zmax = parameterization_args['zmin'], parameterization_args['zmax']
+        self._redshift_range, self._delta_z = _redshift_range_LOS(zmin, zmax, zlens, zstep)
+
+        self._spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
+                                                         lensing_mass_func.geometry)
+        self._parameterization_args = parameterization_args
+
+    def __call__(self):
+
+        redshifts = []
+        zstart = self._redshift_range[0]
+
+        pargs = copy(self._parameterization_args)
+
+        nobjects = self._lensing_mass_func.dN_dV_comoving_deltaFunc(pargs['M'], zstart, pargs['mass_fraction'])
+        nobjects *= pargs['LOS_normalization']
+        masses = np.array([pargs['M']]*nobjects)
+
+        x, y, r2d, r3d = self._render_positions_atz(zstart, len(masses))
+
+        if len(masses) > 0:
+            redshifts += [zstart] * len(masses)
+
+        for z in self._redshift_range[1:-1]:
+
+            pargs = copy(self._parameterization_args)
+
+            nobjects = self._lensing_mass_func.dN_dV_comoving_deltaFunc(pargs['M'], z,
+                                                                        pargs['mass_fraction'])
+            nobjects *= pargs['LOS_normalization']
+            m = np.array([pargs['M']] * nobjects)
+
+            xi, yi, r2di, r3di = self._render_positions_atz(z, len(m))
+
+            masses = np.append(masses,m)
+            x = np.append(x, xi)
+            y = np.append(y, yi)
+            r2d = np.append(r2d, r2di)
+            r3d = np.append(r3d, r3di)
+            if len(m) > 0:
+                redshifts += [z]*len(m)
+
+        redshifts = self._round_redshifts(redshifts, self._lensing_mass_func.geometry._zlens)
+
+        return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(redshifts)
+
+
+    def _render_z(self,z):
+
+        m = self._render_mass_atz(z)
+        x, y, r2d, r3d = self._render_positions_atz(z, len(m))
+
+        return m, x, y, r2d, r3d
+
+    def _render_positions_atz(self, z, nhalos):
+
+        x, y, r2d, r3d = self._spatial_parameterization.draw(nhalos, z)
+
+        return x, y, r2d, r3d
+
+    def _set_kwargs(self, args):
+
+        args_mfunc = self._mfunc(args)
+        args_spatial = self._spatial(args)
+
+        return args_spatial, args_mfunc
+
+    def _spatial(self,args):
+
+        args_spatial ={}
+        args_spatial['cone_opening_angle'] = args['cone_opening_angle']
+        return args_spatial
+
+    def _mfunc(self,args):
+
+        args_mfunc = {}
+        required_keys = ['zmin', 'zmax', 'M', 'mass_fraction', 'LOS_normalization']
+
+        for key in required_keys:
+
+            if key == 'LOS_normalization':
+
+                if key in args.keys():
+                    args_mfunc['LOS_normalization'] = args[key]
+                else:
+                    args_mfunc['LOS_normalization'] = 1
+                continue
+
+            try:
+                args_mfunc[key] = args[key]
+            except:
+                if key == 'zmin':
+                    args_mfunc['zmin'] = default_zstart
+                else:
+                    args_mfunc['zmax'] = self._lensing_mass_func.geometry._zsource - default_zstart
+
+        return args_mfunc
+
 class LOSPowerLaw(object):
 
     def __init__(self, args, lensing_mass_func, zlens, zstep):
@@ -165,3 +270,4 @@ def _redshift_range_LOS(zmin, zmax, zlens, zstep):
     zvalues = np.linspace(zmin, zmax, nsteps)
 
     return zvalues, zstep
+

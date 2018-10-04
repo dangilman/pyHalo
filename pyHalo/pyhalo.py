@@ -3,7 +3,7 @@ from pyHalo.Cosmology.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
-from pyHalo.Massfunc.los import LOSPowerLaw
+from pyHalo.Massfunc.los import LOSPowerLaw, LOSDelta
 from pyHalo.Massfunc.mainlens import MainLensPowerLaw
 from pyHalo.defaults import *
 from pyHalo.single_realization import Realization
@@ -103,7 +103,15 @@ class pyHalo(object):
 
         mfunc_LOS = self._LOS_mass_func(args)
 
-        los = LOSPowerLaw(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+        if 'mass_func_type' in args:
+
+            if args['mass_func_type'] == 'delta':
+                los = LOSDelta(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+
+        else:
+            # default to a power law
+            los = LOSPowerLaw(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+
         if 'mdef_los' not in args.keys():
             raise ValueError('specify mass definition for line of sight halos with mdef_los.')
         mdef = args['mdef_los']
@@ -179,7 +187,7 @@ class pyHalo(object):
 
         return mdef_args
 
-if True:
+if False:
 
     h = pyHalo(0.5,1.5)
 
