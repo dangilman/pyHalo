@@ -8,7 +8,7 @@ class LensingMassFunction(object):
 
     def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
                  delta_theta_lens=None, model_kwargs={'model':'sheth99'},
-                 use_lookup_table=False, two_halo_term = True):
+                 use_lookup_table=True, two_halo_term = True):
 
         if delta_theta_lens is None:
             delta_theta_lens = cone_opening_angle

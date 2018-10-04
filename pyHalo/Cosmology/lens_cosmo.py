@@ -126,7 +126,8 @@ class LensCosmo(object):
     def NFW_truncation(self,M,c,r3d,z,zlens):
 
         if z == zlens:
-            return (0.5 * M * r3d ** 2 / self.sigmacrit) ** (1. / 3)
+            trunc = self.truncation_roche(M, r3d)
+            return trunc
 
         else:
             _, _, r200_kpc = self.NFW_params_physical(M, c, z)
@@ -134,6 +135,10 @@ class LensCosmo(object):
             r200_arcsec = r200_kpc * self.cosmo.kpc_per_asec(z) ** -1
 
             return r200_arcsec
+
+    def truncation_roche(self, M, r3d):
+
+        return (0.5 * M * r3d ** 2 / self.sigmacrit) ** (1. / 3)
 
     def rho0_c(self, c):
         """
@@ -161,6 +166,10 @@ class LensCosmo(object):
         """
         const = 4 * self.cosmo.G * self.cosmo.c ** -2 * self.cosmo.D_A(z, self.z_source) * (self.cosmo.D_A(0, z) * self.cosmo.D_A(0, self.z_source)) ** -1
         return self.cosmo.arcsec ** -1 * const ** .5
+
+    def PJaffe_norm(self, mass, r_trunc):
+
+        return mass * (numpy.pi * self.sigmacrit * r_trunc) ** -1
 
     def NFW_concentration(self,M,z,model='diemer18',mdef='200c',logmhm=0,
                                 scatter=True,g1=None,g2=None):

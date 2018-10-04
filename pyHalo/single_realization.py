@@ -1,7 +1,8 @@
 import numpy as np
 from pyHalo.Lensing.NFW import NFWLensing
 from pyHalo.Lensing.TNFW import TNFWLensing
-from pyHalo.Lensing.PTmass import PTmasslensing
+from pyHalo.Lensing.PTmass import PTmassLensing
+from pyHalo.Lensing.PJaffe import PJaffeLensing
 
 def realization_at_z(realization,z):
 
@@ -42,7 +43,10 @@ class Realization(object):
                 lensing.append(TNFWLensing(self.lens_cosmo))
 
             elif mdef == 'POINT_MASS':
-                lensing.append(PTmasslensing(self.lens_cosmo))
+                lensing.append(PTmassLensing(self.lens_cosmo))
+
+            elif mdef == 'PJAFFE':
+                lensing.append(PJaffeLensing(self.lens_cosmo))
 
             else:
                 raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
@@ -171,6 +175,8 @@ class Realization(object):
                 args.update({'r_trunc': self.mass_def_args[i]['r_trunc']})
             elif mdef == 'POINT_MASS':
                 args.update({'redshift': self.redshifts[i]})
+            elif mdef == 'PJAFFE':
+                args.update({'r_trunc': self.mass_def_args[i]['r_trunc']})
             else:
                 raise ValueError('halo profile '+str(mdef)+' not recongnized.')
 

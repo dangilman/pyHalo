@@ -161,6 +161,11 @@ class pyHalo(object):
             truncation = self._lens_cosmo.NFW_truncation(masses, nfw_c, r3d, redshifts, self.zlens)
             mdef_args.update({'r_trunc':truncation})
 
+        if mdef == 'PJAFFE':
+
+            truncation = self._lens_cosmo.truncation_roche(masses, r3d)
+            mdef_args.update({'r_trunc':truncation})
+
         return mdef_args
 
 if False:
