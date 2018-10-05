@@ -38,6 +38,17 @@ class Geometry(object):
 
         return theta
 
+    def angle_between_planes(self, z1, z2, z3, theta1, theta2):
+
+        x12 = self._cosmo.T_xy(z1, z2)
+        x2 = self._cosmo.T_xy(0, z2)
+        x13 = self._cosmo.T_xy(z1, z3)
+        x3 = self._cosmo.T_xy(0, z3)
+
+        d_theta = (theta1 - theta2) * (x2 / x12)
+
+        return theta1 - d_theta * (x13 / x3)
+
     def volume_element_comoving(self, z, z_lens, delta_z):
         """
 

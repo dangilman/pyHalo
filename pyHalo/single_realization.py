@@ -30,134 +30,6 @@ class Realization(object):
 
         self._lensing_functions = self._lensing_list()
 
-    def _lensing_list(self):
-
-        lensing = []
-
-        for i, mdef in enumerate(self.mdefs):
-
-            if mdef == 'NFW':
-                lensing.append(NFWLensing(self.lens_cosmo))
-
-            elif mdef == 'TNFW':
-                lensing.append(TNFWLensing(self.lens_cosmo))
-
-            elif mdef == 'POINT_MASS':
-                lensing.append(PTmassLensing(self.lens_cosmo))
-
-            elif mdef == 'PJAFFE':
-                lensing.append(PJaffeLensing(self.lens_cosmo))
-
-            else:
-                raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
-
-        return lensing
-
-
-    def filter(self, thetax, thetay, mindis_front = 0.5, mindis_back = 0.5, logmasscut_front = 6, logmasscut_back = 8,
-               back_scale_z = 0, source_x = 0, source_y = 0):
-
-        masses, x, y, mdefs, mdef_args, r2d, r3d, redshifts = [], [], [], [], [], [], [], []
-        start = True
-        for zi in self._unique_redshifts:
-
-            ray_angle_atz_x, ray_angle_atz_y = [], []
-
-            inds_at_z = np.where(self.redshifts == zi)[0]
-            x_at_z = self.x[inds_at_z]
-            y_at_z = self.y[inds_at_z]
-            masses_at_z = self.masses[inds_at_z]
-
-            mdefs_z = [self.mdefs[idx] for idx in inds_at_z]
-            mdef_args_z = [self.mass_def_args[idx] for idx in inds_at_z]
-
-            r2dz = self.r2d[inds_at_z]
-            r3dz = self.r3d[inds_at_z]
-
-            for tx, ty in zip(thetax, thetay):
-
-                angle_x_atz = self.geometry.ray_angle_atz(tx, zi, self.geometry._zlens)
-                angle_y_atz = self.geometry.ray_angle_atz(ty, zi, self.geometry._zlens)
-
-                if zi > self.geometry._zlens:
-
-                    angle_x_atz += source_x
-                    angle_y_atz += source_y
-
-                ray_angle_atz_x.append(angle_x_atz)
-                ray_angle_atz_y.append(angle_y_atz)
-
-            if zi <= self.geometry._zlens:
-
-                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_front)[0]
-
-                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_front)[0]
-
-                keep_inds_dr = []
-
-                for idx in inds_m_low:
-
-                    for (anglex, angley) in zip(ray_angle_atz_x, ray_angle_atz_y):
-
-                        dr = ((x_at_z[idx] - anglex) ** 2 +
-                          (y_at_z[idx] - angley) ** 2) ** 0.5
-
-                        if dr <= mindis_front:
-                            keep_inds_dr.append(idx)
-                            break
-            else:
-
-                if back_scale_z > 0:
-                    area_full = np.pi * self.geometry.cone_opening_angle ** 2
-                    area_small = np.pi * self.geometry._angle_to_arcsec_area(self.geometry._zlens, zi)
-                    ratio = (area_small / area_full) ** 0.5
-                    scale = ratio * back_scale_z
-                else:
-                    scale = 1
-
-                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
-
-                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_back)[0]
-
-                keep_inds_dr = []
-
-                for idx in inds_m_low:
-
-                    for (anglex, angley) in zip(ray_angle_atz_x, ray_angle_atz_y):
-
-                        dr = ((x_at_z[idx] - anglex) ** 2 +
-                              (y_at_z[idx] - angley) ** 2) ** 0.5
-
-                        if dr <= mindis_back * scale:
-                            keep_inds_dr.append(idx)
-                            break
-
-            keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
-
-            if start:
-                masses = np.array(masses_at_z[keep_inds])
-                x = np.array(x_at_z[keep_inds])
-                y = np.array(y_at_z[keep_inds])
-                r2d = np.array(r2dz[keep_inds])
-                r3d = np.array(r3dz[keep_inds])
-                redshifts = np.array([zi]*len(keep_inds))
-                start = False
-
-            else:
-                masses = np.append(masses, masses_at_z[keep_inds])
-                x = np.append(x, x_at_z[keep_inds])
-                y = np.append(y, y_at_z[keep_inds])
-                r2d = np.append(r2d, r2dz[keep_inds])
-                r3d = np.append(r3d, r3dz[keep_inds])
-                redshifts = np.append(redshifts, np.array([zi]*len(keep_inds)))
-
-            mdefs += [mdefs_z[idx] for idx in keep_inds]
-            mdef_args += [mdef_args_z[idx] for idx in keep_inds]
-
-        return Realization(np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), mdefs, redshifts,
-                                        mdef_args, self.geometry)
-
-
     def lensing_quantities(self, mass_sheet_correction = True):
 
         kwargs_lens = []
@@ -193,6 +65,183 @@ class Realization(object):
             redshift_list = self.redshifts
 
         return lens_model_names, redshift_list, kwargs_lens
+
+    def _lensing_list(self):
+
+        lensing = []
+
+        for i, mdef in enumerate(self.mdefs):
+
+            if mdef == 'NFW':
+                lensing.append(NFWLensing(self.lens_cosmo))
+
+            elif mdef == 'TNFW':
+                lensing.append(TNFWLensing(self.lens_cosmo))
+
+            elif mdef == 'POINT_MASS':
+                lensing.append(PTmassLensing(self.lens_cosmo))
+
+            elif mdef == 'PJAFFE':
+                lensing.append(PJaffeLensing(self.lens_cosmo))
+
+            else:
+                raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
+
+        return lensing
+
+    def _ray_position_z(self, thetax, thetay, zi, source_x, source_y):
+
+        ray_angle_atz_x, ray_angle_atz_y = [], []
+
+        for tx, ty in zip(thetax, thetay):
+
+            angle_x_atz = self.geometry.ray_angle_atz(tx, zi, self.geometry._zlens)
+            angle_y_atz = self.geometry.ray_angle_atz(ty, zi, self.geometry._zlens)
+
+            if zi > self.geometry._zlens:
+                angle_x_atz += source_x
+                angle_y_atz += source_y
+
+            ray_angle_atz_x.append(angle_x_atz)
+            ray_angle_atz_y.append(angle_y_atz)
+
+        return ray_angle_atz_x, ray_angle_atz_y
+
+    def _interp_ray_angle_z(self, background_redshifts, Tzlist_background,
+                            ray_x, ray_y, zi, thetax, thetay):
+
+        angle_x, angle_y = [], []
+
+        if zi in background_redshifts:
+
+            idx = np.where(background_redshifts == zi)[0][0].astype(int)
+
+            for i, (tx, ty) in enumerate(zip(thetax, thetay)):
+
+                angle_x.append(ray_x[idx][i] / Tzlist_background[idx])
+                angle_y.append(ray_y[idx][i] / Tzlist_background[idx])
+            print()
+        else:
+
+            ind_low = np.where(background_redshifts - zi < 0)[0][-1].astype(int)
+            ind_high = np.where(background_redshifts - zi > 0)[0][0].astype(int)
+
+            Tz = self.geometry._cosmo.T_xy(0, zi)
+
+            for i in range(0, len(thetax)):
+
+                x0 = Tzlist_background[ind_low]
+                bx = ray_x[ind_low][i]
+                by = ray_y[ind_low][i]
+
+                run = (Tzlist_background[ind_high] -x0)
+                slopex = (ray_x[ind_high][i] - bx) * run ** -1
+                slopey = (ray_y[ind_high][i] - by) * run ** -1
+
+                delta_x = Tz - x0
+
+                newx = slopex * delta_x + bx
+                newy = slopey * delta_x + by
+
+                angle_x.append(newx / Tz)
+                angle_y.append(newy / Tz)
+
+        return np.array(angle_x), np.array(angle_y)
+
+    def filter(self, thetax, thetay, mindis_front = 0.5, mindis_back = 0.5, logmasscut_front = 6, logmasscut_back = 8,
+               source_x = 0, source_y = 0, ray_x = None, ray_y = None,
+               logabsolute_mass_cut = 0, background_redshifts = None, Tzlist_background = None):
+
+        masses, x, y, mdefs, mdef_args, r2d, r3d, redshifts = [], [], [], [], [], [], [], []
+        start = True
+
+        for plane_index, zi in enumerate(self._unique_redshifts):
+
+            inds_at_z = np.where(self.redshifts == zi)[0]
+            x_at_z = self.x[inds_at_z]
+            y_at_z = self.y[inds_at_z]
+            masses_at_z = self.masses[inds_at_z]
+
+            mdefs_z = [self.mdefs[idx] for idx in inds_at_z]
+            mdef_args_z = [self.mass_def_args[idx] for idx in inds_at_z]
+
+            r2dz = self.r2d[inds_at_z]
+            r3dz = self.r3d[inds_at_z]
+
+            if zi <= self.geometry._zlens:
+
+                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_front)[0]
+
+                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_front)[0]
+
+                keep_inds_dr = []
+
+                for idx in inds_m_low:
+
+                    for (anglex, angley) in zip(thetax, thetay):
+
+                        dr = ((x_at_z[idx] - anglex) ** 2 +
+                          (y_at_z[idx] - angley) ** 2) ** 0.5
+
+                        if dr <= mindis_front:
+                            keep_inds_dr.append(idx)
+                            break
+            else:
+
+                if ray_x is None or ray_y is None:
+                    ray_at_zx, ray_at_zy = self._ray_position_z(thetax, thetay, zi, source_x, source_y)
+                else:
+                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(background_redshifts, Tzlist_background, ray_x, ray_y,
+                                                                    zi, thetax, thetay)
+
+                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
+
+                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_back)[0]
+
+                keep_inds_dr = []
+
+                for idx in inds_m_low:
+
+                    for (anglex, angley) in zip(ray_at_zx, ray_at_zy):
+
+                        dr = ((x_at_z[idx] - anglex) ** 2 +
+                              (y_at_z[idx] - angley) ** 2) ** 0.5
+
+                        if dr <= mindis_back:
+                            keep_inds_dr.append(idx)
+                            break
+
+            keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
+
+            if logabsolute_mass_cut > 0:
+                tempmasses = masses_at_z[keep_inds]
+                keep_inds = keep_inds[np.where(tempmasses >= 10**logabsolute_mass_cut)[0]]
+
+
+            if start:
+
+                masses = np.array(masses_at_z[keep_inds])
+                x = np.array(x_at_z[keep_inds])
+                y = np.array(y_at_z[keep_inds])
+                r2d = np.array(r2dz[keep_inds])
+                r3d = np.array(r3dz[keep_inds])
+                redshifts = np.array([zi]*len(keep_inds))
+                start = False
+
+            else:
+
+                masses = np.append(masses, np.array(masses_at_z[keep_inds]))
+                x = np.append(x, np.array(x_at_z[keep_inds]))
+                y = np.append(y, np.array(y_at_z[keep_inds]))
+                r2d = np.append(r2d, np.array(r2dz[keep_inds]))
+                r3d = np.append(r3d, np.array(r3dz[keep_inds]))
+                redshifts = np.append(redshifts, np.array([zi] * len(keep_inds)))
+
+            mdefs += [mdefs_z[idx] for idx in keep_inds]
+            mdef_args += [mdef_args_z[idx] for idx in keep_inds]
+
+        return Realization(np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), mdefs, redshifts,
+                                        mdef_args, self.geometry)
 
     def mass_sheet_correction(self):
 
