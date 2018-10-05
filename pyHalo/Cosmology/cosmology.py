@@ -125,6 +125,7 @@ class Cosmology(object):
         :param z: redshift
         :return: matter density of the universe at redshift z in solar mass / Mpc^3
         """
+
         return self.rho_crit(z)*self.astropy.Om(z)
 
     def D_growth(self,z,omega_M,omega_L):

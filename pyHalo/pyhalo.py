@@ -3,7 +3,7 @@ from pyHalo.Cosmology.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
-from pyHalo.Massfunc.los import LOSPowerLaw
+from pyHalo.Massfunc.los import LOSPowerLaw, LOSDelta
 from pyHalo.Massfunc.mainlens import MainLensPowerLaw
 from pyHalo.defaults import *
 from pyHalo.single_realization import Realization
@@ -55,43 +55,45 @@ class pyHalo(object):
                                                           model_kwargs=self._halo_mass_function_args,
                                                           **self._kwargs_massfunc)
 
+            self._geometry = Geometry(self._cosmology,self.zlens,self.zsource,None,args['cone_opening_angle'])
+
+
             self._geometry = self.halo_mass_function.geometry
 
         return self.halo_mass_function
 
     def _render_single(self, type, args):
 
-        executables, mass_def = self._build(type, args)
+        executables_list, mass_def_list = self._build(type, args)
 
         mdefs = []
         mdef_args = []
 
-        for i, (mdef, func) in enumerate(zip(mass_def, executables)):
+        for component_index, (executables, mass_def) in enumerate(zip(executables_list, mass_def_list)):
 
-            m, x, y, r2, r3, z = func()
-            L = int(len(m))
-            mdefs += [mdef] * L
+            for i, (mdef, func) in enumerate(zip(mass_def, executables)):
 
-            if i == 0:
-                masses, xpos, ypos, r2d, r3d, redshifts = m, x, y, r2, r3, z
+                m, x, y, r2, r3, z = func()
+                L = int(len(m))
+                mdefs += [mdef] * L
 
-            else:
+                if component_index == 0:
+                    masses, xpos, ypos, r2d, r3d, redshifts = m, x, y, r2, r3, z
 
-                masses = np.append(masses, m)
-                xpos = np.append(xpos, x)
-                ypos = np.append(ypos, y)
-                r2d = np.append(r2d, r2)
-                r3d = np.append(r3d, r3)
-                redshifts = np.append(redshifts, z)
+                else:
 
-            for j in range(L):
+                    masses = np.append(masses, m)
+                    xpos = np.append(xpos, x)
+                    ypos = np.append(ypos, y)
+                    r2d = np.append(r2d, r2)
+                    r3d = np.append(r3d, r3)
+                    redshifts = np.append(redshifts, z)
 
-                newargs = self._mdef_args(mdef, m[j], r3[j], z[j], args)
+                for j in range(L):
 
-                mdef_args.append(newargs)
+                    newargs = self._mdef_args(mdef, m[j], r3[j], z[j], args[component_index])
 
-        if not hasattr(self, '_geometry'):
-            self._geometry = Geometry(self._cosmology,self.zlens,self.zsource,None,args['cone_opening_angle'])
+                    mdef_args.append(newargs)
 
         realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, mdef_args, self._geometry)
 
@@ -101,7 +103,15 @@ class pyHalo(object):
 
         mfunc_LOS = self._LOS_mass_func(args)
 
-        los = LOSPowerLaw(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+        if 'mass_func_type' in args:
+
+            if args['mass_func_type'] == 'delta':
+                los = LOSDelta(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+
+        else:
+            # default to a power law
+            los = LOSPowerLaw(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+
         if 'mdef_los' not in args.keys():
             raise ValueError('specify mass definition for line of sight halos with mdef_los.')
         mdef = args['mdef_los']
@@ -119,30 +129,40 @@ class pyHalo(object):
 
     def _build(self, model_name, model_args):
 
-        if model_name == 'composite_powerlaw':
+        if not isinstance(model_name, list):
+            model_name = [model_name]
+        if not isinstance(model_args, list):
+            model_args = [model_args]
 
-            mdef_los, los = self._build_los(model_args)
-            mdef_main, main = self._build_main(model_args)
+        executables = []
+        mdefs = []
 
-            executables = [los, main]
-            mdefs = [mdef_los, mdef_main]
+        for mod, args in zip(model_name, model_args):
 
-        elif model_name == 'main_lens':
+            if mod == 'composite_powerlaw':
 
-            mdef_main, main = self._build_main(model_args)
+                mdef_los, los = self._build_los(args)
+                mdef_main, main = self._build_main(args)
 
-            executables = [main]
-            mdefs = [mdef_main]
+                executables.append([los, main])
+                mdefs.append([mdef_los, mdef_main])
 
-        elif model_name == 'line_of_sight':
+            elif mod == 'main_lens':
 
-            mdef_los, los = self._build_los(model_args)
+                mdef_main, main = self._build_main(args)
 
-            executables = [los]
-            mdefs = [mdef_los]
+                executables.append([main])
+                mdefs.append([mdef_main])
 
-        else:
-            raise ValueError('model name '+str(model_name)+' not recognized.')
+            elif mod == 'line_of_sight':
+
+                mdef_los, los = self._build_los(args)
+
+                executables.append([los])
+                mdefs.append([mdef_los])
+
+            else:
+                raise ValueError('model name '+str(mod)+' not recognized.')
 
         return executables, mdefs
 
@@ -165,6 +185,9 @@ class pyHalo(object):
 
             truncation = self._lens_cosmo.truncation_roche(masses, r3d)
             mdef_args.update({'r_trunc':truncation})
+        if mdef == 'POINT_MASS':
+
+            pass
 
         return mdef_args
 
@@ -177,10 +200,15 @@ if False:
                                     'c_power':-0.17, 'r_tidal':'0.4Rs', 'break_index':-1.3,'c_scale':60,'c_power':-0.17,
                             'cone_opening_angle':6}
 
-    real = h.render('composite_powerlaw',halo_args)
+    halo_args_PT = {'mdef_los': 'NFW', 'fsub': 0.01, 'log_mlow': 6, 'log_mhigh': 10,
+                 'power_law_index': -1.9, 'log_m_break': 0,
+                 'parent_m200': 10 ** 13, 'parent_c': 3, 'mdef': 'TNFW', 'break_index': -1.3, 'c_scale': 60,
+                 'c_power': -0.17, 'r_tidal': '0.4Rs', 'break_index': -1.3, 'c_scale': 60, 'c_power': -0.17,
+                 'cone_opening_angle': 6}
+
+    real = h.render(['composite_powerlaw','line_of_sight','line_of_sight'],[halo_args, halo_args_PT, halo_args_PT])
     print(len(real[0].x))
-    newreal = real[0].filter(np.array([30.72,20.4]), np.array([40.3, -0.6]), logmasscut_front=11, logmasscut_back=11, back_scale_z=0)
-    print(len(newreal.x))
+
     #print(newreal.x)
     #print(len(real[0].x))
 
