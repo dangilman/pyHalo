@@ -120,7 +120,7 @@ class Realization(object):
 
                 angle_x.append(ray_x[idx][i] / Tzlist_background[idx])
                 angle_y.append(ray_y[idx][i] / Tzlist_background[idx])
-            print()
+
         else:
 
             ind_low = np.where(background_redshifts - zi < 0)[0][-1].astype(int)
