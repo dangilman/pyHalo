@@ -28,6 +28,11 @@ class pyHalo(object):
 
         realizations = []
 
+        if not isinstance(type, list):
+            type = [type]
+        if not isinstance(args, list):
+            args = [args]
+
         for n in range(nrealizations):
             realizations.append(self._render_single(type, args))
 
@@ -77,7 +82,7 @@ class pyHalo(object):
                 L = int(len(m))
                 mdefs += [mdef] * L
 
-                if component_index == 0:
+                if component_index == 0 and i == 0:
                     masses, xpos, ypos, r2d, r3d, redshifts = m, x, y, r2, r3, z
 
                 else:
@@ -128,11 +133,6 @@ class pyHalo(object):
         return mdef, MainLensPowerLaw(args, self._lens_cosmo)
 
     def _build(self, model_name, model_args):
-
-        if not isinstance(model_name, list):
-            model_name = [model_name]
-        if not isinstance(model_args, list):
-            model_args = [model_args]
 
         executables = []
         mdefs = []
