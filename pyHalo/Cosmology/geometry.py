@@ -126,7 +126,9 @@ class Geometry(object):
     def _delta_z_comoving(self, delta_R, z):
 
         # for small delta_R
-        delta_R_physical = delta_R * self._cosmo.scale_factor(z)
+
+        delta_R_physical = delta_R * (1 + z) ** -1
+
         dz = delta_R_physical * (self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z)) ** -1
 
         return dz

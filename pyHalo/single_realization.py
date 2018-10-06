@@ -10,47 +10,141 @@ def realization_at_z(realization,z):
 
     return Realization(m, x, y, r2, r3, mdef, redshift, mdefargs, realization.geometry)
 
-class Realization(object):
+class Halo(object):
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, geometry):
+    def __init__(self, mass, x, y, r2d, r3d, mdef, z, args):
 
-        self.masses = masses
+        self.mass = mass
         self.x = x
         self.y = y
-        self.mdefs = mdefs
-        self.redshifts = z
-        self.mass_def_args = mass_def_args
-
         self.r2d = r2d
         self.r3d = r3d
+        self.mdef = mdef
+        self.z = z
+        self.mass_def_arg = args
+        self._unique_tag = np.random.rand()
+
+class Realization(object):
+
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, geometry, halos = None):
 
         self.geometry = geometry
         self.lens_cosmo = geometry._lens_cosmo
-        self._unique_redshifts = np.unique(self.redshifts)
+        self._lensing_functions = []
+        self.halos = []
 
-        self._lensing_functions = self._lensing_list()
+        if halos is None:
+
+            self._unique_redshifts = np.unique(z)
+            self.lens_cosmo = geometry._lens_cosmo
+
+            for mi, xi, yi, r2di, r3di, mdefi, zi, mdefargi in zip(masses, x, y, r2d, r3d,
+                           mdefs, z, mass_def_args):
+
+                self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi, mdefargi)
+        else:
+
+            for halo in halos:
+                self._add_halo(None, None, None, None, None, None, None, None, halo)
+
+        self._reset()
+
+    def _tags(self, halos=None):
+
+        if halos is None:
+            halos = self.halos
+        tags = []
+
+        for halo in halos:
+
+            tags.append(halo._unique_tag)
+
+        return tags
+
+    def join(self, real):
+        """
+
+        :param real: another realization, possibly a filtered version of self
+        :return: a new realization with all unique halos from self and real
+        """
+        halos = []
+
+        tags = self._tags(self.halos)
+        real_tags = self._tags(real.halos)
+        if len(tags) >= len(real_tags):
+            long, short = tags, real_tags
+            halos_long, halos_short = self.halos, real.halos
+        else:
+            long, short = real_tags, tags
+            halos_long, halos_short = real.halos, self.halos
+
+        for halo in halos_short:
+            halos.append(halo)
+
+        for i, tag in enumerate(long):
+
+            if tag not in short:
+                halos.append(halos_long[i])
+
+        return Realization(None, None, None, None, None, None, None, None, self.geometry, halos)
+
+    def _reset(self):
+
+        self.x = []
+        self.y = []
+        self.masses = []
+        self.redshifts = []
+        self.r2d = []
+        self.r3d = []
+        self.mdefs = []
+        self.mass_def_args = []
+        self._halo_tags = []
+
+        for halo in self.halos:
+            self.masses.append(halo.mass)
+            self.x.append(halo.x)
+            self.y.append(halo.y)
+            self.redshifts.append(halo.z)
+            self.r2d.append(halo.r2d)
+            self.r3d.append(halo.r3d)
+            self.mdefs.append(halo.mdef)
+            self.mass_def_args.append(halo.mass_def_arg)
+            self._halo_tags.append(halo._unique_tag)
+
+        self.masses = np.array(self.masses)
+        self.x = np.array(self.x)
+        self.y = np.array(self.y)
+        self.r2d = np.array(self.r2d)
+        self.r3d = np.array(self.r3d)
+        self.redshifts = np.array(self.redshifts)
+
+    def _add_halo(self, m, x, y, r2, r3, md, z, mdarg, halo=None):
+        if halo is None:
+            halo = Halo(m, x, y, r2, r3, md, z, mdarg)
+        self._lensing_functions.append(self._lens(halo))
+        self.halos.append(halo)
 
     def lensing_quantities(self, mass_sheet_correction = True):
 
         kwargs_lens = []
         lens_model_names = []
 
-        for i,mdef in enumerate(self.mdefs):
+        for i, halo in enumerate(self.halos):
 
-            args = {'x': self.x[i], 'y': self.y[i], 'mass': self.masses[i]}
-            lens_model_names.append(mdef)
+            args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
+            lens_model_names.append(halo.mdef)
 
-            if mdef == 'NFW':
-                args.update({'concentration':self.mass_def_args[i]['concentration'],'redshift':self.redshifts[i]})
-            elif mdef == 'TNFW':
-                args.update({'concentration': self.mass_def_args[i]['concentration'], 'redshift': self.redshifts[i]})
-                args.update({'r_trunc': self.mass_def_args[i]['r_trunc']})
-            elif mdef == 'POINT_MASS':
-                args.update({'redshift': self.redshifts[i]})
-            elif mdef == 'PJAFFE':
-                args.update({'r_trunc': self.mass_def_args[i]['r_trunc']})
+            if halo.mdef == 'NFW':
+                args.update({'concentration':halo.mass_def_arg['concentration'],'redshift':halo.z})
+            elif halo.mdef == 'TNFW':
+                args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
+                args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
+            elif halo.mdef == 'POINT_MASS':
+                args.update({'redshift': halo.redshifts[i]})
+            elif halo.mdef == 'PJAFFE':
+                args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
             else:
-                raise ValueError('halo profile '+str(mdef)+' not recongnized.')
+                raise ValueError('halo profile '+str(halo.mdef)+' not recongnized.')
 
             kwargs_lens.append(self._lensing_functions[i].params(**args))
 
@@ -66,28 +160,24 @@ class Realization(object):
 
         return lens_model_names, redshift_list, kwargs_lens
 
-    def _lensing_list(self):
+    def _lens(self, halo):
 
-        lensing = []
+        if halo.mdef == 'NFW':
+            lens = NFWLensing(self.lens_cosmo)
 
-        for i, mdef in enumerate(self.mdefs):
+        elif halo.mdef == 'TNFW':
+            lens = TNFWLensing(self.lens_cosmo)
 
-            if mdef == 'NFW':
-                lensing.append(NFWLensing(self.lens_cosmo))
+        elif halo.mdef == 'POINT_MASS':
+            lens = PTmassLensing(self.lens_cosmo)
 
-            elif mdef == 'TNFW':
-                lensing.append(TNFWLensing(self.lens_cosmo))
+        elif halo.mdef == 'PJAFFE':
+            lens = PJaffeLensing(self.lens_cosmo)
 
-            elif mdef == 'POINT_MASS':
-                lensing.append(PTmassLensing(self.lens_cosmo))
+        else:
+            raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
 
-            elif mdef == 'PJAFFE':
-                lensing.append(PJaffeLensing(self.lens_cosmo))
-
-            else:
-                raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
-
-        return lensing
+        return lens
 
     def _ray_position_z(self, thetax, thetay, zi, source_x, source_y):
 
@@ -154,9 +244,11 @@ class Realization(object):
 
         masses, x, y, mdefs, mdef_args, r2d, r3d, redshifts = [], [], [], [], [], [], [], []
         start = True
+        halos = []
 
         for plane_index, zi in enumerate(self._unique_redshifts):
 
+            plane_halos = self.halos_at_z(zi)
             inds_at_z = np.where(self.redshifts == zi)[0]
             x_at_z = self.x[inds_at_z]
             y_at_z = self.y[inds_at_z]
@@ -217,38 +309,44 @@ class Realization(object):
                 tempmasses = masses_at_z[keep_inds]
                 keep_inds = keep_inds[np.where(tempmasses >= 10**logabsolute_mass_cut)[0]]
 
+            for halo_index in keep_inds:
 
-            if start:
+                halos.append(plane_halos[halo_index])
+            #if start:
 
-                masses = np.array(masses_at_z[keep_inds])
-                x = np.array(x_at_z[keep_inds])
-                y = np.array(y_at_z[keep_inds])
-                r2d = np.array(r2dz[keep_inds])
-                r3d = np.array(r3dz[keep_inds])
-                redshifts = np.array([zi]*len(keep_inds))
-                start = False
+            #    for halo_index in keep_inds:
+            #        halos.append(self.halos[halo_index])
+                #masses = np.array(masses_at_z[keep_inds])
+                #x = np.array(x_at_z[keep_inds])
+                #y = np.array(y_at_z[keep_inds])
+                #r2d = np.array(r2dz[keep_inds])
+                #r3d = np.array(r3dz[keep_inds])
+                #redshifts = np.array([zi]*len(keep_inds))
+                #start = False
 
-            else:
+            #else:
+            #    for halo_index in keep_inds:
+            #        halos.append(self.halos[halo_index])
+                #masses = np.append(masses, np.array(masses_at_z[keep_inds]))
+                #x = np.append(x, np.array(x_at_z[keep_inds]))
+                #y = np.append(y, np.array(y_at_z[keep_inds]))
+                #r2d = np.append(r2d, np.array(r2dz[keep_inds]))
+                #r3d = np.append(r3d, np.array(r3dz[keep_inds]))
+                #redshifts = np.append(redshifts, np.array([zi] * len(keep_inds)))
 
-                masses = np.append(masses, np.array(masses_at_z[keep_inds]))
-                x = np.append(x, np.array(x_at_z[keep_inds]))
-                y = np.append(y, np.array(y_at_z[keep_inds]))
-                r2d = np.append(r2d, np.array(r2dz[keep_inds]))
-                r3d = np.append(r3d, np.array(r3dz[keep_inds]))
-                redshifts = np.append(redshifts, np.array([zi] * len(keep_inds)))
+            #mdefs += [mdefs_z[idx] for idx in keep_inds]
+            #mdef_args += [mdef_args_z[idx] for idx in keep_inds]
 
-            mdefs += [mdefs_z[idx] for idx in keep_inds]
-            mdef_args += [mdef_args_z[idx] for idx in keep_inds]
-
-        return Realization(np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), mdefs, redshifts,
-                                        mdef_args, self.geometry)
+        return Realization(None, None, None, None, None, None, None, None, self.geometry, halos)
+        #return Realization(np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), mdefs, redshifts,
+        #                                mdef_args, self.geometry)
 
     def mass_sheet_correction(self):
 
         kwargs = []
         zsheet = []
-
-        for z in self._unique_redshifts:
+        unique_z = np.unique(self.redshifts)
+        for z in unique_z:
 
             if z != self.geometry._zlens:
 
@@ -259,24 +357,13 @@ class Realization(object):
         return kwargs, zsheet
 
     def halos_at_z(self,z):
-
-        masses, x, y, r2d, r3d, mdefs, massdefargs = [], [], [], [], [], [], []
-
-        for i, mdef in enumerate(self.mdefs):
-            if self.redshifts[i] != z:
+        halos = []
+        for halo in self.halos:
+            if halo.z != z:
                 continue
+            halos.append(halo)
 
-            masses.append(self.masses[i])
-            x.append(self.x[i])
-            y.append(self.y[i])
-            r2d.append(self.r2d[i])
-            r3d.append(self.r3d[i])
-            mdefs.append(self.mdefs[i])
-
-            massdefargs.append(self.mass_def_args[i])
-
-        return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), mdefs, np.array([z]*len(masses)), \
-               massdefargs
+        return halos
 
     def convergence_at_z(self,z):
 
