@@ -19,7 +19,7 @@ class Geometry(object):
 
         self._zlens, self._zsource = z_lens, z_source
 
-        self._min_delta_z = self._delta_z_comoving(distance_resolution_MPC, self._zlens)
+        self._min_delta_z = 2 * self._delta_z_comoving(distance_resolution_MPC, self._zlens)
 
     def ray_angle_atz(self, theta, z, z_lens):
 
@@ -169,3 +169,4 @@ class Geometry(object):
         area_comoving = self._angle_to_comoving_area(z, z_lens)
 
         return np.pi * area_comoving * (self._cosmo.scale_factor(z)) ** 2
+
