@@ -124,54 +124,60 @@ class LOSPowerLaw(object):
                                                          lensing_mass_func.geometry)
         self._parameterization_args = parameterization_args
 
-    def __call__(self):
+    def _draw(self, norm, plaw_index, pargs, z_current, logmlow, logmhigh):
 
-        redshifts = []
-        zstart = self._redshift_range[0]
+        pargs_new = copy(pargs)
+        pargs_new.update({'normalization': norm})
+        pargs_new.update({'power_law_index': plaw_index})
+        pargs_new.update({'log_mlow': logmlow})
+        pargs_new.update({'log_mhigh': logmhigh})
 
-        pargs = copy(self._parameterization_args)
-
-        pargs['normalization'] = self._lensing_mass_func.norm_at_z_biased(zstart, self._parameterization_args['parent_m200'],
-                                                                          self._delta_z)
-
-        pargs['normalization'] *= pargs['LOS_normalization']
-
-        #pargs['normalization'] = self._lensing_mass_func.norm_at_z(zstart, delta_z = self._delta_z)
-        pargs['power_law_index'] = self._lensing_mass_func.plaw_index_z(zstart)
-
-        mfunc = BrokenPowerLaw(**pargs)
+        mfunc = BrokenPowerLaw(**pargs_new)
 
         masses = mfunc.draw()
-        x, y, r2d, r3d = self._render_positions_atz(zstart, len(masses))
+
+        x, y, r2d, r3d = self._render_positions_atz(z_current, len(masses))
 
         if len(masses) > 0:
-            redshifts += [zstart] * len(masses)
-
-        for z in self._redshift_range[1:-1]:
-
-            pargs = copy(self._parameterization_args)
-            pargs['power_law_index'] = self._lensing_mass_func.plaw_index_z(z)
-            pargs['normalization'] = self._lensing_mass_func.norm_at_z_biased(z, self._parameterization_args[
-                'parent_m200'], self._delta_z)
-            pargs['normalization'] *= pargs['LOS_normalization']
-            #pargs['normalization'] = self._lensing_mass_func.norm_at_z(z, delta_z=self._delta_z)
-            mfunc = BrokenPowerLaw(**pargs)
-
-            m = mfunc.draw()
-
-            xi, yi, r2di, r3di = self._render_positions_atz(z, len(m))
-
-            masses = np.append(masses,m)
-            x = np.append(x, xi)
-            y = np.append(y, yi)
-            r2d = np.append(r2d, r2di)
-            r3d = np.append(r3d, r3di)
-            if len(m) > 0:
-                redshifts += [z]*len(m)
-
-        redshifts = self._round_redshifts(redshifts, self._lensing_mass_func.geometry._zlens)
+            redshifts = [z_current] * len(masses)
+        else:
+            redshifts = []
 
         return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(redshifts)
+
+    def __call__(self):
+
+        logm_range = np.linspace(self._parameterization_args['log_mlow'],
+                                 self._parameterization_args['log_mhigh'], 20)
+        #print(logm_range)
+        for idx, zcurrent in enumerate(self._redshift_range):
+
+            for j, mscale in enumerate(10**logm_range[0:-1]):
+
+                norm = self._lensing_mass_func.norm_at_z_biased(mscale, zcurrent, self._parameterization_args['parent_m200'],
+                                                             self._delta_z)
+                norm *= self._parameterization_args['LOS_normalization']
+
+                plaw_idx = self._lensing_mass_func.plaw_index_z(mscale, zcurrent)
+
+                if idx == 0 and j == 0:
+
+                    masses, x, y, r2d, r3d, z = self._draw(norm, plaw_idx,
+                                                           self._parameterization_args, zcurrent, logm_range[j],
+                                                           logm_range[j+1])
+
+
+                else:
+
+                    mi, xi, yi, r2di, r3di, zi = self._draw(norm, plaw_idx, self._parameterization_args, zcurrent,
+                                                            logm_range[j], logm_range[j + 1])
+                    masses = np.append(masses, mi)
+                    x, y = np.append(x, xi), np.append(y, yi)
+                    r2d, r3d = np.append(r2d, r2di), np.append(r3d, r3di)
+                    z = np.append(z, zi)
+            print(len(masses), zcurrent)
+
+        return masses, x, y, r2d, r3d, z
 
     def _round_redshifts(self,zvalues,zlens):
 
