@@ -269,7 +269,7 @@ def write_lookup_table():
             f.write(']\n')
 
     from pyHalo.Cosmology.cosmology import Cosmology
-    l = LensingMassFunction(Cosmology(), 10**5, 10**10, 0.2, 4, cone_opening_angle=6, use_lookup_table=False)
+    l = LensingMassFunction(Cosmology(), 10**4, 10**10, 0.2, 4, cone_opening_angle=6, use_lookup_table=False)
 
     fname = './lookup_tables/lookup_sheth99.py'
 

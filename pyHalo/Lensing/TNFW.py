@@ -16,13 +16,12 @@ class TNFWLensing(object):
 
         return kwargs
 
-    def mass_finite(self, m200, c, z, r_trunc):
+    def mass_finite(self, m200, c, z, tau):
 
         rho, Rs, r200 = self.lens_cosmo.NFW_params_physical(m200, c, z)
 
-        Rs_arcsec = Rs * self.lens_cosmo.cosmo.kpc_per_asec(z) ** -1
-        tau = r_trunc * Rs_arcsec ** -1
         t2 = tau ** 2
 
         return 4 * np.pi * Rs ** 3 * rho * t2 * (t2 + 1) ** -2 * (
                 (t2 - 1) * np.log(tau) + np.pi * tau - (t2 + 1))
+

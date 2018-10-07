@@ -383,6 +383,10 @@ class Realization(object):
 
         for i, mi in enumerate(self.masses):
             if self.redshifts[i] == z:
-                mass += mi
+                if self.mdefs[i] == 'TNFW':
+                    # since I truncate at r200
+                    mass += 1.048 * mi
+                else:
+                    mass += mi
 
         return mass
