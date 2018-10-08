@@ -98,7 +98,7 @@ class pyHalo(object):
                     mdef_args.append(newargs)
 
         if not hasattr(self, '_geometry'):
-            self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, None, args['cone_opening_angle'])
+            self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, None, args[0]['cone_opening_angle'])
 
         realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, mdef_args, self._geometry)
 
