@@ -238,12 +238,11 @@ class Realization(object):
 
         return np.array(angle_x), np.array(angle_y)
 
-    def filter(self, thetax, thetay, mindis_front = 0.5, mindis_back = 0.5, logmasscut_front = 6, logmasscut_back = 8,
-               source_x = 0, source_y = 0, ray_x = None, ray_y = None,
-               logabsolute_mass_cut = 0, background_redshifts = None, Tzlist_background = None):
+    def filter(self, thetax, thetay, mindis_front=0.5, mindis_back=0.5, logmasscut_front=6, logmasscut_back=8,
+               source_x=0, source_y=0, ray_x=None, ray_y=None,
+               logabsolute_mass_cut=0, background_redshifts=None, Tzlist_background=None):
 
-        masses, x, y, mdefs, mdef_args, r2d, r3d, redshifts = [], [], [], [], [], [], [], []
-        start = True
+
         halos = []
 
         for plane_index, zi in enumerate(self._unique_redshifts):
@@ -253,12 +252,6 @@ class Realization(object):
             x_at_z = self.x[inds_at_z]
             y_at_z = self.y[inds_at_z]
             masses_at_z = self.masses[inds_at_z]
-
-            mdefs_z = [self.mdefs[idx] for idx in inds_at_z]
-            mdef_args_z = [self.mass_def_args[idx] for idx in inds_at_z]
-
-            r2dz = self.r2d[inds_at_z]
-            r3dz = self.r3d[inds_at_z]
 
             if zi <= self.geometry._zlens:
 
@@ -273,17 +266,20 @@ class Realization(object):
                     for (anglex, angley) in zip(thetax, thetay):
 
                         dr = ((x_at_z[idx] - anglex) ** 2 +
-                          (y_at_z[idx] - angley) ** 2) ** 0.5
+                              (y_at_z[idx] - angley) ** 2) ** 0.5
 
                         if dr <= mindis_front:
                             keep_inds_dr.append(idx)
                             break
+                keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
+
             else:
 
                 if ray_x is None or ray_y is None:
                     ray_at_zx, ray_at_zy = self._ray_position_z(thetax, thetay, zi, source_x, source_y)
                 else:
-                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(background_redshifts, Tzlist_background, ray_x, ray_y,
+                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(background_redshifts, Tzlist_background, ray_x,
+                                                                    ray_y,
                                                                     zi, thetax, thetay)
 
                 keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
@@ -303,43 +299,16 @@ class Realization(object):
                             keep_inds_dr.append(idx)
                             break
 
-            keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
+                keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
-            if logabsolute_mass_cut > 0:
-                tempmasses = masses_at_z[keep_inds]
-                keep_inds = keep_inds[np.where(tempmasses >= 10**logabsolute_mass_cut)[0]]
+                if logabsolute_mass_cut > 0:
+                    tempmasses = masses_at_z[keep_inds]
+                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** logabsolute_mass_cut)[0]]
 
             for halo_index in keep_inds:
-
                 halos.append(plane_halos[halo_index])
-            #if start:
-
-            #    for halo_index in keep_inds:
-            #        halos.append(self.halos[halo_index])
-                #masses = np.array(masses_at_z[keep_inds])
-                #x = np.array(x_at_z[keep_inds])
-                #y = np.array(y_at_z[keep_inds])
-                #r2d = np.array(r2dz[keep_inds])
-                #r3d = np.array(r3dz[keep_inds])
-                #redshifts = np.array([zi]*len(keep_inds))
-                #start = False
-
-            #else:
-            #    for halo_index in keep_inds:
-            #        halos.append(self.halos[halo_index])
-                #masses = np.append(masses, np.array(masses_at_z[keep_inds]))
-                #x = np.append(x, np.array(x_at_z[keep_inds]))
-                #y = np.append(y, np.array(y_at_z[keep_inds]))
-                #r2d = np.append(r2d, np.array(r2dz[keep_inds]))
-                #r3d = np.append(r3d, np.array(r3dz[keep_inds]))
-                #redshifts = np.append(redshifts, np.array([zi] * len(keep_inds)))
-
-            #mdefs += [mdefs_z[idx] for idx in keep_inds]
-            #mdef_args += [mdef_args_z[idx] for idx in keep_inds]
 
         return Realization(None, None, None, None, None, None, None, None, self.geometry, halos)
-        #return Realization(np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), mdefs, redshifts,
-        #                                mdef_args, self.geometry)
 
     def mass_sheet_correction(self):
 
@@ -383,10 +352,11 @@ class Realization(object):
 
         for i, mi in enumerate(self.masses):
             if self.redshifts[i] == z:
-                if self.mdefs[i] == 'TNFW':
+                #if self.mdefs[i] == 'TNFW':
                     # since I truncate at r200
-                    mass += 1.048 * mi
-                else:
-                    mass += mi
+                #    mass += 1.048 * mi
+                #else:
+                #    mass += mi
+                mass += mi
 
         return mass
