@@ -60,9 +60,6 @@ class pyHalo(object):
                                                           model_kwargs=self._halo_mass_function_args,
                                                           **self._kwargs_massfunc)
 
-            self._geometry = Geometry(self._cosmology,self.zlens,self.zsource,None,args['cone_opening_angle'])
-
-
             self._geometry = self.halo_mass_function.geometry
 
         return self.halo_mass_function
@@ -99,6 +96,9 @@ class pyHalo(object):
                     newargs = self._mdef_args(mdef, m[j], r3[j], z[j], args[component_index])
 
                     mdef_args.append(newargs)
+
+        if not hasattr(self, '_geometry'):
+            self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, None, args['cone_opening_angle'])
 
         realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, mdef_args, self._geometry)
 
