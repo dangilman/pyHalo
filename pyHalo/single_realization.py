@@ -149,7 +149,7 @@ class Realization(object):
 
             kwargs_lens.append(self._lensing_functions[i].params(**args))
 
-        if mass_sheet_correction:
+        if mass_sheet_correction is not False:
 
             kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mass_sheet_correction)
             kwargs_lens += kwargs_mass_sheets
