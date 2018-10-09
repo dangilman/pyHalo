@@ -329,16 +329,18 @@ class Realization(object):
                 if z != self.geometry._zlens:
 
                     kappa = self.convergence_at_z(z,logmscale = logmscale)
-                    kwargs.append({'kappa_ext': - kappa})
-                    zsheet.append(z)
+                    if kappa > 0:
+                        kwargs.append({'kappa_ext': - kappa})
+                        zsheet.append(z)
         else:
 
             for z in unique_z:
 
                 if z != self.geometry._zlens:
                     kappa = self.convergence_at_z(z)
-                    kwargs.append({'kappa_ext': - kappa})
-                    zsheet.append(z)
+                    if kappa > 0:
+                        kwargs.append({'kappa_ext': - kappa})
+                        zsheet.append(z)
 
         return kwargs, zsheet
 
