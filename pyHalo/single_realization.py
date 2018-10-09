@@ -35,7 +35,6 @@ class Realization(object):
 
         if halos is None:
 
-            self._unique_redshifts = np.unique(z)
             self.lens_cosmo = geometry._lens_cosmo
 
             for mi, xi, yi, r2di, r3di, mdefi, zi, mdefargi in zip(masses, x, y, r2d, r3d,
@@ -117,6 +116,8 @@ class Realization(object):
         self.r2d = np.array(self.r2d)
         self.r3d = np.array(self.r3d)
         self.redshifts = np.array(self.redshifts)
+
+        self._unique_redshifts = np.unique(self.redshifts)
 
     def _add_halo(self, m, x, y, r2, r3, md, z, mdarg, halo=None):
         if halo is None:
@@ -240,7 +241,8 @@ class Realization(object):
 
     def filter(self, thetax, thetay, mindis_front=0.5, mindis_back=0.5, logmasscut_front=6, logmasscut_back=8,
                source_x=0, source_y=0, ray_x=None, ray_y=None,
-               logabsolute_mass_cut=0, background_redshifts=None, Tzlist_background=None):
+               logabsolute_mass_cut_back=0, path_redshifts=None, path_Tzlist=None,
+               logabsolute_mass_cut_front=0):
 
 
         halos = []
@@ -273,12 +275,16 @@ class Realization(object):
                             break
                 keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
+                if logabsolute_mass_cut_front > 0:
+                    tempmasses = masses_at_z[keep_inds]
+                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** logabsolute_mass_cut_front)[0]]
+
             else:
 
                 if ray_x is None or ray_y is None:
                     ray_at_zx, ray_at_zy = self._ray_position_z(thetax, thetay, zi, source_x, source_y)
                 else:
-                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(background_redshifts, Tzlist_background, ray_x,
+                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(path_redshifts, path_Tzlist, ray_x,
                                                                     ray_y,
                                                                     zi, thetax, thetay)
 
@@ -301,9 +307,9 @@ class Realization(object):
 
                 keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
-                if logabsolute_mass_cut > 0:
+                if logabsolute_mass_cut_back > 0:
                     tempmasses = masses_at_z[keep_inds]
-                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** logabsolute_mass_cut)[0]]
+                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** logabsolute_mass_cut_back)[0]]
 
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
