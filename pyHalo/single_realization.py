@@ -148,10 +148,10 @@ class Realization(object):
                 raise ValueError('halo profile '+str(halo.mdef)+' not recongnized.')
 
             kwargs_lens.append(self._lensing_functions[i].params(**args))
-        
+
         if mass_sheet_correction:
 
-            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction()
+            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mass_sheet_correction)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(self.redshifts, z_sheets)
@@ -316,18 +316,29 @@ class Realization(object):
 
         return Realization(None, None, None, None, None, None, None, None, self.geometry, halos)
 
-    def mass_sheet_correction(self):
+    def mass_sheet_correction(self, logmscale = 0):
 
         kwargs = []
         zsheet = []
         unique_z = np.unique(self.redshifts)
-        for z in unique_z:
 
-            if z != self.geometry._zlens:
+        if isinstance(logmscale, float) or isinstance(logmscale, int):
 
-                kappa = self.convergence_at_z(z)
-                kwargs.append({'kappa_ext': - kappa})
-                zsheet.append(z)
+            for z in unique_z:
+
+                if z != self.geometry._zlens:
+
+                    kappa = self.convergence_at_z(z,logmscale = logmscale)
+                    kwargs.append({'kappa_ext': - kappa})
+                    zsheet.append(z)
+        else:
+
+            for z in unique_z:
+
+                if z != self.geometry._zlens:
+                    kappa = self.convergence_at_z(z)
+                    kwargs.append({'kappa_ext': - kappa})
+                    zsheet.append(z)
 
         return kwargs, zsheet
 
@@ -340,9 +351,9 @@ class Realization(object):
 
         return halos
 
-    def convergence_at_z(self,z):
+    def convergence_at_z(self,z, logmscale = 0):
 
-        m = self.mass_at_z(z)
+        m = self.mass_at_z(z, logmscale)
 
         area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
 
@@ -352,12 +363,14 @@ class Realization(object):
 
         return kappa
 
-    def mass_at_z(self,z):
+    def mass_at_z(self,z, logmcut = 0):
 
         mass = 0
 
         for i, mi in enumerate(self.masses):
             if self.redshifts[i] == z:
-                mass += mi
+
+                if np.log10(mi) >= logmcut:
+                    mass += mi
 
         return mass
