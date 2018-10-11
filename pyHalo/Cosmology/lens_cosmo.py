@@ -128,12 +128,15 @@ class LensCosmo(object):
         Truncate LOS halos at r50
         :param M:
         :param c:
-        :param z: 
+        :param z:
         :param N:
         :return:
         """
-        r50 = self.rN_M(M * self.cosmo.h, N) * (self.cosmo.h * (1 + z)) ** -1
+        # in mega-parsec
+        r50_mpc = self.rN_M(M * self.cosmo.h, N) * (self.cosmo.h * (1 + z)) ** -1
 
+        # in kpc
+        r50 = r50_mpc * 1000
         r50_asec = r50 * self.cosmo.kpc_per_asec(z) ** -1
 
         return r50_asec
