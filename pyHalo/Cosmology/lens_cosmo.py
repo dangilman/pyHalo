@@ -123,18 +123,13 @@ class LensCosmo(object):
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
-    def NFW_truncation(self,M,c,r3d,z,zlens):
+    def NFW_truncation(self,M,c,z):
 
-        if z == zlens:
-            trunc = self.truncation_roche(M, r3d)
-            return trunc
+        _, _, r200_kpc = self.NFW_params_physical(M, c, z)
 
-        else:
-            _, _, r200_kpc = self.NFW_params_physical(M, c, z)
+        r200_arcsec = r200_kpc * self.cosmo.kpc_per_asec(z) ** -1
 
-            r200_arcsec = r200_kpc * self.cosmo.kpc_per_asec(z) ** -1
-
-            return r200_arcsec
+        return r200_arcsec
 
     def truncation_roche(self, M, r3d):
 

@@ -3,7 +3,7 @@ from copy import copy
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
 from pyHalo.Spatial.uniform import LensConeUniform
-from pyHalo.defaults import default_zstart, default_z_round
+from pyHalo.defaults import default_zstart, default_z_round, default_z_step
 
 class LOSDelta(object):
 
@@ -118,7 +118,8 @@ class LOSPowerLaw(object):
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         zmin, zmax = parameterization_args['zmin'], parameterization_args['zmax']
-        self._redshift_range, self._delta_z = _redshift_range_LOS(zmin,zmax,zlens, 0.01, zstep)
+        self._redshift_range, self._delta_z = _redshift_range_LOS(zmin,zmax,zlens,
+                                                                  default_z_step, zstep)
 
         self._spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
                                                          lensing_mass_func.geometry)
@@ -176,12 +177,14 @@ class LOSPowerLaw(object):
                     r2d, r3d = np.append(r2d, r2di), np.append(r3d, r3di)
                     z = np.append(z, zi)
 
+        z = self._round_redshifts(z, self._lensing_mass_func.geometry._zlens)
+
         return masses, x, y, r2d, r3d, z
 
     def _round_redshifts(self,zvalues,zlens):
 
         zvalues = np.round(zvalues,default_z_round)
-        zvalues[np.where(np.absolute(zvalues - zlens) <= 0.01)] = zlens
+        zvalues[np.where(np.absolute(zvalues - zlens) <= default_z_step)] = zlens
 
         return zvalues
 
@@ -271,7 +274,7 @@ class LOSPowerLaw(object):
 
 def _redshift_range_LOS(zmin, zmax, zlens, zstep, zstep_fine):
 
-    twohalo_range = 0.005
+    twohalo_range = 0.01
 
     nsteps_front = np.round((zlens - twohalo_range - zmin) * zstep ** -1)
     zvals_front = np.linspace(zmin, zlens - twohalo_range, nsteps_front)[:-1]
@@ -285,9 +288,6 @@ def _redshift_range_LOS(zmin, zmax, zlens, zstep, zstep_fine):
     delta_z += [zvals_back[1] - zvals_back[0]] * len(zvals_back)
 
     zvalues = np.append(np.append(zvals_front, zvals_fine), zvals_back)
-
-    #nsteps = int((zmax - zmin) * zstep**-1)
-    #zvalues = np.linspace(zmin, zmax, nsteps)
 
     return zvalues, np.array(delta_z)
 

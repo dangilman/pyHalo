@@ -66,7 +66,7 @@ class pyHalo(object):
 
     def _render_single(self, type, args):
 
-        executables_list, mass_def_list = self._build(type, args)
+        executables_list, mass_def_list, model_names = self._build(type, args)
 
         mdefs = []
         mdef_args = []
@@ -74,6 +74,8 @@ class pyHalo(object):
         for component_index, (executables, mass_def) in enumerate(zip(executables_list, mass_def_list)):
 
             for i, (mdef, func) in enumerate(zip(mass_def, executables)):
+
+                model_name = model_names[component_index][i]
 
                 m, x, y, r2, r3, z = func()
                 L = int(len(m))
@@ -93,7 +95,7 @@ class pyHalo(object):
 
                 for j in range(L):
 
-                    newargs = self._mdef_args(mdef, m[j], r3[j], z[j], args[component_index])
+                    newargs = self._mdef_args(mdef, m[j], r3[j], z[j], args[component_index], model_name)
 
                     mdef_args.append(newargs)
 
@@ -136,6 +138,7 @@ class pyHalo(object):
 
         executables = []
         mdefs = []
+        mod_name = []
 
         for mod, args in zip(model_name, model_args):
 
@@ -146,6 +149,7 @@ class pyHalo(object):
 
                 executables.append([los, main])
                 mdefs.append([mdef_los, mdef_main])
+                mod_name.append(['LOS','main'])
 
             elif mod == 'main_lens':
 
@@ -153,6 +157,7 @@ class pyHalo(object):
 
                 executables.append([main])
                 mdefs.append([mdef_main])
+                mod_name.append(['main'])
 
             elif mod == 'line_of_sight':
 
@@ -160,13 +165,14 @@ class pyHalo(object):
 
                 executables.append([los])
                 mdefs.append([mdef_los])
+                mod_name.append(['LOS'])
 
             else:
                 raise ValueError('model name '+str(mod)+' not recognized.')
 
-        return executables, mdefs
+        return executables, mdefs, mod_name
 
-    def _mdef_args(self, mdef, masses, r3d, redshifts, args):
+    def _mdef_args(self, mdef, masses, r3d, redshifts, args, model_name):
 
         mdef_args = {}
 
@@ -178,7 +184,11 @@ class pyHalo(object):
 
         if mdef == 'TNFW':
 
-            truncation = self._lens_cosmo.NFW_truncation(masses, nfw_c, r3d, redshifts, self.zlens)
+            if model_name == 'LOS':
+                truncation = self._lens_cosmo.NFW_truncation(masses, nfw_c, redshifts)
+            else:
+                truncation = self._lens_cosmo.truncation_roche(masses, r3d)
+
             mdef_args.update({'r_trunc':truncation})
 
         if mdef == 'PJAFFE':
@@ -190,27 +200,6 @@ class pyHalo(object):
             pass
 
         return mdef_args
-
-if False:
-
-    h = pyHalo(0.5,1.5)
-
-    halo_args = {'mdef_main':'TNFW','mdef_los':'TNFW','fsub':0.01,'log_mlow':6,'log_mhigh':10, 'power_law_index': -1.9, 'log_m_break':0,
-                               'parent_m200': 10**13, 'parent_c':3,'mdef':'TNFW','break_index':-1.3,'c_scale':60,
-                                    'c_power':-0.17, 'r_tidal':'0.4Rs', 'break_index':-1.3,'c_scale':60,'c_power':-0.17,
-                            'cone_opening_angle':6}
-
-    halo_args_PT = {'mdef_los': 'NFW', 'fsub': 0.01, 'log_mlow': 6, 'log_mhigh': 10,
-                 'power_law_index': -1.9, 'log_m_break': 0,
-                 'parent_m200': 10 ** 13, 'parent_c': 3, 'mdef': 'TNFW', 'break_index': -1.3, 'c_scale': 60,
-                 'c_power': -0.17, 'r_tidal': '0.4Rs', 'break_index': -1.3, 'c_scale': 60, 'c_power': -0.17,
-                 'cone_opening_angle': 6}
-
-    real = h.render(['composite_powerlaw','line_of_sight','line_of_sight'],[halo_args, halo_args_PT, halo_args_PT])
-    print(len(real[0].x))
-
-    #print(newreal.x)
-    #print(len(real[0].x))
 
 
 
