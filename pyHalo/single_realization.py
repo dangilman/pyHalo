@@ -132,7 +132,7 @@ class Realization(object):
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
-    def lensing_quantities(self, mass_sheet_correction = True):
+    def lensing_quantities(self, mass_sheet_correction = 8):
 
         kwargs_lens = []
         lens_model_names = []
@@ -158,7 +158,10 @@ class Realization(object):
 
         if mass_sheet_correction is not False:
 
-            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction()
+            assert isinstance(mass_sheet_correction, float) or isinstance(mass_sheet_correction, int)
+            assert mass_sheet_correction < 10, 'mass sheet correction should log(M)'
+
+            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow = 10**mass_sheet_correction)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(self.redshifts, z_sheets)
