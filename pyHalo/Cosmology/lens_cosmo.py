@@ -123,13 +123,20 @@ class LensCosmo(object):
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
-    def NFW_truncation(self,M,c,z):
+    def NFW_truncation(self, M, z, N=50):
+        """
+        Truncate LOS halos at r50
+        :param M:
+        :param c:
+        :param z: 
+        :param N:
+        :return:
+        """
+        r50 = self.rN_M(M * self.cosmo.h, N) * (self.cosmo.h * (1 + z)) ** -1
 
-        _, _, r200_kpc = self.NFW_params_physical(M, c, z)
+        r50_asec = r50 * self.cosmo.kpc_per_asec(z) ** -1
 
-        r200_arcsec = r200_kpc * self.cosmo.kpc_per_asec(z) ** -1
-
-        return r200_arcsec
+        return r50_asec
 
     def truncation_roche(self, M, r3d):
 
@@ -152,6 +159,16 @@ class LensCosmo(object):
         """
 
         return (3 * M / (4 * numpy.pi * self.rhoc * 200)) ** (1. / 3.)
+
+    def rN_M(self, M, N):
+        """
+        computes the radius R_200 of a halo of mass M in comoving distances M/h
+        :param M: halo mass in M_sun/h
+        :type M: float or numpy array
+        :return: radius R_200 in comoving Mpc/h
+        """
+
+        return (3 * M / (4 * numpy.pi * self.rhoc * N)) ** (1. / 3.)
 
     def point_mass_fac(self,z):
         """

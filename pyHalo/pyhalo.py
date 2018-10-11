@@ -186,7 +186,7 @@ class pyHalo(object):
         if mdef == 'TNFW':
 
             if model_name == 'LOS':
-                truncation = self._lens_cosmo.NFW_truncation(masses, nfw_c, redshifts)
+                truncation = self._lens_cosmo.NFW_truncation(masses, redshifts)
             else:
                 truncation = self._lens_cosmo.truncation_roche(masses, r3d)
 
