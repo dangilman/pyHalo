@@ -26,16 +26,22 @@ class Halo(object):
 
 class Realization(object):
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, geometry, halos = None):
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function, halos = None, wdm_params = None):
 
-        self.geometry = geometry
-        self.lens_cosmo = geometry._lens_cosmo
+        self.halo_mass_function = halo_mass_function
+        self.geometry = halo_mass_function.geometry
+        self.lens_cosmo = self.geometry._lens_cosmo
         self._lensing_functions = []
         self.halos = []
+        if wdm_params is None:
+            self.m_break_scale = 0
+            self.break_index = -1.3
+        else:
+            self.m_break_scale = wdm_params['log_m_break']
+            self.break_index = wdm_params['break_index']
+        self._wdm_params = wdm_params
 
         if halos is None:
-
-            self.lens_cosmo = geometry._lens_cosmo
 
             for mi, xi, yi, r2di, r3di, mdefi, zi, mdefargi in zip(masses, x, y, r2d, r3d,
                            mdefs, z, mass_def_args):
@@ -85,7 +91,8 @@ class Realization(object):
             if tag not in short:
                 halos.append(halos_long[i])
 
-        return Realization(None, None, None, None, None, None, None, None, self.geometry, halos)
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
+                           wdm_params=self._wdm_params)
 
     def _reset(self):
 
@@ -151,7 +158,7 @@ class Realization(object):
 
         if mass_sheet_correction is not False:
 
-            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mass_sheet_correction)
+            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction()
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(self.redshifts, z_sheets)
@@ -244,7 +251,6 @@ class Realization(object):
                logabsolute_mass_cut_back=0, path_redshifts=None, path_Tzlist=None,
                logabsolute_mass_cut_front=0):
 
-
         halos = []
 
         for plane_index, zi in enumerate(self._unique_redshifts):
@@ -314,33 +320,28 @@ class Realization(object):
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 
-        return Realization(None, None, None, None, None, None, None, None, self.geometry, halos)
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
+                           wdm_params=self._wdm_params)
 
-    def mass_sheet_correction(self, logmscale = 0):
+    def mass_sheet_correction(self, mlow = 10**8, mhigh = 10**10):
 
         kwargs = []
         zsheet = []
         unique_z = np.unique(self.redshifts)
 
-        if isinstance(logmscale, float) or isinstance(logmscale, int):
+        for i in range(0, len(unique_z) - 1):
 
-            for z in unique_z:
+            z = unique_z[i]
+            delta_z = unique_z[i+1] - z
 
-                if z != self.geometry._zlens:
+            if z != self.geometry._zlens:
 
-                    kappa = self.convergence_at_z(z,logmscale = logmscale)
-                    if kappa > 0:
-                        kwargs.append({'kappa_ext': - kappa})
-                        zsheet.append(z)
-        else:
+                kappa = self.convergence_at_z_theory(z, mlow, mhigh, delta_z, self.m_break_scale, self.break_index)
+                #kappa = self.convergence_at_z(z, 8)
 
-            for z in unique_z:
-
-                if z != self.geometry._zlens:
-                    kappa = self.convergence_at_z(z)
-                    if kappa > 0:
-                        kwargs.append({'kappa_ext': - kappa})
-                        zsheet.append(z)
+                if kappa > 0:
+                    kwargs.append({'kappa_ext': - kappa})
+                    zsheet.append(z)
 
         return kwargs, zsheet
 
@@ -352,6 +353,24 @@ class Realization(object):
             halos.append(halo)
 
         return halos
+
+    def convergence_at_z_theory(self,z, mlow, mhigh, delta_z, m_break, break_index):
+
+        m = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index)
+
+        area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
+
+        sigmacrit = self.geometry._lens_cosmo.get_sigmacrit(z)
+
+        kappa = m / area / sigmacrit
+
+        return kappa
+
+    def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index):
+
+        mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break, break_index)
+
+        return mass
 
     def convergence_at_z(self,z, logmscale = 0):
 

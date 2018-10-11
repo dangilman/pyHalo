@@ -55,6 +55,24 @@ class LensingMassFunction(object):
 
         self._z_range = z_range
 
+    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index = -1.3):
+
+        def _integrand(m, norm, index, log_m_break):
+
+            return m * norm * m ** (index) * (1 + 10**log_m_break / m) ** break_index
+
+        M = np.logspace(8, np.log10(mhigh), 20)
+
+        dndm = self.dN_dMdV_comoving(M, z)
+        dV = self.geometry.volume_element_comoving(z, self.geometry._zlens, delta_z)
+
+        moment, norm, index = self._mass_function_moment(M, dndm * dV, 1, mlow, mhigh)
+
+        if log_m_break > np.log10(mlow) - 0.5:
+            moment = quad(_integrand, mlow, mhigh, args=(norm, index, log_m_break))[0]
+
+        return moment
+
     def norm_at_z_density(self, mscale, z):
 
         bin_index = self._get_mass_bin_index(np.log10(mscale))

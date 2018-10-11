@@ -183,8 +183,20 @@ class LOSPowerLaw(object):
 
     def _round_redshifts(self,zvalues,zlens):
 
-        zvalues = np.round(zvalues,default_z_round)
-        zvalues[np.where(np.absolute(zvalues - zlens) <= default_z_step)] = zlens
+        zvalues = np.array(zvalues)
+
+        front_idx = np.where(zvalues < zlens)
+        back_idx = np.where(zvalues > zlens)
+
+        zvals_front = np.round(zvalues[front_idx], 2)
+        last_z_front = zvals_front[np.where(zlens - zvals_front >0)][-1]
+        zvals_front[np.where(zvals_front == zlens)] = last_z_front
+
+        zvals_back = np.round(zvalues[back_idx], 2)
+        first_z_back = zvals_back[np.where(-zlens + zvals_back > 0)][0]
+        zvals_back[np.where(zvals_back == zlens)] = first_z_back
+
+        zvalues = np.append(zvals_front, zvals_back)
 
         return zvalues
 
@@ -274,17 +286,22 @@ class LOSPowerLaw(object):
 
 def _redshift_range_LOS(zmin, zmax, zlens, zstep, zstep_fine):
 
-    twohalo_range = 0.01
+    twohalo_range = 0.005
 
     nsteps_front = np.round((zlens - twohalo_range - zmin) * zstep ** -1)
     zvals_front = np.linspace(zmin, zlens - twohalo_range, nsteps_front)[:-1]
-    delta_z = [zvals_front[1] - zvals_front[0]]*len(zvals_front)
+    delta_z = [zvals_front[1] - zvals_front[0]] * len(zvals_front)
 
-    nstep_back = np.round((zmax - twohalo_range - zlens) * zstep ** -1)
+    nstep_back = np.round((zmax - twohalo_range - zlens) * delta_z[0] ** -1)
     zvals_back = np.linspace(zlens + twohalo_range, zmax, nstep_back)[1:]
 
-    zvals_fine = np.linspace(zlens - twohalo_range, zlens + twohalo_range, np.round(0.1 * zstep_fine ** -1))
-    delta_z += [zvals_fine[1] - zvals_fine[0]]*len(zvals_fine)
+    zvals_fine_front = np.linspace(zlens - twohalo_range, zlens - zstep_fine, np.round(0.1 * zstep_fine ** -1))
+    zvals_fine_back = np.linspace(zlens + zstep_fine, zlens + twohalo_range, np.round(0.1 * zstep_fine ** -1))
+
+    zvals_fine = np.append(zvals_fine_front, zvals_fine_back)
+
+    delta_z += [zvals_fine_front[1] - zvals_fine_front[0]] * len(zvals_fine_front)
+    delta_z += [zvals_fine_back[1] - zvals_fine_back[0]] * len(zvals_fine_back)
     delta_z += [zvals_back[1] - zvals_back[0]] * len(zvals_back)
 
     zvalues = np.append(np.append(zvals_front, zvals_fine), zvals_back)
