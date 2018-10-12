@@ -343,6 +343,7 @@ class Realization(object):
                 #kappa = self.convergence_at_z(z, 8)
 
                 if kappa > 0:
+                    #kwargs.append({'kappa_ext': - 1.269695*kappa})
                     kwargs.append({'kappa_ext': - kappa})
                     zsheet.append(z)
 
