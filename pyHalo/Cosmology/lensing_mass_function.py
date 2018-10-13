@@ -28,95 +28,53 @@ class LensingMassFunction(object):
             else:
                 raise ValueError('lookup table '+model_kwargs['model']+' not found.')
 
-            norm_z_dV_bins = table.norm_z_dV_bins
-            plaw_index_z_bins = table.plaw_index_z_bins
+            norm_z_dV = table.norm_z_dV
+            plaw_index_z = table.plaw_index_z
             z_range = table.z_range
             delta_z = table.delta_z
-            mbins = table.mbins
 
         else:
             # list ordering is by mass, with sublists consisting of different redshifts
-            norm_z_dV_bins, plaw_index_z_bins, z_range, delta_z, mbins = self._build(mlow, mhigh, zsource, zlens)
+            norm_z_dV, plaw_index_z, z_range, delta_z = self._build(mlow, mhigh, zsource)
 
-            self.norm_z_dV_bins = norm_z_dV_bins
-            self.plaw_index_z_bins = plaw_index_z_bins
+            self._norm_z_dV = norm_z_dV
+            self._plaw_index_z = plaw_index_z
             self._z_range = z_range
             self._delta_z = delta_z
-            self.mbins = mbins
 
-        for i, mass_bin in enumerate(mbins):
-            norm_in_bin = interp1d(z_range, norm_z_dV_bins[i])
-            plaw_index_in_bin = interp1d(z_range, plaw_index_z_bins[i])
-            self._norms_z_dV.append(norm_in_bin)
-            self._plaw_indexes_z.append(plaw_index_in_bin)
-            self._log_mbin.append([np.log10(mass_bin[0]), np.log10(mass_bin[1])])
+        self._norm_dV_interp = interp1d(z_range, norm_z_dV)
+
+        self._plaw_interp = interp1d(z_range, plaw_index_z)
 
         self._delta_z = delta_z
 
         self._z_range = z_range
 
-    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index = -1.3):
+    def norm_at_z_density(self, z):
 
-        def _integrand(m, norm, index, log_m_break):
-
-            return m * norm * m ** (index) * (1 + 10**log_m_break / m) ** break_index
-
-        M = np.logspace(8, np.log10(mhigh), 20)
-
-        dndm = self.dN_dMdV_comoving(M, z)
-        dV = self.geometry.volume_element_comoving(z, self.geometry._zlens, delta_z)
-
-        moment, norm, index = self._mass_function_moment(M, dndm * dV, 1, mlow, mhigh)
-
-        if log_m_break > np.log10(mlow) - 0.5:
-            moment = quad(_integrand, mlow, mhigh, args=(norm, index, log_m_break))[0]
-
-        return moment
-
-    def norm_at_z_density(self, mscale, z):
-
-        bin_index = self._get_mass_bin_index(np.log10(mscale))
-
-        norm = self._norms_z_dV[bin_index](z)
+        norm = self._norm_dV_interp(z)
 
         return norm
 
-    def plaw_index_z(self, mscale, z):
+    def plaw_index_z(self, z):
 
-        bin_index = self._get_mass_bin_index(np.log10(mscale))
-
-        idx = self._plaw_indexes_z[bin_index](z)
+        idx = self._plaw_interp(z)
 
         return idx
 
-    def _get_mass_bin_index(self, logmscale):
+    def norm_at_z(self, z, delta_z):
 
-        for i, bin in enumerate(self._log_mbin):
-
-            if logmscale >= bin[0] and logmscale < bin[1]:
-                return i
-
-        else:
-            for i, bin in enumerate(self._log_mbin):
-
-                if logmscale == bin[1]:
-                    return i
-
-        raise Exception('mass scale '+str(logmscale)+' not in precomputed mass bins.')
-
-    def norm_at_z(self, mscale, z, delta_z):
-
-        norm_dV = self.norm_at_z_density(mscale, z)
+        norm_dV = self.norm_at_z_density(z)
 
         dV = self.geometry.volume_element_comoving(z, self.geometry._zlens, delta_z)
 
         return norm_dV * dV
 
-    def norm_at_z_biased(self, mscale, z, M_halo, delta_z):
+    def norm_at_z_biased(self, z, M_halo, delta_z):
 
         delta_R = self.geometry.delta_R_fromz(z)
 
-        norm_unbiased = self.norm_at_z(mscale, z, delta_z)
+        norm_unbiased = self.norm_at_z(z, delta_z)
 
         if self._two_halo_term is False:
 
@@ -141,40 +99,23 @@ class LensingMassFunction(object):
 
         return rho_2h * h ** -2
 
-    def _build(self, mlow, mhigh, zsource, log_mass_resolution = 0.25, sublog_mass_resolution = 0.025):
+    def _build(self, mlow, mhigh, zsource):
 
-        #nsteps = (zsource - 2*default_zstart) * self.geometry._min_delta_z ** -1
-        nsteps = 250
-        z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
-        delta_z = z_range[1] - z_range[0]
-        norm_bins, index_bins = [], []
+        z_range = np.arange(default_zstart, 4, default_zstart)
+        #z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
 
-        n_mass_bins = max(10, int((np.log10(mhigh) - np.log10(mlow)) * log_mass_resolution ** -1))
-        subn_mass_bins = max(10, int(log_mass_resolution / sublog_mass_resolution))
+        M = np.logspace(8, np.log10(mhigh), 20)
 
-        mrange = np.linspace(np.log10(mlow), np.log10(mhigh), n_mass_bins)
-        mbins = []
+        norm, index = [], []
 
-        for k in range(0, len(mrange) - 1):
-            mbins.append([10**mrange[k], 10**mrange[k + 1]])
+        for zi in z_range:
 
-        for k in range(0, len(mrange) - 1):
+            _, normi, indexi = self._mass_function_params(M, mlow, mhigh, zi)
 
-            M = np.logspace(np.log10(mbins[k][0]), np.log10(mbins[k][1]), subn_mass_bins)
+            norm.append(normi)
+            index.append(indexi)
 
-            norm, index = [], []
-
-            for i, zi in enumerate(z_range):
-
-                _, normi, indexi = self._mass_function_params(M, M[0], M[-1], zi)
-
-                norm.append(normi)
-                index.append(indexi)
-
-            norm_bins.append(norm)
-            index_bins.append(index)
-
-        return norm_bins, index_bins, z_range, delta_z, mbins
+        return norm, index, z_range, z_range[1] - z_range[0]
 
     def _mass_function_params(self, M, mlow, mhigh, zstart):
 
@@ -246,6 +187,34 @@ class LensingMassFunction(object):
 
         return norm,plaw_index
 
+    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, n = 1):
+
+        norm = self.norm_at_z(z, delta_z)
+
+        plaw_index = self.plaw_index_z(z)
+
+        moment = self._integrate_power_law(norm, mlow, mhigh, log_m_break, n, plaw_index, break_index = break_index)
+
+        return moment
+
+    def _integrate_power_law(self, norm, m_low, m_high, log_m_break, n, plaw_index, break_index = -1.3):
+
+        def _integrand(m, m_break, plaw_index, n):
+
+            return norm * m ** (n + plaw_index) * (1 + m_break / m) ** break_index
+
+        #if log_m_break < np.log10(m_low) - 1:
+
+        #    newindex = 1 + n + plaw_index
+
+        #    moment = norm * newindex ** -1 * (m_high ** newindex - m_low ** newindex)
+
+        #else:
+
+        moment = quad(_integrand, m_low, m_high, args=(10**log_m_break, plaw_index, n))[0]
+
+        return moment
+
     def _mass_function_moment(self, M, dNdM, n, m_low, m_high, order=1):
 
         """
@@ -261,9 +230,8 @@ class LensingMassFunction(object):
             moment = norm * np.log(m_high * m_low ** -1)
 
         else:
-            newindex = 1 + n + plaw_index
 
-            moment = norm * newindex ** -1 * (m_high ** newindex - m_low ** newindex)
+            moment = self._integrate_power_law(norm, m_low, m_high, 0, n, plaw_index)
 
         return moment,norm,plaw_index
 
@@ -287,16 +255,15 @@ def write_lookup_table():
             f.write(']\n')
 
     from pyHalo.Cosmology.cosmology import Cosmology
-    l = LensingMassFunction(Cosmology(), 10**4, 10**10, 0.2, 4, cone_opening_angle=6, use_lookup_table=False)
+    l = LensingMassFunction(Cosmology(), 10**5, 10**10, 0.2, 4, cone_opening_angle=6, use_lookup_table=False)
 
     fname = './lookup_tables/lookup_sheth99.py'
 
     with open(fname, 'w') as f:
         f.write('import numpy as np\n')
 
-    write_to_file(fname, 'norm_z_dV_bins', l.norm_z_dV_bins, 'a')
-    write_to_file(fname, 'plaw_index_z_bins', l.plaw_index_z_bins, 'a')
-    write_to_file(fname, 'mbins', l.mbins, 'a')
+    write_to_file(fname, 'norm_z_dV', l._norm_z_dV, 'a')
+    write_to_file(fname, 'plaw_index_z', l._plaw_index_z, 'a')
 
     with open(fname, 'a') as f:
         f.write('z_range = np.array([')
@@ -306,3 +273,4 @@ def write_lookup_table():
 
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(l._delta_z)+'\n\n')
+
