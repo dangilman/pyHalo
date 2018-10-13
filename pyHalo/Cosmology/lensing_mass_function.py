@@ -24,7 +24,7 @@ class LensingMassFunction(object):
         if use_lookup_table:
 
             if model_kwargs['model'] == 'sheth99':
-                from pyHalo.Cosmology.lookup_tables import lookup_sheth99 as table
+                from pyHalo.Cosmology.lookup_tables import lookup_sheth99_simple as table
             else:
                 raise ValueError('lookup table '+model_kwargs['model']+' not found.')
 
@@ -257,7 +257,7 @@ def write_lookup_table():
     from pyHalo.Cosmology.cosmology import Cosmology
     l = LensingMassFunction(Cosmology(), 10**5, 10**10, 0.2, 4, cone_opening_angle=6, use_lookup_table=False)
 
-    fname = './lookup_tables/lookup_sheth99.py'
+    fname = './lookup_tables/lookup_sheth99_simple.py'
 
     with open(fname, 'w') as f:
         f.write('import numpy as np\n')
