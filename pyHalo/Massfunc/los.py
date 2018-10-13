@@ -125,13 +125,11 @@ class LOSPowerLaw(object):
                                                          lensing_mass_func.geometry)
         self._parameterization_args = parameterization_args
 
-    def _draw(self, norm, plaw_index, pargs, z_current, logmlow, logmhigh):
+    def _draw(self, norm, plaw_index, pargs, z_current):
 
         pargs_new = copy(pargs)
         pargs_new.update({'normalization': norm})
         pargs_new.update({'power_law_index': plaw_index})
-        pargs_new.update({'log_mlow': logmlow})
-        pargs_new.update({'log_mhigh': logmhigh})
 
         mfunc = BrokenPowerLaw(**pargs_new)
 
@@ -148,34 +146,28 @@ class LOSPowerLaw(object):
 
     def __call__(self):
 
-        logm_range = np.linspace(self._parameterization_args['log_mlow'],
-                                 self._parameterization_args['log_mhigh'], 20)
-        #print(logm_range)
         for idx, zcurrent in enumerate(self._redshift_range):
 
-            for j, mscale in enumerate(10**logm_range[0:-1]):
+            norm = self._lensing_mass_func.norm_at_z_biased(zcurrent, self._parameterization_args['parent_m200'],
+                                                         self._delta_z[idx])
 
-                norm = self._lensing_mass_func.norm_at_z_biased(mscale, zcurrent, self._parameterization_args['parent_m200'],
-                                                             self._delta_z[idx])
-                norm *= self._parameterization_args['LOS_normalization']
+            norm *= self._parameterization_args['LOS_normalization']
 
-                plaw_idx = self._lensing_mass_func.plaw_index_z(mscale, zcurrent)
+            plaw_idx = self._lensing_mass_func.plaw_index_z(zcurrent)
 
-                if idx == 0 and j == 0:
+            if idx == 0:
 
-                    masses, x, y, r2d, r3d, z = self._draw(norm, plaw_idx,
-                                                           self._parameterization_args, zcurrent, logm_range[j],
-                                                           logm_range[j+1])
+                masses, x, y, r2d, r3d, z = self._draw(norm, plaw_idx,
+                                                       self._parameterization_args, zcurrent)
 
 
-                else:
+            else:
 
-                    mi, xi, yi, r2di, r3di, zi = self._draw(norm, plaw_idx, self._parameterization_args, zcurrent,
-                                                            logm_range[j], logm_range[j + 1])
-                    masses = np.append(masses, mi)
-                    x, y = np.append(x, xi), np.append(y, yi)
-                    r2d, r3d = np.append(r2d, r2di), np.append(r3d, r3di)
-                    z = np.append(z, zi)
+                mi, xi, yi, r2di, r3di, zi = self._draw(norm, plaw_idx, self._parameterization_args, zcurrent)
+                masses = np.append(masses, mi)
+                x, y = np.append(x, xi), np.append(y, yi)
+                r2d, r3d = np.append(r2d, r2di), np.append(r3d, r3di)
+                z = np.append(z, zi)
 
         z = self._round_redshifts(z, self._lensing_mass_func.geometry._zlens)
 
@@ -183,20 +175,22 @@ class LOSPowerLaw(object):
 
     def _round_redshifts(self,zvalues,zlens):
 
-        zvalues = np.array(zvalues)
+        #zvalues = np.array(zvalues)
 
-        front_idx = np.where(zvalues < zlens)
-        back_idx = np.where(zvalues > zlens)
+        #front_idx = np.where(zvalues < zlens)
+        #back_idx = np.where(zvalues > zlens)
 
-        zvals_front = np.round(zvalues[front_idx], 2)
-        last_z_front = zvals_front[np.where(zlens - zvals_front >0)][-1]
-        zvals_front[np.where(zvals_front == zlens)] = last_z_front
+        #zvals_front = np.round(zvalues[front_idx], 2)
+        #last_z_front = zvals_front[np.where(zlens - zvals_front >0)][-1]
+        #zvals_front[np.where(zvals_front == zlens)] = last_z_front
 
-        zvals_back = np.round(zvalues[back_idx], 2)
-        first_z_back = zvals_back[np.where(-zlens + zvals_back > 0)][0]
-        zvals_back[np.where(zvals_back == zlens)] = first_z_back
+        #zvals_back = np.round(zvalues[back_idx], 2)
+        #first_z_back = zvals_back[np.where(-zlens + zvals_back > 0)][0]
+        #zvals_back[np.where(zvals_back == zlens)] = first_z_back
 
-        zvalues = np.append(zvals_front, zvals_back)
+        #zvalues = np.append(zvals_front, zvals_back)
+
+        zvalues[np.where(np.absolute(zvalues - zlens) <= 0.005)] = zlens
 
         return zvalues
 

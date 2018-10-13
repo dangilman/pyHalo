@@ -23,6 +23,7 @@ class PowerLaw(object):
     def draw(self):
 
         x = np.random.rand(np.random.poisson(self.Nhalos_mean))
+        #x = np.random.rand(int(np.round(self.Nhalos_mean)))
         X = (x * (self._mH ** (1 + self._index) - self._mL ** (1 + self._index)) + self._mL ** (1 + self._index)) ** (
                 (1 + self._index) ** -1)
 
