@@ -11,9 +11,8 @@ class PowerLaw(object):
 
         self._mL, self._mH = 10 ** log_mlow, 10 ** log_mhigh
 
-        if normalization <= 0:
-            self.norm = 0
-            self.Nhalos_mean = 0
+        if normalization < 0:
+            raise Exception('normalization cannot be < 0.')
         else:
             Nhalos_mean = self._moment(normalization, self._mL, self._mH, 0)
 
