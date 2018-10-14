@@ -112,14 +112,13 @@ class LOSDelta(object):
 
 class LOSPowerLaw(object):
 
-    def __init__(self, args, lensing_mass_func, zlens, zstep):
+    def __init__(self, args, lensing_mass_func):
 
         self._lensing_mass_func = lensing_mass_func
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         zmin, zmax = parameterization_args['zmin'], parameterization_args['zmax']
-        self._redshift_range, self._delta_z = _redshift_range_LOS(zmin,zmax,zlens,
-                                                                  default_z_step, zstep)
+        self._redshift_range, self._delta_z = _redshift_range_LOS(zmin, zmax, self._lensing_mass_func._delta_z)
 
         self._spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
                                                          lensing_mass_func.geometry)
@@ -146,30 +145,64 @@ class LOSPowerLaw(object):
 
     def __call__(self):
 
+        zlens = self._lensing_mass_func.geometry._zlens
+        z_2halo_term = self._redshift_range[np.where(self._redshift_range<zlens)][-1]
+
+        init = True
+
         for idx, zcurrent in enumerate(self._redshift_range):
 
-            norm = self._lensing_mass_func.norm_at_z_biased(zcurrent, self._parameterization_args['parent_m200'],
-                                                         self._delta_z[idx])
-
-            norm *= self._parameterization_args['LOS_normalization']
+            if zcurrent == self._lensing_mass_func.geometry._zlens:
+                continue
 
             plaw_idx = self._lensing_mass_func.plaw_index_z(zcurrent)
+            norm = self._lensing_mass_func.norm_at_z(zcurrent, self._delta_z)
 
-            if idx == 0:
+            if zcurrent == z_2halo_term:
+                add_two_halo = True
+                rmax = self._lensing_mass_func._cosmo.T_xy(zlens - self._delta_z, zlens)
+                norm_2halo = self._lensing_mass_func.norm_at_z_biased(zcurrent, self._delta_z,
+                                                                      self._parameterization_args['parent_m200'],
+                                                                      rmax=rmax)
 
-                masses, x, y, r2d, r3d, z = self._draw(norm, plaw_idx,
-                                                       self._parameterization_args, zcurrent)
+                ratio = norm * norm_2halo ** -1
+                norm_2halo *= self._parameterization_args['LOS_normalization']
 
+                mi, xi, yi, r2di, r3di, zi = self._draw(norm_2halo, plaw_idx, self._parameterization_args, zcurrent)
+                N_boost = int(np.round(len(mi) * (1 - ratio)))
+
+                mi_2halo, xi_2halo,_yi_2halo, r2di_2halo, r3di_2halo = mi[0:N_boost], xi[0:N_boost], \
+                                                                       yi[0:N_boost], r2di[0:N_boost], \
+                                                                                 r3di[0:N_boost]
+                zi_2halo = np.array([zlens]*len(mi_2halo))
+
+                mi, xi, yi, r2di, r3di, zi = mi[N_boost:], xi[N_boost:], yi[N_boost:], r2di[N_boost:], \
+                                             r3di[N_boost:], zi[N_boost:]
+
+            else:
+                add_two_halo = False
+                norm = self._lensing_mass_func.norm_at_z(zcurrent, self._delta_z)
+                norm *= self._parameterization_args['LOS_normalization']
+
+                mi, xi, yi, r2di, r3di, zi = self._draw(norm, plaw_idx, self._parameterization_args, zcurrent)
+
+            if init:
+
+                masses, x, y, r2d, r3d, z = mi, xi, yi, r2di, r3di, zi
+                init = False
 
             else:
 
-                mi, xi, yi, r2di, r3di, zi = self._draw(norm, plaw_idx, self._parameterization_args, zcurrent)
                 masses = np.append(masses, mi)
                 x, y = np.append(x, xi), np.append(y, yi)
                 r2d, r3d = np.append(r2d, r2di), np.append(r3d, r3di)
                 z = np.append(z, zi)
 
-        z = self._round_redshifts(z, self._lensing_mass_func.geometry._zlens)
+            if add_two_halo:
+                masses = np.append(masses, mi_2halo)
+                x, y = np.append(x, xi_2halo), np.append(y, _yi_2halo)
+                r2d, r3d = np.append(r2d, r2di_2halo), np.append(r3d, r3di_2halo)
+                z = np.append(z, zi_2halo)
 
         return masses, x, y, r2d, r3d, z
 
@@ -278,27 +311,10 @@ class LOSPowerLaw(object):
 
         return x, y, r2d, r3d
 
-def _redshift_range_LOS(zmin, zmax, zlens, zstep, zstep_fine):
+def _redshift_range_LOS(zmin, zmax, zstep):
 
-    twohalo_range = 0.005
-
-    nsteps_front = np.round((zlens - twohalo_range - zmin) * zstep ** -1)
-    zvals_front = np.linspace(zmin, zlens - twohalo_range, nsteps_front)[:-1]
-    delta_z = [zvals_front[1] - zvals_front[0]] * len(zvals_front)
-
-    nstep_back = np.round((zmax - twohalo_range - zlens) * delta_z[0] ** -1)
-    zvals_back = np.linspace(zlens + twohalo_range, zmax, nstep_back)[1:]
-
-    zvals_fine_front = np.linspace(zlens - twohalo_range, zlens - zstep_fine, np.round(0.1 * zstep_fine ** -1))
-    zvals_fine_back = np.linspace(zlens + zstep_fine, zlens + twohalo_range, np.round(0.1 * zstep_fine ** -1))
-
-    zvals_fine = np.append(zvals_fine_front, zvals_fine_back)
-
-    delta_z += [zvals_fine_front[1] - zvals_fine_front[0]] * len(zvals_fine_front)
-    delta_z += [zvals_fine_back[1] - zvals_fine_back[0]] * len(zvals_fine_back)
-    delta_z += [zvals_back[1] - zvals_back[0]] * len(zvals_back)
-
-    zvalues = np.append(np.append(zvals_front, zvals_fine), zvals_back)
+    zvalues = np.arange(zmin, zmax, zstep)
+    delta_z = zvalues[1] - zvalues[0]
 
     return zvalues, np.array(delta_z)
 

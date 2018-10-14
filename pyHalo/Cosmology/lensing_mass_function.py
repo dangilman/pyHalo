@@ -70,24 +70,20 @@ class LensingMassFunction(object):
 
         return norm_dV * dV
 
-    def norm_at_z_biased(self, z, M_halo, delta_z):
+    def norm_at_z_biased(self, z, delta_z, M_halo, rmin = 0.5, rmax = 10):
 
-        delta_R = self.geometry.delta_R_fromz(z)
+        boost = self.integrate_two_halo(M_halo, z, rmin = rmin, rmax = rmax) / (rmax - rmin)
 
-        norm_unbiased = self.norm_at_z(z, delta_z)
+        return boost * self.norm_at_z(z, delta_z)
 
-        if self._two_halo_term is False:
+    def integrate_two_halo(self, m200, z, rmin = 0.5, rmax = 10):
 
-            return norm_unbiased
+        def _integrand(x):
+            return self.twohaloterm(x, m200, z)
 
-        if delta_R >= 50 or delta_R < 0.5:
-            return norm_unbiased
-        else:
+        boost = quad(_integrand, rmin, rmax)[0]
 
-            delta_R = max(delta_R, 1e-4)
-            boost = 1 + self.twohaloterm(delta_R,M_halo,z)
-
-            return norm_unbiased * boost
+        return boost
 
     def twohaloterm(self, r, M, z, mdef='200c'):
 
@@ -101,7 +97,8 @@ class LensingMassFunction(object):
 
     def _build(self, mlow, mhigh, zsource):
 
-        z_range = np.arange(default_zstart, 4, default_zstart)
+        z_range = np.arange(default_zstart, 4+default_zstart, 0.02)
+        print(z_range)
         #z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
 
         M = np.logspace(8, np.log10(mhigh), 20)

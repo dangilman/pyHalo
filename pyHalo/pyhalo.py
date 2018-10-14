@@ -114,11 +114,11 @@ class pyHalo(object):
         if 'mass_func_type' in args:
 
             if args['mass_func_type'] == 'delta':
-                los = LOSDelta(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+                los = LOSDelta(args, mfunc_LOS, self.zlens)
 
         else:
             # default to a power law
-            los = LOSPowerLaw(args, mfunc_LOS, self.zlens, self._geometry._min_delta_z)
+            los = LOSPowerLaw(args, mfunc_LOS)
 
         if 'mdef_los' not in args.keys():
             raise ValueError('specify mass definition for line of sight halos with mdef_los.')
