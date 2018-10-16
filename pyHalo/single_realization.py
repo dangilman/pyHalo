@@ -43,9 +43,15 @@ class Realization(object):
         if wdm_params is None:
             self.m_break_scale = 0
             self.break_index = -1.3
+            self._LOS_norm = 1
         else:
             self.m_break_scale = wdm_params['log_m_break']
             self.break_index = wdm_params['break_index']
+            if 'LOS_normalization' in wdm_params:
+                self._LOS_norm = wdm_params['LOS_normalization']
+            else:
+                self._LOS_norm = 1
+
         self._wdm_params = wdm_params
 
         if halos is None:
@@ -381,7 +387,7 @@ class Realization(object):
 
     def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index):
 
-        mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break, break_index)
+        mass = self._LOS_norm * self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break, break_index)
 
         return mass
 
