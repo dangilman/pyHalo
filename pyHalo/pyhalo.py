@@ -111,10 +111,8 @@ class pyHalo(object):
 
         mfunc_LOS = self._LOS_mass_func(args)
 
-        if 'mass_func_type' in args:
-
-            if args['mass_func_type'] == 'delta':
-                los = LOSDelta(args, mfunc_LOS, self.zlens)
+        if args['mass_func_type'] == 'delta':
+            los = LOSDelta(args, mfunc_LOS, self.zlens)
 
         else:
             # default to a power law

@@ -238,3 +238,6 @@ class LensCosmo(object):
 
         return area * kappa_sub * self.sigmacrit * integral
 
+#l = LensCosmo(0.5,1.5)
+#import numpy as np
+#print(np.log10(l.mthermal_to_halfmode(5)))

@@ -98,7 +98,7 @@ class LensingMassFunction(object):
     def _build(self, mlow, mhigh, zsource):
 
         z_range = np.arange(default_zstart, 4+default_zstart, 0.02)
-        print(z_range)
+
         #z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
 
         M = np.logspace(8, np.log10(mhigh), 20)
@@ -199,14 +199,6 @@ class LensingMassFunction(object):
         def _integrand(m, m_break, plaw_index, n):
 
             return norm * m ** (n + plaw_index) * (1 + m_break / m) ** break_index
-
-        #if log_m_break < np.log10(m_low) - 1:
-
-        #    newindex = 1 + n + plaw_index
-
-        #    moment = norm * newindex ** -1 * (m_high ** newindex - m_low ** newindex)
-
-        #else:
 
         moment = quad(_integrand, m_low, m_high, args=(10**log_m_break, plaw_index, n))[0]
 

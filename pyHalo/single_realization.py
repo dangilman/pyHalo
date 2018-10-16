@@ -6,9 +6,12 @@ from pyHalo.Lensing.PJaffe import PJaffeLensing
 
 def realization_at_z(realization,z):
 
-    m, x, y, r2, r3, mdef, redshift, mdefargs = realization.halos_at_z(z)
+    halos = realization.halos_at_z(z)
 
-    return Realization(m, x, y, r2, r3, mdef, redshift, mdefargs, realization.geometry)
+    halo_mass_function, wdm_params = realization.halo_mass_function, realization._wdm_params
+
+    return Realization(None, None, None, None, None, None, None, None, halo_mass_function, halos=halos,
+                           wdm_params=wdm_params)
 
 class Halo(object):
 
@@ -27,6 +30,10 @@ class Halo(object):
 class Realization(object):
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function, halos = None, wdm_params = None):
+
+        self._subtract_theory_mass_sheets = True
+        self._kappa_scale = 1
+        # 1.269695 for TNFW halos truncated at r50
 
         self.halo_mass_function = halo_mass_function
         self.geometry = halo_mass_function.geometry
@@ -339,12 +346,14 @@ class Realization(object):
 
             if z != self.geometry._zlens:
 
-                kappa = self.convergence_at_z_theory(z, mlow, mhigh, delta_z, self.m_break_scale, self.break_index)
-                #kappa = self.convergence_at_z(z, 8)
+                if self._subtract_theory_mass_sheets:
+                    kappa = self.convergence_at_z_theory(z, mlow, mhigh, delta_z, self.m_break_scale, self.break_index)
+                else:
+                    kappa = self.convergence_at_z(z, 0)
 
                 if kappa > 0:
                     #kwargs.append({'kappa_ext': - 1.269695*kappa})
-                    kwargs.append({'kappa_ext': - kappa})
+                    kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
                     zsheet.append(z)
 
         return kwargs, zsheet
