@@ -56,7 +56,9 @@ class Geometry(object):
         """
         area_comoving = self._angle_to_comoving_area(z_lens, z)
 
-        return area_comoving * self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z) ** -1
+        dR = self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z) ** -1
+
+        return area_comoving * dR
 
     def volume_element_comoving(self, z, z_lens, delta_z):
         """
@@ -74,8 +76,8 @@ class Geometry(object):
             volume_element = quad(func, z, z+delta_z, args=args)[0]
 
         else:
-            area_comoving = self._angle_to_comoving_area(z_lens, z)
-            volume_element = area_comoving * self._delta_R_comoving(z, delta_z)
+
+            volume_element = self._volume_integrand_comoving(z, z_lens) * delta_z
 
         return volume_element
 

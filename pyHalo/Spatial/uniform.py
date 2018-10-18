@@ -13,14 +13,14 @@ class LensConeUniform(object):
         if N == 0:
             return [], [], [], []
 
+
         if z_plane > self._cosmo_geometry._zlens:
 
-            new_area = self._cosmo_geometry._angle_to_arcsec_area(self._cosmo_geometry._lens_cosmo.z_lens, z_plane)
-
-            r = (new_area / np.pi) ** 0.5
-
+            steradian = self._cosmo_geometry._angle_to_arcsec_area(self._cosmo_geometry._lens_cosmo.z_lens, z_plane)
+            new_radius = steradian ** 0.5
             rmax_0 = self._uni.rmax2d_arcsec
-            rescale = r / rmax_0
+            rescale = new_radius / rmax_0
+
 
         else:
             rescale = 1

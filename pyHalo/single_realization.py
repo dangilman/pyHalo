@@ -356,6 +356,7 @@ class Realization(object):
             if z != self.geometry._zlens:
 
                 if self._subtract_theory_mass_sheets:
+                    mhigh = min(mhigh, self.max_m_high)
                     kappa = self.convergence_at_z_theory(z, mlow, mhigh, delta_z, self.m_break_scale, self.break_index)
                 else:
                     kappa = self.convergence_at_z(z, 0)
