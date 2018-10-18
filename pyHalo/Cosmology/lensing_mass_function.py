@@ -7,14 +7,12 @@ from colossus.lss.bias import twoHaloTerm
 class LensingMassFunction(object):
 
     def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
-                 delta_theta_lens=None, model_kwargs={'model':'sheth99'},
+                 model_kwargs={'model':'sheth99'},
                  use_lookup_table=True, two_halo_term = True):
 
-        if delta_theta_lens is None:
-            delta_theta_lens = cone_opening_angle
 
         self._cosmo = cosmology
-        self.geometry = Geometry(cosmology, zlens, zsource, delta_theta_lens, cone_opening_angle)
+        self.geometry = Geometry(cosmology, zlens, zsource, cone_opening_angle)
         self._model_kwargs = model_kwargs
         self._mlow, self._mhigh = mlow, mhigh
         self._two_halo_term = two_halo_term
@@ -72,9 +70,12 @@ class LensingMassFunction(object):
 
     def norm_at_z_biased(self, z, delta_z, M_halo, rmin = 0.5, rmax = 10):
 
-        boost = self.integrate_two_halo(M_halo, z, rmin = rmin, rmax = rmax) / (rmax - rmin)
+        if self._two_halo_term:
+            boost = self.integrate_two_halo(M_halo, z, rmin = rmin, rmax = rmax) / (rmax - rmin)
 
-        return boost * self.norm_at_z(z, delta_z)
+            return boost * self.norm_at_z(z, delta_z)
+        else:
+            return self.norm_at_z(z, delta_z)
 
     def integrate_two_halo(self, m200, z, rmin = 0.5, rmax = 10):
 
@@ -132,11 +133,8 @@ class LensingMassFunction(object):
         units of norm are therefore M_sun ^ -1
         """
 
-        #dN_dM = self.dN_dM(M, zstart, zend, z_lens)
         dN_dMdV = self.dN_dMdV_comoving(M, zstart)
 
-        #N_objects, norm, plaw_index = self._mass_function_moment(M, dN_dM, 0, mlow, mhigh)
-        # returns x / mpc ^ 3
         N_objects_dV, norm_dV, plaw_index_dV = self._mass_function_moment(M, dN_dMdV, 0, mlow, mhigh)
 
         return N_objects_dV, norm_dV, plaw_index_dV
@@ -184,13 +182,14 @@ class LensingMassFunction(object):
 
         return norm,plaw_index
 
-    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, n = 1):
+    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, n = 1,
+                                norm_scale = 1):
 
         norm = self.norm_at_z(z, delta_z)
 
         plaw_index = self.plaw_index_z(z)
 
-        moment = self._integrate_power_law(norm, mlow, mhigh, log_m_break, n, plaw_index, break_index = break_index)
+        moment = self._integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index, break_index = break_index)
 
         return moment
 
@@ -224,13 +223,6 @@ class LensingMassFunction(object):
 
         return moment,norm,plaw_index
 
-    def _unit_to_unit_littleh(self, unit):
-
-        return unit * self._cosmo.h
-
-    def _unit_littleh_to_unit(self, unit_h):
-
-        return unit_h * self._cosmo.h ** -1
 
 def write_lookup_table():
 

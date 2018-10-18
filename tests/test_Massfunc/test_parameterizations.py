@@ -5,14 +5,12 @@ import numpy as np
 from scipy.integrate import quad
 
 class TestMassfunc(object):
-    """
-    test angular to mass unit conversions
-    """
+
     def setup(self):
 
         self.plaw_idx = -1.9
         self.norm = 10**12
-        self.log_m_break = 7
+        self.log_m_break = 8
         self.break_index = -1
 
         self.power_law_broken = BrokenPowerLaw(power_law_index=self.plaw_idx, log_mlow=6, log_mhigh=11,
@@ -56,8 +54,8 @@ class TestMassfunc(object):
         analytic = quad(_integral, 10**6, 10**11, args=(0, self.break_index, 1))[0]
         analytic_wdm = quad(_integral, 10**6, 10**11, args=(10**self.log_m_break, self.break_index, 1))[0]
 
-        npt.assert_almost_equal(np.sum(halos_cdm) / analytic, 1, decimal = 2)
-        npt.assert_almost_equal(np.sum(halos_wdm) / analytic_wdm, 1, decimal=2)
+        npt.assert_almost_equal(np.sum(halos_cdm) / analytic, 1, decimal = 1)
+        npt.assert_almost_equal(np.sum(halos_wdm) / analytic_wdm - 1, 0, decimal=1)
 
 if __name__ == '__main__':
     pytest.main()

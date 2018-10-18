@@ -118,7 +118,7 @@ class LOSPowerLaw(object):
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         zmin, zmax = parameterization_args['zmin'], parameterization_args['zmax']
-        self._redshift_range, self._delta_z = _redshift_range_LOS(zmin, zmax, self._lensing_mass_func._delta_z)
+        self._redshift_range = _redshift_range_LOS(zmin, zmax, default_z_step)
 
         self._spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
                                                          lensing_mass_func.geometry)
@@ -146,9 +146,16 @@ class LOSPowerLaw(object):
     def __call__(self):
 
         zlens = self._lensing_mass_func.geometry._zlens
-        z_2halo_term = self._redshift_range[np.where(self._redshift_range<zlens)][-1]
+
+        compute_two_halo = self._lensing_mass_func._two_halo_term
+
+        if compute_two_halo:
+            z_2halo_term = self._redshift_range[np.where(self._redshift_range<zlens)][-1]
+        else:
+            z_2halo_term = None
 
         init = True
+        delta_z = self._redshift_range[1] - self._redshift_range[0]
 
         for idx, zcurrent in enumerate(self._redshift_range):
 
@@ -156,12 +163,12 @@ class LOSPowerLaw(object):
                 continue
 
             plaw_idx = self._lensing_mass_func.plaw_index_z(zcurrent)
-            norm = self._lensing_mass_func.norm_at_z(zcurrent, self._delta_z)
+            norm = self._lensing_mass_func.norm_at_z(zcurrent, delta_z)
 
             if zcurrent == z_2halo_term:
                 add_two_halo = True
-                rmax = self._lensing_mass_func._cosmo.T_xy(zlens - self._delta_z, zlens)
-                norm_2halo = self._lensing_mass_func.norm_at_z_biased(zcurrent, self._delta_z,
+                rmax = self._lensing_mass_func._cosmo.T_xy(zlens - delta_z, zlens)
+                norm_2halo = self._lensing_mass_func.norm_at_z_biased(zcurrent, delta_z,
                                                                       self._parameterization_args['parent_m200'],
                                                                       rmax=rmax)
 
@@ -181,7 +188,7 @@ class LOSPowerLaw(object):
 
             else:
                 add_two_halo = False
-                norm = self._lensing_mass_func.norm_at_z(zcurrent, self._delta_z)
+                norm = self._lensing_mass_func.norm_at_z(zcurrent, delta_z)
                 norm *= self._parameterization_args['LOS_normalization']
 
                 mi, xi, yi, r2di, r3di, zi = self._draw(norm, plaw_idx, self._parameterization_args, zcurrent)
@@ -205,27 +212,6 @@ class LOSPowerLaw(object):
                 z = np.append(z, zi_2halo)
 
         return masses, x, y, r2d, r3d, z
-
-    def _round_redshifts(self,zvalues,zlens):
-
-        #zvalues = np.array(zvalues)
-
-        #front_idx = np.where(zvalues < zlens)
-        #back_idx = np.where(zvalues > zlens)
-
-        #zvals_front = np.round(zvalues[front_idx], 2)
-        #last_z_front = zvals_front[np.where(zlens - zvals_front >0)][-1]
-        #zvals_front[np.where(zvals_front == zlens)] = last_z_front
-
-        #zvals_back = np.round(zvalues[back_idx], 2)
-        #first_z_back = zvals_back[np.where(-zlens + zvals_back > 0)][0]
-        #zvals_back[np.where(zvals_back == zlens)] = first_z_back
-
-        #zvalues = np.append(zvals_front, zvals_back)
-
-        zvalues[np.where(np.absolute(zvalues - zlens) <= 0.005)] = zlens
-
-        return zvalues
 
     def _set_kwargs(self, args):
 
@@ -314,7 +300,6 @@ class LOSPowerLaw(object):
 def _redshift_range_LOS(zmin, zmax, zstep):
 
     zvalues = np.arange(zmin, zmax, zstep)
-    delta_z = zvalues[1] - zvalues[0]
 
-    return zvalues, np.array(delta_z)
+    return zvalues
 

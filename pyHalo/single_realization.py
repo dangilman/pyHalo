@@ -3,6 +3,7 @@ from pyHalo.Lensing.NFW import NFWLensing
 from pyHalo.Lensing.TNFW import TNFWLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
+from pyHalo.defaults import default_z_step
 
 def realization_at_z(realization,z):
 
@@ -28,6 +29,8 @@ class Halo(object):
         self._unique_tag = np.random.rand()
 
 class Realization(object):
+
+    max_m_high = 10**9
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function, halos = None, wdm_params = None):
 
@@ -373,42 +376,44 @@ class Realization(object):
 
         return halos
 
-    def convergence_at_z_theory(self,z, mlow, mhigh, delta_z, m_break, break_index):
+    def _convergence_at_z(self, m_at_z, z):
+
+        area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
+
+        sigma_crit = self.geometry._lens_cosmo.get_sigmacrit(z)
+
+        return m_at_z / area / sigma_crit
+
+    def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index):
 
         m = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index)
 
-        area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
+        return self._convergence_at_z(m, z)
 
-        sigmacrit = self.geometry._lens_cosmo.get_sigmacrit(z)
+    def convergence_at_z(self, z, m_scale):
 
-        kappa = m / area / sigmacrit
+        m = self.mass_at_z(z, m_scale)
 
-        return kappa
+        return self._convergence_at_z(m, z)
 
     def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index):
 
-        mass = self._LOS_norm * self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break, break_index)
+        #mhigh = min(mhigh, self.max_m_high)
+        mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break,
+                                                               break_index, norm_scale=self._LOS_norm)
 
         return mass
 
-    def convergence_at_z(self,z, logmscale = 0):
-
-        m = self.mass_at_z(z, logmscale)
-
-        area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
-
-        sigmacrit = self.geometry._lens_cosmo.get_sigmacrit(z)
-
-        kappa = m / area / sigmacrit
-
-        return kappa
-
     def mass_at_z(self,z, logmcut = 0):
+
+        def z_is_close(z1, z2):
+            return np.absolute(z2 - z1) < default_z_step * 0.01
 
         mass = 0
 
         for i, mi in enumerate(self.masses):
-            if self.redshifts[i] == z:
+
+            if z_is_close(self.redshifts[i], z):
 
                 if np.log10(mi) >= logmcut:
                     mass += mi

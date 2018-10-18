@@ -2,6 +2,8 @@ import numpy as np
 
 class PowerLaw(object):
 
+    draw_poisson = True
+
     def __init__(self, power_law_index = None, log_mlow = None, log_mhigh = None, normalization = None):
 
         if power_law_index > 0:
@@ -22,7 +24,12 @@ class PowerLaw(object):
 
     def draw(self):
 
-        x = np.random.rand(np.random.poisson(self.Nhalos_mean))
+        if self.draw_poisson:
+            N = np.random.poisson(self.Nhalos_mean)
+        else:
+            N = int(np.round(self.Nhalos_mean))
+
+        x = np.random.rand(N)
         #x = np.random.rand(int(np.round(self.Nhalos_mean)))
         X = (x * (self._mH ** (1 + self._index) - self._mL ** (1 + self._index)) + self._mL ** (1 + self._index)) ** (
                 (1 + self._index) ** -1)
@@ -43,9 +50,10 @@ class PowerLaw(object):
 class BrokenPowerLaw(object):
 
     def __init__(self, power_law_index = None, log_mlow = None, log_mhigh = None, normalization = None,
-                 log_m_break = None, break_index = None, **kwargs):
+                 log_m_break = None, break_index = None, draw_poisson = True, **kwargs):
 
         self._plaw = PowerLaw(power_law_index, log_mlow, log_mhigh, normalization)
+        self._plaw.draw_poisson = draw_poisson
 
         self.log_m_break = log_m_break
 
