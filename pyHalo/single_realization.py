@@ -400,9 +400,9 @@ class Realization(object):
 
     def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index):
 
-        m_rendered = self.mass_at_z(z, log_m_break)
-        if m_rendered > 0:
-            mhigh = min(m_rendered, mhigh)
+        #m_rendered = self.mass_at_z(z, log_m_break)
+        #if m_rendered > 0:
+        #    mhigh = min(m_rendered, mhigh)
 
         mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break,
                                                                break_index, norm_scale=self._LOS_norm)
