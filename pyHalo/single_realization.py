@@ -30,12 +30,13 @@ class Halo(object):
 
 class Realization(object):
 
-    max_m_high = 10**9
+    #max_m_high = 10**9
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function, halos = None, wdm_params = None):
 
         self._subtract_theory_mass_sheets = True
-        self._kappa_scale = 1
+        #self._kappa_scale = 1
+        self._kappa_scale = 1.269695
         # 1.269695 for TNFW halos truncated at r50
 
         self.halo_mass_function = halo_mass_function
@@ -356,7 +357,7 @@ class Realization(object):
             if z != self.geometry._zlens:
 
                 if self._subtract_theory_mass_sheets:
-                    mhigh = min(mhigh, self.max_m_high)
+
                     kappa = self.convergence_at_z_theory(z, mlow, mhigh, delta_z, self.m_break_scale, self.break_index)
                 else:
                     kappa = self.convergence_at_z(z, 0)
@@ -377,19 +378,19 @@ class Realization(object):
 
         return halos
 
-    def _convergence_at_z(self, m_at_z, z):
+    def _convergence_at_z(self, m_rendered, z):
 
         area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
 
         sigma_crit = self.geometry._lens_cosmo.get_sigmacrit(z)
 
-        return m_at_z / area / sigma_crit
+        return m_rendered / area / sigma_crit
 
     def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index):
 
-        m = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index)
+        m_theory = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index)
 
-        return self._convergence_at_z(m, z)
+        return self._convergence_at_z(m_theory, z)
 
     def convergence_at_z(self, z, m_scale):
 
@@ -399,7 +400,10 @@ class Realization(object):
 
     def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index):
 
-        #mhigh = min(mhigh, self.max_m_high)
+        m_rendered = self.mass_at_z(z, log_m_break)
+        if m_rendered > 0:
+            mhigh = min(m_rendered, mhigh)
+
         mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break,
                                                                break_index, norm_scale=self._LOS_norm)
 
