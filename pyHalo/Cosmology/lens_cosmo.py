@@ -62,7 +62,7 @@ class LensCosmo(object):
         Ez = self.cosmo.E_z(z)
         return self.rhoc * Ez ** 2
 
-    def get_sigmacrit(self,z):
+    def get_sigmacrit(self, z):
 
         return self.get_epsiloncrit(z,self.z_source)*(0.001)**2*self.cosmo.kpc_per_asec(z)**2
 

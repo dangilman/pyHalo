@@ -35,8 +35,8 @@ class Realization(object):
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function, halos = None, wdm_params = None):
 
         self._subtract_theory_mass_sheets = True
-        #self._kappa_scale = 1
-        self._kappa_scale = 1.269695
+        self._kappa_scale = 1
+        #self._kappa_scale = 1.269695
         # 1.269695 for TNFW halos truncated at r50
 
         self.halo_mass_function = halo_mass_function
@@ -381,10 +381,9 @@ class Realization(object):
     def _convergence_at_z(self, m_rendered, z):
 
         area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
+        scrit = self.geometry._lens_cosmo.get_sigmacrit(z)
 
-        sigma_crit = self.geometry._lens_cosmo.get_sigmacrit(z)
-
-        return m_rendered / area / sigma_crit
+        return m_rendered / area / scrit
 
     def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index):
 

@@ -132,9 +132,13 @@ class Geometry(object):
 
     def _angle_to_arcsec_area(self, z_lens, z):
 
-        omega = self.solid_angle_z(z, z_lens)
+        theta = self._angle_to_arcsec_radius(z, z_lens)
 
-        return omega * self._cosmo.arcsec ** -2
+        return np.pi * theta ** 2
+
+        #omega = self.solid_angle_z(z, z_lens)
+
+        #return omega * self._cosmo.arcsec ** -2
 
     def _angle_to_comoving_area(self, z_lens, z):
         """
@@ -145,9 +149,9 @@ class Geometry(object):
         :return: comoving area
         """
 
-        sigma = self.solid_angle_z(z, z_lens) * self._cosmo.T_xy(0, z) ** 2
+        r = self.angle_to_comovingradius(z, z_lens)
 
-        return sigma
+        return np.pi * r ** 2
 
     def _angle_to_physical_area(self, z_lens, z):
         """
@@ -164,3 +168,16 @@ class Geometry(object):
 
         return area_comoving * a_z ** 2
 
+    def _angle_to_arcsec_radius(self, z, z_lens):
+        """
+        computes the area corresponding to the angular radius of a plane at redshift z for a double cone with base at z_base
+        :param theta: lens cone opening angle in arcsec
+        :param z: redshift of plane
+        :param z_lens: redshift of main lens
+        :return: comoving area
+        """
+
+        r_co = self.angle_to_comovingradius(z, z_lens)
+        asec_per_mpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value * 1000
+
+        return r_co * asec_per_mpc
