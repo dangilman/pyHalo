@@ -100,7 +100,7 @@ class pyHalo(object):
                     mdef_args.append(newargs)
 
         if not hasattr(self, '_geometry'):
-            self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, None, args[0]['cone_opening_angle'])
+            self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
 
         wdm_params = {'log_m_break': args[0]['log_m_break'], 'break_index': args[0]['break_index']}
         if 'LOS_normalization' in args[0].keys():
@@ -142,6 +142,8 @@ class pyHalo(object):
         mod_name = []
 
         for mod, args in zip(model_name, model_args):
+
+            _ = self._LOS_mass_func(args)
 
             if mod == 'composite_powerlaw':
 
