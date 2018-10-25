@@ -7,13 +7,13 @@ from pyHalo.defaults import default_zstart, default_z_round, default_z_step
 
 class LOSDelta(object):
 
-    def __init__(self, args, lensing_mass_func, zlens, zstep):
+    def __init__(self, args, lensing_mass_func):
 
         self._lensing_mass_func = lensing_mass_func
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         zmin, zmax = parameterization_args['zmin'], parameterization_args['zmax']
-        self._redshift_range, self._delta_z = _redshift_range_LOS(zmin, zmax, zlens, zstep)
+        self._redshift_range = _redshift_range_LOS(zmin, zmax, default_z_step)
 
         self._spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
                                                          lensing_mass_func.geometry)
@@ -24,9 +24,10 @@ class LOSDelta(object):
         redshifts = []
         zstart = self._redshift_range[0]
 
+        delta_z = self._redshift_range[1] - zstart
         pargs = copy(self._parameterization_args)
 
-        nobjects = self._lensing_mass_func.dN_dV_comoving_deltaFunc(pargs['M'], zstart, pargs['mass_fraction'])
+        nobjects = self._lensing_mass_func.dN_comoving_deltaFunc(pargs['M'], zstart, delta_z, pargs['mass_fraction'])
         nobjects *= pargs['LOS_normalization']
         masses = np.array([pargs['M']]*nobjects)
 
@@ -39,8 +40,8 @@ class LOSDelta(object):
 
             pargs = copy(self._parameterization_args)
 
-            nobjects = self._lensing_mass_func.dN_dV_comoving_deltaFunc(pargs['M'], z,
-                                                                        pargs['mass_fraction'])
+            nobjects = self._lensing_mass_func.dN_comoving_deltaFunc(pargs['M'], z,
+                                                                     delta_z, pargs['mass_fraction'])
             nobjects *= pargs['LOS_normalization']
             m = np.array([pargs['M']] * nobjects)
 
@@ -57,7 +58,6 @@ class LOSDelta(object):
         redshifts = self._round_redshifts(redshifts, self._lensing_mass_func.geometry._zlens)
 
         return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(redshifts)
-
 
     def _render_z(self,z):
 

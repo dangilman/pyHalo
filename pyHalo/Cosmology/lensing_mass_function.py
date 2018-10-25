@@ -154,7 +154,7 @@ class LensingMassFunction(object):
 
         return h ** 3 * massFunction(M_h, z, q_out='dndlnM', **self._model_kwargs) * M_h ** -1
 
-    def dN_dV_comoving_deltaFunc(self, M, z, component_fraction):
+    def dN_comoving_deltaFunc(self, M, z, delta_z, component_fraction):
 
         """
 
@@ -162,7 +162,10 @@ class LensingMassFunction(object):
         :param component_fraction: density parameter; fraction of the matter density (not fraction of critical density!)
         :return: the number of objects of mass M * Mpc^-3
         """
-        return self._cosmo.rho_matter_crit(z) * component_fraction * M ** -1
+
+        dN_dV = self._cosmo.rho_matter_crit(z) * component_fraction * M ** -1
+
+        return dN_dV * self.geometry.volume_element_comoving(z, self.geometry._zlens, delta_z)
 
     def _fit_norm_index(self, M, dNdM, order=1):
         """
