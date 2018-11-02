@@ -32,8 +32,10 @@ class Realization(object):
 
     #max_m_high = 10**9
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function, halos = None, wdm_params = None):
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function,
+                 halos = None, wdm_params = None, mass_sheet_correction = True):
 
+        self._mass_sheet_correction  = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
         self._kappa_scale = 1
         #self._kappa_scale = 1.269695
@@ -44,6 +46,7 @@ class Realization(object):
         self.lens_cosmo = self.geometry._lens_cosmo
         self._lensing_functions = []
         self.halos = []
+
         if wdm_params is None:
             self.m_break_scale = 0
             self.break_index = -1.3
@@ -109,7 +112,7 @@ class Realization(object):
                 halos.append(halos_long[i])
 
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
-                           wdm_params=self._wdm_params)
+                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
 
     def _reset(self):
 
@@ -165,7 +168,7 @@ class Realization(object):
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
             elif halo.mdef == 'POINT_MASS':
-                args.update({'redshift': halo.redshifts[i]})
+                args.update({'redshift': halo.z})
             elif halo.mdef == 'PJAFFE':
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
             else:
@@ -173,7 +176,7 @@ class Realization(object):
 
             kwargs_lens.append(self._lensing_functions[i].params(**args))
 
-        if mass_sheet_correction is not False:
+        if self._mass_sheet_correction and mass_sheet_correction is not False:
 
             assert isinstance(mass_sheet_correction, float) or isinstance(mass_sheet_correction, int)
             assert mass_sheet_correction < 10, 'mass sheet correction should log(M)'
@@ -341,7 +344,7 @@ class Realization(object):
                 halos.append(plane_halos[halo_index])
 
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
-                           wdm_params=self._wdm_params)
+                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
 
     def mass_sheet_correction(self, mlow = 10**8, mhigh = 10**10):
 

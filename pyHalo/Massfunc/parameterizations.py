@@ -1,4 +1,50 @@
+from scipy.special import erf
 import numpy as np
+
+class LogNormal(object):
+
+    def __init__(self, mean = None, standard_dev = None, log_mlow = None,
+                 log_mhigh = None, normalization = None):
+
+        self._mean = mean
+        self._sigma = standard_dev
+
+        if normalization < 0:
+            raise Exception('normalization cannot be <0')
+        else:
+            Nhalos_mean = self._integrate(normalization, 10**log_mlow, 10**log_mhigh)
+            self.Nhalos_mean = Nhalos_mean
+
+    def _integrate(self, norm, mlow, mhigh):
+
+        # norm is fpbh * rho_matter(z) * delta_V
+        I1 = self._I1(self._mean, self._sigma, mlow, mhigh)
+        I0 = self._I0(self._mean, self._sigma, mlow, mhigh)
+        print(I1, I0)
+        I = np.exp(self._mean + 0.5*self._sigma**2) * I1 * I0 ** -1
+
+        return norm * I
+
+    def _I0(self, mu, sig, ml, mh):
+        x1 = (mu + sig ** 2 - np.log(mh)) / (2 ** 0.5 * sig)
+        x2 = (mu + sig ** 2 - np.log(ml)) / (2 ** 0.5 * sig)
+
+        return erf(x2) - erf(x1)
+
+    def _I1(self, mu, sig, ml, mh):
+
+        x1 = (mu - np.log10(mh)) / (2 ** 0.5 * sig)
+        x2 = (mu - np.log10(ml)) / (2 ** 0.5 * sig)
+
+        return erf(x2) - erf(x1)
+
+    def draw(self):
+
+        N = np.random.poisson(self.Nhalos_mean)
+
+        samples = np.random.lognormal(self._mean, self._standard_dev, size=N)
+
+        return np.array(samples)
 
 class PowerLaw(object):
 
