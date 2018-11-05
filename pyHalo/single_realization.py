@@ -37,6 +37,7 @@ class Realization(object):
 
         self._mass_sheet_correction  = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
+        self._overwrite_mass_sheet = None
         self._kappa_scale = 1
         #self._kappa_scale = 1.269695
         # 1.269695 for TNFW halos truncated at r50
@@ -153,6 +154,9 @@ class Realization(object):
         self.halos.append(halo)
 
     def lensing_quantities(self, mass_sheet_correction = 8):
+
+        if self._overwrite_mass_sheet is not None:
+            mass_sheet_correction = self._overwrite_mass_sheet
 
         kwargs_lens = []
         lens_model_names = []

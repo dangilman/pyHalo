@@ -42,16 +42,25 @@ class pyHalo(object):
 
         if not hasattr(self, 'halo_mass_function'):
 
-            if 'log_mlow_los' not in args.keys():
-                assert 'log_mlow' in args.keys()
-                logLOS_mlow = args['log_mlow']
+            if 'mass_func_type' not in args.keys():
+                args['mass_func_type'] = 'composite_powerlaw'
+
+            if args['mass_func_type'] == 'delta':
+
+                logLOS_mlow = args['M'] - 0.01
+                logLOS_mhigh = args['M'] + 0.01
+
             else:
-                logLOS_mlow = args['log_mlow_los']
-            if 'log_mhigh_los' not in args.keys():
-                assert 'log_mhigh' in args.keys()
-                logLOS_mhigh = args['log_mhigh']
-            else:
-                logLOS_mhigh = args['log_mhigh_los']
+                if 'log_mlow_los' not in args.keys():
+                    assert 'log_mlow' in args.keys()
+                    logLOS_mlow = args['log_mlow']
+                else:
+                    logLOS_mlow = args['log_mlow_los']
+                if 'log_mhigh_los' not in args.keys():
+                    assert 'log_mhigh' in args.keys()
+                    logLOS_mhigh = args['log_mhigh']
+                else:
+                    logLOS_mhigh = args['log_mhigh_los']
 
             assert 'cone_opening_angle' in args.keys()
 
@@ -71,6 +80,7 @@ class pyHalo(object):
         mdefs = []
         mdef_args = []
 
+        init = True
         for component_index, (executables, mass_def) in enumerate(zip(executables_list, mass_def_list)):
 
             for i, (mdef, func) in enumerate(zip(mass_def, executables)):
@@ -81,7 +91,7 @@ class pyHalo(object):
                 L = int(len(m))
                 mdefs += [mdef] * L
 
-                if component_index == 0 and i == 0:
+                if i == 0:
                     masses, xpos, ypos, r2d, r3d, redshifts = m, x, y, r2, r3, z
 
                 else:
@@ -99,14 +109,30 @@ class pyHalo(object):
 
                     mdef_args.append(newargs)
 
-        if not hasattr(self, '_geometry'):
-            self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
+            if not hasattr(self, '_geometry'):
+                self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
 
-        wdm_params = {'log_m_break': args[0]['log_m_break'], 'break_index': args[0]['break_index']}
-        if 'LOS_normalization' in args[0].keys():
-            wdm_params.update({'LOS_normalization': args[0]['LOS_normalization']})
-        realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, mdef_args, self.halo_mass_function,
-                                  wdm_params=wdm_params)
+            if 'log_m_break' in args[component_index].keys() and 'break_index' in args[component_index].keys():
+                wdm_params = {'log_m_break': args[0]['log_m_break'], 'break_index': args[0]['break_index']}
+                if 'LOS_normalization' in args[0].keys():
+                    wdm_params.update({'LOS_normalization': args[0]['LOS_normalization']})
+
+            else:
+                wdm_params = None
+
+            mass_sheet = True
+            if 'mass_func_type' in args[component_index].keys():
+                if args[component_index]['mass_func_type'] == 'delta':
+                    mass_sheet = False
+
+            if init:
+                realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, mdef_args, self.halo_mass_function,
+                                      wdm_params=wdm_params, mass_sheet_correction=mass_sheet)
+                init = False
+            else:
+                new = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, mdef_args, self.halo_mass_function,
+                                      wdm_params=wdm_params, mass_sheet_correction=mass_sheet)
+                realization = realization.join(new)
 
         return realization
 
@@ -115,7 +141,7 @@ class pyHalo(object):
         mfunc_LOS = self._LOS_mass_func(args)
 
         if 'mass_func_type' in args and args['mass_func_type'] == 'delta':
-            los = LOSDelta(args, mfunc_LOS, self.zlens)
+            los = LOSDelta(args, mfunc_LOS)
         else:
             # default to a power law
             los = LOSPowerLaw(args, mfunc_LOS)
