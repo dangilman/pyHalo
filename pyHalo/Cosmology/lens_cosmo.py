@@ -238,10 +238,55 @@ class LensCosmo(object):
 
         return area * kappa_sub * self.sigmacrit * integral
 
+    def sigmasub_from_fsub(self, fsub, zlens, zsrc, fsub_ref = 0.01):
+
+        scrit_ref = 10**11
+        return 0.38 * fsub * fsub_ref ** -1 * self.get_sigmacrit_z1z2(zlens, zsrc) * scrit_ref ** -1
+
+    def fsub_from_sigmasub(self, sigma_sub, zlens, zsrc, fsub_ref = 0.01, sigma_sub_ref = 0.38):
+
+        scrit = 10**11
+        scrit_z = self.get_sigmacrit_z1z2(zlens, zsrc)
+        return sigma_sub * fsub_ref * sigma_sub_ref ** -1 * scrit * scrit_z ** -1
+
+    def fsub_renorm(self, fsub1, zlens1, zlens2, zsrc1, zsrc2):
+        """
+        Re-normalizes fsub so that it yields the same normalization in # per kpc^2 at different redshifts
+        :param fsub1:
+        :param zlens1:
+        :param zlens2:
+        :param zsrc1:
+        :param zsrc2:
+        :return:
+        """
+        l = LensCosmo(zlens1, zsrc1)
+        scrit1 = l.get_sigmacrit_z1z2(zlens1, zsrc1)
+        scrit2 = l.get_sigmacrit_z1z2(zlens2, zsrc2)
+        return fsub1 * scrit1 * scrit2 ** -1
+
     def convert_lognormal_norm(self, m_total, mlow, mhigh, mean, sigma):
 
         pass
 
-#l = LensCosmo(0.5,1.5)
-#import numpy as np
-#print(np.log10(l.mthermal_to_halfmode(5)))
+
+def a0_area(zlens, zsrc, fsub = 0.01, vdis=250):
+    l = LensCosmo(zlens, zsrc)
+
+    a0 = 0.38*(fsub * 0.01**-1) * (l.get_sigmacrit(zlens) * 10 ** -11)
+    return a0
+
+def a0_area_asec(a0, z, l):
+
+    return a0 * l.cosmo.kpc_per_asec(z) ** 2
+
+def a0prime(zlens, zsrc, fsub, vdis):
+    l = LensCosmo(zlens, zsrc)
+    a0 = a0_area(zlens, zsrc, fsub, vdis)
+    return a0 * (l.vdis_to_Rein(zlens, zsrc, vdis) * l.cosmo.kpc_per_asec(zsrc))**2
+
+def fsub_renorm(fsub1, zlens1, zlens2, zsrc1, zsrc2):
+
+    l = LensCosmo(zlens1, zsrc1)
+    scrit1 = l.get_sigmacrit_z1z2(zlens1, zsrc1)
+    scrit2 = l.get_sigmacrit_z1z2(zlens2, zsrc2)
+    return fsub1 * scrit1 * scrit2 ** -1
