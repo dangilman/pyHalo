@@ -259,9 +259,9 @@ class LensCosmo(object):
         :param zsrc2:
         :return:
         """
-        l = LensCosmo(zlens1, zsrc1)
-        scrit1 = l.get_sigmacrit_z1z2(zlens1, zsrc1)
-        scrit2 = l.get_sigmacrit_z1z2(zlens2, zsrc2)
+
+        scrit1 = self.get_sigmacrit_z1z2(zlens1, zsrc1)
+        scrit2 = self.get_sigmacrit_z1z2(zlens2, zsrc2)
         return fsub1 * scrit1 * scrit2 ** -1
 
     def convert_lognormal_norm(self, m_total, mlow, mhigh, mean, sigma):
