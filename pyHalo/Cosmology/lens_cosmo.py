@@ -290,3 +290,4 @@ def fsub_renorm(fsub1, zlens1, zlens2, zsrc1, zsrc2):
     scrit1 = l.get_sigmacrit_z1z2(zlens1, zsrc1)
     scrit2 = l.get_sigmacrit_z1z2(zlens2, zsrc2)
     return fsub1 * scrit1 * scrit2 ** -1
+
