@@ -153,7 +153,8 @@ class Realization(object):
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
-    def lensing_quantities(self, mass_sheet_correction = 8):
+    def lensing_quantities(self, mass_sheet_correction_front = 7.7,
+                           mass_sheet_correction_back = 8):
 
         if self._overwrite_mass_sheet is not None:
             mass_sheet_correction = self._overwrite_mass_sheet
@@ -180,12 +181,15 @@ class Realization(object):
 
             kwargs_lens.append(self._lensing_functions[i].params(**args))
 
-        if self._mass_sheet_correction and mass_sheet_correction is not False:
+        if self._mass_sheet_correction:
 
-            assert isinstance(mass_sheet_correction, float) or isinstance(mass_sheet_correction, int)
-            assert mass_sheet_correction < 10, 'mass sheet correction should log(M)'
+            assert isinstance(mass_sheet_correction_front, float) or isinstance(mass_sheet_correction_front, int)
+            assert mass_sheet_correction_front < 100, 'mass sheet correction should log(M)'
+            assert isinstance(mass_sheet_correction_back, float) or isinstance(mass_sheet_correction_back, int)
+            assert mass_sheet_correction_back < 100, 'mass sheet correction should log(M)'
 
-            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow = 10**mass_sheet_correction)
+            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow_front = 10**mass_sheet_correction_front,
+                                                                      mlow_back = 10**mass_sheet_correction_back)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(self.redshifts, z_sheets)
@@ -350,7 +354,7 @@ class Realization(object):
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
                            wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
 
-    def mass_sheet_correction(self, mlow = 10**8, mhigh = 10**10):
+    def mass_sheet_correction(self, mlow_front = 10**7.7, mlow_back = 10**8, mhigh = 10**10):
 
         kwargs = []
         zsheet = []
@@ -364,8 +368,11 @@ class Realization(object):
             if z != self.geometry._zlens:
 
                 if self._subtract_theory_mass_sheets:
-
-                    kappa = self.convergence_at_z_theory(z, mlow, mhigh, delta_z, self.m_break_scale, self.break_index)
+                    if z < self.geometry._zlens:
+                        kappa = self.convergence_at_z_theory(z, mlow_front, mhigh, delta_z, self.m_break_scale, self.break_index)
+                    else:
+                        kappa = self.convergence_at_z_theory(z, mlow_back, mhigh, delta_z, self.m_break_scale,
+                                                             self.break_index)
                 else:
                     kappa = self.convergence_at_z(z, 0)
 
