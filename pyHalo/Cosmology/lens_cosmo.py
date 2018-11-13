@@ -224,6 +224,14 @@ class LensCosmo(object):
                 c = numpy.array(con)
         return c
 
+    def norm_A0_from_a0area(self, a0_per_kpc2, zlens, cone_diameter, plaw_index, m_pivot = 10**8):
+
+        R_kpc = self.cosmo.kpc_per_asec(zlens) * (0.5 * cone_diameter)
+
+        area = numpy.pi * R_kpc ** 2
+
+        return a0_per_kpc2 * m_pivot ** (-plaw_index-1) * area
+
     def convert_fsub_to_norm(self, fsub, cone_diameter, plaw_index, mlow, mhigh):
 
         R = cone_diameter*0.5
@@ -241,9 +249,9 @@ class LensCosmo(object):
     def sigmasub_from_fsub(self, fsub, zlens, zsrc, fsub_ref = 0.01):
 
         scrit_ref = 10**11
-        return 0.38 * fsub * fsub_ref ** -1 * self.get_sigmacrit_z1z2(zlens, zsrc) * scrit_ref ** -1
+        return 0.0135 * fsub * fsub_ref ** -1 * self.get_sigmacrit_z1z2(zlens, zsrc) * scrit_ref ** -1
 
-    def fsub_from_sigmasub(self, sigma_sub, zlens, zsrc, fsub_ref = 0.01, sigma_sub_ref = 0.38):
+    def fsub_from_sigmasub(self, sigma_sub, zlens, zsrc, fsub_ref = 0.01, sigma_sub_ref = 0.0135):
 
         scrit = 10**11
         scrit_z = self.get_sigmacrit_z1z2(zlens, zsrc)
@@ -268,11 +276,10 @@ class LensCosmo(object):
 
         pass
 
-
 def a0_area(zlens, zsrc, fsub = 0.01, vdis=250):
     l = LensCosmo(zlens, zsrc)
 
-    a0 = 0.38*(fsub * 0.01**-1) * (l.get_sigmacrit(zlens) * 10 ** -11)
+    a0 = 0.012*(fsub * 0.01**-1) * (l.get_sigmacrit(zlens) * 10 ** -11)
     return a0
 
 def a0_area_asec(a0, z, l):
@@ -290,4 +297,3 @@ def fsub_renorm(fsub1, zlens1, zlens2, zsrc1, zsrc2):
     scrit1 = l.get_sigmacrit_z1z2(zlens1, zsrc1)
     scrit2 = l.get_sigmacrit_z1z2(zlens2, zsrc2)
     return fsub1 * scrit1 * scrit2 ** -1
-
