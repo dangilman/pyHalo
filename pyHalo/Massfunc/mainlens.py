@@ -78,13 +78,8 @@ class MainLensPowerLaw(object):
             norm_0 = self._lens_cosmo.norm_A0_from_a0area(args['a0_area'],
                            self._lens_cosmo.z_lens, args['cone_opening_angle'],
                            args_mfunc['power_law_index'], m_pivot = 10**8)
-            ml, mh, index = 10 ** args_mfunc['log_mlow'], 10 ** args_mfunc['log_mhigh'], \
-                            args_mfunc['power_law_index']
-            denom = mh ** (2 + index) - ml ** (2 + index)
-            denom_norm = (10 ** 10) ** (2 + index) - (10 ** 6) ** (2 + index)
-            rescale = denom * denom_norm ** -1
 
-            args_mfunc['normalization'] = norm_0 * rescale
+            args_mfunc['normalization'] = norm_0
 
         elif 'fsub' in args.keys():
 

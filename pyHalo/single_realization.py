@@ -157,7 +157,8 @@ class Realization(object):
                            mass_sheet_correction_back = 8):
 
         if self._overwrite_mass_sheet is not None:
-            mass_sheet_correction = self._overwrite_mass_sheet
+            mass_sheet_correction_front = self._overwrite_mass_sheet
+            mass_sheet_correction_back = self._overwrite_mass_sheet
 
         kwargs_lens = []
         lens_model_names = []

@@ -1,6 +1,7 @@
 from pyHalo.Cosmology.cosmology import Cosmology
 from colossus.halo.concentration import concentration
 import numpy
+from scipy.integrate import quad
 
 class LensCosmo(object):
 
@@ -272,13 +273,21 @@ class LensCosmo(object):
         scrit2 = self.get_sigmacrit_z1z2(zlens2, zsrc2)
         return fsub1 * scrit1 * scrit2 ** -1
 
+    def mean_mass_fraction(self, mlow, mhigh, mpivot = 10**8, a0_area = 0.0135):
+
+        def _integrand(m, m0):
+            x = m * m0 ** -1
+            return x*x**-1.9
+
+        return a0_area * quad(_integrand, mlow, mhigh, args=(mpivot))[0]
+
     def convert_lognormal_norm(self, m_total, mlow, mhigh, mean, sigma):
 
         pass
 
 def a0_area(zlens, zsrc, fsub = 0.01, vdis=250):
-    l = LensCosmo(zlens, zsrc)
 
+    l = LensCosmo(zlens, zsrc)
     a0 = 0.012*(fsub * 0.01**-1) * (l.get_sigmacrit(zlens) * 10 ** -11)
     return a0
 
@@ -297,4 +306,3 @@ def fsub_renorm(fsub1, zlens1, zlens2, zsrc1, zsrc2):
     scrit1 = l.get_sigmacrit_z1z2(zlens1, zsrc1)
     scrit2 = l.get_sigmacrit_z1z2(zlens2, zsrc2)
     return fsub1 * scrit1 * scrit2 ** -1
-
