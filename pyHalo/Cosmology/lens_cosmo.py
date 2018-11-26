@@ -101,15 +101,17 @@ class LensCosmo(object):
         Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
         theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
         eps_crit = self.get_epsiloncrit(z, self.z_source)
-        return Rs_angle, theta_Rs / eps_crit / self.D_d / self.cosmo.arcsec
+        return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
 
     def _nfwParam_physical_Mpc(self, M, c, z):
+
         """
         returns the NFW parameters in physical units
         :param M: physical mass in M_sun
         :param c: concentration
         :return:
         """
+
         h = self.cosmo.h
         a_z = self.cosmo.scale_factor(z)
 
@@ -123,6 +125,42 @@ class LensCosmo(object):
         rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
+
+    def coredBurkert_params_physical(self, M, c, z, q):
+
+        """
+        :param M: m200
+        :param c: concentration
+        :param z: redshift
+        :param q: ratio of core radius to Rs, q * Rs = r_core
+        :return:
+        """
+
+        rho_nfw, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
+
+        p = q ** -1
+        m_burk = rho_nfw*(p + p**3)**-1 * 2*numpy.pi*Rs**3*(p**2 * numpy.log(1+c**2) +
+                   2*numpy.log(1+c*p) - 2*p*numpy.arctan(c))
+
+        scale = M * m_burk ** -1
+        rho_burk = scale*rho_nfw
+        r_core = q * Rs
+
+        return rho_burk * 1000 ** -3, Rs * 1000, r_core * 1000, r200 * 1000
+
+    def coreBurkert_physical2angle(self, M, c, z, q):
+
+        D_d = self.cosmo.D_A(0, z)
+        rho0, Rs, r_core, r200 = self.coredBurkert_params_physical(M, c, z, q)
+
+        Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
+        r_core_angle = r_core * (D_d * self.cosmo.arcsec) ** -1 # r_core in arcsec
+
+        def_Rs = 2*Rs**2*rho0*self.coreBurk_alpha(1, Rs*r_core**-1)
+        eps_crit = self.get_epsiloncrit(z, self.z_source)
+        theta_Rs = def_Rs * (eps_crit * D_d * self.cosmo.arcsec) ** -1
+
+        return Rs_angle, theta_Rs, r_core_angle
 
     def NFW_truncation(self, M, z, N=50):
         """
@@ -281,28 +319,30 @@ class LensCosmo(object):
 
         return a0_area * quad(_integrand, mlow, mhigh, args=(mpivot))[0]
 
-    def convert_lognormal_norm(self, m_total, mlow, mhigh, mean, sigma):
+    def coreBurk_alpha(self, x, p):
 
-        pass
+        prefactor = (p + p**3) ** -1
 
-def a0_area(zlens, zsrc, fsub = 0.01, vdis=250):
+        ux = numpy.sqrt(1 + x**2)
 
-    l = LensCosmo(zlens, zsrc)
-    a0 = 0.012*(fsub * 0.01**-1) * (l.get_sigmacrit(zlens) * 10 ** -11)
-    return a0
+        if x * p == 1:
 
-def a0_area_asec(a0, z, l):
+            func = numpy.log(0.25 * x ** 2 * p ** 2) + numpy.pi * p * (ux - 1) + \
+                   2 * p ** 2 * (ux * numpy.arctanh(ux ** -1) +
+                                 numpy.log(0.5 * x))
 
-    return a0 * l.cosmo.kpc_per_asec(z) ** 2
+        elif x * p < 1:
 
-def a0prime(zlens, zsrc, fsub, vdis):
-    l = LensCosmo(zlens, zsrc)
-    a0 = a0_area(zlens, zsrc, fsub, vdis)
-    return a0 * (l.vdis_to_Rein(zlens, zsrc, vdis) * l.cosmo.kpc_per_asec(zsrc))**2
+            gx = (1 - x**2*p**2)**0.5
+            func = numpy.log(0.25 * x ** 2 * p ** 2) + numpy.pi * p * (ux - 1) + \
+                   2 * p ** 2 * (ux * numpy.arctanh(ux ** -1) +
+                                 numpy.log(0.5 * x)) + 2 * gx * numpy.arctanh(gx)
 
-def fsub_renorm(fsub1, zlens1, zlens2, zsrc1, zsrc2):
+        else:
+            fx = (x ** 2 * p ** 2 - 1) ** 0.5
+            func = numpy.log(0.25 * x ** 2 * p ** 2) + numpy.pi * p * (ux - 1) + \
+                   2 * p ** 2 * (ux * numpy.arctanh(ux ** -1) +
+                                 numpy.log(0.5 * x)) - 2 * fx * numpy.arctan(fx)
 
-    l = LensCosmo(zlens1, zsrc1)
-    scrit1 = l.get_sigmacrit_z1z2(zlens1, zsrc1)
-    scrit2 = l.get_sigmacrit_z1z2(zlens2, zsrc2)
-    return fsub1 * scrit1 * scrit2 ** -1
+        return func * prefactor
+

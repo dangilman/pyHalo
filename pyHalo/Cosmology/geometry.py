@@ -181,3 +181,4 @@ class Geometry(object):
         asec_per_mpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value * 1000
 
         return r_co * asec_per_mpc
+
