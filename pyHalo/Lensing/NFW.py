@@ -1,30 +1,26 @@
 import numpy as np
-from colossus.halo.profile_nfw import NFWProfile
 
 class NFWLensing(object):
 
-    def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
-
-        if lens_cosmo is None:
-            from pyHalo.Cosmology.lens_cosmo import LensCosmo
-            lens_cosmo = LensCosmo(zlens, z_source)
+    def __init__(self,lens_cosmo):
 
         self.lens_cosmo = lens_cosmo
 
-    def params(self, x, y, mass, concentration, redshift):
+    def params(self, x, y, mass, concentration, redshift, r_trunc):
 
-        Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
+        Rs_angle, theta_Rs = self.lens_cosmo.coreBurk(mass, concentration, redshift)
 
         kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
-                  'center_x':x, 'center_y':y}
+                  'center_x':x, 'center_y':y, 'r_trunc':r_trunc}
 
         return kwargs
 
-    def M_physical(self, m, c, z):
-        """
-        :param m200: m200
-        :return: physical mass corresponding to m200
-        """
-        rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
-        return 4*np.pi*rho0*Rs**3*(np.log(1+c)-c*(1+c)**-1)
+    def mass_finite(self, m200, c, z, tau):
+
+        rho, Rs, r200 = self.lens_cosmo.NFW_params_physical(m200, c, z)
+
+        t2 = tau ** 2
+
+        return 4 * np.pi * Rs ** 3 * rho * t2 * (t2 + 1) ** -2 * (
+                (t2 - 1) * np.log(tau) + np.pi * tau - (t2 + 1))
 

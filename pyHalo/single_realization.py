@@ -1,6 +1,7 @@
 import numpy as np
 from pyHalo.Lensing.NFW import NFWLensing
 from pyHalo.Lensing.TNFW import TNFWLensing
+from pyHalo.Lensing.coreBurk import cBurkLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.defaults import default_z_step
@@ -173,6 +174,9 @@ class Realization(object):
             elif halo.mdef == 'TNFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
+            elif halo.mdef == 'coreBURKERT':
+                args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
+                args.update({'q': halo.mass_def_arg['q']})
             elif halo.mdef == 'POINT_MASS':
                 args.update({'redshift': halo.z})
             elif halo.mdef == 'PJAFFE':
@@ -207,6 +211,9 @@ class Realization(object):
 
         elif halo.mdef == 'TNFW':
             lens = TNFWLensing(self.lens_cosmo)
+
+        elif halo.mdef == 'coreBURKERT':
+            lens = cBurkLensing(self.lens_cosmo)
 
         elif halo.mdef == 'POINT_MASS':
             lens = PTmassLensing(self.lens_cosmo)

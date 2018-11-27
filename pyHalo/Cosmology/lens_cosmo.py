@@ -126,7 +126,7 @@ class LensCosmo(object):
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
-    def coredBurkert_params_physical(self, M, c, z, q):
+    def _coredBurkert_params_physical_Mpc(self, M, c, z, q):
 
         """
         :param M: m200
@@ -143,20 +143,22 @@ class LensCosmo(object):
                    2*numpy.log(1+c*p) - 2*p*numpy.arctan(c))
 
         scale = M * m_burk ** -1
+
         rho_burk = scale*rho_nfw
         r_core = q * Rs
 
-        return rho_burk * 1000 ** -3, Rs * 1000, r_core * 1000, r200 * 1000
+        return rho_burk, Rs, r_core, r200
 
     def coreBurkert_physical2angle(self, M, c, z, q):
 
         D_d = self.cosmo.D_A(0, z)
-        rho0, Rs, r_core, r200 = self.coredBurkert_params_physical(M, c, z, q)
+        rho0, Rs, r_core, r200 = self._coredBurkert_params_physical_Mpc(M, c, z, q)
 
-        Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
+        Rs_angle = Rs * (D_d * self.cosmo.arcsec)**-1  # Rs in arcsec
         r_core_angle = r_core * (D_d * self.cosmo.arcsec) ** -1 # r_core in arcsec
 
         def_Rs = 2*Rs**2*rho0*self.coreBurk_alpha(1, Rs*r_core**-1)
+
         eps_crit = self.get_epsiloncrit(z, self.z_source)
         theta_Rs = def_Rs * (eps_crit * D_d * self.cosmo.arcsec) ** -1
 
@@ -345,4 +347,3 @@ class LensCosmo(object):
                                  numpy.log(0.5 * x)) - 2 * fx * numpy.arctan(fx)
 
         return func * prefactor
-
