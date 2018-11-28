@@ -1,7 +1,8 @@
-from pyHalo.Lensing.NFW import NFWLensing
 import numpy as np
 
 class TNFWLensing(object):
+
+    hybrid = False
 
     def __init__(self,lens_cosmo):
 
