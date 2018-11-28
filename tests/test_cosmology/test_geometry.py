@@ -55,7 +55,7 @@ class TestGeometry(object):
 
         volume = self.geometry.volume_element_comoving(z, self.zlens, delta_z)
 
-        area =  np.pi*self.geometry.angle_to_comovingradius(z, self.zlens) ** 2
+        area = np.pi*self.geometry.angle_to_comovingradius(z, self.zlens) ** 2
         dr = self.geometry._delta_R_comoving(z, delta_z)
 
         npt.assert_almost_equal(area * dr, volume, decimal = 4)
@@ -69,7 +69,7 @@ class TestGeometry(object):
 
         vol = volume_astro()
 
-        npt.assert_almost_equal(vol, volume, decimal=2)
+        npt.assert_almost_equal(vol / (volume / np.pi)-1, 0, decimal=1)
 
     def test_ray_angle_z(self):
 

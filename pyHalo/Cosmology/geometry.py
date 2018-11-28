@@ -151,7 +151,7 @@ class Geometry(object):
 
         r = self.angle_to_comovingradius(z, z_lens)
 
-        return np.pi * r ** 2
+        return np.pi*r ** 2
 
     def _angle_to_physical_area(self, z_lens, z):
         """

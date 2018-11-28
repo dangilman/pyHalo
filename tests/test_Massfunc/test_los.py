@@ -83,7 +83,7 @@ class Test_los(object):
                 theory_mass = self.lensing_mass_function.integrate_mass_function(z1, delta_z, self.mlow,
                                               self.mhigh, 0, -1, norm_scale=LOS_norm)
 
-                npt.assert_almost_equal(np.absolute(theory_mass / np.sum(masses_z1) - 1), 0, decimal= 1)
+                npt.assert_almost_equal(np.absolute(theory_mass / np.sum(masses_z1)), 1, decimal= 1)
 
 if __name__ == '__main__':
     pytest.main()
