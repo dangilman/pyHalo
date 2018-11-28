@@ -162,13 +162,13 @@ class Realization(object):
             mass_sheet_correction_front = self._overwrite_mass_sheet
             mass_sheet_correction_back = self._overwrite_mass_sheet
 
-        kwargs_lens, kwargs_lensmodel = [], []
+        kwargs_lens = []
         lens_model_names = []
+        redshift_list = []
 
         for i, halo in enumerate(self.halos):
 
             args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
-            lens_model_names.append(halo.mdef)
 
             if halo.mdef == 'NFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
@@ -189,9 +189,20 @@ class Realization(object):
             else:
                 raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
 
-            kwargs_halo = self._lensing_functions[i].params(**args)
-            kwargs_lens.append(kwargs_halo[0])
-            kwargs_lensmodel.append(kwargs_halo[1])
+            if self._lensing_functions[i].hybrid:
+                kw = self._lensing_functions[i].params(**args)
+                for ki in kw:
+                    kwargs_lens.append(ki)
+                redshift_list += [halo.z]*len(kw)
+
+                if halo.mdef == 'cBURKtNFW':
+                    lens_model_names.append('NFW')
+                    lens_model_names.append('coreBURKERT')
+
+            else:
+                lens_model_names.append(halo.mdef)
+                kwargs_lens.append(self._lensing_functions[i].params(**args))
+                redshift_list += [halo.z]
 
         if self._mass_sheet_correction:
 
@@ -204,13 +215,9 @@ class Realization(object):
                                                                       mlow_back = 10**mass_sheet_correction_back)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
-            redshift_list = np.append(self.redshifts, z_sheets)
-            kwargs_lensmodel += [{}]*len(kwargs_mass_sheets)
+            redshift_list = np.append(redshift_list, z_sheets)
 
-        else:
-            redshift_list = self.redshifts
-
-        return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
+        return lens_model_names, redshift_list, kwargs_lens
 
     def _lens(self, halo):
 
