@@ -162,25 +162,16 @@ class Realization(object):
             mass_sheet_correction_front = self._overwrite_mass_sheet
             mass_sheet_correction_back = self._overwrite_mass_sheet
 
-        kwargs_lens = []
+        kwargs_lens, kwargs_lensmodel = [], []
         lens_model_names = []
-        redshift_list = []
 
         for i, halo in enumerate(self.halos):
 
             args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
-
-            if halo.mdef == 'cBURKtNFW':
-                lens_model_names.append('TNFW')
-                lens_model_names.append('coreBURKERT')
-                redshift_list.append(halo.z)
-                redshift_list.append(halo.z)
-            else:
-                lens_model_names.append(halo.mdef)
-                redshift_list.append(halo.z)
+            lens_model_names.append(halo.mdef)
 
             if halo.mdef == 'NFW':
-                args.update({'concentration':halo.mass_def_arg['concentration'],'redshift':halo.z})
+                args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
             elif halo.mdef == 'TNFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
@@ -189,22 +180,18 @@ class Realization(object):
                 args.update({'q': halo.mass_def_arg['q']})
             elif halo.mdef == 'cBURKtNFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
-                args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
                 args.update({'q': halo.mass_def_arg['q']})
+                args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
             elif halo.mdef == 'POINT_MASS':
                 args.update({'redshift': halo.z})
             elif halo.mdef == 'PJAFFE':
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
             else:
-                raise ValueError('halo profile '+str(halo.mdef)+' not recongnized.')
+                raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
 
-            if self._lensing_functions[i].hybrid:
-                kw = self._lensing_functions[i].params(**args)
-                for ki in kw:
-                    kwargs_lens.append(ki)
-
-            else:
-                kwargs_lens.append(self._lensing_functions[i].params(**args))
+            kwargs_halo = self._lensing_functions[i].params(**args)
+            kwargs_lens.append(kwargs_halo[0])
+            kwargs_lensmodel.append(kwargs_halo[1])
 
         if self._mass_sheet_correction:
 
@@ -217,9 +204,13 @@ class Realization(object):
                                                                       mlow_back = 10**mass_sheet_correction_back)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
-            redshift_list = redshift_list + z_sheets
+            redshift_list = np.append(self.redshifts, z_sheets)
+            kwargs_lensmodel += [{}]*len(kwargs_mass_sheets)
 
-        return lens_model_names, redshift_list, kwargs_lens
+        else:
+            redshift_list = self.redshifts
+
+        return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
 
     def _lens(self, halo):
 
