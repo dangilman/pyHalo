@@ -1,4 +1,3 @@
-from pyHalo.Lensing.NFW import NFWLensing
 import numpy as np
 
 class TNFWLensing(object):
@@ -16,7 +15,7 @@ class TNFWLensing(object):
         kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
                   'center_x':x, 'center_y':y, 'r_trunc':r_trunc}
 
-        return kwargs, {}
+        return kwargs
 
     def mass_finite(self, m200, c, z, tau):
 

@@ -12,10 +12,7 @@ class cBurkTNFWLensing(object):
 
         self.lens_cosmo = lens_cosmo
 
-    def _interpolating_function(self, kwargs1, kwargs2):
-
-        rs = kwargs1['Rs']
-        r_core = kwargs2['r_core']
+    def _interpolating_function(self, rs, r_core):
 
         power = 4
         coeff = 1
@@ -37,13 +34,13 @@ class cBurkTNFWLensing(object):
 
         rs_nfw, trs_nfw = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
 
+        f = self._interpolating_function(rs, r_core)
+        trs_nfw, trs = self._transform(trs_nfw, trs, f)
+
         kwargs1 = {'theta_Rs': trs_nfw, 'Rs': rs, 'r_trunc': r_trunc}
         kwargs2 = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core}
 
-        kwargs = {'kwargs1': kwargs1, 'kwargs2': kwargs2}
-
-        return kwargs, {'lens_model_1': 'TNFW', 'lens_model_2': 'coreBURKERT',
-                        'interpolating_function':self._interpolating_function}
+        return [kwargs1, kwargs2]
 
     def M_physical(self, m, c, z):
         """
