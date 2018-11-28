@@ -181,7 +181,6 @@ class Realization(object):
             elif halo.mdef == 'cBURKNFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
                 args.update({'q': halo.mass_def_arg['q']})
-                args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
             elif halo.mdef == 'POINT_MASS':
                 args.update({'redshift': halo.z})
             elif halo.mdef == 'PJAFFE':
