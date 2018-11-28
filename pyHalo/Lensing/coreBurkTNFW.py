@@ -1,6 +1,6 @@
 import numpy as np
 
-class cBurkTNFWLensing(object):
+class cBurkNFWLensing(object):
 
     hybrid = True
 
@@ -29,7 +29,7 @@ class cBurkTNFWLensing(object):
 
         return f*theta_Rs_nfw, (1-f)*theta_Rs_cburk
 
-    def params(self, x, y, mass, concentration, q, r_trunc, redshift):
+    def params(self, x, y, mass, concentration, q, redshift):
 
         rs, trs, r_core = self.lens_cosmo.coreBurkert_physical2angle(mass,
                                      concentration, redshift, q)
@@ -40,7 +40,7 @@ class cBurkTNFWLensing(object):
         trs_nfw, trs = self._transform(trs_nfw, trs, f)
         #rescale = self.lens_cosmo.rescale_rho_burk(mass, rho_nfw, q ** -1, rs, concentration)
 
-        kwargs1 = {'theta_Rs': trs_nfw, 'Rs': rs, 'r_trunc': r_trunc, 'center_x': x, 'center_y':y}
+        kwargs1 = {'theta_Rs': trs_nfw, 'Rs': rs, 'center_x': x, 'center_y':y}
         kwargs2 = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core,'center_x': x, 'center_y':y}
 
         return [kwargs1, kwargs2]

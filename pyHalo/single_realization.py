@@ -2,7 +2,7 @@ import numpy as np
 from pyHalo.Lensing.NFW import NFWLensing
 from pyHalo.Lensing.TNFW import TNFWLensing
 from pyHalo.Lensing.coreBurk import cBurkLensing
-from pyHalo.Lensing.coreBurkTNFW import cBurkTNFWLensing
+from pyHalo.Lensing.coreBurkTNFW import cBurkNFWLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.defaults import default_z_step
@@ -178,7 +178,7 @@ class Realization(object):
             elif halo.mdef == 'coreBURKERT':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
                 args.update({'q': halo.mass_def_arg['q']})
-            elif halo.mdef == 'cBURKtNFW':
+            elif halo.mdef == 'cBURKNFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
                 args.update({'q': halo.mass_def_arg['q']})
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
@@ -195,8 +195,8 @@ class Realization(object):
                     kwargs_lens.append(ki)
                 redshift_list += [halo.z]*len(kw)
 
-                if halo.mdef == 'cBURKtNFW':
-                    lens_model_names.append('TNFW')
+                if halo.mdef == 'cBURKNFW':
+                    lens_model_names.append('NFW')
                     lens_model_names.append('coreBURKERT')
 
             else:
@@ -230,8 +230,8 @@ class Realization(object):
         elif halo.mdef == 'coreBURKERT':
             lens = cBurkLensing(self.lens_cosmo)
 
-        elif halo.mdef == 'cBURKtNFW':
-            lens = cBurkTNFWLensing(self.lens_cosmo)
+        elif halo.mdef == 'cBURKNFW':
+            lens = cBurkNFWLensing(self.lens_cosmo)
 
         elif halo.mdef == 'POINT_MASS':
             lens = PTmassLensing(self.lens_cosmo)
