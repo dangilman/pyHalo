@@ -3,6 +3,8 @@ import numpy as np
 
 class TNFWLensing(object):
 
+    hybrid = False
+
     def __init__(self,lens_cosmo):
 
         self.lens_cosmo = lens_cosmo

@@ -2,6 +2,7 @@ import numpy as np
 from pyHalo.Lensing.NFW import NFWLensing
 from pyHalo.Lensing.TNFW import TNFWLensing
 from pyHalo.Lensing.coreBurk import cBurkLensing
+from pyHalo.Lensing.coreBurkTNFW import cBurkTNFWLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.defaults import default_z_step
@@ -163,11 +164,20 @@ class Realization(object):
 
         kwargs_lens = []
         lens_model_names = []
+        redshift_list = []
 
         for i, halo in enumerate(self.halos):
 
             args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
-            lens_model_names.append(halo.mdef)
+
+            if halo.mdef == 'cBURKtNFW':
+                lens_model_names.append('TNFW')
+                lens_model_names.append('coreBURKERT')
+                redshift_list.append(halo.z)
+                redshift_list.append(halo.z)
+            else:
+                lens_model_names.append(halo.mdef)
+                redshift_list.append(halo.z)
 
             if halo.mdef == 'NFW':
                 args.update({'concentration':halo.mass_def_arg['concentration'],'redshift':halo.z})
@@ -177,6 +187,10 @@ class Realization(object):
             elif halo.mdef == 'coreBURKERT':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
                 args.update({'q': halo.mass_def_arg['q']})
+            elif halo.mdef == 'cBURKtNFW':
+                args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
+                args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
+                args.update({'q': halo.mass_def_arg['q']})
             elif halo.mdef == 'POINT_MASS':
                 args.update({'redshift': halo.z})
             elif halo.mdef == 'PJAFFE':
@@ -184,7 +198,13 @@ class Realization(object):
             else:
                 raise ValueError('halo profile '+str(halo.mdef)+' not recongnized.')
 
-            kwargs_lens.append(self._lensing_functions[i].params(**args))
+            if self._lensing_functions[i].hybrid:
+                kw = self._lensing_functions[i].params(**args)
+                for ki in kw:
+                    kwargs_lens.append(ki)
+
+            else:
+                kwargs_lens.append(self._lensing_functions[i].params(**args))
 
         if self._mass_sheet_correction:
 
@@ -197,10 +217,7 @@ class Realization(object):
                                                                       mlow_back = 10**mass_sheet_correction_back)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
-            redshift_list = np.append(self.redshifts, z_sheets)
-
-        else:
-            redshift_list = self.redshifts
+            redshift_list = redshift_list + z_sheets
 
         return lens_model_names, redshift_list, kwargs_lens
 
@@ -214,6 +231,9 @@ class Realization(object):
 
         elif halo.mdef == 'coreBURKERT':
             lens = cBurkLensing(self.lens_cosmo)
+
+        elif halo.mdef == 'cBURKtNFW':
+            lens = cBurkTNFWLensing(self.lens_cosmo)
 
         elif halo.mdef == 'POINT_MASS':
             lens = PTmassLensing(self.lens_cosmo)

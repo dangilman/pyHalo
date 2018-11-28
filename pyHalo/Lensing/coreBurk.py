@@ -2,6 +2,8 @@ import numpy as np
 
 class cBurkLensing(object):
 
+    hybrid = False
+
     def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
 
         if lens_cosmo is None:
