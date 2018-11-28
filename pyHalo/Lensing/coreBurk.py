@@ -20,7 +20,7 @@ class cBurkLensing(object):
         kwargs = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core,
                   'center_x':x, 'center_y':y}
 
-        return kwargs
+        return kwargs, {}
 
     def M_physical(self, m, c, z):
         """

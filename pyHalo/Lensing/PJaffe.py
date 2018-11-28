@@ -14,4 +14,4 @@ class PJaffeLensing(object):
         theta_E = self.lens_cosmo.PJaffe_norm(mass, r_trunc)
 
         return {'center_x':center_x, 'center_y': center_y,
-                'sigma0': theta_E, 'Ra':0, 'Rs': r_trunc}
+                'sigma0': theta_E, 'Ra':0, 'Rs': r_trunc}, {}
