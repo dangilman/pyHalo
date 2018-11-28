@@ -4,7 +4,8 @@ class cBurkTNFWLensing(object):
 
     hybrid = True
 
-    def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
+    def __init__(self, lens_cosmo = None, zlens = None, z_source = None,
+                 interp_coeff = 1, interp_power = 2, interp_qcrit = 0.2):
 
         if lens_cosmo is None:
             from pyHalo.Cosmology.lens_cosmo import LensCosmo
@@ -12,13 +13,14 @@ class cBurkTNFWLensing(object):
 
         self.lens_cosmo = lens_cosmo
 
+        self._interp_coeff = interp_coeff
+        self._interp_power = interp_power
+        self._interp_qcrit = interp_qcrit
+
     def _interpolating_function(self, rs, r_core):
 
-        power = 4
-        coeff = 1
-        q_crit = 0.2
-        ratio = (r_core * rs**-1) * q_crit**-1
-        arg = coeff*(ratio)**power
+        ratio = (r_core * rs**-1) * self._interp_qcrit**-1
+        arg = self._interp_coeff*(ratio)**self._interp_power
         f = np.exp(-arg)
 
         return f
@@ -36,9 +38,10 @@ class cBurkTNFWLensing(object):
 
         f = self._interpolating_function(rs, r_core)
         trs_nfw, trs = self._transform(trs_nfw, trs, f)
+        #rescale = self.lens_cosmo.rescale_rho_burk(mass, rho_nfw, q ** -1, rs, concentration)
 
-        kwargs1 = {'theta_Rs': trs_nfw, 'Rs': rs, 'r_trunc': r_trunc}
-        kwargs2 = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core}
+        kwargs1 = {'theta_Rs': trs_nfw, 'Rs': rs, 'r_trunc': r_trunc, 'center_x': x, 'center_y':y}
+        kwargs2 = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core,'center_x': x, 'center_y':y}
 
         return [kwargs1, kwargs2]
 

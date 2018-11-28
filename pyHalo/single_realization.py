@@ -196,7 +196,7 @@ class Realization(object):
                 redshift_list += [halo.z]*len(kw)
 
                 if halo.mdef == 'cBURKtNFW':
-                    lens_model_names.append('NFW')
+                    lens_model_names.append('TNFW')
                     lens_model_names.append('coreBURKERT')
 
             else:

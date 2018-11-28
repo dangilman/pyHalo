@@ -139,15 +139,22 @@ class LensCosmo(object):
         rho_nfw, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
 
         p = q ** -1
-        m_burk = rho_nfw*(p + p**3)**-1 * 2*numpy.pi*Rs**3*(p**2 * numpy.log(1+c**2) +
-                   2*numpy.log(1+c*p) - 2*p*numpy.arctan(c))
-
-        scale = M * m_burk ** -1
+        scale = self.rescale_rho_burk(M, rho_nfw, p, Rs, c)
 
         rho_burk = scale*rho_nfw
         r_core = q * Rs
 
         return rho_burk, Rs, r_core, r200
+
+    def rescale_rho_burk(self, M, rho_nfw, p, Rs, c):
+
+        m_burk = rho_nfw * (p + p ** 3) ** -1 * 2 * numpy.pi * Rs ** 3 * (p ** 2 * numpy.log(1 + c ** 2) +
+                                                                          2 * numpy.log(
+                1 + c * p) - 2 * p * numpy.arctan(c))
+
+        scale = M * m_burk**-1
+
+        return scale
 
     def coreBurkert_physical2angle(self, M, c, z, q):
 
