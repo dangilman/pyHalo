@@ -21,6 +21,8 @@ class LensCosmo(object):
         # hubble distance in Mpc
         self._d_hubble = self.cosmo.c * self.cosmo.Mpc * 0.001 * (self.cosmo.h * 100)
 
+        self._kpc_per_asec_zlens = self.cosmo.kpc_per_asec(self.z_lens)
+
     def mthermal_to_halfmode(self, m_thermal):
 
         """
@@ -203,9 +205,18 @@ class LensCosmo(object):
 
         return r50_asec
 
-    def truncation_roche(self, M, r3d):
+    def truncation_roche(self, M, r3d, k = 0.68):
 
-        return (0.5 * M * r3d ** 2 / self.sigmacrit) ** (1. / 3)
+        """
+
+        :param M: m200
+        :param r3d: 3d radial position in the halo (kpc)
+        :return: Equation 2 in Gilman et al 2019 (expressed in arcsec)
+        """
+
+        rtrunc_kpc = k*(M / 10**6) ** (1./3) * (r3d * 100 ** -1) ** (2./3)
+
+        return rtrunc_kpc * self._kpc_per_asec_zlens ** -1
 
     def rho0_c(self, c):
         """

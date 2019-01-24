@@ -13,10 +13,17 @@ class MainLensPowerLaw(object):
         self._spatial_parameterization = NFW_3D(**spatial_args)
 
     def __call__(self):
+        """
 
+        :return: x coordinate, y coordinates, r3d, r3d
+        NOTE: x and y are returned in arcsec, while r2d and r3d are expressed in kpc
+        """
         masses = self._mass_func_parameterization.draw()
 
         x, y, r2d, r3d = self._spatial_parameterization.draw(len(masses))
+
+        x *= self._lens_cosmo._kpc_per_asec_zlens ** -1
+        y *= self._lens_cosmo._kpc_per_asec_zlens ** -1
 
         return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(
             [self._lens_cosmo.z_lens] * len(masses))
@@ -24,7 +31,8 @@ class MainLensPowerLaw(object):
     def _spatial(self,args):
 
         args_spatial = {}
-        args_spatial['rmax2d'] = 0.5*args['cone_opening_angle']
+        args_spatial['rmax2d'] = 0.5*args['cone_opening_angle']*\
+                                 self._lens_cosmo.cosmo.kpc_per_asec(self._lens_cosmo.z_lens)
 
         if 'parent_m200' in args and 'parent_c' in args.keys():
             rho0_kpc, parent_Rs, parent_r200 = self._lens_cosmo.NFW_params_physical(args['parent_m200'],

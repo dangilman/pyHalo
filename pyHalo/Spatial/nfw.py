@@ -1,8 +1,22 @@
 import numpy as np
 
-class NFW_3D:
+class NFW_3D(object):
 
     def __init__(self, Rs, rmax2d, rmax3d, xoffset=0, yoffset = 0, tidal_core=False, r_core = None):
+
+        """
+        all distances expressed in (physical) kpc
+
+        :param Rs: scale radius
+        :param rmax2d: maximum 2d radius
+        :param rmax3d: maximum 3d radius (basically sets the distribution of z coordinates)
+        :param xoffset: centroid of NFW
+        :param yoffset: centroid of NFW
+        :param tidal_core: flag to draw from a uniform denity inside r_core
+        :param r_core: format 'number * Rs' where number is a float.
+        specifies an inner radius where the distribution is uniform
+        see Figure 4 in Jiang+van den Bosch 2016
+        """
 
         self.rmax3d = rmax3d
         self.rmax2d = rmax2d
