@@ -88,6 +88,7 @@ class pyHalo(object):
                 model_name = model_names[component_index][i]
 
                 m, x, y, r2, r3, z = func()
+                
                 L = int(len(m))
                 mdefs += [mdef] * L
 

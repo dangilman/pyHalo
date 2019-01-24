@@ -98,6 +98,7 @@ class LensCosmo(object):
         """
         D_d = self.cosmo.D_A(0, z)
         rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
+
         Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
         theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
         eps_crit = self.get_epsiloncrit(z, self.z_source)
@@ -126,7 +127,7 @@ class LensCosmo(object):
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
-    def _coredBurkert_params_physical_Mpc(self, M, c, z, q):
+    def _coredBurkert_params_physical_Mpc(self, M, c, z, q, rmax='r200'):
 
         """
         :param M: m200
@@ -139,20 +140,33 @@ class LensCosmo(object):
         rho_nfw, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
 
         p = q ** -1
-        scale = self.rescale_rho_burk(M, rho_nfw, p, Rs, c)
+
+        if rmax == 'r200':
+            r_max = r200
+        elif rmax == 'rs':
+            r_max = r200 * c**-1
+        elif rmax == 'r_core':
+            r_max = Rs * q
+        else:
+            raise Exception('rmax must be either r200 or rs.')
+
+        scale = self.rescale_rho_burk(rho_nfw, p, Rs, r_max, r200)
 
         rho_burk = scale*rho_nfw
         r_core = q * Rs
 
         return rho_burk, Rs, r_core, r200
 
-    def rescale_rho_burk(self, M, rho_nfw, p, Rs, c):
+    def rescale_rho_burk(self, rho_nfw, p, Rs, rmax, r200):
 
-        m_burk = rho_nfw * (p + p ** 3) ** -1 * 2 * numpy.pi * Rs ** 3 * (p ** 2 * numpy.log(1 + c ** 2) +
-                                                                          2 * numpy.log(
-                1 + c * p) - 2 * p * numpy.arctan(c))
+        c_nfw = r200 * Rs ** -1
+        m_nfw = 4. * rho_nfw * numpy.pi * Rs**3 * (numpy.log(1+c_nfw) - c_nfw/(1 + c_nfw))
 
-        scale = M * m_burk**-1
+        cburk = rmax * Rs ** -1
+        m_burk = 2 * rho_nfw * numpy.pi * Rs**3 * (p + p ** 3) ** -1 * (p ** 2 * numpy.log(1 + cburk ** 2) +
+                                    2 * numpy.log(1 + cburk * p) - 2 * p * numpy.arctan(cburk))
+
+        scale = m_nfw * m_burk**-1
 
         return scale
 
@@ -354,3 +368,5 @@ class LensCosmo(object):
                                  numpy.log(0.5 * x)) - 2 * fx * numpy.arctan(fx)
 
         return func * prefactor
+
+
