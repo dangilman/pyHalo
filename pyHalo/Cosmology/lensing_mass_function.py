@@ -10,7 +10,6 @@ class LensingMassFunction(object):
                  model_kwargs={'model':'sheth99'},
                  use_lookup_table=True, two_halo_term = True):
 
-
         self._cosmo = cosmology
         self.geometry = Geometry(cosmology, zlens, zsource, cone_opening_angle)
         self._model_kwargs = model_kwargs
