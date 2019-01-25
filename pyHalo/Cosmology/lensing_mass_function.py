@@ -70,7 +70,8 @@ class LensingMassFunction(object):
     def norm_at_z_biased(self, z, delta_z, M_halo, rmin = 0.5, rmax = 10):
 
         if self._two_halo_term:
-            boost = self.integrate_two_halo(M_halo, z, rmin = rmin, rmax = rmax) / (rmax - rmin)
+            # factor of 2 for symmetry
+            boost = 2*self.integrate_two_halo(M_halo, z, rmin = rmin, rmax = rmax) / (rmax - rmin)
 
             return boost * self.norm_at_z(z, delta_z)
         else:
