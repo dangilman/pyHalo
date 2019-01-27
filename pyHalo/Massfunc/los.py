@@ -27,7 +27,6 @@ class LOS(object):
         args_spatial['cone_opening_angle'] = args['cone_opening_angle']
         return args_spatial
 
-
     def _set_kwargs(self, args):
 
         args_mfunc = self._mfunc(args)
@@ -158,7 +157,7 @@ class LOSPowerLaw(LOS):
         delta_z = self._redshift_range[1] - self._redshift_range[0]
 
         for idx, zcurrent in enumerate(self._redshift_range):
-
+            
             if zcurrent == self._lensing_mass_func.geometry._zlens:
                 continue
 
