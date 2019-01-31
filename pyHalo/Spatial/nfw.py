@@ -104,3 +104,5 @@ class NFW_3D(object):
         else:
             X[np.where(X < self.xmin)] = self.xmin
             return norm*(X*self.xmin**-1)**-alpha
+
+
