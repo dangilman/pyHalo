@@ -1,7 +1,7 @@
 import numpy as np
-from pyHalo.Cosmology.Profiles.nfw import NFW
+from pyHalo.Cosmology.Profiles.cnfw import CNFW
 
-class NFWLensing(object):
+class coreNFWLensing(object):
 
     hybrid = False
 
@@ -11,13 +11,14 @@ class NFWLensing(object):
             from pyHalo.Cosmology.lens_cosmo import LensCosmo
             lens_cosmo = LensCosmo(zlens, z_source)
 
-        self.lens_cosmo = NFW(lens_cosmo)
+        self.lens_cosmo = CNFW(lens_cosmo)
 
-    def params(self, x, y, mass, concentration, redshift):
+    def params(self, x, y, mass, concentration, b, redshift):
 
-        Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
+        Rs_angle, theta_Rs, r_core = self.lens_cosmo.corenfw_physical2angle(mass,
+                       concentration, redshift, b)
 
-        kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
+        kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle, 'r_core': r_core,
                   'center_x':x, 'center_y':y}
 
         return kwargs

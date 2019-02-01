@@ -1,6 +1,8 @@
 import numpy as np
+from pyHalo.Lensing.coreBurk import cBurkLensing
+from pyHalo.Lensing.coreNFW import coreNFWLensing
 
-class cBurkNFWLensing(object):
+class cBurkcNFWLensing(object):
 
     hybrid = True
 
@@ -11,6 +13,9 @@ class cBurkNFWLensing(object):
             lens_cosmo = LensCosmo(zlens, z_source)
 
         self.lens_cosmo = lens_cosmo
+
+        self._cburk = cBurkLensing(lens_cosmo)
+        self._cnfw = coreNFWLensing(lens_cosmo)
 
     def _interpolating_function(self, rs, r_core, b_min = 0.3,
                  b_max = 0.7, b_crit = 0.5, c = 1):
@@ -23,25 +28,17 @@ class cBurkNFWLensing(object):
 
         return 0.5 * (1 + np.tanh(c * arg))
 
-    def _transform(self, theta_Rs_nfw, theta_Rs_cburk, f):
+    def params(self, x, y, mass, concentration, b, redshift):
 
-        return f*theta_Rs_cburk, (1-f)*theta_Rs_nfw
+        kwargs_cburk = self._cburk.params(x, y, mass, concentration, b, redshift)
+        kwargs_cnfw = self._cnfw.params(x, y, mass, concentration, b, redshift)
 
-    def params(self, x, y, mass, concentration, q, redshift):
+        f = self._interpolating_function(kwargs_cnfw['Rs'], kwargs_cnfw['r_core'])
+        #f = 1
+        kwargs_cburk['theta_Rs'] = kwargs_cburk['theta_Rs'] * f
+        kwargs_cnfw['theta_Rs'] = kwargs_cnfw['theta_Rs'] * (1-f)
 
-        rs_nfw, trs_nfw = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
-
-        rs, trs, r_core = self.lens_cosmo.coreBurkert_physical2angle(mass,
-                                     concentration, redshift, q)
-
-        f = self._interpolating_function(rs_nfw, r_core)
-
-        trs, trs_nfw = self._transform(trs_nfw, trs, f)
-
-        kwargs1 = {'theta_Rs': trs_nfw, 'Rs': rs, 'center_x': x, 'center_y':y}
-        kwargs2 = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core,'center_x': x, 'center_y':y}
-
-        return [kwargs1, kwargs2]
+        return [kwargs_cnfw, kwargs_cburk]
 
     def M_physical(self, m, c, z):
         """

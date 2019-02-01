@@ -206,7 +206,8 @@ class pyHalo(object):
 
         mdef_args = {}
 
-        if mdef == 'NFW' or mdef == 'TNFW' or mdef == 'coreBURKERT' or mdef == 'cBURKNFW':
+        if mdef == 'NFW' or mdef == 'TNFW' or mdef == 'coreBURKERT' or \
+            mdef == 'cBURKcNFW' or mdef == 'CNFW':
 
             nfw_c = self._lens_cosmo.NFW_concentration(masses, redshifts, logmhm=args['log_m_break'],
                                                 g1=args['c_scale'],g2=args['c_power'])
@@ -215,7 +216,7 @@ class pyHalo(object):
         if mdef == 'TNFW':
 
             if model_name == 'LOS':
-                truncation = self._lens_cosmo.NFW_truncation(masses, redshifts)
+                truncation = self._lens_cosmo.LOS_truncation(masses, redshifts)
             else:
                 truncation = self._lens_cosmo.truncation_roche(masses, r3d)
 
@@ -226,8 +227,8 @@ class pyHalo(object):
             truncation = self._lens_cosmo.truncation_roche(masses, r3d)
             mdef_args.update({'r_trunc':truncation})
 
-        if mdef == 'coreBURKERT' or mdef == 'cBURKNFW':
-            mdef_args.update({'q': args['core_ratio']})
+        if mdef == 'coreBURKERT' or mdef == 'cBURKcNFW' or mdef == 'CNFW':
+            mdef_args.update({'b': args['core_ratio']})
 
         if mdef == 'POINT_MASS':
 

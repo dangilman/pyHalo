@@ -1,4 +1,5 @@
 import numpy as np
+from pyHalo.Cosmology.Profiles.cburk import CBURK
 
 class cBurkLensing(object):
 
@@ -10,12 +11,12 @@ class cBurkLensing(object):
             from pyHalo.Cosmology.lens_cosmo import LensCosmo
             lens_cosmo = LensCosmo(zlens, z_source)
 
-        self.lens_cosmo = lens_cosmo
+        self.lens_cosmo = CBURK(lens_cosmo)
 
-    def params(self, x, y, mass, concentration, q, redshift):
+    def params(self, x, y, mass, concentration, b, redshift):
 
-        rs, trs, r_core = self.lens_cosmo.coreBurkert_physical2angle(mass,
-                                     concentration, redshift, q)
+        rs, trs, r_core = self.lens_cosmo.cburk_physical2angle(mass,
+                                     concentration, redshift, b)
 
         kwargs = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core,
                   'center_x':x, 'center_y':y}

@@ -1,11 +1,13 @@
 import numpy as np
+from pyHalo.Cosmology.Profiles.ptmass import PTmass
 
 class PTmassLensing(object):
 
     hybrid = False
 
     def __init__(self, lens_cosmo):
-        self.lens_cosmo = lens_cosmo
+
+        self.lens_cosmo = PTmass(lens_cosmo)
 
     def params(self, x, y, mass, redshift):
 
