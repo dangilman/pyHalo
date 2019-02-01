@@ -6,6 +6,7 @@ from pyHalo.Lensing.hybrid_cBURKcNFW import cBurkcNFWLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.defaults import default_z_step
+from pyHalo.Lensing.coreNFW import coreNFWLensing
 
 def realization_at_z(realization,z):
 
@@ -169,7 +170,7 @@ class Realization(object):
         for i, halo in enumerate(self.halos):
 
             args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
-
+            print(halo.mdef)
             if halo.mdef == 'NFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
             elif halo.mdef == 'CNFW':
@@ -240,6 +241,9 @@ class Realization(object):
 
         elif halo.mdef == 'PJAFFE':
             lens = PJaffeLensing(self.lens_cosmo)
+
+        elif halo.mdef == 'CNFW':
+            lens = coreNFWLensing(self.lens_cosmo)
 
         else:
             raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
