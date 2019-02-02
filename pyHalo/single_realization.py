@@ -8,6 +8,8 @@ from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.defaults import default_z_step
 from pyHalo.Lensing.coreNFW import coreNFWLensing
 
+from copy import deepcopy
+
 def realization_at_z(realization,z):
 
     halos = realization.halos_at_z(z)
@@ -77,6 +79,17 @@ class Realization(object):
                 self._add_halo(None, None, None, None, None, None, None, None, halo)
 
         self._reset()
+
+    def change_mdef(self, new_mdef):
+
+        new_halos = []
+        for halo in self.halos:
+            duplicate = deepcopy(halo)
+            duplicate.mdef = new_mdef
+            new_halos.append(duplicate)
+
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=new_halos,
+                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
 
     def _tags(self, halos=None):
 
@@ -170,7 +183,7 @@ class Realization(object):
         for i, halo in enumerate(self.halos):
 
             args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
-            print(halo.mdef)
+
             if halo.mdef == 'NFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
             elif halo.mdef == 'CNFW':

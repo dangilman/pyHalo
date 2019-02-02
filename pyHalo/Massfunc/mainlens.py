@@ -1,12 +1,14 @@
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
 from pyHalo.Spatial.nfw import NFW_3D
+from pyHalo.Cosmology.Profiles.nfw import NFW
 
 class MainLensPowerLaw(object):
 
     def __init__(self, args, lens_cosmo):
 
         self._lens_cosmo = lens_cosmo
+        self._nfw_cosmo = NFW(lens_cosmo)
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         self._mass_func_parameterization = BrokenPowerLaw(**parameterization_args)
@@ -35,7 +37,7 @@ class MainLensPowerLaw(object):
                                  self._lens_cosmo.cosmo.kpc_per_asec(self._lens_cosmo.z_lens)
 
         if 'parent_m200' in args and 'parent_c' in args.keys():
-            rho0_kpc, parent_Rs, parent_r200 = self._lens_cosmo.NFW_params_physical(args['parent_m200'],
+            rho0_kpc, parent_Rs, parent_r200 = self._nfw_cosmo.NFW_params_physical(args['parent_m200'],
                                                                                     args['parent_c'],
                                                                                     self._lens_cosmo.z_lens)
             args_spatial['Rs'] = parent_Rs

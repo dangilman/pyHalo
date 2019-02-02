@@ -26,12 +26,12 @@ class CosmoMassProfiles(object):
             return 0.026*z_val - 0.04
 
         if isinstance(M, float) or isinstance(M, int):
-            c = concentration(M*self.cosmo.h,mdef=mdef,model=model,z=z)
+            c = concentration(M*self.lens_cosmo.cosmo.h,mdef=mdef,model=model,z=z)
         else:
             con = []
             for i,mi in enumerate(M):
 
-                con.append(concentration(mi*self.cosmo.h,mdef=mdef,model=model,z=z[i]))
+                con.append(concentration(mi*self.lens_cosmo.cosmo.h,mdef=mdef,model=model,z=z[i]))
             c = numpy.array(con)
 
         if logmhm != 0:

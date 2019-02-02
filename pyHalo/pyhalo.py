@@ -7,6 +7,7 @@ from pyHalo.Massfunc.los import LOSPowerLaw, LOSDelta
 from pyHalo.Massfunc.mainlens import MainLensPowerLaw
 from pyHalo.defaults import *
 from pyHalo.single_realization import Realization
+from pyHalo.Cosmology.Profiles.cosmo_profiles import CosmoMassProfiles
 
 class pyHalo(object):
 
@@ -206,25 +207,28 @@ class pyHalo(object):
 
         mdef_args = {}
 
+        if not hasattr(self, 'cosmo_mass_profile'):
+            self.cosmo_mass_profile = CosmoMassProfiles(self._lens_cosmo)
+
         if mdef == 'NFW' or mdef == 'TNFW' or mdef == 'coreBURKERT' or \
             mdef == 'cBURKcNFW' or mdef == 'CNFW':
 
-            nfw_c = self._lens_cosmo.NFW_concentration(masses, redshifts, logmhm=args['log_m_break'],
+            nfw_c = self.cosmo_mass_profile.NFW_concentration(masses, redshifts, logmhm=args['log_m_break'],
                                                 g1=args['c_scale'],g2=args['c_power'])
             mdef_args.update({'concentration':nfw_c})
 
         if mdef == 'TNFW':
 
             if model_name == 'LOS':
-                truncation = self._lens_cosmo.LOS_truncation(masses, redshifts)
+                truncation = self.cosmo_mass_profile.LOS_truncation(masses, redshifts)
             else:
-                truncation = self._lens_cosmo.truncation_roche(masses, r3d)
+                truncation = self.cosmo_mass_profile.truncation_roche(masses, r3d)
 
             mdef_args.update({'r_trunc':truncation})
 
         if mdef == 'PJAFFE':
 
-            truncation = self._lens_cosmo.truncation_roche(masses, r3d)
+            truncation = self.cosmo_mass_profile.truncation_roche(masses, r3d)
             mdef_args.update({'r_trunc':truncation})
 
         if mdef == 'coreBURKERT' or mdef == 'cBURKcNFW' or mdef == 'CNFW':
