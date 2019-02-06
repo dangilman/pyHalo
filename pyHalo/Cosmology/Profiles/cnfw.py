@@ -102,3 +102,4 @@ class CNFW(CosmoMassProfiles):
                              _nfw_func(x))
 
         return 0.5*output
+

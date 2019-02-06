@@ -7,6 +7,7 @@ from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.defaults import default_z_step
 from pyHalo.Lensing.coreNFW import coreNFWLensing
+from pyHalo.Spatial.nfw import NFW_2D
 
 from copy import deepcopy
 
@@ -30,6 +31,25 @@ class Halo(object):
         self.r3d = r3d
         self.mdef = mdef
         self.z = z
+        self.mass_def_arg = args
+        self._unique_tag = np.random.rand()
+
+    def add_subhalos(self):
+
+        pass
+
+class Subhalo(object):
+
+    def __init__(self, parent_halo, mdef):
+
+        spatial = NFW_2D(Rs = parent_rs, rmax2d = parent_r200)
+        _x, _y, _r2d, _ = spatial.draw(1)
+        self.x = float(_x)
+        self.y = float(_y)
+        self.r2d = float(_r2d)
+        self.r3d = self.r2d
+        self.mdef = mdef
+        self.z = parent_halo.z
         self.mass_def_arg = args
         self._unique_tag = np.random.rand()
 
@@ -80,11 +100,32 @@ class Realization(object):
 
         self._reset()
 
+    def add_subhalos(self, subhalo_mdef):
+
+        new_halos = []
+        for halo in self.halos:
+
+            halo.add_subhalos(subhalo_mdef)
+
+            new_halos.append(halo)
+            for subhalo in halo.subhalos:
+                new_halos.append(subhalo)
+
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=new_halos,
+                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
+
     def change_mdef(self, new_mdef):
 
         new_halos = []
         for halo in self.halos:
             duplicate = deepcopy(halo)
+
+            if duplicate.mdef == 'CNFW' and new_mdef == 'NFW':
+                del duplicate.mass_def_arg['b']
+            else:
+                raise Exception('combination '+duplicate.mdef + ' and '+
+                                new_mdef+' not recognized.')
+
             duplicate.mdef = new_mdef
             new_halos.append(duplicate)
 

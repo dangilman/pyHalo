@@ -1,5 +1,65 @@
 import numpy as np
 
+class NFW_2D(object):
+
+    def __init__(self, Rs, rmax2d, xoffset=0, yoffset = 0):
+
+        """
+        all distances expressed in (physical) kpc
+
+        :param Rs: scale radius
+        :param rmax2d: maximum 2d radius
+        :param rmax3d: maximum 3d radius (basically sets the distribution of z coordinates)
+        :param xoffset: centroid of NFW
+        :param yoffset: centroid of NFW
+
+        """
+
+        self.rmax2d = rmax2d
+        self.rs = Rs
+
+        self.xoffset = xoffset
+        self.yoffset = yoffset
+
+        rmin = Rs*0.001
+
+        self.xoffset,self.yoffset = xoffset,yoffset
+
+        self.xmin = rmin * Rs ** -1
+
+    def _density_2d(self, x):
+
+        if x < 1:
+            f = np.sqrt(1-x**2)
+            func = np.arctanh(f) * f ** -1
+        elif x > 1:
+            f = np.sqrt(-1 + x ** 2)
+            func = np.arctan(f) * f ** -1
+
+        return 2 * (1 - func) * (x**2 - 1)
+
+    def draw(self, N):
+
+        x, y, r2d = [], [], []
+        rho2d_max = self._density_2d(self.xmin)
+
+        while len(r2d) < N:
+
+            theta = np.random.uniform(0, 2 * np.pi)
+
+            r_2 = np.random.uniform(0, self.rmax2d ** 2) ** 0.5
+
+            x = r_2 * self.rs ** -1
+
+            draw = self._density_2d(x) * rho2d_max ** -1
+
+            if draw > np.random.rand():
+                x.append(r_2 * np.cos(theta))
+                y.append(r_2 * np.sin(theta))
+                r2d.append(r_2)
+
+        return np.array(x), np.array(y), np.array(r2d), None
+
 class NFW_3D(object):
 
     def __init__(self, Rs, rmax2d, rmax3d, xoffset=0, yoffset = 0, tidal_core=False, r_core = None):

@@ -17,3 +17,4 @@ class PTmass(CosmoMassProfiles):
         const = 4 * self.lens_cosmo.cosmo.G * self.lens_cosmo.cosmo.c ** -2 * D_ds * (D_d * D_s) ** -1
 
         return self.lens_cosmo.cosmo.arcsec ** -1 * const ** .5
+
