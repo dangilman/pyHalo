@@ -86,6 +86,64 @@ class LensCosmo(object):
 
         return D_12 * D_os * (D_o2 * D_1s) ** -1
 
+    def subhalo_mfunc_spatial_scaing(self, R_ein_arcsec, zlens):
+        """
+        This function returns a scaling factor that accounts for an angular position inside
+        a halo as a function of redshift and Einstein radius. I assume M_halo = 10^13.
+
+        The scaling factor returned is normalized with respect to the value at redshift
+        0.5 and Einstein radius of 1 arcsec.
+
+        :param R_ein_arcsec: Einstein radius in arcsec
+        :param zlens: lens redshift
+
+        @ z = 0.5  and  R_ein  = 1 arcsec:
+        rs = 80kpc
+        kappa_sub(R_ein/r50) = 4.554 (units arbitrary since it is a scaling relation)
+        """
+
+        # reference values
+        kappa_nfw_reference = 4.554
+        a_z_reference = (1 + 0.5) ** -1
+        rs_reference = 80 # kpc
+
+        # rescale to correct redshift
+        a_z = (1+zlens) ** -1
+        a_z_rescale = a_z * a_z_reference ** -1
+        Rs = rs_reference * a_z_rescale
+
+        # Einstein radius in kpc
+        R_ein_kpc = R_ein_arcsec * self.cosmo.kpc_per_asec(zlens)
+        x = R_ein_kpc * Rs ** -1
+
+        # new kappa value
+        kappa_nfw = 2*(1 - numpy.arctanh(numpy.sqrt(1 - x**2)) *
+                       numpy.sqrt(1 - x**2) ** -1) * (x**2 - 1) ** -1
+
+        # compute the scaling factor
+        kappa_scaling = kappa_nfw * kappa_nfw_reference ** -1
+        scaling = kappa_scaling
+
+        return scaling
+
+    def subhalo_mass_function_amplitude(self, sigma_sub, R_ein, zlens):
+
+        """
+        :param sigma_sub: units kpc ^ (-2) see Equation 4 in Gilman et al. 2018
+        :param m_parent: parent halo mass
+        :param zlens: parent halo redshift
+        :return:
+        """
+        #TODO: incorporate redshift dependence
+
+        scaling_factor = self.subhalo_mfunc_spatial_scaing(R_ein, zlens)
+
+        # z_power = 0, until I figure out otherwise
+        z_power = 0
+        sigma_sub_z = sigma_sub * scaling_factor * (1 + zlens) ** z_power
+
+        return sigma_sub_z
+
     def norm_A0_from_a0area(self, a0_per_kpc2, zlens, cone_diameter, plaw_index, m_pivot = 10**8):
 
         R_kpc = self.cosmo.kpc_per_asec(zlens) * (0.5 * cone_diameter)
@@ -127,6 +185,23 @@ class LensCosmo(object):
 
         return a0_area * quad(_integrand, mlow, mhigh, args=(mpivot))[0]
 
+if False:
+    zlens = 0.5
+    l = LensCosmo(0.3, 1.5)
+    r_ein_arcsec_values = numpy.linspace(0.6, 1.6, 100)
+    scale_1, scale_2, scale_3 = [], [], []
+    for r_ein_arcsec in r_ein_arcsec_values:
+        scale_1.append((l.subhalo_mfunc_spatial_scaing(r_ein_arcsec, 0.3)))
+        scale_2.append((l.subhalo_mfunc_spatial_scaing(r_ein_arcsec, 0.5)))
+        scale_3.append((l.subhalo_mfunc_spatial_scaing(r_ein_arcsec, 0.7)))
 
+    norm_1 = numpy.log10(l.norm_A0_from_a0area(0.01*numpy.array(scale_1), 0.3, 6, -1.9))
+    norm_2 = numpy.log10(l.norm_A0_from_a0area(0.01*numpy.array(scale_2), 0.5, 6, -1.9))
+    norm_3 = numpy.log10(l.norm_A0_from_a0area(0.01*numpy.array(scale_3), 0.7, 6, -1.9))
 
+    import matplotlib.pyplot as plt
+    plt.plot(r_ein_arcsec_values, norm_1, color='k')
+    plt.plot(r_ein_arcsec_values, norm_2, color='r')
+    plt.plot(r_ein_arcsec_values, norm_3, color='g')
 
+    plt.show()

@@ -1,5 +1,5 @@
 import numpy as np
-from pyHalo.Cosmology.Profiles.nfw import NFW
+from pyHalo.Halos.Profiles.nfw import NFW
 
 class TNFWLensing(object):
 

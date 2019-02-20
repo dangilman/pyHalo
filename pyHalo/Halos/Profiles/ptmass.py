@@ -1,6 +1,5 @@
-from pyHalo.Cosmology.Profiles.cosmo_profiles import CosmoMassProfiles
-from colossus.halo.concentration import concentration
-import numpy
+from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
+
 
 class PTmass(CosmoMassProfiles):
 

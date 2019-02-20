@@ -1,7 +1,7 @@
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
 from pyHalo.Spatial.nfw import NFW_3D
-from pyHalo.Cosmology.Profiles.nfw import NFW
+from pyHalo.Halos.Profiles.nfw import NFW
 
 class MainLensPowerLaw(object):
 
@@ -22,21 +22,25 @@ class MainLensPowerLaw(object):
         """
         masses = self._mass_func_parameterization.draw()
 
+        # EVERYTHING EXPRESSED IN KPC
         x, y, r2d, r3d = self._spatial_parameterization.draw(len(masses))
 
-        x *= self._lens_cosmo._kpc_per_asec_zlens ** -1
-        y *= self._lens_cosmo._kpc_per_asec_zlens ** -1
+        x_arcsec = x*self._lens_cosmo._kpc_per_asec_zlens ** -1
+        y_arcsec = y*self._lens_cosmo._kpc_per_asec_zlens ** -1
 
-        return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(
+        return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d), np.array(r3d), np.array(
             [self._lens_cosmo.z_lens] * len(masses))
 
     def _spatial(self,args):
 
         args_spatial = {}
+
+        # EVERYTHING EXPRESSED IN KPC
         args_spatial['rmax2d'] = 0.5*args['cone_opening_angle']*\
                                  self._lens_cosmo.cosmo.kpc_per_asec(self._lens_cosmo.z_lens)
 
         if 'parent_m200' in args and 'parent_c' in args.keys():
+            # EVERYTHING EXPRESSED IN KPC
             rho0_kpc, parent_Rs, parent_r200 = self._nfw_cosmo.NFW_params_physical(args['parent_m200'],
                                                                                     args['parent_c'],
                                                                                     self._lens_cosmo.z_lens)
@@ -84,8 +88,12 @@ class MainLensPowerLaw(object):
             args_mfunc['normalization'] = args['norm_A0']
 
         elif 'a0_area' in args.keys():
+            print('enforcing cone_opening_angle = 6 * R_ein')
+            r_ein_arcsec = args['cone_opening_angle'] * 0.5 * 3 ** -1
+            a0_area_parent_halo = self._lens_cosmo.subhalo_mass_function_amplitude(args['a0_area'],
+                                  r_ein_arcsec, self._lens_cosmo.z_lens)
 
-            norm_0 = self._lens_cosmo.norm_A0_from_a0area(args['a0_area'],
+            norm_0 = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
                            self._lens_cosmo.z_lens, args['cone_opening_angle'],
                            args_mfunc['power_law_index'], m_pivot = 10**8)
 

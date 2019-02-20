@@ -1,5 +1,5 @@
 import numpy as np
-from pyHalo.Cosmology.Profiles.ptmass import PTmass
+from pyHalo.Halos.Profiles.ptmass import PTmass
 
 class PTmassLensing(object):
 

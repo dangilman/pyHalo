@@ -1,4 +1,4 @@
-from pyHalo.Cosmology.Profiles.cosmo_profiles import CosmoMassProfiles
+from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 import numpy
 
 class CNFW(CosmoMassProfiles):
@@ -26,7 +26,7 @@ class CNFW(CosmoMassProfiles):
         h = self.lens_cosmo.cosmo.h
         a_z = self.lens_cosmo.cosmo.scale_factor(z)
 
-        r200 = self.rN_M_nfw(M * h, 200) * a_z / h   # physical radius r200
+        r200 = self.rN_M_nfw_comoving(M * h, 200) * a_z / h   # physical radius r200
         rho0 = self.rho0_c_CNFW(c, b) * h ** 2 / a_z ** 3 # physical density in M_sun/Mpc**3
         Rs = r200/c
         return rho0, Rs, r200

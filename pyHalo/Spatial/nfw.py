@@ -21,11 +21,9 @@ class NFW_2D(object):
         self.xoffset = xoffset
         self.yoffset = yoffset
 
-        rmin = Rs*0.001
-
         self.xoffset,self.yoffset = xoffset,yoffset
 
-        self.xmin = rmin * Rs ** -1
+        self.xmin = 0.001
 
     def _density_2d(self, x):
 
@@ -49,16 +47,18 @@ class NFW_2D(object):
 
             r_2 = np.random.uniform(0, self.rmax2d ** 2) ** 0.5
 
-            x = r_2 * self.rs ** -1
+            _x = r_2 * self.rs ** -1
 
-            draw = self._density_2d(x) * rho2d_max ** -1
+            draw = self._density_2d(_x) * rho2d_max ** -1
 
             if draw > np.random.rand():
                 x.append(r_2 * np.cos(theta))
                 y.append(r_2 * np.sin(theta))
                 r2d.append(r_2)
 
-        return np.array(x), np.array(y), np.array(r2d), None
+        # just make r3d some big number for truncation purposes
+        r3d = np.ones_like(r2d) * 400
+        return np.array(x) + self.xoffset, np.array(y) + self.yoffset, np.array(r2d), r3d
 
 class NFW_3D(object):
 
@@ -85,11 +85,11 @@ class NFW_3D(object):
         self.xoffset = xoffset
         self.yoffset = yoffset
 
-        rmin = Rs*0.001
+        rmin = Rs*0.005
 
         self.xoffset,self.yoffset = xoffset,yoffset
         self.tidal_core = tidal_core
-        self.core_fac = 1
+
         self.r_core = r_core
 
         self.xmin = rmin * Rs ** -1
@@ -104,27 +104,22 @@ class NFW_3D(object):
             theta = np.random.uniform(0,2*np.pi)
             phi = np.random.uniform(0,2*np.pi)
 
-            r_2 = np.random.uniform(0,self.rmax2d**2) ** 0.5
+            r2 = np.random.uniform(0,self.rmax2d**2) ** 0.5
+
+            if r2 > self.rmax2d:
+                continue
+
             r_z = np.random.uniform(0,self.rmax3d**2) ** 0.5
 
-            x_value,y_value = r_2*np.cos(theta),r_2*np.sin(theta)
+            x_value,y_value = r2*np.cos(theta),r2*np.sin(theta)
             z_value = r_z * np.sin(phi)
-
-            r2 = (x_value**2+y_value**2)**0.5
 
             r3 = (r2**2+z_value**2)**0.5
 
-            if r3*self.rs**-1 <= self.xmin:
-                choose = 1
+            if r3 > self.rmax3d:
+                continue
 
-            else:
-
-                if self.tidal_core:
-                    choose = self._density_3d(max(self.r_core, r3)) * self._upper_bound(r3) ** -1
-                else:
-                    choose = self._density_3d(r3) * self._upper_bound(r3) ** -1
-
-            if choose > np.random.uniform(0,1) and r2 <= self.rmax2d:
+            if self._acceptance_prob(r3) > np.random.uniform(0,1):
                 r3d.append(r3)
                 x.append(x_value+self.xoffset)
                 y.append(y_value+self.yoffset)
@@ -138,6 +133,17 @@ class NFW_3D(object):
 
         return x,y,r2d,r3d
 
+    def _acceptance_prob(self, r3d):
+
+        if self.tidal_core:
+
+            prob = self._density_3d(max(self.r_core, r3d)) * \
+                   self._upper_bound()**-1
+        else:
+            prob = self._density_3d(r3d) * self._upper_bound() ** -1
+
+        return prob
+
     def _density_3d(self, r):
 
         x = r*self.rs**-1
@@ -149,20 +155,11 @@ class NFW_3D(object):
 
         return (x*(1+x)**2)**-1
 
-    def _upper_bound(self, r, alpha=0.9999999):
+    def _upper_bound(self):
 
-        X = r*self.rs**-1
         norm = self._density_3d(self.xmin * self.rs)
+        return norm
 
-        if isinstance(X,int) or isinstance(X,float):
 
-            if X>self.xmin:
-                return norm*(X*self.xmin**-1)**-alpha
-            else:
-                return norm
-
-        else:
-            X[np.where(X < self.xmin)] = self.xmin
-            return norm*(X*self.xmin**-1)**-alpha
 
 

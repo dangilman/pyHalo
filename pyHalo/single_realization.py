@@ -1,4 +1,6 @@
 import numpy as np
+
+from pyHalo.Halos.halo import Halo
 from pyHalo.Lensing.NFW import NFWLensing
 from pyHalo.Lensing.TNFW import TNFWLensing
 from pyHalo.Lensing.coreBurk import cBurkLensing
@@ -7,7 +9,9 @@ from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.defaults import default_z_step
 from pyHalo.Lensing.coreNFW import coreNFWLensing
-from pyHalo.Spatial.nfw import NFW_2D
+from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
+from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 
 from copy import deepcopy
 
@@ -17,48 +21,16 @@ def realization_at_z(realization,z):
 
     halo_mass_function, wdm_params = realization.halo_mass_function, realization._wdm_params
 
-    return Realization(None, None, None, None, None, None, None, None, halo_mass_function, halos=halos,
-                           wdm_params=wdm_params)
+    return Realization(None, None, None, None, None, None, None, halo_mass_function,
+                       halos=halos, other_params=wdm_params)
 
-class Halo(object):
-
-    def __init__(self, mass, x, y, r2d, r3d, mdef, z, args):
-
-        self.mass = mass
-        self.x = x
-        self.y = y
-        self.r2d = r2d
-        self.r3d = r3d
-        self.mdef = mdef
-        self.z = z
-        self.mass_def_arg = args
-        self._unique_tag = np.random.rand()
-
-    def add_subhalos(self):
-
-        pass
-
-class Subhalo(object):
-
-    def __init__(self, parent_halo, mdef):
-
-        spatial = NFW_2D(Rs = parent_rs, rmax2d = parent_r200)
-        _x, _y, _r2d, _ = spatial.draw(1)
-        self.x = float(_x)
-        self.y = float(_y)
-        self.r2d = float(_r2d)
-        self.r3d = self.r2d
-        self.mdef = mdef
-        self.z = parent_halo.z
-        self.mass_def_arg = args
-        self._unique_tag = np.random.rand()
 
 class Realization(object):
 
     #max_m_high = 10**9
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, mass_def_args, halo_mass_function,
-                 halos = None, wdm_params = None, mass_sheet_correction = True):
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, halo_mass_function,
+                 halos = None, other_params = None, mass_sheet_correction = True):
 
         self._mass_sheet_correction  = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
@@ -70,49 +42,105 @@ class Realization(object):
         self.halo_mass_function = halo_mass_function
         self.geometry = halo_mass_function.geometry
         self.lens_cosmo = self.geometry._lens_cosmo
+        self.cosmo_mass_profile = CosmoMassProfiles(self.lens_cosmo)
         self._lensing_functions = []
         self.halos = []
 
-        if wdm_params is None:
+        if other_params is None:
             self.m_break_scale = 0
             self.break_index = -1.3
             self._LOS_norm = 1
+            other_params = {}
+            other_params.update({'log_m_break': self.m_break_scale})
+            other_params.update({'break_index': self.break_index})
+            other_params.update({'LOS_normalization': self._LOS_norm})
+            other_params.update({'c_scale': 60})
+            other_params.update({'c_power': -0.17})
+            other_params.update({'include_subhalos': False})
+
         else:
-            self.m_break_scale = wdm_params['log_m_break']
-            self.break_index = wdm_params['break_index']
-            if 'LOS_normalization' in wdm_params:
-                self._LOS_norm = wdm_params['LOS_normalization']
+            self.m_break_scale = other_params['log_m_break']
+            self.break_index = other_params['break_index']
+            if 'LOS_normalization' in other_params:
+                self._LOS_norm = other_params['LOS_normalization']
             else:
                 self._LOS_norm = 1
 
-        self._wdm_params = wdm_params
+        self._wdm_params = other_params
 
         if halos is None:
 
-            for mi, xi, yi, r2di, r3di, mdefi, zi, mdefargi in zip(masses, x, y, r2d, r3d,
-                           mdefs, z, mass_def_args):
+            for mi, xi, yi, r2di, r3di, mdefi, zi in zip(masses, x, y, r2d, r3d,
+                           mdefs, z):
 
-                self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi, mdefargi)
+                self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi)
+
+            if other_params['include_subhalos']:
+                assert 'subhalo_args' in other_params.keys(), \
+                    'Must specify subhalo args in including subhalos.'
+                self.add_subhalos(other_params['subhalo_args'])
+
         else:
 
             for halo in halos:
-                self._add_halo(None, None, None, None, None, None, None, None, halo)
+                self._add_halo(None, None, None, None, None, None, None, halo=halo)
 
         self._reset()
 
-    def add_subhalos(self, subhalo_mdef):
+    def shift_centroid(self, centroid_coordinates):
 
-        new_halos = []
+        halos = []
+
         for halo in self.halos:
 
-            halo.add_subhalos(subhalo_mdef)
+            new_halo = deepcopy(halo)
+            new_halo.x += centroid_coordinates[0]
+            new_halo.y += centroid_coordinates[1]
+            halos.append(new_halo)
 
-            new_halos.append(halo)
-            for subhalo in halo.subhalos:
-                new_halos.append(subhalo)
+        realization = Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+                                       halos=halos, other_params=self._wdm_params)
 
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=new_halos,
-                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
+        return realization
+
+    def add_halo(self, mass, x, y, r2d, r3d, mdef, z):
+
+        new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], self.halo_mass_function,
+                               halos = None, other_params=self._wdm_params,
+                               mass_sheet_correction=self._mass_sheet_correction)
+
+        realization = self.join(new_real)
+        return realization
+
+    def add_subhalos(self, args):
+
+        for halo in self.halos:
+
+            if halo.z != self.lens_cosmo.z_lens:
+                subhalos = halo.add_subhalos(args)
+
+                for subhalo in subhalos:
+                    self._add_halo(None, None, None, None, None, None, None, subhalo)
+
+        self._reset()
+
+    def split_halos_and_subhalos(self):
+
+        subhalos, halos = [], []
+        for halo in self.halos:
+            if halo.is_subhalo:
+
+                subhalos.append(halo)
+            else:
+
+                halos.append(halo)
+
+        subhalo_realization = Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+                           halos = subhalos, other_params= self._wdm_params)
+        halo_realization = Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+                           halos = halos, other_params= self._wdm_params)
+
+        return halo_realization, subhalo_realization
 
     def change_mdef(self, new_mdef):
 
@@ -129,8 +157,8 @@ class Realization(object):
             duplicate.mdef = new_mdef
             new_halos.append(duplicate)
 
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=new_halos,
-                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
+        return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+                           halos = new_halos, other_params= self._wdm_params, mass_sheet_correction = self.mass_sheet_correction())
 
     def _tags(self, halos=None):
 
@@ -169,8 +197,8 @@ class Realization(object):
             if tag not in short:
                 halos.append(halos_long[i])
 
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
-                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
+        return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+                           halos = halos, other_params= self._wdm_params, mass_sheet_correction = self.mass_sheet_correction())
 
     def _reset(self):
 
@@ -204,9 +232,9 @@ class Realization(object):
 
         self._unique_redshifts = np.unique(self.redshifts)
 
-    def _add_halo(self, m, x, y, r2, r3, md, z, mdarg, halo=None):
+    def _add_halo(self, m, x, y, r2, r3, md, z, halo=None):
         if halo is None:
-            halo = Halo(m, x, y, r2, r3, md, z, mdarg)
+            halo = Halo(m, x, y, r2, r3, md, z, self.cosmo_mass_profile, **self._wdm_params)
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
@@ -224,6 +252,9 @@ class Realization(object):
         for i, halo in enumerate(self.halos):
 
             args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
+
+            #if not hasattr(halo, 'mass_def_arg'):
+            #    halo.profile_parameters()
 
             if halo.mdef == 'NFW':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
@@ -437,8 +468,11 @@ class Realization(object):
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
-                           wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
+        return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+                           halos = halos, other_params= self._wdm_params, mass_sheet_correction = self.mass_sheet_correction())
+
+        #return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
+        #                   wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
 
     def mass_sheet_correction(self, mlow_front = 10**7.7, mlow_back = 10**8, mhigh = 10**10):
 
@@ -523,3 +557,34 @@ class Realization(object):
                     mass += mi
 
         return mass
+
+class RealizationFast(Realization):
+
+    """
+    A quick and dirty class useful for generating a realization with a few
+    user-specified halos.
+    """
+
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, z_lens, z_source,
+                 cone_opening_angle = 6, other_params = None, **kwargs):
+
+
+        mfunc = LensingMassFunction(Cosmology(), 10**6, 10**10, z_lens,
+                                    z_source, cone_opening_angle)
+
+        tup = (masses, x, y, r2d, r3d, mdefs, z)
+
+        for element in tup:
+            if isinstance(element, list) or isinstance(element, np.ndarray):
+                _aslist = True
+                break
+
+        if _aslist:
+            for element in tup:
+                assert isinstance(element, list) or isinstance(element, np.ndarray), \
+                    'All arguments must be either lists or floats.'
+
+        else:
+            tup = ([masses], [x], [y], [r2d], [r3d], [mdefs], [z])
+
+        Realization.__init__(self, *tup, mfunc, other_params=other_params, **kwargs)

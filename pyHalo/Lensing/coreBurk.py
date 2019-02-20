@@ -1,5 +1,5 @@
 import numpy as np
-from pyHalo.Cosmology.Profiles.cburk import CBURK
+from pyHalo.Halos.Profiles.cburk import CBURK
 
 class cBurkLensing(object):
 

@@ -43,12 +43,7 @@ class LOS(object):
 
     def _render_positions_atz(self, z, nhalos):
 
-        x, y, r2d, r3d = self._spatial_parameterization.draw(nhalos, z)
-
-        return x, y, r2d, r3d
-
-    def _render_positions_localized(self, z, nhalos):
-
+        # EVERYTHING EXPRESSED IN ARCSEC
         x, y, r2d, r3d = self._spatial_parameterization.draw(nhalos, z)
 
         return x, y, r2d, r3d
@@ -133,14 +128,15 @@ class LOSPowerLaw(LOS):
 
         masses = mfunc.draw()
 
-        x, y, r2d, r3d = self._render_positions_atz(z_current, len(masses))
+        # ALL IN ARCSEC
+        x_arcsec, y_arcsec, r2d, r3d = self._render_positions_atz(z_current, len(masses))
 
         if len(masses) > 0:
             redshifts = [z_current] * len(masses)
         else:
             redshifts = []
 
-        return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(redshifts)
+        return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d), np.array(r3d), np.array(redshifts)
 
     def __call__(self):
 
@@ -177,9 +173,13 @@ class LOSPowerLaw(LOS):
                 mi, xi, yi, r2di, r3di, zi = self._draw(norm_2halo, plaw_idx, self._parameterization_args, zcurrent)
                 N_boost = int(np.round(len(mi) * (1 - ratio)))
 
+                # Put these objects at the lens redshift
                 mi_2halo, xi_2halo,_yi_2halo, r2di_2halo, r3di_2halo = mi[0:N_boost], xi[0:N_boost], \
                                                                        yi[0:N_boost], r2di[0:N_boost], \
                                                                                  r3di[0:N_boost]
+                # make r3di_2halo very large so these objects are essentially un-truncated
+                r3di_2halo = np.ones_like(r3di_2halo) * 400
+
                 zi_2halo = np.array([zlens]*len(mi_2halo))
 
                 mi, xi, yi, r2di, r3di, zi = mi[N_boost:], xi[N_boost:], yi[N_boost:], r2di[N_boost:], \
