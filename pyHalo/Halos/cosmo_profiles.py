@@ -196,4 +196,3 @@ class CosmoMassProfiles(object):
         r_trunc_arcsec = self.rN_M_nfw_physical_arcsec(M, N, z)
 
         return r_trunc_arcsec
-

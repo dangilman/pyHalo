@@ -128,7 +128,7 @@ class Halo(object):
         if self.mdef in self.has_concentration:
 
             nfw_c = self.cosmo_prof.NFW_concentration(self.mass, self.z, logmhm=self._args['log_m_break'],
-                               g1=self._args['c_scale'], g2=self._args['c_power'])
+                               g1=self._args['c_scale'], g2=self._args['c_power'], scatter=self._args['c_scatter'])
             mdef_args.update({'concentration': nfw_c})
 
         if self.mdef in self.has_truncation:

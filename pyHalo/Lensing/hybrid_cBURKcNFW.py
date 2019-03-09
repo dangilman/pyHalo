@@ -17,8 +17,8 @@ class cBurkcNFWLensing(object):
         self._cburk = cBurkLensing(lens_cosmo)
         self._cnfw = coreNFWLensing(lens_cosmo)
 
-    def _interpolating_function(self, rs, r_core, b_min = 0.3,
-                 b_max = 0.7, b_crit = 0.5, c = 1):
+    def _interpolating_function(self, rs, r_core, b_min = 0.25,
+                 b_max = 0.75, b_crit = 0.5, c = 1):
 
         beta = r_core * rs ** -1
 
@@ -47,3 +47,5 @@ class cBurkcNFWLensing(object):
         """
         rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
         return 4*np.pi*rho0*Rs**3*(np.log(1+c)-c*(1+c)**-1)
+
+
