@@ -12,7 +12,7 @@ def rc_from_M_setsigmav(M200, z, sigma_0, alpha, logmhm=0, cross_type = 'simple'
     sigma_averaged = sigma_0 * (rms_velocity_dispersion * 10 ** -1) ** alpha
 
     prof = NFW(z_lens=z, z_source=4)
-    c = prof.NFW_concentration(M200, z, scatter=False, logmhm=logmhm, g1=60, g2=-0.17)
+    c = prof.NFW_concentration(M200, z, scatter=False, logmhm=logmhm, c_scale=60, c_power=-0.17)
     rho0, rs, _ = prof.NFW_params_physical(M200, c, z)
 
     lam, rc = compute_rc(sigma_averaged, rho0, rs)
@@ -33,7 +33,7 @@ def rc_from_M(M200, z, sigma_0, alpha, logmhm=0, cross_type = 'simple'):
 def compute_sigmav(M200, z, cross, v_rms, alpha, logmhm=0, cross_type = 'simple'):
 
     prof = NFW(z_lens=z, z_source=4)
-    c = prof.NFW_concentration(M200, z, scatter=False, logmhm=logmhm, g1=60, g2=-0.17)
+    c = prof.NFW_concentration(M200, z, scatter=False, logmhm=logmhm, c_scale=60, c_power=-0.17)
     rho0, rs, _ = prof.NFW_params_physical(M200, c, z)
 
     if cross_type == 'simple':

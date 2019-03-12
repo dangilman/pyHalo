@@ -11,17 +11,20 @@ from pyHalo.single_realization import Realization
 
 class pyHalo(object):
 
-    def __init__(self, zlens, zsource, cosmo_args = {},
+    def __init__(self, zlens, zsource, cosmo_args = None,
                  halo_mass_function_args=None, kwargs_massfunc = {}):
 
         self.zlens = zlens
         self.zsource = zsource
 
+        if cosmo_args is None:
+            cosmo_args = cosmo_default.default_args
+
         self._cosmology = Cosmology(**cosmo_args)
         self._lens_cosmo = LensCosmo(zlens, zsource)
 
         if halo_mass_function_args is None:
-            halo_mass_function_args = {'model':default_mass_function, 'mdef': default_mdef}
+            halo_mass_function_args = {'model': cosmo_default.default_mass_function, 'mdef': cosmo_default.default_mdef}
         self._halo_mass_function_args = halo_mass_function_args
         self._kwargs_massfunc = kwargs_massfunc
 
@@ -44,7 +47,7 @@ class pyHalo(object):
         if not hasattr(self, 'halo_mass_function'):
 
             if 'mass_func_type' not in args.keys():
-                args['mass_func_type'] = 'composite_powerlaw'
+                args['mass_func_type'] = realization_default.default_type
 
             if args['mass_func_type'] == 'delta':
 
@@ -53,17 +56,28 @@ class pyHalo(object):
 
             else:
                 if 'log_mlow_los' not in args.keys():
-                    assert 'log_mlow' in args.keys()
-                    logLOS_mlow = args['log_mlow']
+                    logLOS_mlow = realization_default.log_mlow
                 else:
                     logLOS_mlow = args['log_mlow_los']
+
                 if 'log_mhigh_los' not in args.keys():
-                    assert 'log_mhigh' in args.keys()
-                    logLOS_mhigh = args['log_mhigh']
+                    logLOS_mhigh = realization_default.log_mhigh
                 else:
                     logLOS_mhigh = args['log_mhigh_los']
 
-            assert 'cone_opening_angle' in args.keys()
+            if 'cone_opening_angle' not in args.keys():
+
+                if 'R_ein_main' not in args.keys():
+                    raise Exception('must either specify cone_opening_angle, or (R_ein_main, opening_angle_factor) '
+                                    'in keyword arguments.')
+                if 'opening_angle_factor' in args.keys():
+                    factor = args['opening_angle_factor']
+                else:
+                    factor = realization_default.opening_angle_factor
+                args['cone_opening_angle'] = factor * args['R_ein_main']
+
+            if 'two_halo_term' not in self._kwargs_massfunc.keys():
+                self._kwargs_massfunc.update({'two_halo_term': realization_default.two_halo_term})
 
             self.halo_mass_function = LensingMassFunction(self._cosmology, 10 ** logLOS_mlow, 10 ** logLOS_mhigh, self.zlens, self.zsource,
                                                           cone_opening_angle=args['cone_opening_angle'],
@@ -125,44 +139,7 @@ class pyHalo(object):
 
     def _add_profile_params(self, args):
 
-        profile_params = {}
-
-        if 'include_subhalos' in args.keys():
-            profile_params.update({'include_subhalos': args['include_subhalos']})
-            if args['include_subhalos'] is True:
-                profile_params.update({'subhalo_args': args['subhalo_args']})
-        else:
-            profile_params.update({'include_subhalos': False})
-
-        if 'log_m_break' in args.keys():
-            assert 'break_index' in args.keys()
-            profile_params.update({'log_m_break': args['log_m_break'], 'break_index': args['break_index']})
-        else:
-            print('log_m_break not specified, assuming 0 (CDM)')
-            profile_params.update({'log_m_break': 0, 'break_index': 1})
-
-        if 'c_power' in args.keys():
-            profile_params.update({'c_power': args['c_power']})
-        else:
-            print('c_power not specified, assuming -0.017 (only applies if log_m_break>0)')
-            profile_params.update({'c_power': -0.17})
-        if 'c_scale' in args.keys():
-            profile_params.update({'c_scale': args['c_scale']})
-        else:
-            print('c_scale not specified, assuming 60')
-            profile_params.update({'c_scale': 60})
-
-        if 'parent_m200' in args.keys():
-            profile_params.update({'parent_m200': args['parent_m200']})
-        else:
-            print('Warning: halo mass not specified, assuming a parent halo mass of 10^13.')
-            profile_params.update({'parent_m200': 10 ** 13})
-        if 'LOS_normalization' in args.keys():
-            profile_params.update({'LOS_normalization': args['LOS_normalization']})
-        else:
-            profile_params.update({'LOS_normalization': 1})
-
-        return profile_params
+        return set_default_kwargs(args)
 
     def _build_los(self, args):
 

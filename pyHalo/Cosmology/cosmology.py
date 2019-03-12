@@ -3,6 +3,7 @@ from colossus.halo.concentration import *
 from colossus.cosmology import cosmology
 import astropy.cosmology as astropy_cosmo
 from scipy.special import hyp2f1
+from pyHalo.defaults import *
 
 class Cosmology(object):
 

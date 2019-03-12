@@ -8,7 +8,7 @@ from pyHalo.Lensing.hybrid_cBURKcNFW import cBurkcNFWLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.Lensing.coreNFWmodified import coreNFWmodifiedLensing
-from pyHalo.defaults import default_z_step
+from pyHalo.defaults import *
 from pyHalo.Lensing.coreNFW import coreNFWLensing
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -48,44 +48,7 @@ class Realization(object):
         self.halos = []
         self._loaded_models = {}
 
-        if other_params is None:
-            self.m_break_scale = 0
-            self.break_index = -1.3
-            self._LOS_norm = 1
-            other_params = {}
-            other_params.update({'log_m_break': self.m_break_scale})
-            other_params.update({'break_index': self.break_index})
-            other_params.update({'LOS_normalization': self._LOS_norm})
-            other_params.update({'c_scale': 60})
-            other_params.update({'c_power': -0.17})
-            other_params.update({'include_subhalos': False})
-            other_params.update({'c_scatter': True})
-
-        else:
-            if 'log_m_break' in other_params.keys():
-                self.m_break_scale = other_params['log_m_break']
-            else:
-                other_params['log_m_break'] = 0
-                self.m_break_scale = 0
-            if 'break_index' in other_params.keys():
-                self.break_index = other_params['break_index']
-            else:
-                other_params['break_index'] = -1.3
-                self.break_index = -1.3
-            if 'c_scale' not in other_params.keys():
-                other_params.update({'c_scale': 60})
-            if 'c_power' not in other_params.keys():
-                other_params.update({'c_power': -0.17})
-            if 'LOS_normalization' in other_params:
-                self._LOS_norm = other_params['LOS_normalization']
-            else:
-                self._LOS_norm = 1
-            if 'include_subhalos' not in other_params.keys():
-                other_params.update({'include_subhalos': False})
-            if 'c_scatter' not in other_params.keys():
-                other_params.update({'c_scatter':True})
-
-        self._prof_params = other_params
+        self._prof_params = set_default_kwargs(other_params)
 
         if halos is None:
 
@@ -588,7 +551,7 @@ class Realization(object):
     def mass_at_z(self,z, logmcut = 0):
 
         def z_is_close(z1, z2):
-            return np.absolute(z2 - z1) < default_z_step * 0.01
+            return np.absolute(z2 - z1) < lenscone_default.default_z_step * 0.01
 
         mass = 0
 

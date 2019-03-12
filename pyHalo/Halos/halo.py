@@ -50,7 +50,7 @@ class Halo(object):
 
                 r200_arcsec = self.cosmo_prof.rN_M_nfw_physical_arcsec(self.mass, 200, self.z)
                 c = self.cosmo_prof.NFW_concentration(self.mass, self.z, logmhm=self._args['log_m_break'],
-                               g1=self._args['c_scale'], g2=self._args['c_power'])
+                                                      c_scale=self._args['c_scale'], c_power=self._args['c_power'])
 
                 rs_arcsec = r200_arcsec * c ** -1
 
@@ -84,8 +84,8 @@ class Halo(object):
                 self.mass = new_parent_mass
                 if self.mdef in self.has_concentration:
                     self.mass_def_arg['concentration'] = self.cosmo_prof.NFW_concentration(self.mass,
-                             self.z, logmhm=self._args['log_m_break'],
-                             g1=self._args['c_scale'], g2=self._args['c_power'])
+                                                                                           self.z, logmhm=self._args['log_m_break'],
+                                                                                           c_scale=self._args['c_scale'], c_power=self._args['c_power'])
 
                 for (mi, xi, yi, r2i, r3i) in zip(msub, xsub, ysub, r2dsub, r3dsub):
                     new_object = Halo(mi, xi, yi, None, None, subhalo_args['mdef'], self.z, self.cosmo_prof, **self._args)
@@ -128,15 +128,17 @@ class Halo(object):
         if self.mdef in self.has_concentration:
 
             nfw_c = self.cosmo_prof.NFW_concentration(self.mass, self.z, logmhm=self._args['log_m_break'],
-                               g1=self._args['c_scale'], g2=self._args['c_power'], scatter=self._args['c_scatter'])
+                                                      c_scale=self._args['c_scale'], c_power=self._args['c_power'],
+                                                      scatter=self._args['c_scatter'])
             mdef_args.update({'concentration': nfw_c})
 
         if self.mdef in self.has_truncation:
 
             if self.is_subhalo:
-                truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z)
+                truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z, self._args['LOS_truncation'])
             elif self.z == self.cosmo_prof.lens_cosmo.z_lens:
-                truncation = self.cosmo_prof.truncation_roche(self.mass, self.z)
+                truncation = self.cosmo_prof.truncation_roche(self.mass, self.z, self._args['RocheNorm'],
+                                                              self._args['RocheNu'])
             else:
                 truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z)
 

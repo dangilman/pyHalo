@@ -3,7 +3,7 @@ from copy import copy
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
 from pyHalo.Spatial.uniform import LensConeUniform
-from pyHalo.defaults import default_zstart, default_z_round, default_z_step
+from pyHalo.defaults import *
 
 class LOS(object):
 
@@ -15,7 +15,7 @@ class LOS(object):
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         zmin, zmax = parameterization_args['zmin'], parameterization_args['zmax']
-        self._redshift_range = _redshift_range_LOS(zmin, zmax, default_z_step)
+        self._redshift_range = _redshift_range_LOS(zmin, zmax, lenscone_default.default_z_step)
 
         self._spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
                                                          lensing_mass_func.geometry)
@@ -110,9 +110,9 @@ class LOSDelta(LOS):
                 args_mfunc[key] = args[key]
             except:
                 if key == 'zmin':
-                    args_mfunc['zmin'] = default_zstart
+                    args_mfunc['zmin'] = lenscone_default.default_zstart
                 else:
-                    args_mfunc['zmax'] = self._lensing_mass_func.geometry._zsource - default_zstart
+                    args_mfunc['zmax'] = self._lensing_mass_func.geometry._zsource - lenscone_default.default_zstart
 
         return args_mfunc
 
@@ -249,9 +249,9 @@ class LOSPowerLaw(LOS):
                 args_mfunc[key] = args[key]
             except:
                 if key == 'zmin':
-                    args_mfunc['zmin'] = default_zstart
+                    args_mfunc['zmin'] = lenscone_default.default_zstart
                 else:
-                    args_mfunc['zmax'] = self._lensing_mass_func.geometry._zsource - default_zstart
+                    args_mfunc['zmax'] = self._lensing_mass_func.geometry._zsource - lenscone_default.default_zstart
 
         if args_mfunc['log_m_break'] == 0:
             args_mfunc['break_index'] = 0

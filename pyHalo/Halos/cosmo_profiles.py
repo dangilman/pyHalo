@@ -86,8 +86,8 @@ class CosmoMassProfiles(object):
 
         return rNM_arcsec
 
-    def NFW_concentration(self,M,z,model='diemer18',mdef='200c',logmhm=0,
-                                scatter=True,g1=None,g2=None):
+    def NFW_concentration(self, M, z, model='diemer18', mdef='200c', logmhm=0,
+                          scatter=True, c_scale=None, c_power=None):
 
         # WDM relation adopted from Ludlow et al
         # use diemer18?
@@ -106,7 +106,7 @@ class CosmoMassProfiles(object):
         if logmhm != 0:
 
             mhm = 10**logmhm
-            concentration_factor = (1+g1*mhm*M**-1)**g2
+            concentration_factor = (1 + c_scale * mhm * M ** -1) ** c_power
             redshift_factor = (1+z)**zfunc(z)
             rescale = redshift_factor * concentration_factor
 
@@ -124,7 +124,7 @@ class CosmoMassProfiles(object):
                 c = numpy.array(con)
         return c
 
-    def truncation_roche(self, M, r3d, k = 1.4, nu = 2):
+    def truncation_roche(self, M, r3d, k, nu):
 
         """
 
@@ -164,9 +164,9 @@ class CosmoMassProfiles(object):
             return numpy.absolute(_f1(tau) - _f2(X))
 
         c_parent = self.NFW_concentration(m_parent, z, logmhm=logmhm,
-                                          scatter=False, g1=g1, g2=g2)
+                                          scatter=False, c_scale=g1, c_power=g2)
         c_sub = self.NFW_concentration(msub, z, logmhm=logmhm,
-                                          scatter=False, g1=g1, g2=g2)
+                                       scatter=False, c_scale=g1, c_power=g2)
 
         rho_sub, Rs_sub, _ = self.NFW_params_physical(msub, c_sub, z)
         rho_main, Rs_main, _ = self.NFW_params_physical(m_parent, c_parent, z)
