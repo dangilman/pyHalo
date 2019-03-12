@@ -5,6 +5,8 @@ class PTmassLensing(object):
 
     hybrid = False
 
+    lenstronomy_ID = 'POINT_MASS'
+
     def __init__(self, lens_cosmo):
 
         self.lens_cosmo = PTmass(lens_cosmo)
@@ -16,4 +18,4 @@ class PTmassLensing(object):
         factor = self.lens_cosmo.point_mass_fac(redshift)
         theta_E = factor * np.sqrt(mass)
 
-        return {'center_x':center_x, 'center_y': center_y, 'theta_E': theta_E}
+        return {'center_x':center_x, 'center_y': center_y, 'theta_E': theta_E}, None

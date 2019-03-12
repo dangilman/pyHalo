@@ -1,9 +1,12 @@
 import numpy as np
-from pyHalo.Halos.Profiles.cnfw import CNFW
+from pyHalo.Halos.Profiles.modifiedCNFW import modifiedCNFW
+from pyHalo.Lensing.numerical_alphas.coreNFWmodified import InterpCNFWmod
 
 class coreNFWmodifiedLensing(object):
 
     hybrid = False
+
+    lenstronomy_ID = 'NumericalAlpha'
 
     def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
 
@@ -11,22 +14,27 @@ class coreNFWmodifiedLensing(object):
             from pyHalo.Cosmology.lens_cosmo import LensCosmo
             lens_cosmo = LensCosmo(zlens, z_source)
 
-        self.lens_cosmo = CNFW(lens_cosmo)
+        self.lens_cosmo = modifiedCNFW(lens_cosmo)
+        self.numerical_class = InterpCNFWmod()
 
-    def params(self, x, y, mass, concentration, b, redshift):
+    def params(self, x, y, mass, concentration, redshift):
 
-        Rs_angle, theta_Rs, r_core = self.lens_cosmo.corenfw_physical2angle(mass,
-                       concentration, redshift, b)
+        Rs_angle, theta_Rs_nfw = self.lens_cosmo.nfw_physical2angle(mass,
+                       concentration, redshift)
 
-        kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle, 'r_core': r_core,
-                  'center_x':x, 'center_y':y}
+        r_core, normalization = self._compute_properties(Rs_angle, theta_Rs_nfw, redshift)
 
-        return kwargs
+        kwargs = {'center_x': x, 'center_y': y,'Rs': Rs_angle,
+                  'Rc': r_core, 'norm': normalization}
 
-    def M_physical(self, m, c, z):
-        """
-        :param m200: m200
-        :return: physical mass corresponding to m200
-        """
-        rho0, Rs, r200 = self.lens_cosmo.NFW_params_physical(m,c,z)
-        return 4*np.pi*rho0*Rs**3*(np.log(1+c)-c*(1+c)**-1)
+        return kwargs, self.numerical_class
+
+    def _compute_properties(self, rs_arcsec, theta_Rs_nfw, z):
+
+        trs_corenfw = self.numerical_class(rs_arcsec, 0, rs_arcsec,
+                                           self.numerical_class._betamin, 1, center_x=0, center_y=0)
+
+        norm = theta_Rs_nfw * trs_corenfw ** -1
+        r_core = 0.5*rs_arcsec
+        return r_core, norm
+

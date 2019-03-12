@@ -5,6 +5,8 @@ class TNFWLensing(object):
 
     hybrid = False
 
+    lenstronomy_ID = 'TNFW'
+
     def __init__(self,lens_cosmo):
 
         self.lens_cosmo = NFW(lens_cosmo)
@@ -16,7 +18,7 @@ class TNFWLensing(object):
         kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
                   'center_x':x, 'center_y':y, 'r_trunc':r_trunc}
 
-        return kwargs
+        return kwargs, None
 
     def mass_finite(self, m200, c, z, tau):
 

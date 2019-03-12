@@ -7,6 +7,7 @@ from pyHalo.Lensing.coreBurk import cBurkLensing
 from pyHalo.Lensing.hybrid_cBURKcNFW import cBurkcNFWLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
+from pyHalo.Lensing.coreNFWmodified import coreNFWmodifiedLensing
 from pyHalo.defaults import default_z_step
 from pyHalo.Lensing.coreNFW import coreNFWLensing
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
@@ -266,6 +267,7 @@ class Realization(object):
         kwargs_lens = []
         lens_model_names = []
         redshift_list = []
+        kwargs_lensmodel = []
 
         for i, halo in enumerate(self.halos):
 
@@ -292,23 +294,31 @@ class Realization(object):
                 args.update({'redshift': halo.z})
             elif halo.mdef == 'PJAFFE':
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
+            elif halo.mdef == 'cNFWmod':
+                args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
             else:
                 raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
 
+            kw, model_args = self._lensing_functions[i].params(**args)
+
+            lenstronomy_ID = self._lensing_functions[i].lenstronomy_ID
+
             if self._lensing_functions[i].hybrid:
-                kw = self._lensing_functions[i].params(**args)
                 for ki in kw:
                     kwargs_lens.append(ki)
                 redshift_list += [halo.z]*len(kw)
 
                 if halo.mdef == 'cBURKcNFW':
-                    lens_model_names.append('CNFW')
-                    lens_model_names.append('coreBURKERT')
+                    lens_model_names.append(lenstronomy_ID[0])
+                    lens_model_names.append(lenstronomy_ID[1])
+                    kwargs_lensmodel.append(model_args)
+                    kwargs_lensmodel.append(model_args)
 
             else:
-                lens_model_names.append(halo.mdef)
-                kwargs_lens.append(self._lensing_functions[i].params(**args))
+                lens_model_names.append(lenstronomy_ID)
+                kwargs_lens.append(kw)
                 redshift_list += [halo.z]
+                kwargs_lensmodel.append(model_args)
 
         if self._mass_sheet_correction:
 
@@ -323,7 +333,7 @@ class Realization(object):
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(redshift_list, z_sheets)
 
-        return lens_model_names, redshift_list, kwargs_lens
+        return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
 
     def _lens(self, halo):
 
@@ -332,7 +342,7 @@ class Realization(object):
             model = self._load_model(halo)
             self._loaded_models.update({halo.mdef: model})
 
-        return self._load_models[halo.mdef]
+        return self._loaded_models[halo.mdef]
 
     def _load_model(self, halo):
 
@@ -356,6 +366,9 @@ class Realization(object):
 
         elif halo.mdef == 'CNFW':
             lens = coreNFWLensing(self.lens_cosmo)
+
+        elif halo.mdef == 'cNFWmod':
+            lens = coreNFWmodifiedLensing(self.lens_cosmo)
 
         else:
             raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')

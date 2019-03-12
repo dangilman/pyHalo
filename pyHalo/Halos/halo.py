@@ -6,7 +6,7 @@ class Halo(object):
 
     is_subhalo = False
 
-    has_concentration = ['NFW', 'TNFW', 'coreBURKERT', 'cBURKcNFW', 'CNFW']
+    has_concentration = ['NFW', 'TNFW', 'coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod']
 
     has_truncation = ['TNFW']
 

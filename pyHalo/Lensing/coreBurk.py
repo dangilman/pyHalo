@@ -5,6 +5,8 @@ class cBurkLensing(object):
 
     hybrid = False
 
+    lenstronomy_ID = 'coreBURKERT'
+
     def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
 
         if lens_cosmo is None:
@@ -21,7 +23,7 @@ class cBurkLensing(object):
         kwargs = {'theta_Rs': trs, 'Rs': rs, 'r_core': r_core,
                   'center_x':x, 'center_y':y}
 
-        return kwargs
+        return kwargs, None
 
     def M_physical(self, m, c, z):
         """

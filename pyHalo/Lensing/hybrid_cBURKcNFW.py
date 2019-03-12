@@ -6,6 +6,8 @@ class cBurkcNFWLensing(object):
 
     hybrid = True
 
+    lenstronomy_ID = ['CNFW', 'coreBURKERT']
+
     def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
 
         if lens_cosmo is None:
@@ -38,7 +40,7 @@ class cBurkcNFWLensing(object):
         kwargs_cburk['theta_Rs'] = kwargs_cburk['theta_Rs'] * f
         kwargs_cnfw['theta_Rs'] = kwargs_cnfw['theta_Rs'] * (1-f)
 
-        return [kwargs_cnfw, kwargs_cburk]
+        return [kwargs_cnfw, kwargs_cburk], None
 
     def M_physical(self, m, c, z):
         """

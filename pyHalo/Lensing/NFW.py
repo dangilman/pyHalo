@@ -5,6 +5,8 @@ class NFWLensing(object):
 
     hybrid = False
 
+    lenstronomy_ID = 'NFW'
+
     def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
 
         if lens_cosmo is None:
@@ -20,7 +22,7 @@ class NFWLensing(object):
         kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
                   'center_x':x, 'center_y':y}
 
-        return kwargs
+        return kwargs, None
 
     def M_physical(self, m, c, z):
         """
