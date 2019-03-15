@@ -1,7 +1,7 @@
 import numpy as np
 from pyHalo.Cosmology.lens_cosmo import LensCosmo
 from scipy.integrate import quad
-from pyHalo.defaults import distance_resolution_MPC
+#from pyHalo.defaults import *
 
 class Geometry(object):
 

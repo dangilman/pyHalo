@@ -8,6 +8,7 @@ from pyHalo.Lensing.hybrid_cBURKcNFW import cBurkcNFWLensing
 from pyHalo.Lensing.PTmass import PTmassLensing
 from pyHalo.Lensing.PJaffe import PJaffeLensing
 from pyHalo.Lensing.coreNFWmodified import coreNFWmodifiedLensing
+from pyHalo.Lensing.coreNFWmodified_trunc import coreNFWmodifiedtruncLensing
 from pyHalo.defaults import *
 from pyHalo.Lensing.coreNFW import coreNFWLensing
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
@@ -20,10 +21,8 @@ def realization_at_z(realization,z):
 
     halos = realization.halos_at_z(z)
 
-    halo_mass_function, wdm_params = realization.halo_mass_function, realization._wdm_params
-
-    return Realization(None, None, None, None, None, None, None, halo_mass_function,
-                       halos=halos, other_params=wdm_params)
+    return Realization(None, None, None, None, None, None, None, realization.halo_mass_function,
+                       halos=halos, other_params=realization._prof_params)
 
 
 class Realization(object):
@@ -31,7 +30,7 @@ class Realization(object):
     #max_m_high = 10**9
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, halo_mass_function,
-                 halos = None, other_params = None, mass_sheet_correction = True):
+                 halos = None, other_params = {}, mass_sheet_correction = True):
 
         self._mass_sheet_correction  = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
@@ -49,6 +48,9 @@ class Realization(object):
         self._loaded_models = {}
 
         self._prof_params = set_default_kwargs(other_params)
+        self.m_break_scale = self._prof_params['log_m_break']
+        self.break_index = self._prof_params['break_index']
+        self._LOS_norm = self._prof_params['LOS_normalization']
 
         if halos is None:
 
@@ -132,6 +134,10 @@ class Realization(object):
 
             if duplicate.mdef == 'CNFW' and new_mdef == 'NFW':
                 del duplicate.mass_def_arg['b']
+            elif duplicate.mdef == 'cNFWmod' and new_mdef == 'NFW':
+                del duplicate.mass_def_arg['b']
+            elif duplicate.mdef == 'cNFWmod_trunc' and new_mdef == 'TNFW':
+                del duplicate.mass_def_arg['b']
             else:
                 raise Exception('combination '+duplicate.mdef + ' and '+
                                 new_mdef+' not recognized.')
@@ -140,7 +146,8 @@ class Realization(object):
             new_halos.append(duplicate)
 
         return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = new_halos, other_params= self._prof_params, mass_sheet_correction = self.mass_sheet_correction())
+                           halos = new_halos, other_params= self._prof_params,
+                           mass_sheet_correction = self.mass_sheet_correction())
 
     def _tags(self, halos=None):
 
@@ -180,7 +187,8 @@ class Realization(object):
                 halos.append(halos_long[i])
 
         return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = halos, other_params= self._prof_params, mass_sheet_correction = self.mass_sheet_correction())
+                           halos = halos, other_params= self._prof_params,
+                           mass_sheet_correction = self.mass_sheet_correction())
 
     def _reset(self):
 
@@ -216,7 +224,9 @@ class Realization(object):
 
     def _add_halo(self, m, x, y, r2, r3, md, z, halo=None):
         if halo is None:
-            halo = Halo(m, x, y, r2, r3, md, z, self.cosmo_mass_profile, **self._prof_params)
+
+            halo = Halo(mass=m, x=x, y=y, r2d=r2, r3d=r3, mdef=md, z=z, cosmo_m_prof=self.cosmo_mass_profile,
+                        args=self._prof_params)
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
@@ -230,7 +240,7 @@ class Realization(object):
         kwargs_lens = []
         lens_model_names = []
         redshift_list = []
-        kwargs_lensmodel = []
+        kwargs_lensmodel = None
 
         for i, halo in enumerate(self.halos):
 
@@ -259,6 +269,11 @@ class Realization(object):
                 args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
             elif halo.mdef == 'cNFWmod':
                 args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
+                args.update({'b': halo.mass_def_arg['b']})
+            elif halo.mdef == 'cNFWmod_trunc':
+                args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
+                args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
+                args.update({'b': halo.mass_def_arg['b']})
             else:
                 raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
 
@@ -274,14 +289,22 @@ class Realization(object):
                 if halo.mdef == 'cBURKcNFW':
                     lens_model_names.append(lenstronomy_ID[0])
                     lens_model_names.append(lenstronomy_ID[1])
-                    kwargs_lensmodel.append(model_args)
-                    kwargs_lensmodel.append(model_args)
+                    if kwargs_lensmodel is None:
+                        kwargs_lensmodel = model_args
+                    else:
+                        if model_args is not None and not (type(model_args) is type(kwargs_lensmodel)):
+                            raise Exception('Currently only one numerical lens class at once is supported.')
 
             else:
                 lens_model_names.append(lenstronomy_ID)
                 kwargs_lens.append(kw)
                 redshift_list += [halo.z]
-                kwargs_lensmodel.append(model_args)
+                if kwargs_lensmodel is None:
+                    kwargs_lensmodel = model_args
+                else:
+
+                    if model_args is not None and not (type(model_args) is type(kwargs_lensmodel)):
+                        raise Exception('Currently only one numerical lens class at once is supported.')
 
         if self._mass_sheet_correction:
 
@@ -291,10 +314,12 @@ class Realization(object):
             assert mass_sheet_correction_back < 100, 'mass sheet correction should log(M)'
 
             kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow_front = 10**mass_sheet_correction_front,
-                                                                      mlow_back = 10**mass_sheet_correction_back)
+                                                                      mlow_back = 10**mass_sheet_correction_back,
+                                                                      mhigh = 10**self._prof_params['log_mhigh'])
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(redshift_list, z_sheets)
+            #kwargs_lensmodel = [None] * len(kwargs_mass_sheets)
 
         return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
 
@@ -332,6 +357,9 @@ class Realization(object):
 
         elif halo.mdef == 'cNFWmod':
             lens = coreNFWmodifiedLensing(self.lens_cosmo)
+
+        elif halo.mdef == 'cNFWmod_trunc':
+            lens = coreNFWmodifiedtruncLensing(self.lens_cosmo)
 
         else:
             raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')

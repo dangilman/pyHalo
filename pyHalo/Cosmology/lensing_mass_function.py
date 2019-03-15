@@ -99,7 +99,7 @@ class LensingMassFunction(object):
 
     def _build(self, mlow, mhigh, zsource):
 
-        z_range = np.arange(default_zstart, 4+default_zstart, 0.02)
+        z_range = np.arange(lenscone_default.default_zstart, 4+lenscone_default.default_zstart, 0.02)
 
         #z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
 

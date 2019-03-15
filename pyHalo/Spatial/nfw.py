@@ -62,7 +62,7 @@ class NFW_2D(object):
 
 class NFW_3D(object):
 
-    def __init__(self, Rs, rmax2d, rmax3d, xoffset=0, yoffset = 0, tidal_core=False, r_core = None):
+    def __init__(self, Rs, rmax2d, rmax3d, xoffset=0, yoffset = 0, tidal_core=False, r_core_parent = None):
 
         """
         all distances expressed in (physical) kpc
@@ -90,7 +90,7 @@ class NFW_3D(object):
         self.xoffset,self.yoffset = xoffset,yoffset
         self.tidal_core = tidal_core
 
-        self.r_core = r_core
+        self.r_core = r_core_parent
 
         self.xmin = rmin * Rs ** -1
         self.xmax = rmax3d * Rs ** -1

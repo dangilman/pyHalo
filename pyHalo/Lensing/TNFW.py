@@ -1,5 +1,5 @@
 import numpy as np
-from pyHalo.Halos.Profiles.nfw import NFW
+from pyHalo.Halos.Profiles.tnfw import TNFW
 
 class TNFWLensing(object):
 
@@ -9,11 +9,11 @@ class TNFWLensing(object):
 
     def __init__(self,lens_cosmo):
 
-        self.lens_cosmo = NFW(lens_cosmo)
+        self.lens_cosmo = TNFW(lens_cosmo)
 
     def params(self, x, y, mass, concentration, redshift, r_trunc):
 
-        Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
+        Rs_angle, theta_Rs = self.lens_cosmo.tnfw_physical2angle(mass, concentration, r_trunc, redshift)
 
         kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
                   'center_x':x, 'center_y':y, 'r_trunc':r_trunc}

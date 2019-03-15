@@ -6,13 +6,14 @@ class Halo(object):
 
     is_subhalo = False
 
-    has_concentration = ['NFW', 'TNFW', 'coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod']
+    has_concentration = ['NFW', 'TNFW', 'coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod',
+                         'cNFWmod_trunc']
 
-    has_truncation = ['TNFW']
+    has_truncation = ['TNFW', 'cNFWmod_trunc']
 
-    has_core = ['coreBURKERT', 'cBURKcNFW', 'CNFW']
+    has_core = ['coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod', 'cNFWmod_trunc']
 
-    def __init__(self, mass, x, y, r2d, r3d, mdef, z, cosmo_m_prof, **args):
+    def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None, cosmo_m_prof=None, args={}):
 
         self.mass = mass
 
@@ -88,7 +89,8 @@ class Halo(object):
                                                                                            c_scale=self._args['c_scale'], c_power=self._args['c_power'])
 
                 for (mi, xi, yi, r2i, r3i) in zip(msub, xsub, ysub, r2dsub, r3dsub):
-                    new_object = Halo(mi, xi, yi, None, None, subhalo_args['mdef'], self.z, self.cosmo_prof, **self._args)
+                    new_object = Halo(mass=mi, x=xi, y=yi, r2d=None, r3d=None, mdef=subhalo_args['mdef'], z=self.z,
+                                      cosmo_m_prof=self.cosmo_prof, args=self._args)
                     new_object.is_subhalo = True
                     self.subhalos.append(new_object)
 
@@ -137,7 +139,7 @@ class Halo(object):
             if self.is_subhalo:
                 truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z, self._args['LOS_truncation'])
             elif self.z == self.cosmo_prof.lens_cosmo.z_lens:
-                truncation = self.cosmo_prof.truncation_roche(self.mass, self.z, self._args['RocheNorm'],
+                truncation = self.cosmo_prof.truncation_roche(self.mass, self.r3d, self.z, self._args['RocheNorm'],
                                                               self._args['RocheNu'])
             else:
                 truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z)
@@ -151,6 +153,8 @@ class Halo(object):
             pass
 
         return mdef_args
+
+
 
 
 

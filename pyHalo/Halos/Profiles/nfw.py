@@ -59,3 +59,4 @@ class NFW(CosmoMassProfiles):
         return Rs_angle, theta_Rs / eps_crit / D_d / self.lens_cosmo.cosmo.arcsec
 
 
+

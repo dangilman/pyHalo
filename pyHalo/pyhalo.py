@@ -35,7 +35,11 @@ class pyHalo(object):
         if not isinstance(type, list):
             type = [type]
         if not isinstance(args, list):
+            args = self._add_profile_params(args)
             args = [args]
+        else:
+            for i, ai in enumerate(args):
+                args[i] = self._add_profile_params(ai)
 
         for n in range(nrealizations):
             realizations.append(self._render_single(type, args))
@@ -64,17 +68,6 @@ class pyHalo(object):
                     logLOS_mhigh = realization_default.log_mhigh
                 else:
                     logLOS_mhigh = args['log_mhigh_los']
-
-            if 'cone_opening_angle' not in args.keys():
-
-                if 'R_ein_main' not in args.keys():
-                    raise Exception('must either specify cone_opening_angle, or (R_ein_main, opening_angle_factor) '
-                                    'in keyword arguments.')
-                if 'opening_angle_factor' in args.keys():
-                    factor = args['opening_angle_factor']
-                else:
-                    factor = realization_default.opening_angle_factor
-                args['cone_opening_angle'] = factor * args['R_ein_main']
 
             if 'two_halo_term' not in self._kwargs_massfunc.keys():
                 self._kwargs_massfunc.update({'two_halo_term': realization_default.two_halo_term})
@@ -119,7 +112,7 @@ class pyHalo(object):
             if not hasattr(self, '_geometry'):
                 self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
 
-            profile_params = self._add_profile_params(args[component_index])
+            #profile_params = self._add_profile_params(args[component_index])
 
             mass_sheet = True
             if 'mass_func_type' in args[component_index].keys():
@@ -128,11 +121,11 @@ class pyHalo(object):
 
             if init:
                 realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, self.halo_mass_function,
-                                          other_params=profile_params, mass_sheet_correction=mass_sheet)
+                                          other_params=args[component_index], mass_sheet_correction=mass_sheet)
                 init = False
             else:
                 new = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, self.halo_mass_function,
-                                  other_params=profile_params, mass_sheet_correction=mass_sheet)
+                                  other_params=args[component_index], mass_sheet_correction=mass_sheet)
                 realization = realization.join(new)
 
         return realization

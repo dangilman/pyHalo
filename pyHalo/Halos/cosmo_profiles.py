@@ -36,6 +36,7 @@ class CosmoMassProfiles(object):
 
         r200 = self.rN_M_nfw_comoving(M * h, 200) * a_z / h   # physical radius r200
         rho0 = self.rho0_c_NFW(c) * h ** 2 / a_z ** 3 # physical density in M_sun/Mpc**3
+
         Rs = r200/c
         return rho0, Rs, r200
 
@@ -124,7 +125,7 @@ class CosmoMassProfiles(object):
                 c = numpy.array(con)
         return c
 
-    def truncation_roche(self, M, r3d, k, nu):
+    def truncation_roche(self, M, r3d, z, k, nu):
 
         """
 
@@ -137,7 +138,7 @@ class CosmoMassProfiles(object):
         exponent = nu * 3 ** -1
         rtrunc_kpc = k*(M / 10**6) ** (1./3) * (r3d * 100 ** -1) ** (exponent)
 
-        return rtrunc_kpc * self.lens_cosmo._kpc_per_asec_zlens ** -1
+        return rtrunc_kpc * self.lens_cosmo.cosmo.kpc_per_asec(z) ** -1
 
     def truncation_roche_exact(self, msub, r3d, m_parent, z, logmhm=0,
                                g1=None,g2=None):
@@ -196,3 +197,4 @@ class CosmoMassProfiles(object):
         r_trunc_arcsec = self.rN_M_nfw_physical_arcsec(M, N, z)
 
         return r_trunc_arcsec
+

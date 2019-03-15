@@ -55,19 +55,20 @@ class MainLensPowerLaw(object):
                                  '(parent_Rs, parent_r200) directly')
 
         if 'r_tidal' in args.keys():
+
             if isinstance(args['r_tidal'], str):
                 if args['r_tidal'] == 'Rs':
-                    args_spatial['r_core'] = args_spatial['Rs']
+                    args_spatial['r_core_parent'] = args_spatial['Rs']
                 else:
                     if args['r_tidal'][-2:] != 'Rs':
                         raise ValueError('if specifying the tidal core radius as number*Rs, the last two '
                                          'letters in the string must be "Rs".')
 
                     scale = float(args['r_tidal'][:-2])
-                    args_spatial['r_core'] = scale * args_spatial['Rs']
+                    args_spatial['r_core_parent'] = scale * args_spatial['Rs']
 
             else:
-                args_spatial['r_core'] = args['r_tidal_parent']
+                args_spatial['r_core_parent'] = args['r_tidal']
 
         return args_spatial
 
@@ -88,8 +89,8 @@ class MainLensPowerLaw(object):
             args_mfunc['normalization'] = args['norm_A0']
 
         elif 'a0_area' in args.keys():
-            print('enforcing cone_opening_angle = 6 * R_ein')
-            r_ein_arcsec = args['cone_opening_angle'] * 0.5 * 3 ** -1
+
+            r_ein_arcsec = args['R_ein_main']
             a0_area_parent_halo = self._lens_cosmo.subhalo_mass_function_amplitude(args['a0_area'],
                                   r_ein_arcsec, self._lens_cosmo.z_lens)
 

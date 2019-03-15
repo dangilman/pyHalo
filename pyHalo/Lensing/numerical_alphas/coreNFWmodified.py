@@ -41,12 +41,9 @@ class InterpCNFWmod(object):
 
         return w1, self.split[minidx[0]], w2, self.split[minidx[1]]
 
-    def __call__(self, x, y, Rs, Rc, norm, center_x, center_y):
+    def __call__(self, x, y, Rs, r_core, norm):
 
-        _x = x - center_x
-        _y = y - center_y
-
-        R = np.sqrt(_x**2 + _y**2)
+        R = np.sqrt(x**2 + y**2)
         log_xnfw = np.log10(R * Rs ** -1)
 
         if isinstance(R, float) or isinstance(R, int):
@@ -54,7 +51,7 @@ class InterpCNFWmod(object):
                 return 0.
 
             else:
-                func = self._get_interp_function(Rc * Rs ** -1)
+                func = self._get_interp_function(r_core * Rs ** -1)
                 alpha = func(log_xnfw)
                 return norm * alpha
 
@@ -65,7 +62,7 @@ class InterpCNFWmod(object):
             log_xnfw[low_inds] = self._xmin + eps
             log_xnfw[high_inds] = self._xmax - eps
 
-        beta = Rc * Rs ** -1
+        beta = r_core * Rs ** -1
 
         if beta <= self._betamin or beta >= self._betamax:
             func = self._get_interp_function(beta)

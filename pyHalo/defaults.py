@@ -64,11 +64,10 @@ class RealizationDefaults(object):
         self.opening_angle_factor = 5
 
         self.default_mhm = 0
-        self.default_break_index = 1.3
+        self.default_break_index = -1.3
         self.default_r_tidal = 0.5 # r_tidal = 'default_r_ridal * Rs'
 
         self.default_type = 'composite_powerlaw'
-
 
         self.default_include_subhalos = False
         self.default_LOS_normalization = 1
@@ -87,67 +86,91 @@ lenscone_default = LensConeDefaults()
 truncation_default = TruncationDefaults()
 halo_default = DMHaloDefaults()
 realization_default = RealizationDefaults()
+print_defaults = False
 
-def set_default_kwargs(args):
+def set_default_kwargs(profile_params):
 
-    profile_params = {}
-
-    if 'include_subhalos' in args.keys():
-        profile_params.update({'include_subhalos': args['include_subhalos']})
-        if args['include_subhalos'] is True:
-            profile_params.update({'subhalo_args': args['subhalo_args']})
+    if 'include_subhalos' in profile_params.keys():
+        profile_params.update({'include_subhalos': profile_params['include_subhalos']})
+        if profile_params['include_subhalos'] is True:
+            profile_params.update({'subhalo_args': profile_params['subhalo_args']})
     else:
         profile_params.update({'include_subhalos':
                                    realization_default.default_include_subhalos})
 
-    if 'log_m_break' in args.keys():
-        if 'break_index' not in args.keys():
+    if 'log_m_break' in profile_params.keys():
+        if 'break_index' not in profile_params.keys():
             raise Exception('If log_m_break is specified, must include break_index keyword.'
                             'default is '+str(realization_default.default_break_index))
 
-        profile_params.update({'log_m_break': args['log_m_break'],
-                               'break_index': args['break_index']})
+        profile_params.update({'log_m_break': profile_params['log_m_break'],
+                               'break_index': profile_params['break_index']})
     else:
-        print('log_m_break not specified, assuming '+str(realization_default.default_mhm))
+        if print_defaults:
+            print('log_m_break not specified, assuming '+str(realization_default.default_mhm))
         profile_params.update({'log_m_break': realization_default.default_mhm,
                                'break_index': realization_default.default_break_index})
 
-    if 'c_power' in args.keys():
-        profile_params.update({'c_power': args['c_power']})
+    if 'c_power' in profile_params.keys():
+        profile_params.update({'c_power': profile_params['c_power']})
     else:
-        print('c_power not specified, assuming -0.17 (only applies if log_m_break>0)')
+        if print_defaults:
+            print('c_power not specified, assuming -0.17 (only applies if log_m_break>0)')
         profile_params.update({'c_power': halo_default.c_power})
-    if 'c_scale' in args.keys():
-        profile_params.update({'c_scale': args['c_scale']})
+    if 'c_scale' in profile_params.keys():
+        profile_params.update({'c_scale': profile_params['c_scale']})
     else:
-        print('c_scale not specified, assuming 60')
+        if print_defaults:
+            print('c_scale not specified, assuming 60')
         profile_params.update({'c_scale': halo_default.c_scale})
 
-    if 'parent_m200' in args.keys():
-        profile_params.update({'parent_m200': args['parent_m200']})
+    if 'parent_m200' in profile_params.keys():
+        profile_params.update({'parent_m200': profile_params['parent_m200']})
     else:
-        print('Warning: halo mass not specified, assuming a parent halo mass of 10^13.')
+        if print_defaults:
+            print('Warning: halo mass not specified, assuming a parent halo mass of 10^13.')
         profile_params.update({'parent_m200': realization_default.m_parent})
-    if 'LOS_normalization' in args.keys():
-        profile_params.update({'LOS_normalization': args['LOS_normalization']})
+    if 'r_tidal' not in profile_params.keys():
+        profile_params.update({'r_tidal': realization_default.default_r_tidal})
+    if 'LOS_normalization' in profile_params.keys():
+        profile_params.update({'LOS_normalization': profile_params['LOS_normalization']})
     else:
         profile_params.update({'LOS_normalization':
                                    realization_default.default_LOS_normalization})
 
-    if 'c_scatter' not in args.keys():
+    if 'c_scatter' not in profile_params.keys():
         profile_params.update({'c_scatter': halo_default.scatter})
-    if 'include_subhalos' not in args.keys():
+    if 'include_subhalos' not in profile_params.keys():
         profile_params.update({'include_subhalos':
                                    realization_default.default_include_subhalos})
         if realization_default.default_include_subhalos is True:
             raise Exception('not yet implemented.')
 
-    if 'RocheNorm' not in args.keys():
+    if 'RocheNorm' not in profile_params.keys():
         profile_params.update({'RocheNorm': truncation_default.RocheNorm})
-    if 'RocheNu' not in args.keys():
+    if 'RocheNu' not in profile_params.keys():
         profile_params.update({'RocheNu': truncation_default.RocheNu})
-    if 'LOS_truncation_factor' not in args.keys():
+    if 'LOS_truncation_factor' not in profile_params.keys():
         profile_params.update({'LOS_truncation_factor': truncation_default.LOS_truncation})
+
+    if 'cone_opening_angle' not in profile_params.keys():
+
+        if 'R_ein_main' not in profile_params.keys():
+            raise Exception('must either specify cone_opening_angle, or (R_ein_main, opening_angle_factor) '
+                            'in keyword arguments.')
+        if 'opening_angle_factor' in profile_params.keys():
+            factor = profile_params['opening_angle_factor']
+        else:
+            factor = realization_default.opening_angle_factor
+
+        profile_params['cone_opening_angle'] = factor * profile_params['R_ein_main']
+        profile_params['opening_angle_factor'] = factor
+
+    else:
+        if 'opening_angle_factor' not in profile_params.keys():
+            raise Exception('If you specify cone_opening_angle, you must also specify opening_angle_factor,'
+                            'where R_ein_main = cone_opening_angle / opening_angle_factor')
+        profile_params['R_ein_main'] = profile_params['cone_opening_angle'] * profile_params['opening_angle_factor'] ** -1
 
     return profile_params
 
