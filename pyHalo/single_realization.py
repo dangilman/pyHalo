@@ -1,16 +1,7 @@
 import numpy as np
 
 from pyHalo.Halos.halo import Halo
-from pyHalo.Lensing.NFW import NFWLensing
-from pyHalo.Lensing.TNFW import TNFWLensing
-from pyHalo.Lensing.coreBurk import cBurkLensing
-from pyHalo.Lensing.hybrid_cBURKcNFW import cBurkcNFWLensing
-from pyHalo.Lensing.PTmass import PTmassLensing
-from pyHalo.Lensing.PJaffe import PJaffeLensing
-from pyHalo.Lensing.coreNFWmodified import coreNFWmodifiedLensing
-from pyHalo.Lensing.coreNFWmodified_trunc import coreNFWmodifiedtruncLensing
 from pyHalo.defaults import *
-from pyHalo.Lensing.coreNFW import coreNFWLensing
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
@@ -335,30 +326,39 @@ class Realization(object):
     def _load_model(self, halo):
 
         if halo.mdef == 'NFW':
+            from pyHalo.Lensing.NFW import NFWLensing
             lens = NFWLensing(self.lens_cosmo)
 
         elif halo.mdef == 'TNFW':
+            from pyHalo.Lensing.TNFW import TNFWLensing
             lens = TNFWLensing(self.lens_cosmo)
 
         elif halo.mdef == 'coreBURKERT':
+            from pyHalo.Lensing.coreBurk import cBurkLensing
             lens = cBurkLensing(self.lens_cosmo)
 
         elif halo.mdef == 'cBURKcNFW':
+            from pyHalo.Lensing.hybrid_cBURKcNFW import cBurkcNFWLensing
             lens = cBurkcNFWLensing(self.lens_cosmo)
 
         elif halo.mdef == 'POINT_MASS':
+            from pyHalo.Lensing.PTmass import PTmassLensing
             lens = PTmassLensing(self.lens_cosmo)
 
         elif halo.mdef == 'PJAFFE':
+            from pyHalo.Lensing.PJaffe import PJaffeLensing
             lens = PJaffeLensing(self.lens_cosmo)
 
         elif halo.mdef == 'CNFW':
+            from pyHalo.Lensing.coreNFW import coreNFWLensing
             lens = coreNFWLensing(self.lens_cosmo)
 
         elif halo.mdef == 'cNFWmod':
+            from pyHalo.Lensing.coreNFWmodified import coreNFWmodifiedLensing
             lens = coreNFWmodifiedLensing(self.lens_cosmo)
 
         elif halo.mdef == 'cNFWmod_trunc':
+            from pyHalo.Lensing.coreNFWmodified_trunc import coreNFWmodifiedtruncLensing
             lens = coreNFWmodifiedtruncLensing(self.lens_cosmo)
 
         else:
