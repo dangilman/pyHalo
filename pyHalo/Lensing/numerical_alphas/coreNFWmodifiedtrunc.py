@@ -1,10 +1,8 @@
 import numpy as np
 from scipy.interpolate import interp1d
-try:
-    from pyHalo.Lensing.numerical_alphas import cnfwmodtrunc_deflections
-except:
-    raise Exception('When using this class, must first unzip the file cnfwmodtrunc_deflections.py.zip to access the '
-                    'numerical deflections stored there.')
+from pyHalo.Lensing.numerical_alphas import cnfwmodtrunc_deflections
+#raise Exception('When using this class, must first unzip the file cnfwmodtrunc_deflections.py.zip to access the '
+#                    'numerical deflections stored there.')
 
 from pyHalo.Lensing.numerical_alphas import cnfwmodtrunc_beta
 from pyHalo.Lensing.numerical_alphas import cnfwmodtrunc_logx
