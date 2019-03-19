@@ -140,6 +140,35 @@ class CosmoMassProfiles(object):
 
         return rtrunc_kpc * self.lens_cosmo.cosmo.kpc_per_asec(z) ** -1
 
+    def truncation_roche_isonfw(self, msub, r3d, m_parent, z, logmhm=0, g1=None, g2 = None, k=1,
+                                m_func = 'NFW', beta_sub= 1e-5):
+
+        c_parent = self.NFW_concentration(m_parent, z, logmhm=logmhm,
+                                          scatter=False, c_scale=g1, c_power=g2)
+        c_sub = self.NFW_concentration(msub, z, logmhm=logmhm,
+                                       scatter=False, c_scale=g1, c_power=g2)
+
+        rho_sub, Rs_sub, _ = self.NFW_params_physical(msub, c_sub, z)
+        _, Rs_main, _ = self.NFW_params_physical(m_parent, c_parent, z)
+
+        fc_parent = numpy.log(1+r3d * Rs_main**-1)
+
+        area = (numpy.pi * 1) ** 2
+        m_main = self.lens_cosmo.sigmacrit * area
+        rho_main = m_main * (4 * numpy.pi * Rs_main ** 3 * fc_parent) ** -1
+
+        if m_func == 'NFW':
+            fc = numpy.log(c_sub + 1) - c_sub * (1+c_sub) ** -1
+        elif m_func == 'coreNFW':
+            fc = (c_sub * (1+c_sub) ** -1 * (-1+beta_sub) ** -1 + (-1+beta_sub) ** -2 *
+                      ((2*beta_sub-1)*numpy.log(1/(1+c_sub)) + beta_sub **2 * numpy.log(c_sub / beta_sub + 1)))
+
+        rho_factor = (rho_sub * fc) * (fc_parent * rho_main) ** -1
+        rs_factor = Rs_sub * Rs_main ** -1
+        r_trunc = k * r3d * rs_factor * rho_factor ** (1./3)
+
+        return r_trunc, r_trunc * Rs_sub ** -1
+
     def truncation_roche_exact(self, msub, r3d, m_parent, z, logmhm=0,
                                g1=None,g2=None):
 
@@ -197,4 +226,3 @@ class CosmoMassProfiles(object):
         r_trunc_arcsec = self.rN_M_nfw_physical_arcsec(M, N, z)
 
         return r_trunc_arcsec
-

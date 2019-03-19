@@ -83,51 +83,14 @@ class InterpCNFWmodtrunc(object):
         beta = r_core * Rs ** -1
         tau = r_trunc * Rs ** -1
 
-        tmins = self._get_closest_tau_double(tau)
-        tau_value_1, tau_value_2 = self.tau[tmins[0]], self.tau[tmins[1]]
-
-        bmins = self._get_closest_beta_double(beta)
-        beta_value_1, beta_value_2 = self.beta[bmins[0]], self.beta[bmins[1]]
-
-        dis1 = self._euclidean(tau, beta, tau_value_1, beta_value_1)
-        dis2 = self._euclidean(tau, beta, tau_value_2, beta_value_2)
-        dis3 = self._euclidean(tau, beta, tau_value_1, beta_value_2)
-        dis4 = self._euclidean(tau, beta, tau_value_2, beta_value_1)
-        weight_norm = (dis1 + dis2 + dis3 + dis4) ** -1
-
-        func1 = self.split[tmins[0]][bmins[0]]
-        func2 = self.split[tmins[1]][bmins[1]]
-        func3 = self.split[tmins[0]][bmins[1]]
-        func4 = self.split[tmins[1]][bmins[0]]
-
-        return norm * weight_norm * (dis1 * func1(log_xnfw) + dis2 * func2(log_xnfw) +
-                                     dis3 * func3(log_xnfw) + dis4 * func4(log_xnfw))
-
-    def old__call__(self, x, y, Rs, r_core, r_trunc, norm):
-
-        R = np.sqrt(x**2 + y**2)
-        log_xnfw = np.log10(R * Rs ** -1)
-
-        if isinstance(R, float) or isinstance(R, int):
-            if log_xnfw <= self._xmin or log_xnfw >= self._xmax:
-                return 0.
-        else:
-            eps = 1e-5
-            low_inds = np.where(log_xnfw<=self._xmin)
-            high_inds = np.where(log_xnfw>=self._xmax)
-            log_xnfw[low_inds] = self._xmin + eps
-            log_xnfw[high_inds] = self._xmax - eps
-
-        beta = r_core * Rs ** -1
-        tau = r_trunc * Rs ** -1
-
         tmin = self._get_closest_tau(tau, 0)
-        #tmin_2 = self._get_closest_tau(tau, 1)
-        bmin = self._get_closest_beta(beta, 0)
+        bmin = self._get_closest_beta_double(beta)
+        func1, func2 = self.split[tmin][bmin[0]](log_xnfw), self.split[tmin][bmin[1]](log_xnfw)
 
-        func = self.split[tmin][bmin]
+        w1 = 1 - np.absolute(self.beta - self.beta[bmin]) * self._delta_beta ** -1
+        w2 = 1 - w1
 
-        return norm * func(log_xnfw)
+        return norm * (w1 * func1 + w2 * func2)
 
 
 if False:
