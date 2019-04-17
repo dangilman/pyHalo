@@ -87,11 +87,10 @@ class InterpCNFWmodtrunc(object):
         bmin = self._get_closest_beta_double(beta)
         func1, func2 = self.split[tmin][bmin[0]](log_xnfw), self.split[tmin][bmin[1]](log_xnfw)
 
-        w1 = 1 - np.absolute(self.beta - self.beta[bmin]) * self._delta_beta ** -1
+        w1 = 1 - np.absolute(beta - self.beta[bmin[0]]) * self._delta_beta ** -1
         w2 = 1 - w1
 
         return norm * (w1 * func1 + w2 * func2)
-
 
 if False:
     c = InterpCNFWmodtrunc()

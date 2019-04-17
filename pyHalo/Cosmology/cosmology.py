@@ -5,6 +5,8 @@ import astropy.cosmology as astropy_cosmo
 from scipy.special import hyp2f1
 from pyHalo.defaults import *
 
+from scipy.interpolate import interpn
+
 class Cosmology(object):
 
     M_sun = 1.9891 * 10 ** 30  # solar mass in [kg]
