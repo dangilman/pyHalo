@@ -37,6 +37,8 @@ class TNFW(CosmoMassProfiles):
 
     def _tnfw_g1(self, tau):
 
+        # revert to NFW normalization for now
+        tau = 10000
         x = 1
         L = numpy.log((numpy.sqrt(tau**2 + 1)+tau)**-1)
         F = 1

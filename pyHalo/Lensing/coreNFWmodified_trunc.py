@@ -1,4 +1,3 @@
-import numpy as np
 from pyHalo.Halos.Profiles.coreTNFW import coreTNFW
 from pyHalo.Lensing.numerical_alphas.coreNFWmodifiedtrunc import InterpCNFWmodtrunc
 
