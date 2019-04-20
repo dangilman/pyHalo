@@ -166,11 +166,11 @@ def set_default_kwargs(profile_params):
         profile_params['cone_opening_angle'] = factor * profile_params['R_ein_main']
         profile_params['opening_angle_factor'] = factor
 
-    else:
-        if 'opening_angle_factor' not in profile_params.keys():
-            raise Exception('If you specify cone_opening_angle, you must also specify opening_angle_factor,'
+    if 'opening_angle_factor' not in profile_params.keys():
+        raise Exception('If you specify cone_opening_angle, you must also specify opening_angle_factor,'
                             'where R_ein_main = cone_opening_angle / opening_angle_factor')
-        profile_params['R_ein_main'] = profile_params['cone_opening_angle'] * profile_params['opening_angle_factor'] ** -1
+
+    profile_params['R_ein_main'] = profile_params['cone_opening_angle'] * profile_params['opening_angle_factor'] ** -1
 
     return profile_params
 
