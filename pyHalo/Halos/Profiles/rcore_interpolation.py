@@ -21,6 +21,16 @@ log_rs_arr, log_rho_arr = np.meshgrid(np.log10(rs_bins), np.log10(rho_bins))
 linear_interp = interp2d(log_rho_arr, log_rs_arr, linear_term)
 constant_interp = interp2d(log_rho_arr, log_rs_arr, constant_term)
 
+def halo_age(z, lookback_time_function, zform = 10):
+
+    formation_time = lookback_time_function(zform)
+    age = lookback_time_function(z) - formation_time
+    return np.max(age, 0)
+
+def zeta_value(z, cross_0, lookback_time_function):
+    age = halo_age(z, lookback_time_function)
+    return age * cross_0
+
 def interp_rc_over_rs(rho_s, Rs, zeta):
 
     log_rho_value = np.log10(rho_s)

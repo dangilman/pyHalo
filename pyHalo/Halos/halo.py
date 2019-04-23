@@ -1,7 +1,7 @@
 import numpy as np
 from pyHalo.Spatial.nfw import NFW_3D
 from pyHalo.Massfunc.parameterizations import *
-from pyHalo.Halos.Profiles.rcore_interpolation import interp_rc_over_rs
+from pyHalo.Halos.Profiles.rcore_interpolation import interp_rc_over_rs, zeta_value
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 
 _cosmo_prof = CosmoMassProfiles(z_lens=0.5, z_source=1.5)
@@ -154,8 +154,10 @@ class Halo(object):
 
             if self.mdef in ['cNFWmod_trunc', 'cNFWmod']:
                 rho, rs, _ = _cosmo_prof.NFW_params_physical(self.mass, nfw_c, self.z)
-                timescale = 10 #Gyr
-                core_ratio = interp_rc_over_rs(rho, rs, self._args['SIDMcross']*timescale)
+                time_function = self.cosmo_prof.lens_cosmo.cosmo.lookback_time
+                cross_times_timescale = zeta_value(self.z, self._args['SIDMcross'], time_function)
+
+                core_ratio = interp_rc_over_rs(rho, rs, cross_times_timescale)
                 mdef_args.update({'b': core_ratio})
             else:
                 mdef_args.update({'b': self._args['core_ratio']})

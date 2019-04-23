@@ -50,6 +50,10 @@ class Cosmology(object):
 
         return self._colossus_cosmo
 
+    def lookback_time(self, z):
+
+        return self.astropy.age(z).value
+
     def scale_factor(self,z):
 
         return (1+z)**-1
