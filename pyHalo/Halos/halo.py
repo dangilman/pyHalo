@@ -135,7 +135,7 @@ class Halo(object):
 
             nfw_c = self.cosmo_prof.NFW_concentration(self.mass, self.z, logmhm=self._args['log_m_break'],
                                                       c_scale=self._args['c_scale'], c_power=self._args['c_power'],
-                                                      scatter=self._args['c_scatter'])
+                                                      scatter=self._args['c_scatter'], model=self._args['mc_model'])
             mdef_args.update({'concentration': nfw_c})
 
         if self.mdef in self.has_truncation:
@@ -154,11 +154,19 @@ class Halo(object):
 
             if self.mdef in ['cNFWmod_trunc', 'cNFWmod']:
                 rho, rs, _ = _cosmo_prof.NFW_params_physical(self.mass, nfw_c, self.z)
-                time_function = self.cosmo_prof.lens_cosmo.cosmo.lookback_time
-                cross_times_timescale = zeta_value(self.z, self._args['SIDMcross'], time_function)
 
-                core_ratio = interp_rc_over_rs(rho, rs, cross_times_timescale)
+                if 'core_ratio' in self._args.keys():
+                    if 'SIDMcross' in self._args.keys():
+                        raise Exception('You have specified both core_ratio and SIDMcross arguments. '
+                                        'You should pick one or the other')
+                    core_ratio = self._args['core_ratio']
+                else:
+                    time_function = self.cosmo_prof.lens_cosmo.cosmo.lookback_time
+                    cross_times_timescale = zeta_value(self.z, self._args['SIDMcross'], time_function)
+                    core_ratio = interp_rc_over_rs(rho, rs, cross_times_timescale)
+
                 mdef_args.update({'b': core_ratio})
+
             else:
                 mdef_args.update({'b': self._args['core_ratio']})
 

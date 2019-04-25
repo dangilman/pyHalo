@@ -138,6 +138,9 @@ def set_default_kwargs(profile_params):
         profile_params.update({'LOS_normalization':
                                    realization_default.default_LOS_normalization})
 
+    if 'mc_model' not in profile_params.keys():
+        profile_params.update({'mc_model': halo_default.mass_concentration_relation})
+
     if 'c_scatter' not in profile_params.keys():
         profile_params.update({'c_scatter': halo_default.scatter})
     if 'include_subhalos' not in profile_params.keys():
