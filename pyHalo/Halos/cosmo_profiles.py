@@ -138,7 +138,7 @@ class CosmoMassProfiles(object):
         exponent = nu * 3 ** -1
         rtrunc_kpc = k*(M / 10**6) ** (1./3) * (r3d * 100 ** -1) ** (exponent)
 
-        return rtrunc_kpc * self.lens_cosmo.cosmo.kpc_per_asec(z) ** -1
+        return numpy.round(rtrunc_kpc * self.lens_cosmo.cosmo.kpc_per_asec(z) ** -1, 3)
 
     def truncation_roche_isonfw(self, msub, r3d, m_parent, z, logmhm=0, g1=None, g2 = None, k=1,
                                 m_func = 'NFW', beta_sub= 1e-5):

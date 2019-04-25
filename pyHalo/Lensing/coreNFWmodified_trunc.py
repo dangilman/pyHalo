@@ -1,5 +1,6 @@
 from pyHalo.Halos.Profiles.coreTNFW import coreTNFW
 from pyHalo.Lensing.numerical_alphas.coreNFWmodifiedtrunc import InterpCNFWmodtrunc
+import numpy as np
 
 class coreNFWmodifiedtruncLensing(object):
 
@@ -23,8 +24,14 @@ class coreNFWmodifiedtruncLensing(object):
 
         normalization = self._normalize(Rs_angle, theta_Rs_nfw)
 
+        x, y = np.round(x, 4), np.round(y, 4)
+
+        Rs_angle = np.round(Rs_angle, 6)
+
+        r_core = np.round(b*Rs_angle, 6)
+
         kwargs = {'center_x': x, 'center_y': y,'Rs': Rs_angle,
-                  'r_core': b*Rs_angle, 'norm': normalization, 'r_trunc': r_trunc}
+                  'r_core': r_core, 'norm': normalization, 'r_trunc': r_trunc}
 
         return kwargs, self.numerical_class
 

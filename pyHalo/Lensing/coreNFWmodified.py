@@ -24,6 +24,10 @@ class coreNFWmodifiedLensing(object):
 
         _, normalization = self._compute_properties(Rs_angle, theta_Rs_nfw, redshift)
 
+        x, y = np.round(x, 4), np.round(y, 4)
+
+        Rs_angle = np.round(Rs_angle, 6)
+
         r_core = b * Rs_angle
         kwargs = {'center_x': x, 'center_y': y,'Rs': Rs_angle,
                   'r_core': r_core, 'norm': normalization}

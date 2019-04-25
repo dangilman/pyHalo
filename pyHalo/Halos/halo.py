@@ -136,7 +136,8 @@ class Halo(object):
             nfw_c = self.cosmo_prof.NFW_concentration(self.mass, self.z, logmhm=self._args['log_m_break'],
                                                       c_scale=self._args['c_scale'], c_power=self._args['c_power'],
                                                       scatter=self._args['c_scatter'], model=self._args['mc_model'])
-            mdef_args.update({'concentration': nfw_c})
+
+            mdef_args.update({'concentration': np.round(nfw_c,2)})
 
         if self.mdef in self.has_truncation:
 
@@ -148,7 +149,7 @@ class Halo(object):
             else:
                 truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z)
 
-            mdef_args.update({'r_trunc': truncation})
+            mdef_args.update({'r_trunc': np.round(truncation, 3)})
 
         if self.mdef in self.has_core:
 
@@ -165,10 +166,11 @@ class Halo(object):
                     cross_times_timescale = zeta_value(self.z, self._args['SIDMcross'], time_function)
                     core_ratio = interp_rc_over_rs(rho, rs, cross_times_timescale)
 
+                core_ratio = np.round(core_ratio, 2)
                 mdef_args.update({'b': core_ratio})
 
             else:
-                mdef_args.update({'b': self._args['core_ratio']})
+                mdef_args.update({'b': np.round(self._args['core_ratio'],2)})
 
         if self.mdef == 'POINT_MASS':
             pass
