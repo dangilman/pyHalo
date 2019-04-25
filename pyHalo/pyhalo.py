@@ -136,13 +136,11 @@ class pyHalo(object):
 
     def _build_los(self, args):
 
-        mfunc_LOS = self._LOS_mass_func(args)
-
         if 'mass_func_type' in args and args['mass_func_type'] == 'delta':
-            los = LOSDelta(args, mfunc_LOS)
+            los = LOSDelta(args, self.halo_mass_function)
         else:
             # default to a power law
-            los = LOSPowerLaw(args, mfunc_LOS)
+            los = LOSPowerLaw(args, self.halo_mass_function)
 
         if 'mdef_los' not in args.keys():
             raise ValueError('specify mass definition for line of sight halos with mdef_los.')
@@ -167,7 +165,8 @@ class pyHalo(object):
 
         for mod, args in zip(model_name, model_args):
 
-            _ = self._LOS_mass_func(args)
+            if not hasattr(self, 'halo_mass_function'):
+                _ = self._LOS_mass_func(args)
 
             if mod == 'composite_powerlaw':
 
