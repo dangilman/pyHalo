@@ -30,7 +30,7 @@ class cBurkcNFWLensing(object):
 
         return 0.5 * (1 + np.tanh(c * arg))
 
-    def params(self, x, y, mass, concentration, b, redshift):
+    def params(self, x, y, mass, redshift, concentration, b):
 
         kwargs_cburk = self._cburk.params(x, y, mass, concentration, b, redshift)
         kwargs_cnfw = self._cnfw.params(x, y, mass, concentration, b, redshift)

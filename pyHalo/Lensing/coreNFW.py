@@ -15,7 +15,7 @@ class coreNFWLensing(object):
 
         self.lens_cosmo = CNFW(lens_cosmo)
 
-    def params(self, x, y, mass, concentration, b, redshift):
+    def params(self, x, y, mass, redshift, concentration, b):
 
         Rs_angle, theta_Rs, r_core = self.lens_cosmo.corenfw_physical2angle(mass,
                        concentration, redshift, b)

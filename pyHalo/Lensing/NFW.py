@@ -15,7 +15,7 @@ class NFWLensing(object):
 
         self.lens_cosmo = NFW(lens_cosmo)
 
-    def params(self, x, y, mass, concentration, redshift):
+    def params(self, x, y, mass, redshift, concentration):
 
         Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle(mass, concentration, redshift)
 

@@ -9,7 +9,7 @@ class PJaffeLensing(object):
     def __init__(self, lens_cosmo):
         self.lens_cosmo = lens_cosmo
 
-    def params(self, x, y, mass, r_trunc):
+    def params(self, x, y, mass, redshift, r_trunc):
 
         center_x = x
         center_y = y
