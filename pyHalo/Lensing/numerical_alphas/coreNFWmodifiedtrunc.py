@@ -92,6 +92,7 @@ class InterpCNFWmodtrunc(object):
 
         return norm * (w1 * func1 + w2 * func2)
 
+
 if False:
     c = InterpCNFWmodtrunc()
     x = np.logspace(-1, 1.6, 100)
