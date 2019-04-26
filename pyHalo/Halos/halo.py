@@ -1,7 +1,7 @@
 import numpy as np
 from pyHalo.Spatial.nfw import NFW_3D
 from pyHalo.Massfunc.parameterizations import *
-from pyHalo.Halos.Profiles.rcore_interpolation import interp_rc_over_rs, zeta_value
+from pyHalo.Halos.Profiles.rcore_interpolation import do_interp, zeta_value
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 
 _cosmo_prof = CosmoMassProfiles(z_lens=0.5, z_source=1.5)
@@ -162,10 +162,12 @@ class Halo(object):
                         raise Exception('You have specified both core_ratio and SIDMcross arguments. '
                                         'You should pick one or the other')
                     core_ratio = self._args['core_ratio']
+
                 else:
+                    zform = 10
                     time_function = self.cosmo_prof.lens_cosmo.cosmo.lookback_time
-                    cross_times_timescale = zeta_value(self.z, self._args['SIDMcross'], time_function)
-                    core_ratio = interp_rc_over_rs(rho, rs, cross_times_timescale)[0]
+                    zeta = zeta_value(self.z, self._args['SIDMcross'], time_function, zform)
+                    core_ratio = do_interp(np.log10(rho), np.log10(rs), zeta)[0]
 
                 core_ratio = np.round(core_ratio, 2)
                 #mdef_args.update({'b': core_ratio})
