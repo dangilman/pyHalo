@@ -167,7 +167,7 @@ class Halo(object):
                     zform = 10
                     time_function = self.cosmo_prof.lens_cosmo.cosmo.lookback_time
                     zeta = zeta_value(self.z, self._args['SIDMcross'], time_function, zform)
-                    core_ratio = do_interp(np.log10(rho), np.log10(rs), zeta)[0]
+                    core_ratio = do_interp(np.log10(rho), np.log10(rs), np.log10(zeta))
 
                 core_ratio = np.round(core_ratio, 2)
                 #mdef_args.update({'b': core_ratio})
