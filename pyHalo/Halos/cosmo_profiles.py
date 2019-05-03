@@ -4,6 +4,8 @@ from scipy.optimize import minimize
 
 class CosmoMassProfiles(object):
 
+    G = 4.3e-6 # kpc / solar mass (km/sec)^2
+
     def __init__(self, lens_comso = None, z_lens = None, z_source = None):
 
         if lens_comso is None:
@@ -14,6 +16,22 @@ class CosmoMassProfiles(object):
 
         self.lens_cosmo = lens_comso
 
+    def NFWv200_fromM(self, M, z, mc_scatter=False):
+
+        _, _, r200 = self.NFW_params_physical_fromM(M, z, mc_scatter=mc_scatter)
+
+        return numpy.sqrt(self.G * M / r200)
+
+    def NFWvmax_fromM(self, M, z, mc_scatter=False):
+
+        c = self.NFW_concentration(M, z, scatter=mc_scatter)
+
+        _, _, r200 = self.NFW_params_physical(M, c, z)
+
+        vmax = numpy.sqrt(self.G * M / r200)
+
+        return vmax * (0.216 * (numpy.log(1 + c) - c * (1+c) ** -1) * c ** -1) ** 0.5
+
     def rho0_c_NFW(self, c):
         """
         computes density normalization as a function of concentration parameter
@@ -21,6 +39,14 @@ class CosmoMassProfiles(object):
         """
 
         return 200. / 3 * self.lens_cosmo.rhoc * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
+
+    def NFW_params_physical_fromM(self, M, z, mc_scatter=False, scatter_amplitude = 0.13):
+
+        c = self.NFW_concentration(M, z, scatter=mc_scatter, scatter_amplitude=scatter_amplitude)
+
+        rho, rs, r200 = self.NFW_params_physical(M, c, z)
+
+        return rho, rs, r200
 
     def _nfwParam_physical_Mpc(self, M, c, z):
 
@@ -88,7 +114,7 @@ class CosmoMassProfiles(object):
         return rNM_arcsec
 
     def NFW_concentration(self, M, z, model='diemer18', mdef='200c', logmhm=0,
-                          scatter=True, c_scale=None, c_power=None):
+                          scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
 
         # WDM relation adopted from Ludlow et al
         # use diemer18?
@@ -121,7 +147,7 @@ class CosmoMassProfiles(object):
             else:
                 con = []
                 for i, ci in enumerate(c):
-                    con.append(numpy.random.lognormal(numpy.log(ci),0.13))
+                    con.append(numpy.random.lognormal(numpy.log(ci), scatter_amplitude))
                 c = numpy.array(con)
         return c
 

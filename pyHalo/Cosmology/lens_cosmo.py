@@ -9,19 +9,20 @@ class LensCosmo(object):
 
         self.cosmo = Cosmology()
         self.z_lens, self.z_source = z_lens, z_source
-
-        # critical density for lensing in units M_sun * Mpc ^ -2
-        self.epsilon_crit = self.get_epsiloncrit(z_lens, z_source)
-        # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
-        self.sigmacrit = self.epsilon_crit * (0.001) ** 2 * self.cosmo.kpc_per_asec(z_lens) ** 2
         # critical density of the universe in M_sun Mpc^-3
         self.rhoc = self.cosmo.astropy.critical_density0.value * self.cosmo.density_to_MsunperMpc
-        # lensing distances
-        self.D_d, self.D_s, self.D_ds = self.cosmo.D_A(0, z_lens), self.cosmo.D_A(0, z_source), self.cosmo.D_A(z_lens, z_source)
-        # hubble distance in Mpc
-        self._d_hubble = self.cosmo.c * self.cosmo.Mpc * 0.001 * (self.cosmo.h * 100)
 
-        self._kpc_per_asec_zlens = self.cosmo.kpc_per_asec(self.z_lens)
+        if z_lens != 0:
+            # critical density for lensing in units M_sun * Mpc ^ -2
+            self.epsilon_crit = self.get_epsiloncrit(z_lens, z_source)
+            # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
+            self.sigmacrit = self.epsilon_crit * (0.001) ** 2 * self.cosmo.kpc_per_asec(z_lens) ** 2
+            # lensing distances
+            self.D_d, self.D_s, self.D_ds = self.cosmo.D_A(0, z_lens), self.cosmo.D_A(0, z_source), self.cosmo.D_A(z_lens, z_source)
+            # hubble distance in Mpc
+            self._d_hubble = self.cosmo.c * self.cosmo.Mpc * 0.001 * (self.cosmo.h * 100)
+
+            self._kpc_per_asec_zlens = self.cosmo.kpc_per_asec(self.z_lens)
 
     def mthermal_to_halfmode(self, m_thermal):
 
