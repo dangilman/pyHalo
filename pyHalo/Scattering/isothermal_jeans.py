@@ -6,6 +6,7 @@ from pyHalo.Scattering.vdis_nfw import _velocity_dispersion_NFW
 from pyHalo.Scattering.Enfw import _energyNFW
 from copy import copy
 from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 
 class ISONFW(object):
 
@@ -346,7 +347,18 @@ def solve(rhonfw, rsnfw, cross_section_class,
 
     return rho0, s0, core_density_ratio, fit_quality
 
-def solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.002, do_E = False):
+def solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.002):
+
+    rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_class,
+                                                                N, plot=plot, tol=tol)
+
+    #if fit_quality > 0.1:
+    #    print('using energy boundary conditions')
+    #    rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_class, N, do_E=True)
+
+    return rho0, s0, core_size_unitsrs, fit_quality
+
+def _solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.002, do_E = False):
 
     fit_quality = 100
 
@@ -403,5 +415,56 @@ def solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.0
         if iter_count >= N_iter_max:
             break
 
+    if fit_quality > 0.1:
+        rho0 = np.nan
+        s0 = np.nan
+        core_size_unitsrs = np.nan
 
     return rho0, s0, core_size_unitsrs, fit_quality
+
+def solve_mass_range(masses, common_redshift, cross_class):
+
+    logrho0 = []
+    prof = CosmoMassProfiles(z_lens=0.5, z_source=3)
+    fitquality = []
+
+    for mi in masses:
+        rhos, rs, _ = prof.NFW_params_physical_fromM(mi, common_redshift)
+        rho0, _, _, fit_qual = solve_iterative(rhos, rs, cross_class, 5)
+        logrho0.append(np.log10(rho0))
+        fitquality.append(fit_qual)
+
+    cut = np.where(np.array(fitquality) < 0.05)[0]
+
+    return np.array(masses)[cut], np.array(logrho0)[cut], np.array(fitquality)[cut]
+
+
+def solve_z_range(mass, redshifts, cross_class):
+
+    logrho0 = []
+    prof = CosmoMassProfiles(z_lens=0.5, z_source=3)
+    fitquality = []
+
+    for zi in redshifts:
+        rhos, rs, _ = prof.NFW_params_physical_fromM(mass, zi)
+        rho0, _, _, fit_qual = solve_iterative(rhos, rs, cross_class, 5)
+        logrho0.append(np.log10(rho0))
+        fitquality.append(fit_qual)
+
+    cut = np.where(np.array(fitquality) < 0.05)
+
+    return np.array(logrho0)[cut], np.array(fitquality)[cut]
+
+def solve_cross_range(mass, z, cross_classes):
+    logrho0 = []
+    prof = CosmoMassProfiles(z_lens=0.5, z_source=3)
+    fitquality = []
+    for cross_class in cross_classes:
+        rhos, rs, _ = prof.NFW_params_physical_fromM(mass, z)
+        rho0, _, _, fit_qual = solve_iterative(rhos, rs, cross_class, 5)
+        logrho0.append(np.log10(rho0))
+        fitquality.append(fit_qual)
+
+    cut = np.where(np.array(fitquality) < 0.05)
+
+    return np.array(logrho0)[cut], np.array(fitquality)[cut]

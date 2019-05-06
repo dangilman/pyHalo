@@ -3,9 +3,6 @@ from colossus.halo.concentration import *
 from colossus.cosmology import cosmology
 import astropy.cosmology as astropy_cosmo
 from scipy.special import hyp2f1
-from pyHalo.defaults import *
-
-from scipy.interpolate import interpn
 
 class Cosmology(object):
 
@@ -36,6 +33,8 @@ class Cosmology(object):
 
         self._colossus_cosmo = self._set_colossus_cosmo()
 
+        self._age_today = self.astropy.age(0).value
+
     def _set_colossus_cosmo(self):
 
         if not hasattr(self,'colossus_cosmo'):
@@ -50,9 +49,13 @@ class Cosmology(object):
 
         return self._colossus_cosmo
 
-    def lookback_time(self, z):
+    def halo_age(self, z, zform=11):
 
-        return self.astropy.age(z).value
+        halo_form = self.astropy.age(zform).value
+        if z > zform:
+            return 0
+        else:
+            return self.astropy.age(z).value - halo_form
 
     def scale_factor(self,z):
 
@@ -166,6 +169,4 @@ class Cosmology(object):
         D_void_a1 = self.D_growth(0, void_omega_M, self.astropy.Ode0)
 
         return sigma_8_init*(D_ai*D_void_a1)*(D_a1*D_void_ai)**-1
-
-
 

@@ -16,6 +16,22 @@ class CosmoMassProfiles(object):
 
         self.lens_cosmo = lens_comso
 
+    def SIDMrho(self, cross_section, sidm_func, halo_mass, halo_redshift, cscatter = True):
+
+        cmean = self.NFW_concentration(halo_mass, halo_redshift, scatter=False)
+        if cscatter:
+            c = self.NFW_concentration(halo_mass, halo_redshift)
+        else:
+            c = cmean
+
+        rho, _, _ = self.NFW_params_physical(halo_mass, c, halo_redshift)
+
+        zeta = self.lens_cosmo.cosmo.halo_age(halo_redshift) * cross_section
+
+        rho_sidm = 10**sidm_func(halo_mass, halo_redshift, zeta, cmean, c)
+
+        return rho_sidm, rho / rho_sidm
+
     def NFWv200_fromM(self, M, z, mc_scatter=False):
 
         _, _, r200 = self.NFW_params_physical_fromM(M, z, mc_scatter=mc_scatter)
@@ -114,6 +130,26 @@ class CosmoMassProfiles(object):
         return rNM_arcsec
 
     def NFW_concentration(self, M, z, model='diemer18', mdef='200c', logmhm=0,
+                          scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
+
+        if isinstance(M, float) or isinstance(M, int):
+
+            c = self._NFW_concentration(M, z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+            return c
+
+        else:
+
+            if isinstance(z, numpy.ndarray) or isinstance(z, list):
+                assert len(z) == len(M)
+                c = [self._NFW_concentration(mi, z[i], model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+                 for i, mi in enumerate(M)]
+            else:
+                c = [self._NFW_concentration(mi, z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+                    for i, mi in enumerate(M)]
+
+            return numpy.array(c)
+
+    def _NFW_concentration(self, M, z, model='diemer18', mdef='200c', logmhm=0,
                           scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
 
         # WDM relation adopted from Ludlow et al

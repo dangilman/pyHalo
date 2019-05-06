@@ -1,8 +1,11 @@
 import numpy as np
 from pyHalo.Spatial.nfw import NFW_3D
 from pyHalo.Massfunc.parameterizations import *
-from pyHalo.Halos.Profiles.rcore_interpolation import do_interp, zeta_value
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
+from pyHalo.Scattering.sidm_densities_vpower25 import logrho_Mz_25
+from pyHalo.Scattering.sidm_densities_vpower4 import logrho_Mz_4
+from pyHalo.Scattering.sidm_densities_vpower5 import logrho_Mz_5
+from pyHalo.Scattering.sidm_densities_vpower0 import logrho_Mz_0
 
 _cosmo_prof = CosmoMassProfiles(z_lens=0.5, z_source=1.5)
 
@@ -164,13 +167,25 @@ class Halo(object):
                     core_ratio = self._args['core_ratio']
 
                 else:
-                    zform = 10
-                    time_function = self.cosmo_prof.lens_cosmo.cosmo.lookback_time
-                    zeta = zeta_value(self.z, self._args['SIDMcross'], time_function, zform)
-                    core_ratio = do_interp(np.log10(rho), np.log10(rs), np.log10(zeta))
+                    cmean = _cosmo_prof.NFW_concentration(self.mass, self.z, scatter=False)
+                    halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
+
+                    zeta = self._args['SIDMcross'] * halo_age
+
+                    if self._args['vpower'] == 0.25:
+                        rho_sidm = 10**logrho_Mz_25(self.mass, self.z, zeta, cmean, nfw_c)
+                    elif self._args['vpower'] == 0.4:
+                        rho_sidm = 10**logrho_Mz_4(self.mass, self.z, zeta, cmean, nfw_c)
+                    elif self._args['vpower'] == 0:
+                        rho_sidm = 10**logrho_Mz_0(self.mass, self.z, zeta, cmean, nfw_c)
+                    elif self._args['vpower'] == 0.5:
+                        rho_sidm = 10**logrho_Mz_5(self.mass, self.z, zeta, cmean, nfw_c)
+                    else:
+                        raise Exception('vpower '+str(self._args['vpower'])+' not recognized.')
+                    
+                    core_ratio = rho / rho_sidm
 
                 core_ratio = np.round(core_ratio, 2)
-                #mdef_args.update({'b': core_ratio})
                 mdef_args.append(core_ratio)
 
             else:
