@@ -49,7 +49,7 @@ class Cosmology(object):
 
         return self._colossus_cosmo
 
-    def halo_age(self, z, zform=11):
+    def halo_age(self, z, zform=10):
 
         halo_form = self.astropy.age(zform).value
         if z > zform:

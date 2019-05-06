@@ -48,6 +48,33 @@ intercept_polynomial = [intercept_fit15, intercept_fit20, intercept_fit30, inter
               intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
               intercept_fit100, intercept_fit110, intercept_fit120]
 
+concentration_redshifts = [0.3, 0.6, 1.2, 1.8, 2.5]
+concentration_derivatives = np.array([[0.01, 0.03, 0.033],
+                                     [0.037, 0.34, 0.038],
+                                     [0.036, 0.04, 0.053],
+                                     [0.045, 0.061, 0.073],
+                                     [0.058, 0.077, 0.097]])
+cz_interp_m7 = np.polyfit(concentration_redshifts, concentration_derivatives[:,0], 1)
+cz_interp_m8 = np.polyfit(concentration_redshifts, concentration_derivatives[:,1], 1)
+cz_interp_m9 = np.polyfit(concentration_redshifts, concentration_derivatives[:,2], 1)
+
+logcm_masses = np.array([7,8,9])
+linear = [cz_interp_m7[0], cz_interp_m8[0], cz_interp_m9[0]]
+const = [cz_interp_m7[1], cz_interp_m8[1], cz_interp_m9[1]]
+
+cm_interp_1 = np.polyfit(logcm_masses, linear, 1)
+cm_interp_2 = np.polyfit(logcm_masses, const, 1)
+
+def concentration_derivative(z, logm, zeta):
+
+    z_linear = np.polyval(cm_interp_1, logm)
+    z_const = np.polyval(cm_interp_2, logm)
+
+    #d_z = 0.005 * (zeta - 3)
+    d_z = 0
+
+    return z * z_linear + z_const + d_z
+
 def _logrho_Mz(m, z, idx):
 
     slope = slope_polynomial[idx][0] * z ** 2 + slope_polynomial[idx][1] * z + slope_polynomial[idx][2]
@@ -69,7 +96,7 @@ def logrho_Mz_0(m, z, zeta, cmean, c):
         rho1 = w1 * _logrho_Mz(m, z, inds[0])
         rho2 = w2 * _logrho_Mz(m, z, inds[1])
 
-        rho_central = rho1 + rho2
+        logrho_central = rho1 + rho2
 
     elif zeta > 20 and zeta <= 22.5:
         inds = [1, 2]
@@ -81,7 +108,7 @@ def logrho_Mz_0(m, z, zeta, cmean, c):
         rho1 = w1 * _logrho_Mz(m, z, inds[0])
         rho2 = w2 * _logrho_Mz(m, z, inds[1])
 
-        rho_central = rho1 + rho2
+        logrho_central = rho1 + rho2
 
     elif zeta < zeta_values[0]:
         rho_0 = _logrho_Mz(m, z, 0)
@@ -98,13 +125,13 @@ def logrho_Mz_0(m, z, zeta, cmean, c):
 
         derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
 
-        rho_central = (zeta - zeta_values[0]) * derivative + rho_0
+        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
 
     elif zeta > 120:
         nmax = int(len(zeta_values))-1
         rho_0 = _logrho_Mz(m, z, nmax)
         derivative = (-_logrho_Mz(m, z, int(nmax-1)) + rho_0) * delta_zeta ** -1
-        rho_central = (zeta - zeta_values[-1]) * derivative + rho_0
+        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
 
     else:
 
@@ -117,13 +144,10 @@ def logrho_Mz_0(m, z, zeta, cmean, c):
         rho1 = w1 * _logrho_Mz(m, z, inds[0])
         rho2 = w2 * _logrho_Mz(m, z, inds[1])
 
-        rho_central = rho1 + rho2
+        logrho_central = rho1 + rho2
 
-    delta_c = c * cmean ** -1 - 1
-    slope_c = 0.5
+    logrho_central = logrho_central + 1.75 * (c - cmean) * cmean ** -1
 
-    rho_central = 10**rho_central * (1 - slope_c * delta_c)
-
-    return np.log10(rho_central)
+    return logrho_central
 
 
