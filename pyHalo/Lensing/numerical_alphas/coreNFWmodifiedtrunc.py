@@ -22,7 +22,8 @@ class InterpCNFWmodtrunc(object):
         self._xmin, self._xmax = log_xnfw[0], log_xnfw[-1]
         self._betamin = self.beta[0]
         self._betamax = self.beta[-1]
-        self._delta_beta = self.beta[1] - self.beta[0]
+        self._delta_beta = self.beta[2] - self.beta[1]
+
         self._tau_min = self.tau[0]
         self._tau_max = self.tau[-1]
         self._delta_tau = self.tau[1] - self.tau[0]
@@ -74,7 +75,7 @@ class InterpCNFWmodtrunc(object):
             if log_xnfw <= self._xmin or log_xnfw >= self._xmax:
                 return 0.
         else:
-            eps = 1e-5
+            eps = 0
             low_inds = np.where(log_xnfw <= self._xmin)
             high_inds = np.where(log_xnfw >= self._xmax)
             log_xnfw[low_inds] = self._xmin + eps
@@ -85,17 +86,17 @@ class InterpCNFWmodtrunc(object):
 
         tmin = self._get_closest_tau(tau, 0)
         bmin = self._get_closest_beta_double(beta)
-        func1, func2 = self.split[tmin][bmin[0]](log_xnfw), self.split[tmin][bmin[1]](log_xnfw)
+        #func1, func2 = self.split[tmin][bmin[0]](log_xnfw), self.split[tmin][bmin[1]](log_xnfw)
 
-        w1 = 1 - np.absolute(beta - self.beta[bmin[0]]) * self._delta_beta ** -1
-        w2 = 1 - w1
-
-        return norm * (w1 * func1 + w2 * func2)
+        #w1 = 1 - np.absolute(beta - self.beta[bmin[0]]) * self._delta_beta ** -1
+        #w2 = 1 - w1
+        return norm * self.split[tmin][bmin[0]](log_xnfw)
+        #return norm * (w1 * func1 + w2 * func2)
 
 
 if False:
     c = InterpCNFWmodtrunc()
-    x = np.logspace(-1, 1.6, 100)
+    x = np.logspace(-1, 1.5, 100)
     y = 0
     Rs = 1
     Rc = 0.5
@@ -108,13 +109,11 @@ if False:
     plt.plot(np.log10(x), alpha, color='g', label = r'$r_c = 0.2 r_s$')
     alpha = c(x, y ,Rs, 0.5*Rs, Rt, norm)
     plt.plot(np.log10(x), alpha, color='r', label = r'$r_c = 0.5 r_s$')
-    alpha = c(x, y ,Rs, 0.25*Rs, 5*Rs, norm)
-    plt.plot(np.log10(x), alpha, color='m',label = r'$r_c = 0.25 r_s$'+'\n'+r'$r_t = 5 r_s$')
     plt.legend(fontsize=14, loc=1)
     plt.xlabel(r'$\log_{10} \left(x \right)$',fontsize=14)
     plt.ylabel('deflection angle',fontsize=14)
     text = r'$\rho \left(r, r_c, r_s, r_t\right) = \frac{\rho_0}{\left(r^{10} + r_c^{10}\right)^{\frac{1}{10}} \ \left(r+r_s\right)^2} \ \frac{r_t^2}{r^2+r_t^2}$'
-    plt.annotate(text, xy=(0.14, 0.1), xycoords='axes fraction', fontsize=16)
+    #plt.annotate(text, xy=(0.14, 0.1), xycoords='axes fraction', fontsize=16)
     plt.tight_layout()
     plt.savefig('cored_truncated_nfw.pdf')
     plt.show()

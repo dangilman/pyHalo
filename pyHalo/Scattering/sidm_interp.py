@@ -317,7 +317,7 @@ def logrho_Mz_25(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inte
         logrho_central = rho1 + rho2
 
     elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0)
+        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
 
         logm = np.log10(m)
         if logm < 6:
@@ -336,7 +336,7 @@ def logrho_Mz_25(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inte
     elif zeta > 120:
         nmax = int(len(zeta_values))-1
         rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1)) + rho_0) * delta_zeta ** -1
+        derivative = (-_logrho_Mz(m, z, int(nmax-1)) + rho_0, slope_poly, intercept_poly) * delta_zeta ** -1
         logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
 
     else:
