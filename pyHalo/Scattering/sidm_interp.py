@@ -209,6 +209,60 @@ def get_interps(vpower):
                                 intercept_fit50,
                                 intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
                                 intercept_fit100, intercept_fit110, intercept_fit120]
+
+    elif vpower == 0.6:
+
+        zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
+        delta_zeta = 10
+
+        slopes_fit5 = np.array([0.00532636, -0.01548608, -0.13258164])
+        intercept_fit5 = np.array([-0.0542423, 0.19769615, 9.1914769])
+
+        slopes_fit10 = np.array([0.00293763, -0.00363292, -0.14594608])
+        intercept_fit10 = np.array([-0.04713896, 0.15778479, 9.07856056])
+
+        slopes_fit20 = np.array([0.00391073, -0.00694817, -0.14507455])
+        intercept_fit20 = np.array([-0.06310773, 0.22103103, 8.88605547])
+
+        slopes_fit30 = np.array([0.00354745, -0.00529315, -0.14761838])
+        intercept_fit30 = np.array([-0.06342665, 0.2277179, 8.80870428])
+
+        slopes_fit40 = np.array([0.0046871, -0.00689681, -0.15193929])
+        intercept_fit40 = np.array([-0.07500406, 0.25314633, 8.78264004])
+
+        slopes_fit50 = np.array([0.00588497, -0.01022511, -0.14838062])
+        intercept_fit50 = np.array([-0.08722261, 0.29470006, 8.70281808])
+
+        slopes_fit60 = np.array([0.0058367, -0.01147992, -0.14880548])
+        intercept_fit60 = np.array([-0.08785315, 0.31421723, 8.66913953])
+
+        slopes_fit70 = np.array([0.00479057, -0.00778304, -0.15202999])
+        intercept_fit70 = np.array([-0.08236731, 0.29833731, 8.66421279])
+
+        slopes_fit80 = np.array([0.0054714, -0.00831967, -0.15432778])
+        intercept_fit80 = np.array([-0.08914859, 0.31142856, 8.65769244])
+
+        slopes_fit90 = np.array([0.00557633, -0.00948703, -0.1530476])
+        intercept_fit90 = np.array([-0.09116717, 0.32822673, 8.62772145])
+
+        slopes_fit100 = np.array([0.00549166, -0.00790876, -0.15720378])
+        intercept_fit100 = np.array([-0.09117963, 0.32292029, 8.64287672])
+
+        slopes_fit110 = np.array([0.00560193, -0.00876665, -0.15554193])
+        intercept_fit110 = np.array([-0.09636302, 0.34416616, 8.61085698])
+
+        slopes_fit120 = np.array([0.00550915, -0.00813063, -0.15671411])
+        intercept_fit120 = np.array([-0.0950345, 0.34060712, 8.61002036])
+
+        slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
+                            slopes_fit60,
+                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
+
+        intercept_polynomial = [intercept_fit5, intercept_fit10, intercept_fit20, intercept_fit30, intercept_fit40,
+                                intercept_fit50,
+                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
+                                intercept_fit100, intercept_fit110, intercept_fit120]
+
     else:
         raise Exception('v_power '+str(vpower)+' not recognized.')
 
@@ -285,7 +339,15 @@ def logrho_Mz_0(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
 
         logrho_central = rho1 + rho2
 
-    logrho_central = logrho_central + 1.75 * (c - cmean) * cmean ** -1
+    #logrho_central = logrho_central + 1.75 * (c - cmean) * cmean ** -1
+    if zeta > 50:
+        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
+    elif zeta > 70:
+        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
+    elif zeta > 90:
+        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
+    else:
+        logrho_central += 1.4 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -352,7 +414,15 @@ def logrho_Mz_25(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inte
 
         logrho_central = rho1 + rho2
 
-    logrho_central = logrho_central + 1.5 * (c - cmean) * cmean ** -1
+    #logrho_central = logrho_central + 1.5 * (c - cmean) * cmean ** -1
+    if zeta > 50:
+        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
+    elif zeta > 70:
+        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
+    elif zeta > 90:
+        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
+    else:
+        logrho_central += 1.4 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -412,7 +482,15 @@ def logrho_Mz_4(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
 
         logrho_central = rho1 + rho2
 
-    logrho_central = logrho_central + 1.75 * (c - cmean) * cmean ** -1
+    #logrho_central = logrho_central + 1.75 * (c - cmean) * cmean ** -1
+    if zeta > 50:
+        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
+    elif zeta > 70:
+        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
+    elif zeta > 90:
+        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
+    else:
+        logrho_central += 1.4 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -471,7 +549,81 @@ def logrho_Mz_5(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
 
         logrho_central = rho1 + rho2
 
-    logrho_central = logrho_central + 1.4 * (c - cmean) * cmean ** -1
+    #logrho_central = logrho_central + 1.4 * (c - cmean) * cmean ** -1
+    if zeta > 50:
+        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
+    elif zeta > 70:
+        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
+    elif zeta > 90:
+        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
+    else:
+        logrho_central += 1.4 * (c - cmean) * cmean ** -1
+
+    return logrho_central
+
+def logrho_Mz_6(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
+
+    if zeta >= 5 and zeta < 10:
+
+        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
+
+        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
+        w2 = 1 - w1
+        # w1, w2 = 1, 0
+
+        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
+        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
+
+        logrho_central = rho1 + rho2
+
+    elif zeta >= 10 and zeta < 12.5:
+        inds = [1, 2]
+
+        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
+        w2 = 1 - w1
+        # w1, w2 = 1, 0
+
+        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
+        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
+
+        logrho_central = rho1 + rho2
+
+    elif zeta < zeta_values[0]:
+        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
+
+        rho_at_0 = 10
+
+        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
+
+        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
+
+    elif zeta > 120:
+        nmax = int(len(zeta_values))-1
+        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
+        derivative = (-_logrho_Mz(m, z, int(nmax-1), slope_poly, intercept_poly) + rho_0) * delta_zeta ** -1
+        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
+
+    else:
+
+        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
+
+        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
+        w2 = 1 - w1
+        #w1, w2 = 1, 0
+
+        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
+        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
+
+        logrho_central = rho1 + rho2
+
+    if zeta > 50:
+        logrho_central += 1.2 * (c - cmean) * cmean ** -1
+    elif zeta > 70:
+        logrho_central += 1.05 * (c - cmean) * cmean ** -1
+    elif zeta > 90:
+        logrho_central += 0.8 * (c - cmean) * cmean ** -1
+    else:
+        logrho_central += 1.4 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -487,3 +639,5 @@ def logrho(m, z, zeta, cmean, c, vpower):
         return logrho_Mz_4(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
     elif vpower == 0.5:
         return logrho_Mz_5(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
+    elif vpower == 0.6:
+        return logrho_Mz_6(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
