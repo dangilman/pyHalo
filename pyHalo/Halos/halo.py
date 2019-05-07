@@ -2,10 +2,7 @@ import numpy as np
 from pyHalo.Spatial.nfw import NFW_3D
 from pyHalo.Massfunc.parameterizations import *
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
-from pyHalo.Scattering.sidm_densities_vpower25 import logrho_Mz_25
-from pyHalo.Scattering.sidm_densities_vpower4 import logrho_Mz_4
-from pyHalo.Scattering.sidm_densities_vpower5 import logrho_Mz_5
-from pyHalo.Scattering.sidm_densities_vpower0 import logrho_Mz_0
+from pyHalo.Scattering.sidm_interp import logrho
 
 _cosmo_prof = CosmoMassProfiles(z_lens=0.5, z_source=1.5)
 
@@ -172,18 +169,10 @@ class Halo(object):
 
                     zeta = self._args['SIDMcross'] * halo_age
 
-                    if self._args['vpower'] == 0.25:
-                        rho_sidm = 10**logrho_Mz_25(self.mass, self.z, zeta, cmean, nfw_c)
-                    elif self._args['vpower'] == 0.4:
-                        rho_sidm = 10**logrho_Mz_4(self.mass, self.z, zeta, cmean, nfw_c)
-                    elif self._args['vpower'] == 0:
-                        rho_sidm = 10**logrho_Mz_0(self.mass, self.z, zeta, cmean, nfw_c)
-                    elif self._args['vpower'] == 0.5:
-                        rho_sidm = 10**logrho_Mz_5(self.mass, self.z, zeta, cmean, nfw_c)
-                    else:
-                        raise Exception('vpower '+str(self._args['vpower'])+' not recognized.')
-                    
-                    core_ratio = rho / rho_sidm
+                    rho_sidm = 10 ** logrho(self.mass, self.z, zeta, cmean,
+                                            nfw_c, self._args['vpower'])
+
+                    core_ratio = rho * rho_sidm ** -1
 
                 core_ratio = np.round(core_ratio, 2)
                 mdef_args.append(core_ratio)

@@ -122,16 +122,12 @@ class Realization(object):
         new_halos = []
         for halo in self.halos:
             duplicate = deepcopy(halo)
+            if duplicate.mdef == 'cNFWmod_trunc' and new_mdef == 'TNFW':
 
-            if duplicate.mdef == 'CNFW' and new_mdef == 'NFW':
-                del duplicate.mass_def_arg['b']
-            elif duplicate.mdef == 'cNFWmod' and new_mdef == 'NFW':
-                del duplicate.mass_def_arg['b']
-            elif duplicate.mdef == 'cNFWmod_trunc' and new_mdef == 'TNFW':
-                del duplicate.mass_def_arg['b']
+                duplicate.mass_def_arg = duplicate.mass_def_arg[0:-1]
             else:
                 raise Exception('combination '+duplicate.mdef + ' and '+
-                                new_mdef+' not recognized.')
+                                    new_mdef+' not recognized.')
 
             duplicate.mdef = new_mdef
             new_halos.append(duplicate)
@@ -599,7 +595,7 @@ class RealizationFast(Realization):
     """
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, z_lens, z_source,
-                 cone_opening_angle = 6, other_params = None, **kwargs):
+                 cone_opening_angle = 6, params = None, **kwargs):
 
 
         mfunc = LensingMassFunction(Cosmology(), 10**6, 10**10, z_lens,
@@ -607,6 +603,7 @@ class RealizationFast(Realization):
 
         tup = (masses, x, y, r2d, r3d, mdefs, z)
 
+        _aslist = False
         for element in tup:
             if isinstance(element, list) or isinstance(element, np.ndarray):
                 _aslist = True
@@ -620,4 +617,4 @@ class RealizationFast(Realization):
         else:
             tup = ([masses], [x], [y], [r2d], [r3d], [mdefs], [z])
 
-        Realization.__init__(self, *tup, mfunc, other_params=other_params, **kwargs)
+        Realization.__init__(self, *tup, mfunc, other_params=params, **kwargs)
