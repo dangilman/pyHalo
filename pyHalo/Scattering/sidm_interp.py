@@ -455,7 +455,7 @@ def logrho_Mz_5(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
     elif zeta > 120:
         nmax = int(len(zeta_values))-1
         rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1)) + rho_0) * delta_zeta ** -1
+        derivative = (-_logrho_Mz(m, z, int(nmax-1), slope_poly, intercept_poly) + rho_0) * delta_zeta ** -1
         logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
 
     else:
