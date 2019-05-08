@@ -164,9 +164,14 @@ class Halo(object):
                     core_ratio = self._args['core_ratio']
 
                 else:
-                    cmean = _cosmo_prof.NFW_concentration(self.mass, self.z, scatter=False)
-                    halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
 
+                    cmean = _cosmo_prof.NFW_concentration(self.mass, self.z, scatter=False)
+
+                    if 'halo_age' not in self._args.keys():
+                        halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
+                    else:
+                        halo_age = self._args['halo_age']
+                    print(halo_age)
                     zeta = self._args['SIDMcross'] * halo_age
 
                     rho_sidm = 10 ** logrho(self.mass, self.z, zeta, cmean,
