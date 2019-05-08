@@ -171,7 +171,7 @@ class Halo(object):
                         halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
                     else:
                         halo_age = self._args['halo_age']
-                    print(halo_age)
+                    
                     zeta = self._args['SIDMcross'] * halo_age
 
                     rho_sidm = 10 ** logrho(self.mass, self.z, zeta, cmean,
