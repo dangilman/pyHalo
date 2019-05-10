@@ -3,7 +3,7 @@ from scipy.integrate import quad
 import matplotlib.pyplot as plt
 
 def maxwell_boltzmann_average(v_rms, cross_section_function):
-
+    #most_probable_v = v_rms
     most_probable_v = v_rms * np.sqrt(2./3)
     # 2 * np.sqrt(2./3) / np.sqrt(np.pi)
     # cross section times v_avg = cross0 * above factor
