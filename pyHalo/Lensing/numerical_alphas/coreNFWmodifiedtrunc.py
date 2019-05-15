@@ -128,7 +128,7 @@ class InterpCNFWmodtrunc(object):
                 return norm * defl
 
             elif log_xnfw > self._xmax:
-                print('ok')
+
                 defl = self._tnfw_def(10**log_xnfw, tau)
                 defl_interp = norm * self.split[tmin][bmin[0]](self._xmax)
                 defl_norm = self._tnfw_def(10**self._xmax, tau)
@@ -141,6 +141,7 @@ class InterpCNFWmodtrunc(object):
 
         else:
             #eps = 0
+
             log_xnfw[np.where(log_xnfw<self._xmin)] = self._xmin
             high_inds = np.where(log_xnfw > self._xmax)
             valid_range = np.where(log_xnfw <= self._xmax)
@@ -160,7 +161,7 @@ class InterpCNFWmodtrunc(object):
 if False:
     print('ok')
     c = InterpCNFWmodtrunc()
-    x = np.logspace(-3.5, 2.4, 100)
+    x = np.logspace(-2, 1, 100)
     y = 0
     Rs = 1
     Rc = 0.5

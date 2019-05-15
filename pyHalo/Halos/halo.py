@@ -154,8 +154,7 @@ class Halo(object):
 
         if self.mdef in self.has_core:
 
-            if self.mdef in ['cNFWmod_trunc', 'cNFWmod']:
-                rho, rs, _ = _cosmo_prof.NFW_params_physical(self.mass, nfw_c, self.z)
+            if self.mdef in ['cNFWmod_trunc', 'cNFWmod', 'CNFW']:
 
                 if 'core_ratio' in self._args.keys():
                     if 'SIDMcross' in self._args.keys():
@@ -166,18 +165,19 @@ class Halo(object):
                 else:
 
                     cmean = _cosmo_prof.NFW_concentration(self.mass, self.z, scatter=False)
+                    rho_mean, rs_mean, _ = _cosmo_prof.NFW_params_physical(self.mass, cmean, self.z)
 
                     if 'halo_age' not in self._args.keys():
                         halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
                     else:
                         halo_age = self._args['halo_age']
-                    
+
                     zeta = self._args['SIDMcross'] * halo_age
 
                     rho_sidm = 10 ** logrho(self.mass, self.z, zeta, cmean,
                                             nfw_c, self._args['vpower'])
 
-                    core_ratio = rho * rho_sidm ** -1
+                    core_ratio = rho_mean * rho_sidm ** -1
 
                 core_ratio = np.round(core_ratio, 2)
                 mdef_args.append(core_ratio)

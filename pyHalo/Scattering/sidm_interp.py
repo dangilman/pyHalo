@@ -670,13 +670,13 @@ def logrho_Mz_6(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
         logrho_central = rho1 + rho2
 
     if zeta > 50:
-        logrho_central += 1.2 * (c - cmean) * cmean ** -1
+        logrho_central += 0.5 * (c - cmean) * cmean ** -1
     elif zeta > 70:
-        logrho_central += 1.05 * (c - cmean) * cmean ** -1
+        logrho_central += 0.5 * (c - cmean) * cmean ** -1
     elif zeta > 90:
-        logrho_central += 0.8 * (c - cmean) * cmean ** -1
+        logrho_central += 0.5 * (c - cmean) * cmean ** -1
     else:
-        logrho_central += 1.4 * (c - cmean) * cmean ** -1
+        logrho_central += 0.5 * (c - cmean) * cmean ** -1
 
     return logrho_central
 

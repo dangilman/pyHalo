@@ -5,6 +5,16 @@ from scipy.integrate import quad
 
 class LensCosmo(object):
 
+    interp_redshifts = numpy.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    interp_values = [[0.79871744, 0.1385], [0.85326291, 0.2048],
+                     [0.87740329, 0.2479], [0.87212949, 0.31635],
+                     [0.90235063, 0.36065], [0.85694561, 0.4112],
+                     [0.8768506, 0.4522]]
+    mass_norm = 13.0
+    norm_norm = 0.01
+
+    # values calibrated from Galacticus runs inside rmax = 20kpc
+
     def __init__(self,z_lens,z_source):
 
         self.cosmo = Cosmology()
@@ -23,6 +33,26 @@ class LensCosmo(object):
             self._d_hubble = self.cosmo.c * self.cosmo.Mpc * 0.001 * (self.cosmo.h * 100)
 
             self._kpc_per_asec_zlens = self.cosmo.kpc_per_asec(self.z_lens)
+
+    def _eval_halo_interp(self, halo_z, log_halo_mass):
+
+        logm_norm = log_halo_mass * self.mass_norm ** -1
+
+        if halo_z < self.interp_redshifts[0]:
+            raise Exception('main lens halo at a higher redshift than interpolated values cover.')
+        elif halo_z > self.interp_redshifts[-1]:
+            raise Exception('main lens halo at a higher redshift than interpolated values cover.')
+        else:
+            argmins = numpy.argsort(numpy.absolute(halo_z - self.interp_redshifts))[0:2]
+            expon1 = self.interp_values[argmins[0]][0] * logm_norm + self.interp_values[argmins[0]][1]
+            expon2 = self.interp_values[argmins[1]][0] * logm_norm + self.interp_values[argmins[1]][1]
+            w1 = 1 - numpy.absolute(halo_z - self.interp_redshifts[argmins[0]]) * 0.1 ** -1
+            w2 = 1 - w1
+
+            norm1 = 10 ** expon1
+            norm2 = 10 ** expon2
+
+            return self.norm_norm * (w1 * norm1 + w2 * norm2)
 
     def mthermal_to_halfmode(self, m_thermal):
 
@@ -88,28 +118,26 @@ class LensCosmo(object):
         return D_12 * D_os * (D_o2 * D_1s) ** -1
 
     def subhalo_mfunc_spatial_scaing(self, R_ein_arcsec, zlens):
+
         """
-        This function returns a scaling factor that accounts for an angular position inside
-        a halo as a function of redshift and Einstein radius. I assume M_halo = 10^13.
-
-        The scaling factor returned is normalized with respect to the value at redshift
-        0.5 and Einstein radius of 1 arcsec.
-
-        :param R_ein_arcsec: Einstein radius in arcsec
-        :param zlens: lens redshift
-
-        @ z = 0.5  and  R_ein  = 1 arcsec:
-        rs = 80kpc
-        kappa_sub(R_ein/r50) = 4.554 (units arbitrary since it is a scaling relation)
-        """
+               This function returns a scaling factor that accounts for an angular position inside
+               a halo as a function of redshift and Einstein radius. I assume M_halo = 10^13.
+               The scaling factor returned is normalized with respect to the value at redshift
+               0.5 and Einstein radius of 1 arcsec.
+               :param R_ein_arcsec: Einstein radius in arcsec
+               :param zlens: lens redshift
+               @ z = 0.5  and  R_ein  = 1 arcsec:
+               rs = 80kpc
+               kappa_sub(R_ein/r50) = 4.554 (units arbitrary since it is a scaling relation)
+               """
 
         # reference values
         kappa_nfw_reference = 4.554
         a_z_reference = (1 + 0.5) ** -1
-        rs_reference = 80 # kpc
+        rs_reference = 80  # kpc
 
         # rescale to correct redshift
-        a_z = (1+zlens) ** -1
+        a_z = (1 + zlens) ** -1
         a_z_rescale = a_z * a_z_reference ** -1
         Rs = rs_reference * a_z_rescale
 
@@ -118,8 +146,8 @@ class LensCosmo(object):
         x = R_ein_kpc * Rs ** -1
 
         # new kappa value
-        kappa_nfw = 2*(1 - numpy.arctanh(numpy.sqrt(1 - x**2)) *
-                       numpy.sqrt(1 - x**2) ** -1) * (x**2 - 1) ** -1
+        kappa_nfw = 2 * (1 - numpy.arctanh(numpy.sqrt(1 - x ** 2)) *
+                         numpy.sqrt(1 - x ** 2) ** -1) * (x ** 2 - 1) ** -1
 
         # compute the scaling factor
         kappa_scaling = kappa_nfw * kappa_nfw_reference ** -1
