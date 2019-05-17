@@ -64,6 +64,7 @@ class RealizationDefaults(object):
         self.opening_angle_factor = 5
 
         self.default_mhm = 0
+        self.default_break_scale = 1
         self.default_break_index = -1.3
         self.default_r_tidal = 0.5 # r_tidal = 'default_r_ridal * Rs'
 
@@ -102,14 +103,18 @@ def set_default_kwargs(profile_params):
         if 'break_index' not in profile_params.keys():
             raise Exception('If log_m_break is specified, must include break_index keyword.'
                             'default is '+str(realization_default.default_break_index))
+        if 'break_scale' not in profile_params.keys():
+            profile_params['break_scale'] = realization_default.default_break_scale
 
         profile_params.update({'log_m_break': profile_params['log_m_break'],
-                               'break_index': profile_params['break_index']})
+                               'break_index': profile_params['break_index'],
+                               'break_scale': profile_params['break_scale']})
     else:
         if print_defaults:
             print('log_m_break not specified, assuming '+str(realization_default.default_mhm))
         profile_params.update({'log_m_break': realization_default.default_mhm,
-                               'break_index': realization_default.default_break_index})
+                               'break_index': realization_default.default_break_index,
+                              'break_scale': realization_default.default_break_scale})
 
     if 'c_power' in profile_params.keys():
         profile_params.update({'c_power': profile_params['c_power']})

@@ -121,6 +121,7 @@ class LOSPowerLaw(LOS):
     def _draw(self, norm, plaw_index, pargs, z_current):
 
         pargs_new = copy(pargs)
+
         pargs_new.update({'normalization': norm})
         pargs_new.update({'power_law_index': plaw_index})
 
@@ -257,6 +258,7 @@ class LOSPowerLaw(LOS):
             args_mfunc['break_index'] = 0
             args_mfunc['c_scale'] = 0
             args_mfunc['c_power'] = 0
+            args_mfunc['break_scale'] = 1
 
         else:
 
@@ -264,6 +266,8 @@ class LOSPowerLaw(LOS):
                 args_mfunc['break_index'] = args['break_index']
                 args_mfunc['c_scale'] = args['c_scale']
                 args_mfunc['c_power'] = args['c_power']
+                args_mfunc['break_scale'] = args['break_scale']
+
             except:
                 raise ValueError('must specify a value for "break_index, c_scale, c_power" if log_m_break != 0 '
                                  '(because you are specifying a WDM scenario in which the concentration and mass function'

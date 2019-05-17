@@ -5,6 +5,14 @@ from pyHalo.Halos.Profiles.nfw import NFW
 
 class MainLensPowerLaw(object):
 
+    interp_redshifts = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    interp_values = [[0.79871744, 0.1385], [0.85326291, 0.2048],
+                     [0.87740329, 0.2479], [0.87212949, 0.31635],
+                     [0.90235063, 0.36065], [0.85694561, 0.4112],
+                     [0.8768506, 0.4522]]
+    mass_norm = 13.0
+    norm_norm = 0.01
+
     def __init__(self, args, lens_cosmo):
 
         self._lens_cosmo = lens_cosmo
@@ -39,8 +47,10 @@ class MainLensPowerLaw(object):
         args_spatial['rmax2d'] = 0.5*args['cone_opening_angle']*\
                                  self._lens_cosmo.cosmo.kpc_per_asec(self._lens_cosmo.z_lens)
 
-        if 'parent_m200' in args and 'parent_c' in args.keys():
+        if 'parent_m200' in args.keys():
             # EVERYTHING EXPRESSED IN KPC
+            if 'parent_c' not in args.keys():
+                args['parent_c'] = self._nfw_cosmo.NFW_concentration(args['parent_m200'], self._lens_cosmo.z_lens)
             rho0_kpc, parent_Rs, parent_r200 = self._nfw_cosmo.NFW_params_physical(args['parent_m200'],
                                                                                     args['parent_c'],
                                                                                     self._lens_cosmo.z_lens)
@@ -90,10 +100,18 @@ class MainLensPowerLaw(object):
 
         elif 'a0_area' in args.keys():
 
-            r_ein_arcsec = args['R_ein_main']
+            a0_area_parent_halo = self._lens_cosmo.\
+                subhalo_mass_function_amplitude(args['a0_area'], args['R_ein_main'], self._lens_cosmo.z_lens)
 
-            a0_area_parent_halo = self._lens_cosmo.subhalo_mass_function_amplitude(args['a0_area'],
-                                  r_ein_arcsec, self._lens_cosmo.z_lens)
+            norm_0 = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
+                           self._lens_cosmo.z_lens, args['cone_opening_angle'],
+                           args_mfunc['power_law_index'], m_pivot = 10**8)
+
+            args_mfunc['normalization'] = norm_0
+
+        elif 'sigma_sub' in args.keys():
+
+            a0_area_parent_halo = a0area_main(args['parent_m200'], self._lens_cosmo.z_lens)
 
             norm_0 = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
                            self._lens_cosmo.z_lens, args['cone_opening_angle'],
@@ -136,3 +154,10 @@ class MainLensPowerLaw(object):
 
         return args_spatial, args_mfunc
 
+def a0area_main(mhalo, z, k1 = 0.85, k2 = 0.53, k3 = -0.8):
+
+    # interpolated from galacticus
+
+    logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * (1+z) + k3
+
+    return 10**logscaling

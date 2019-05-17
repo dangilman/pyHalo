@@ -14,11 +14,12 @@ class TestMassfunc(object):
         self.break_index = -1
 
         self.power_law_broken = BrokenPowerLaw(power_law_index=self.plaw_idx, log_mlow=6, log_mhigh=11,
-                                               normalization=self.norm, log_m_break=self.log_m_break, break_index=self.break_index)
+                                               normalization=self.norm, log_m_break=self.log_m_break,
+                                               break_index=self.break_index, break_scale=1)
         self.power_law = PowerLaw(power_law_index=self.plaw_idx, log_mlow=6, log_mhigh=11,
                                                normalization=self.norm)
         self.power_law_unbroken = BrokenPowerLaw(power_law_index=self.plaw_idx, log_mlow=6, log_mhigh=11,
-                                               normalization=self.norm, log_m_break=0, break_index=-1)
+                                               normalization=self.norm, log_m_break=0, break_index=-1, break_scale=0.68)
         self.bins = 10 ** np.arange(6, 11, 1)
 
     def test_power_law(self):

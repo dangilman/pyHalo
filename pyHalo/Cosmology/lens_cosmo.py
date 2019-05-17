@@ -173,9 +173,9 @@ class LensCosmo(object):
 
         return sigma_sub_z
 
-    def norm_A0_from_a0area(self, a0_per_kpc2, zlens, cone_diameter, plaw_index, m_pivot = 10**8):
+    def norm_A0_from_a0area(self, a0_per_kpc2, zlens, cone_opening_angle, plaw_index, m_pivot = 10**8):
 
-        R_kpc = self.cosmo.kpc_per_asec(zlens) * (0.5 * cone_diameter)
+        R_kpc = self.cosmo.kpc_per_asec(zlens) * (0.5 * cone_opening_angle)
 
         area = numpy.pi * R_kpc ** 2
 

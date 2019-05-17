@@ -43,7 +43,8 @@ class Test_los(object):
                 los_mfunc._redshift_range = np.array([z1, z2])
                 los_mfunc._parameterization_args.update({'draw_poisson':False})
                 los_mfunc._parameterization_args.update({'LOS_normalization':LOS_norm})
-                los_mfunc._parameterization_args.update({'log_m_break': log_m_break})
+                los_mfunc._parameterization_args.update({'log_m_break': log_m_break,
+                                                         'break_scale': 1.2})
 
                 plaw_indexes = [self.lensing_mass_function.plaw_index_z(z1),
                                 self.lensing_mass_function.plaw_index_z(z2)]
@@ -81,7 +82,7 @@ class Test_los(object):
                 npt.assert_(len(masses) == Nhalos_z1 + Nhalos_z2)
 
                 theory_mass = self.lensing_mass_function.integrate_mass_function(z1, delta_z, self.mlow,
-                                              self.mhigh, 0, -1, norm_scale=LOS_norm)
+                                              self.mhigh, 0, -1, 1, norm_scale=LOS_norm)
 
                 npt.assert_almost_equal(np.absolute(theory_mass / np.sum(masses_z1)), 1, decimal= 1)
 

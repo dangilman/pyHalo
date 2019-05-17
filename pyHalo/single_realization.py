@@ -42,6 +42,7 @@ class Realization(object):
         self.m_break_scale = self._prof_params['log_m_break']
         self.break_index = self._prof_params['break_index']
         self._LOS_norm = self._prof_params['LOS_normalization']
+        self.break_scale = self._prof_params['break_scale']
 
         if halos is None:
 
@@ -518,10 +519,11 @@ class Realization(object):
 
                 if self._subtract_theory_mass_sheets:
                     if z < self.geometry._zlens:
-                        kappa = self.convergence_at_z_theory(z, mlow_front, mhigh, delta_z, self.m_break_scale, self.break_index)
+                        kappa = self.convergence_at_z_theory(z, mlow_front, mhigh, delta_z,
+                                                             self.m_break_scale, self.break_index, self.break_scale)
                     else:
                         kappa = self.convergence_at_z_theory(z, mlow_back, mhigh, delta_z, self.m_break_scale,
-                                                             self.break_index)
+                                                             self.break_index,  self.break_scale)
                 else:
                     kappa = self.convergence_at_z(z, 0)
 
@@ -548,9 +550,9 @@ class Realization(object):
 
         return m_rendered / area / scrit
 
-    def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index):
+    def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
 
-        m_theory = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index)
+        m_theory = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index, break_scale)
 
         return self._convergence_at_z(m_theory, z)
 
@@ -560,14 +562,15 @@ class Realization(object):
 
         return self._convergence_at_z(m, z)
 
-    def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index):
+    def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale):
 
         #m_rendered = self.mass_at_z(z, log_m_break)
         #if m_rendered > 0:
         #    mhigh = min(m_rendered, mhigh)
 
         mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break,
-                                                               break_index, norm_scale=self._LOS_norm)
+                                                               break_index, break_scale=break_scale,
+                                                               norm_scale=self._LOS_norm)
 
         return mass
 

@@ -54,4 +54,3 @@ class Uniform(object):
         y += center_y
 
         return x, y, r2d, np.sqrt(zcoord ** 2 + r2d ** 2)
-

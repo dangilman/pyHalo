@@ -186,22 +186,23 @@ class LensingMassFunction(object):
 
         return norm,plaw_index
 
-    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, n = 1,
+    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n = 1,
                                 norm_scale = 1):
 
         norm = self.norm_at_z(z, delta_z)
 
         plaw_index = self.plaw_index_z(z)
 
-        moment = self._integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index, break_index = break_index)
+        moment = self._integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
+                                           break_index = break_index, break_scale=break_scale)
 
         return moment
 
-    def _integrate_power_law(self, norm, m_low, m_high, log_m_break, n, plaw_index, break_index = -1.3):
+    def _integrate_power_law(self, norm, m_low, m_high, log_m_break, n, plaw_index, break_index=0, break_scale=1):
 
         def _integrand(m, m_break, plaw_index, n):
 
-            return norm * m ** (n + plaw_index) * (1 + m_break / m) ** break_index
+            return norm * m ** (n + plaw_index) * (1 + break_scale * m_break / m) ** break_index
 
         moment = quad(_integrand, m_low, m_high, args=(10**log_m_break, plaw_index, n))[0]
 

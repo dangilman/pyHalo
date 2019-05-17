@@ -45,6 +45,7 @@ class TestSingleRealization(object):
         los_mfunc._parameterization_args.update({'draw_poisson':draw_poisson})
         los_mfunc._parameterization_args.update({'LOS_normalization':LOS_norm})
         los_mfunc._parameterization_args.update({'log_m_break': log_m_break})
+        los_mfunc._parameterization_args.update({'break_scale': 1.2})
 
         plaw_indexes = [self.lensing_mass_function.plaw_index_z(z1),
                         self.lensing_mass_function.plaw_index_z(z2)]
@@ -72,16 +73,16 @@ class TestSingleRealization(object):
 
         x = y = r2d = r3d = np.zeros_like(masses)
         mdefs = ['NFW']*len(masses)
-        mdef_args = [{'concentration':9}]*len(masses)
+        mdef_args = {'cone_opening_angle': 6, 'opening_angle_factor': 6}
 
         self.realization = Realization(masses, x, y, r2d, r3d, mdefs, redshifts,
-                                       mdef_args, self.lensing_mass_function)
+                                       self.lensing_mass_function, other_params=mdef_args)
 
     def test_mass_at_z(self):
 
         m_at_z = self.realization.mass_at_z(self.z1)
         theory_mass_at_z = self.lensing_mass_function.integrate_mass_function(self.z1, self.delta_z,
-                              self.mlow, 10**8.5, 0, -1, norm_scale=self.LOS_norm)
+                              self.mlow, 10**8.5, 0, -1, 1, norm_scale=self.LOS_norm)
 
         kappa_z = self.realization.convergence_at_z(self.z1, 0)
         area = self.lensing_mass_function.geometry._angle_to_arcsec_area(self.zlens, self.z1)
