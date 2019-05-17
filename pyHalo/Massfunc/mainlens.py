@@ -91,6 +91,7 @@ class MainLensPowerLaw(object):
         elif 'a0_area' in args.keys():
 
             r_ein_arcsec = args['R_ein_main']
+
             a0_area_parent_halo = self._lens_cosmo.subhalo_mass_function_amplitude(args['a0_area'],
                                   r_ein_arcsec, self._lens_cosmo.z_lens)
 

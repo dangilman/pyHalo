@@ -392,15 +392,7 @@ def logrho_Mz_0(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
 
         logrho_central = rho1 + rho2
 
-    #logrho_central = logrho_central + 1.75 * (c - cmean) * cmean ** -1
-    if zeta > 50:
-        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
-    elif zeta > 70:
-        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
-    elif zeta > 90:
-        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
-    else:
-        logrho_central += 1.4 * (c - cmean) * cmean ** -1
+    logrho_central += 0.5 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -467,15 +459,7 @@ def logrho_Mz_25(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inte
 
         logrho_central = rho1 + rho2
 
-    #logrho_central = logrho_central + 1.5 * (c - cmean) * cmean ** -1
-    if zeta > 50:
-        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
-    elif zeta > 70:
-        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
-    elif zeta > 90:
-        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
-    else:
-        logrho_central += 1.4 * (c - cmean) * cmean ** -1
+    logrho_central += 0.5 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -535,15 +519,7 @@ def logrho_Mz_4(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
 
         logrho_central = rho1 + rho2
 
-    #logrho_central = logrho_central + 1.75 * (c - cmean) * cmean ** -1
-    if zeta > 50:
-        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
-    elif zeta > 70:
-        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
-    elif zeta > 90:
-        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
-    else:
-        logrho_central += 1.4 * (c - cmean) * cmean ** -1
+    logrho_central += 0.5 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -602,15 +578,7 @@ def logrho_Mz_5(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
 
         logrho_central = rho1 + rho2
 
-    #logrho_central = logrho_central + 1.4 * (c - cmean) * cmean ** -1
-    if zeta > 50:
-        logrho_central += + 1.3 * (c - cmean) * cmean ** -1
-    elif zeta > 70:
-        logrho_central += + 1.2 * (c - cmean) * cmean ** -1
-    elif zeta > 90:
-        logrho_central += + 1.1 * (c - cmean) * cmean ** -1
-    else:
-        logrho_central += 1.4 * (c - cmean) * cmean ** -1
+    logrho_central += 0.5 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -669,14 +637,7 @@ def logrho_Mz_6(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inter
 
         logrho_central = rho1 + rho2
 
-    if zeta > 50:
-        logrho_central += 0.5 * (c - cmean) * cmean ** -1
-    elif zeta > 70:
-        logrho_central += 0.5 * (c - cmean) * cmean ** -1
-    elif zeta > 90:
-        logrho_central += 0.5 * (c - cmean) * cmean ** -1
-    else:
-        logrho_central += 0.5 * (c - cmean) * cmean ** -1
+    logrho_central += 0.5 * (c - cmean) * cmean ** -1
 
     return logrho_central
 
@@ -735,14 +696,7 @@ def logrho_Mz_75(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inte
 
         logrho_central = rho1 + rho2
 
-    if zeta > 50:
-        logrho_central += 1.1 * (c - cmean) * cmean ** -1
-    elif zeta > 70:
-        logrho_central += 0.95 * (c - cmean) * cmean ** -1
-    elif zeta > 90:
-        logrho_central += 0.5 * (c - cmean) * cmean ** -1
-    else:
-        logrho_central += 1.2 * (c - cmean) * cmean ** -1
+    logrho_central += 0.5 * (c - cmean) * cmean ** -1
 
     return logrho_central
 

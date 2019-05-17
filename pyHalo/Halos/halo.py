@@ -164,8 +164,8 @@ class Halo(object):
 
                 else:
 
-                    cmean = _cosmo_prof.NFW_concentration(self.mass, self.z, scatter=False)
-                    rho_mean, rs_mean, _ = _cosmo_prof.NFW_params_physical(self.mass, cmean, self.z)
+                    cmean = self.cosmo_prof.NFW_concentration(self.mass, self.z, scatter=False)
+                    rho_mean, rs_mean, _ = self.cosmo_prof.NFW_params_physical(self.mass, cmean, self.z)
 
                     if 'halo_age' not in self._args.keys():
                         halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
