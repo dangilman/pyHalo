@@ -39,6 +39,7 @@ class Realization(object):
         self._loaded_models = {}
 
         self._prof_params = set_default_kwargs(other_params)
+
         self.m_break_scale = self._prof_params['log_m_break']
         self.break_index = self._prof_params['break_index']
         self._LOS_norm = self._prof_params['LOS_normalization']

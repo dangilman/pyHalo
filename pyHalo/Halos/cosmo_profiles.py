@@ -141,10 +141,10 @@ class CosmoMassProfiles(object):
 
             if isinstance(z, numpy.ndarray) or isinstance(z, list):
                 assert len(z) == len(M)
-                c = [self._NFW_concentration(mi, z[i], model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+                c = [self._NFW_concentration(float(mi), z[i], model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
                  for i, mi in enumerate(M)]
             else:
-                c = [self._NFW_concentration(mi, z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+                c = [self._NFW_concentration(float(mi), z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
                     for i, mi in enumerate(M)]
 
             return numpy.array(c)

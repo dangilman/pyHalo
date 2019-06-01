@@ -1,6 +1,6 @@
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
-from pyHalo.Spatial.nfw import NFW_3D
+from pyHalo.Spatial.nfw import NFW_3D, NFW3DFast
 from pyHalo.Halos.Profiles.nfw import NFW
 
 class MainLensPowerLaw(object):
@@ -20,7 +20,7 @@ class MainLensPowerLaw(object):
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         self._mass_func_parameterization = BrokenPowerLaw(**parameterization_args)
-        self._spatial_parameterization = NFW_3D(**spatial_args)
+        self._spatial_parameterization = NFW3DFast(**spatial_args)
 
     def __call__(self):
         """
@@ -111,7 +111,7 @@ class MainLensPowerLaw(object):
 
         elif 'sigma_sub' in args.keys():
 
-            a0_area_parent_halo = a0area_main(args['parent_m200'], self._lens_cosmo.z_lens)
+            a0_area_parent_halo = args['sigma_sub']*a0area_main(args['parent_m200'], self._lens_cosmo.z_lens)
 
             norm_0 = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
                            self._lens_cosmo.z_lens, args['cone_opening_angle'],
@@ -158,6 +158,6 @@ def a0area_main(mhalo, z, k1 = 0.85, k2 = 0.53, k3 = -0.8):
 
     # interpolated from galacticus
 
-    logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * (1+z) + k3
+    logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * (z - 0.5)
 
     return 10**logscaling
