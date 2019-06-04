@@ -154,10 +154,10 @@ class MainLensPowerLaw(object):
 
         return args_spatial, args_mfunc
 
-def a0area_main(mhalo, z, k1 = 0.85, k2 = 0.53, k3 = -0.8):
+def a0area_main(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
 
     # interpolated from galacticus
 
-    logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * (z - 0.5)
+    logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * np.log10(z + 0.5)
 
     return 10**logscaling
