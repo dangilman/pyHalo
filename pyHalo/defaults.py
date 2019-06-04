@@ -34,7 +34,7 @@ class TruncationDefaults(object):
 
     def __init__(self):
 
-        self.RocheNorm = 1.4
+        self.RocheNorm = 1.
         self.RocheNu = 2
         self.LOS_truncation = 50 # truncate at 'r50'
 
