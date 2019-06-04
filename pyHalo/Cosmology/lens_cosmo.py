@@ -63,10 +63,8 @@ class LensCosmo(object):
         :return: half mode mass in solar masses
         """
         # scaling of 3.3 keV from Viel et al
-        norm_h = (2 * 10**8) * 3 ** 3.33 # units M / h
-        norm = norm_h / self.cosmo.h
 
-        return norm * m_thermal ** -3.33
+        return 10**9 * (m_thermal / 2.4) ** (-3.33)
 
     def halfmode_to_thermal(self, m_half_mode):
 
@@ -76,10 +74,8 @@ class LensCosmo(object):
         :param m: half mode mass in solar masses
         :return: thermal relic particle mass in keV
         """
-        norm_h = (2 * 10 ** 8) * 3 ** 3.33  # units M / h
-        norm = norm_h / self.cosmo.h
 
-        return (m_half_mode / norm) ** (-1 / 3.33)
+        return 2.4 * (m_half_mode / 10**9) ** (-0.3)
 
     def get_epsiloncrit(self,z1,z2):
 
