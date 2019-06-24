@@ -191,42 +191,35 @@ class LensCosmo(object):
 
         return area * kappa_sub * self.sigmacrit * integral
 
-    def sigmasub_from_fsub(self, fsub, zlens, zsrc, fsub_ref = 0.01):
+    def a0area_main(self, mhalo, z, k1=0.88, k2=1.7, k3=-2):
 
-        scrit_ref = 10**11
-        return 0.0135 * fsub * fsub_ref ** -1 * self.get_sigmacrit_z1z2(zlens, zsrc) * scrit_ref ** -1
+        # interpolated from galacticus
 
-    def fsub_from_sigmasub(self, sigma_sub, zlens, zsrc, fsub_ref = 0.01, sigma_sub_ref = 0.0135):
+        logscaling = k1 * numpy.log10(mhalo * 10 ** -13) + k2 * numpy.log10(z + 0.5)
 
-        scrit = 10**11
-        scrit_z = self.get_sigmacrit_z1z2(zlens, zsrc)
-        return sigma_sub * fsub_ref * sigma_sub_ref ** -1 * scrit * scrit_z ** -1
+        return 10 ** logscaling
 
-    def mean_mass_fraction(self, mlow, mhigh, mpivot = 10**8, a0_area = 0.0135):
+    def projected_mass_fraction(self, sigma_sub, mlow=10**6, mhigh=10**10, mpivot = 10**8, Mhalo = 10**13,
+                           z=0.5):
 
         def _integrand(m, m0):
             x = m * m0 ** -1
             return x*x**-1.9
 
-        return a0_area * quad(_integrand, mlow, mhigh, args=(mpivot))[0]
+        sigma_sub *= self.a0area_main(Mhalo, z)
+        return sigma_sub * quad(_integrand, mlow, mhigh, args=(mpivot))[0]
 
-if False:
-    zlens = 0.5
-    l = LensCosmo(0.3, 1.5)
-    r_ein_arcsec_values = numpy.linspace(0.6, 1.6, 100)
-    scale_1, scale_2, scale_3 = [], [], []
-    for r_ein_arcsec in r_ein_arcsec_values:
-        scale_1.append((l.subhalo_mfunc_spatial_scaing(r_ein_arcsec, 0.3)))
-        scale_2.append((l.subhalo_mfunc_spatial_scaing(r_ein_arcsec, 0.5)))
-        scale_3.append((l.subhalo_mfunc_spatial_scaing(r_ein_arcsec, 0.7)))
+    def projected_mass_fraction_arcsec(self, sigma_sub, mlow=10**6, mhigh=10**10, mpivot = 10**8, Mhalo = 10**13,
+                           z=0.5):
 
-    norm_1 = numpy.log10(l.norm_A0_from_a0area(0.01*numpy.array(scale_1), 0.3, 6, -1.9))
-    norm_2 = numpy.log10(l.norm_A0_from_a0area(0.01*numpy.array(scale_2), 0.5, 6, -1.9))
-    norm_3 = numpy.log10(l.norm_A0_from_a0area(0.01*numpy.array(scale_3), 0.7, 6, -1.9))
+        mproj = self.projected_mass_fraction(sigma_sub, mlow, mhigh, mpivot, Mhalo, z)
 
-    import matplotlib.pyplot as plt
-    plt.plot(r_ein_arcsec_values, norm_1, color='k')
-    plt.plot(r_ein_arcsec_values, norm_2, color='r')
-    plt.plot(r_ein_arcsec_values, norm_3, color='g')
+        return mproj*self.cosmo.kpc_per_asec(z) ** 2
 
-    plt.show()
+    def projected_convergence(self, sigma_sub, mlow=10**6, mhigh=10**10, mpivot = 10**8, Mhalo = 10**13,
+                           z=0.5, zsrc=1.5):
+
+        mproj_arcsec = self.projected_mass_fraction_arcsec(sigma_sub, mlow, mhigh, mpivot, Mhalo, z)
+
+        return mproj_arcsec/self.get_sigmacrit_z1z2(z, zsrc)
+
