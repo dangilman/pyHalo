@@ -233,38 +233,8 @@ class Realization(object):
 
         for i, halo in enumerate(self.halos):
 
-            #args = {'x': halo.x, 'y': halo.y, 'mass': halo.mass}
             args = tuple([halo.x, halo.y, halo.mass, halo.z] + halo.mass_def_arg)
 
-            #
-            # if halo.mdef == 'NFW':
-            #     args += (halo.mass_def_arg['concentration'], halo.z)
-            # elif halo.mdef == 'CNFW':
-            #     args += (halo.mass_def_arg['concentration'], halo.z, halo.mass_def_arg['b'])
-            # elif halo.mdef == 'TNFW':
-            #     args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
-            #     args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
-            # elif halo.mdef == 'coreBURKERT':
-            #     args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
-            #     args.update({'b': halo.mass_def_arg['b']})
-            # elif halo.mdef == 'cBURKcNFW':
-            #     args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
-            #     args.update({'b': halo.mass_def_arg['b']})
-            # elif halo.mdef == 'POINT_MASS':
-            #     args.update({'redshift': halo.z})
-            # elif halo.mdef == 'PJAFFE':
-            #     args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
-            # elif halo.mdef == 'cNFWmod':
-            #     args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
-            #     args.update({'b': halo.mass_def_arg['b']})
-            # elif halo.mdef == 'cNFWmod_trunc':
-            #     args.update({'concentration': halo.mass_def_arg['concentration'], 'redshift': halo.z})
-            #     args.update({'r_trunc': halo.mass_def_arg['r_trunc']})
-            #     args.update({'b': halo.mass_def_arg['b']})
-            # else:
-            #     raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
-
-            #kw, model_args = self._lensing_functions[i].params(**args)
             kw, model_args = self._lensing_functions[i].params(*args)
 
             lenstronomy_ID = self._lensing_functions[i].lenstronomy_ID
@@ -307,7 +277,6 @@ class Realization(object):
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(redshift_list, z_sheets)
-            #kwargs_lensmodel = [None] * len(kwargs_mass_sheets)
 
         return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
 
