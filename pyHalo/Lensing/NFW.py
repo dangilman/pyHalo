@@ -24,7 +24,7 @@ class NFWLensing(object):
         Rs_angle = np.round(Rs_angle, 6)
         theta_Rs = np.round(theta_Rs, 6)
 
-        kwargs = {'theta_Rs':theta_Rs, 'Rs': Rs_angle,
+        kwargs = {'alpha_Rs':theta_Rs, 'Rs': Rs_angle,
                   'center_x':x, 'center_y':y}
 
         return kwargs, None

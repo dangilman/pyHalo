@@ -64,7 +64,7 @@ class LensCosmo(object):
         """
         # scaling of 3.3 keV from Viel et al
 
-        return 10**9 * (m_thermal / 2.4) ** (-3.33)
+        return 10**9 * (m_thermal / 2.3) ** (-3.33)
 
     def halfmode_to_thermal(self, m_half_mode):
 
@@ -75,7 +75,7 @@ class LensCosmo(object):
         :return: thermal relic particle mass in keV
         """
 
-        return 2.4 * (m_half_mode / 10**9) ** (-0.3)
+        return 2.3 * (m_half_mode / 10**9) ** (-0.3)
 
     def get_epsiloncrit(self,z1,z2):
 
