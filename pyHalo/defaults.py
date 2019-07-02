@@ -42,9 +42,9 @@ class DMHaloDefaults(object):
 
     def __init__(self):
 
-        self.mass_concentration_relation = 'diemer18'
+        self.mass_concentration_relation = 'diemer19'
 
-        if self.mass_concentration_relation == 'diemer18':
+        if self.mass_concentration_relation == 'diemer19':
             self.mc_mdef = '200c'
         else:
             self.mc_mdef = '200c'

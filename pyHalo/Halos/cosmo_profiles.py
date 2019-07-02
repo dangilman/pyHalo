@@ -129,7 +129,7 @@ class CosmoMassProfiles(object):
 
         return rNM_arcsec
 
-    def NFW_concentration(self, M, z, model='diemer18', mdef='200c', logmhm=0,
+    def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=0,
                           scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
 
         if isinstance(M, float) or isinstance(M, int):
@@ -149,11 +149,11 @@ class CosmoMassProfiles(object):
 
             return numpy.array(c)
 
-    def _NFW_concentration(self, M, z, model='diemer18', mdef='200c', logmhm=0,
+    def _NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=0,
                           scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
 
         # WDM relation adopted from Ludlow et al
-        # use diemer18?
+        # use diemer19?
         def zfunc(z_val):
             return 0.026*z_val - 0.04
 
