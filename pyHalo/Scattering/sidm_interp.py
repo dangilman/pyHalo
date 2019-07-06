@@ -321,44 +321,85 @@ def get_interps(vpower):
         zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
         delta_zeta = 10
 
-        slopes_fit5 = np.array([-0.00196707, -0.11596073])
-        intercept_fit5 = np.array([0.06532406, 9.00945706])
+        if True:
+            slopes_fit5 = np.array([0.00973678, -0.03142519, -0.10343325])
+            intercept_fit5 = np.array([-0.09799922, 0.36181552, 8.88336984])
 
-        slopes_fit10 = np.array([0.0020493, -0.12781251])
-        intercept_fit10 = np.array([0.05008846, 8.91070026])
+            slopes_fit10 = np.array([0.00714848, -0.01957806, -0.11861516])
+            intercept_fit10 = np.array([-0.08880488, 0.31876295, 8.79644261])
 
-        slopes_fit20 = np.array([0.00340371, -0.13457218])
-        intercept_fit20 = np.array([0.04994487, 8.79967026])
+            slopes_fit20 = np.array([0.00411244, -0.00903825, -0.12928106])
+            intercept_fit20 = np.array([-0.06723712, 0.25336723, 8.71316201])
 
-        slopes_fit30 = np.array([0.00398468, -0.13762388])
-        intercept_fit30 = np.array([0.05327855, 8.73673745])
+            slopes_fit30 = np.array([0.00513231, -0.01154284, -0.13102058])
+            intercept_fit30 = np.array([-0.07900466, 0.29230299, 8.6350889])
 
-        slopes_fit40 = np.array([0.00465438, -0.14128698])
-        intercept_fit40 = np.array([0.05560193, 8.70507398])
+            slopes_fit40 = np.array([0.00411038, -0.00778135, -0.13599851])
+            intercept_fit40 = np.array([-0.07365812, 0.27845067, 8.61030438])
 
-        slopes_fit50 = np.array([0.00560122, -0.14424182])
-        intercept_fit50 = np.array([0.0538395, 8.68770889])
+            slopes_fit50 = np.array([0.00476455, -0.00881367, -0.13811168])
+            intercept_fit50 = np.array([-0.07911127, 0.29318647, 8.58592318])
 
-        slopes_fit60 = np.array([0.00459384, -0.14562378])
-        intercept_fit60 = np.array([0.06806642, 8.66531186])
+            slopes_fit60 = np.array([0.00656568, -0.01527028, -0.13717628])
+            intercept_fit60 = np.array([-0.09664753, 0.36046842, 8.54096375])
 
-        slopes_fit70 = np.array([0.00443256, -0.14666501])
-        intercept_fit70 = np.array([0.07484694, 8.64790349])
+            slopes_fit70 = np.array([0.00610427, -0.01403559, -0.13881117])
+            intercept_fit70 = np.array([-0.09533585, 0.36328051, 8.525243])
 
-        slopes_fit80 = np.array([0.00495319, -0.14892299])
-        intercept_fit80 = np.array([0.07510193, 8.64536443])
+            slopes_fit80 = np.array([0.00569853, -0.01228741, -0.14159118])
+            intercept_fit80 = np.array([-0.09355446, 0.358146, 8.52499591])
 
-        slopes_fit90 = np.array([0.00640236, -0.15250554])
-        intercept_fit90 = np.array([0.06740622, 8.65635991])
+            slopes_fit90 = np.array([0.00717163, -0.01529502, -0.14327842])
+            intercept_fit90 = np.array([-0.10825774, 0.3949343, 8.51707394])
 
-        slopes_fit100 = np.array([0.00686102, -0.15442087])
-        intercept_fit100 = np.array([0.06682426, 8.65798167])
+            slopes_fit100 = np.array([0.00580987, -0.01071642, -0.14694581])
+            intercept_fit100 = np.array([-0.09798099, 0.36326058, 8.53191791])
 
-        slopes_fit110 = np.array([0.0054332, -0.15350959])
-        intercept_fit110 = np.array([0.082698, 8.63659169])
+            slopes_fit110 = np.array([0.00575655, -0.01198294, -0.14610312])
+            intercept_fit110 = np.array([-0.09857626, 0.38093526, 8.50976205])
 
-        slopes_fit120 = np.array([0.00585052, -0.15573671])
-        intercept_fit120 = np.array([0.08315841, 8.64379102])
+            slopes_fit120 = np.array([0.00601038, -0.01233357, -0.14800367])
+            intercept_fit120 = np.array([-0.10127382, 0.38955701, 8.51349066])
+
+        else:
+            slopes_fit5 = np.array([-0.00196707, -0.11596073])
+            intercept_fit5 = np.array([0.06532406, 9.00945706])
+
+            slopes_fit10 = np.array([0.0020493, -0.12781251])
+            intercept_fit10 = np.array([0.05008846, 8.91070026])
+
+            slopes_fit20 = np.array([0.00340371, -0.13457218])
+            intercept_fit20 = np.array([0.04994487, 8.79967026])
+
+            slopes_fit30 = np.array([0.00398468, -0.13762388])
+            intercept_fit30 = np.array([0.05327855, 8.73673745])
+
+            slopes_fit40 = np.array([0.00465438, -0.14128698])
+            intercept_fit40 = np.array([0.05560193, 8.70507398])
+
+            slopes_fit50 = np.array([0.00560122, -0.14424182])
+            intercept_fit50 = np.array([0.0538395, 8.68770889])
+
+            slopes_fit60 = np.array([0.00459384, -0.14562378])
+            intercept_fit60 = np.array([0.06806642, 8.66531186])
+
+            slopes_fit70 = np.array([0.00443256, -0.14666501])
+            intercept_fit70 = np.array([0.07484694, 8.64790349])
+
+            slopes_fit80 = np.array([0.00495319, -0.14892299])
+            intercept_fit80 = np.array([0.07510193, 8.64536443])
+
+            slopes_fit90 = np.array([0.00640236, -0.15250554])
+            intercept_fit90 = np.array([0.06740622, 8.65635991])
+
+            slopes_fit100 = np.array([0.00686102, -0.15442087])
+            intercept_fit100 = np.array([0.06682426, 8.65798167])
+
+            slopes_fit110 = np.array([0.0054332, -0.15350959])
+            intercept_fit110 = np.array([0.082698, 8.63659169])
+
+            slopes_fit120 = np.array([0.00585052, -0.15573671])
+            intercept_fit120 = np.array([0.08315841, 8.64379102])
 
         slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
                             slopes_fit60,
