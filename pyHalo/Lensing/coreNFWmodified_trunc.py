@@ -6,7 +6,7 @@ class coreNFWmodifiedtruncLensing(object):
 
     hybrid = False
 
-    lenstronomy_ID = 'NumericalAlpha'
+    lenstronomy_ID = 'CTNFW_GAUSS_DEC'
 
     def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
 
@@ -22,7 +22,9 @@ class coreNFWmodifiedtruncLensing(object):
         Rs_angle, theta_Rs_nfw = self.lens_cosmo.tnfw_physical2angle(mass,
                        concentration, r_trunc, redshift)
 
-        normalization = self._normalize(Rs_angle, theta_Rs_nfw)
+        #normalization = self._normalize(Rs_angle, theta_Rs_nfw)
+        rho_s = self.lens_cosmo.NFW_params_physical(mass, concentration, redshift)[0]
+        #rho_s *= 1000 ** 3
 
         x, y = np.round(x, 4), np.round(y, 4)
 
@@ -30,10 +32,10 @@ class coreNFWmodifiedtruncLensing(object):
 
         r_core = np.round(b*Rs_angle, 6)
 
-        kwargs = {'center_x': x, 'center_y': y,'Rs': Rs_angle,
-                  'r_core': r_core, 'norm': normalization, 'r_trunc': r_trunc}
+        kwargs = {'center_x': x, 'center_y': y,'r_s': Rs_angle,
+                  'r_core': r_core, 'rho_s': rho_s, 'r_trunc': r_trunc, 'a':10}
 
-        return kwargs, self.numerical_class
+        return kwargs, None
 
     def _normalize(self, Rs, theta_Rs_nfw):
 
