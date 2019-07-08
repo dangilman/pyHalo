@@ -1,6 +1,7 @@
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 import numpy
 from scipy.integrate import quad
+from pyHalo.Halos.Profiles.tnfw import TNFW
 
 class NFW(CosmoMassProfiles):
 
@@ -57,6 +58,3 @@ class NFW(CosmoMassProfiles):
         theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
         eps_crit = self.lens_cosmo.get_epsiloncrit(z, self.lens_cosmo.z_source)
         return Rs_angle, theta_Rs / eps_crit / D_d / self.lens_cosmo.cosmo.arcsec
-
-
-

@@ -28,6 +28,16 @@ class coreTNFW(CosmoMassProfiles):
         eps_crit = self.lens_cosmo.get_epsiloncrit(z, self.lens_cosmo.z_source)
         return Rs_angle, theta_Rs / eps_crit / D_d / self.lens_cosmo.cosmo.arcsec
 
+    def norm_arcsec(self, M, c, r_t, z):
+
+        D_d = self.lens_cosmo.cosmo.D_A(0, z)
+        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
+        Rs_angle = Rs / D_d / self.lens_cosmo.cosmo.arcsec
+
+        eps_crit = self.lens_cosmo.get_epsiloncrit(z, self.lens_cosmo.z_source)
+
+        return Rs_angle, rho0 / eps_crit / D_d / 2
+
     def tnfw_theta_Rs(self, rs, rho, tau):
 
         factor = self._tnfw_g1(tau)

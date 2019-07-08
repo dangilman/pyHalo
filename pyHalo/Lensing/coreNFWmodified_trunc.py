@@ -19,12 +19,14 @@ class coreNFWmodifiedtruncLensing(object):
 
     def params(self, x, y, mass, redshift, concentration, r_trunc, b):
 
-        Rs_angle, theta_Rs_nfw = self.lens_cosmo.tnfw_physical2angle(mass,
-                       concentration, r_trunc, redshift)
+        #Rs_angle, theta_Rs_nfw = self.lens_cosmo.tnfw_physical2angle(mass,
+        #               concentration, r_trunc, redshift)
 
         #normalization = self._normalize(Rs_angle, theta_Rs_nfw)
-        rho_s = self.lens_cosmo.NFW_params_physical(mass, concentration, redshift)[0]
-        #rho_s *= 1000 ** 3
+        #rho_s = self.lens_cosmo.NFW_params_physical(mass, concentration, redshift)[0]
+        Rs_angle, rho_s = self.lens_cosmo.norm_arcsec(mass, concentration, r_trunc, redshift)
+
+        #Rs_angle, trs = self.lens_cosmo.nfw_physical2angle(mass, )
 
         x, y = np.round(x, 4), np.round(y, 4)
 
