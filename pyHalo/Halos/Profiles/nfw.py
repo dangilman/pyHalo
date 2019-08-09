@@ -8,36 +8,9 @@ class NFW(CosmoMassProfiles):
 
         pass
 
-    def mean_circular_velocity(self, M, z, rmax=None):
-        """
-        mean circular velocity inside rmax for an NFW halo
-        :param M:
-        :param z:
-        :param rmax:
-        :return:
-        """
-        c = self.NFW_concentration(M, z, scatter=False)
+    def nfw_mass_2angles(self, M, z, model='diemer19'):
 
-        rho0, rs, r200 = self.NFW_params_physical(M, c, z)
-
-        G = 4.3e-3 # pc/Msun (km/sec)^2
-        G *= 0.001 # kpc/Msun (km/sec)^2
-        factor = numpy.sqrt(4*numpy.pi*rs**3*rho0 * G)
-
-        def _integrand(r, Rs):
-            x = r * Rs ** -1
-            return numpy.sqrt(r**-1*(numpy.log(1+x) - x * (x+1)**-1))
-
-        if rmax is None:
-            rmax = rs
-
-        factor *= rmax ** -1
-
-        return factor * quad(_integrand, 0.0001*rs, rmax, args=(rs))[0]
-
-    def nfw_mass_2angles(self, M, z):
-
-        c = self.NFW_concentration(M, z, scatter=False)
+        c = self.NFW_concentration(M, z, scatter=False, model=model)
 
         Rs_angle, theta_Rs = self.nfw_physical2angle(M, c, z)
 

@@ -4,9 +4,9 @@ from scipy.integrate import quad
 
 class TNFW(CosmoMassProfiles):
 
-    def tnfw_mass_2angles(self, M, r_t, z):
+    def tnfw_mass_2angles(self, M, r_t, z, model='diemer19'):
 
-        c = self.NFW_concentration(M, z, scatter=False)
+        c = self.NFW_concentration(M, z, scatter=False, model=model)
 
         Rs_angle, theta_Rs = self.tnfw_physical2angle(M, c, r_t, z)
 
