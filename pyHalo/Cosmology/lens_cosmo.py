@@ -34,6 +34,10 @@ class LensCosmo(object):
 
             self._kpc_per_asec_zlens = self.cosmo.kpc_per_asec(self.z_lens)
 
+    @property
+    def colossus(self):
+        return self.cosmo.colossus
+
     def _eval_halo_interp(self, halo_z, log_halo_mass):
 
         logm_norm = log_halo_mass * self.mass_norm ** -1

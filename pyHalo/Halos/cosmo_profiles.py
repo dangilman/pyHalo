@@ -16,6 +16,36 @@ class CosmoMassProfiles(object):
 
         self.lens_cosmo = lens_comso
 
+    @property
+    def colossus(self):
+        return self.lens_cosmo.colossus
+
+    def k_from_M(self, M, z):
+
+        nu = self.nu_from_M(M, z)
+        M_L = peaks.massFromPeakHeight(nu, z)
+        R_L = peaks.lagrangianR(M_L)
+
+        return 2*numpy.pi / R_L
+
+    def power_spectrum_fromM(self, M, z):
+
+        k = self.k_from_M(M, z)
+        pk = self.colossus.matterPowerSpectrum(k, z)
+
+        return pk
+
+    def power_spectrum_slope_fromM(self, M, z):
+
+        nu = self.nu_from_M(M, z)
+        return peaks.powerSpectrumSlope(nu, z)
+
+    def nu_from_M(self, M, z):
+
+        M_h = M*self.lens_cosmo.cosmo.h
+        nu = peaks.peakHeight(M_h, z)
+        return nu
+
     def SIDMrho(self, cross_section, sidm_func, halo_mass, halo_redshift, cscatter = True):
 
         cmean = self.NFW_concentration(halo_mass, halo_redshift, scatter=False)
@@ -326,13 +356,15 @@ class CosmoMassProfiles(object):
 
 if False:
     import matplotlib.pyplot as plt
-    if True:
-        cprof = CosmoMassProfiles(z_lens=0.5, z_source=1.5)
+    one=True
+    cprof = CosmoMassProfiles(z_lens=0.5, z_source=2)
+    M = numpy.logspace(6, 10, 20)
+    logm = numpy.log10(M)
 
-        M = numpy.logspace(6, 10, 20)
-        logm = numpy.log10(M)
-        zshift1 = 0.3
-        zshift2 = 1.5
+    if one:
+
+        zshift1 = 0.
+        zshift2 = 3
 
         model = {'custom': True, 'c0': 17., 'c_slope': -0.8}
         c_diemer = cprof.NFW_concentration(M * 0.7, zshift1, model='diemer15', scatter=False)
@@ -341,11 +373,11 @@ if False:
         c_diemer2 = cprof.NFW_concentration(M * 0.7, zshift2, model='diemer15', scatter=False)
         c_custom2 = cprof.NFW_concentration(M, zshift2, model=model, scatter=False)
 
-        plt.plot(logm, c_custom, color='g', linestyle='-', label='custom (z=0.3)')
-        plt.plot(logm, c_diemer, color='k', linestyle='-', label='diemer19 (z=0.3)')
+        plt.plot(logm, c_custom/c_diemer, color='g', linestyle='-', label='custom (z=0.3)')
+        #plt.plot(logm, c_diemer, color='k', linestyle='-', label='diemer19 (z=0.3)')
 
-        plt.plot(logm, c_custom2, color='g', linestyle='--', label='custom (z=1.5)')
-        plt.plot(logm, c_diemer2, color='k', linestyle='--', label='diemer19 (z=1.5)')
+        plt.plot(logm, c_custom2/c_diemer2, color='g', linestyle='--', label='custom (z=1.5)')
+        #plt.plot(logm, c_diemer2, color='k', linestyle='--', label='diemer19 (z=1.5)')
         plt.annotate(r'$c = 17 \left(\frac{\nu \left(M, z\right)}{\nu\left(10^8, 0\right)}\right)^{-0.8}$'+'\n(no scatter)',
                      xy=(0.05, 0.1), xycoords='axes fraction', fontsize=18)
         ax = plt.gca()
@@ -353,6 +385,12 @@ if False:
         plt.legend(fontsize=14, frameon=False)
         plt.savefig('custom_mc_relation.pdf')
         plt.show()
+    else:
+        nu = cprof.nu_from_M(M, 1)
+        pk = cprof.power_spectrum_slope_fromM(M, 1)
+        plt.plot(nu, pk)
+        plt.show()
+
 
 
 
