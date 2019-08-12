@@ -1,5 +1,5 @@
 import numpy
-from colossus.halo.concentration import concentration
+from colossus.halo.concentration import concentration, peaks
 from scipy.optimize import minimize
 
 class CosmoMassProfiles(object):
@@ -15,6 +15,36 @@ class CosmoMassProfiles(object):
             lens_comso = LensCosmo(z_lens, z_source)
 
         self.lens_cosmo = lens_comso
+
+    @property
+    def colossus(self):
+        return self.lens_cosmo.colossus
+
+    def k_from_M(self, M, z):
+
+        nu = self.nu_from_M(M, z)
+        M_L = peaks.massFromPeakHeight(nu, z)
+        R_L = peaks.lagrangianR(M_L)
+
+        return 2*numpy.pi / R_L
+
+    def power_spectrum_fromM(self, M, z):
+
+        k = self.k_from_M(M, z)
+        pk = self.colossus.matterPowerSpectrum(k, z)
+
+        return pk
+
+    def power_spectrum_slope_fromM(self, M, z):
+
+        nu = self.nu_from_M(M, z)
+        return peaks.powerSpectrumSlope(nu, z)
+
+    def nu_from_M(self, M, z):
+
+        M_h = M*self.lens_cosmo.cosmo.h
+        nu = peaks.peakHeight(M_h, z)
+        return nu
 
     def SIDMrho(self, cross_section, sidm_func, halo_mass, halo_redshift, cscatter = True):
 
@@ -132,25 +162,60 @@ class CosmoMassProfiles(object):
     def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=0,
                           scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
 
-        if isinstance(M, float) or isinstance(M, int):
+      
+        if isinstance(model, dict):
 
-            c = self._NFW_concentration(M, z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
-            return c
+            assert 'custom' in model.keys()
 
-        else:
-
-            if isinstance(z, numpy.ndarray) or isinstance(z, list):
-                assert len(z) == len(M)
-                c = [self._NFW_concentration(float(mi), z[i], model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
-                 for i, mi in enumerate(M)]
+            if isinstance(M, float) or isinstance(M, int):
+                c = self._NFW_concentration_custom(M, z, model, scatter, scatter_amplitude)
             else:
-                c = [self._NFW_concentration(float(mi), z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+
+                if isinstance(z, numpy.ndarray) or isinstance(z, list):
+                    assert len(z) == len(M)
+                    c = [self._NFW_concentration_custom(float(mi), z[i], model, scatter, scatter_amplitude)
                     for i, mi in enumerate(M)]
+                else:
+                    c = [self._NFW_concentration_custom(float(mi), z, model, scatter, scatter_amplitude)
+                         for i, mi in enumerate(M)]
 
             return numpy.array(c)
 
-    def _NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=0,
-                          scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
+        else:
+
+            if isinstance(M, float) or isinstance(M, int):
+
+                c = self._NFW_concentration_colossus(M, z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+                return c
+
+            else:
+
+                if isinstance(z, numpy.ndarray) or isinstance(z, list):
+                    assert len(z) == len(M)
+                    c = [self._NFW_concentration_colossus(float(mi), z[i], model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+                     for i, mi in enumerate(M)]
+                else:
+                    c = [self._NFW_concentration_colossus(float(mi), z, model, mdef, logmhm, scatter, c_scale, c_power, scatter_amplitude)
+                        for i, mi in enumerate(M)]
+
+                return numpy.array(c)
+
+    def _NFW_concentration_custom(self, M, z, args, scatter, scatter_amplitude):
+
+        M_h = M * self.lens_cosmo.cosmo.h
+        Mref_h = 10**8 * self.lens_cosmo.cosmo.h
+        nu = peaks.peakHeight(M_h, z)
+        nu_ref = peaks.peakHeight(Mref_h, 0)
+
+        c = args['c0'] * (nu/nu_ref) ** args['c_slope']
+
+        if scatter:
+            c += numpy.random.lognormal(numpy.log(c), scatter_amplitude)
+
+        return c
+
+    def _NFW_concentration_colossus(self, M, z, model='diemer19', mdef='200c', logmhm=0,
+                                    scatter=True, c_scale=None, c_power=None, scatter_amplitude = 0.13):
 
         # WDM relation adopted from Ludlow et al
         # use diemer19?
@@ -288,3 +353,54 @@ class CosmoMassProfiles(object):
         r_trunc_arcsec = self.rN_M_nfw_physical_arcsec(M, N, z)
 
         return r_trunc_arcsec
+
+if False:
+    import matplotlib.pyplot as plt
+    one=True
+    cprof = CosmoMassProfiles(z_lens=0.5, z_source=2)
+    M = numpy.logspace(6, 10, 20)
+    logm = numpy.log10(M)
+
+    if one:
+
+        zshift1 = 0.
+        zshift2 = 3
+
+        model = {'custom': True, 'c0': 17., 'c_slope': -0.8}
+        c_diemer = cprof.NFW_concentration(M * 0.7, zshift1, model='diemer15', scatter=False)
+        c_custom = cprof.NFW_concentration(M, zshift1, model=model, scatter=False)
+
+        c_diemer2 = cprof.NFW_concentration(M * 0.7, zshift2, model='diemer15', scatter=False)
+        c_custom2 = cprof.NFW_concentration(M, zshift2, model=model, scatter=False)
+
+        plt.plot(logm, c_custom/c_diemer, color='g', linestyle='-', label='custom (z=0.3)')
+        #plt.plot(logm, c_diemer, color='k', linestyle='-', label='diemer19 (z=0.3)')
+
+        plt.plot(logm, c_custom2/c_diemer2, color='g', linestyle='--', label='custom (z=1.5)')
+        #plt.plot(logm, c_diemer2, color='k', linestyle='--', label='diemer19 (z=1.5)')
+        plt.annotate(r'$c = 17 \left(\frac{\nu \left(M, z\right)}{\nu\left(10^8, 0\right)}\right)^{-0.8}$'+'\n(no scatter)',
+                     xy=(0.05, 0.1), xycoords='axes fraction', fontsize=18)
+        ax = plt.gca()
+
+        plt.legend(fontsize=14, frameon=False)
+        plt.savefig('custom_mc_relation.pdf')
+        plt.show()
+    else:
+        nu = cprof.nu_from_M(M, 1)
+        pk = cprof.power_spectrum_slope_fromM(M, 1)
+        plt.plot(nu, pk)
+        plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
