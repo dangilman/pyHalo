@@ -12,7 +12,7 @@ def realization_at_z(realization,z):
 
     halos = realization.halos_at_z(z)
 
-    return Realization(None, None, None, None, None, None, None, realization.halo_mass_function,
+    return Realization(None, None, None, None, None, None, None, None, realization.halo_mass_function,
                        halos=halos, other_params=realization._prof_params)
 
 
@@ -20,7 +20,7 @@ class Realization(object):
 
     #max_m_high = 10**9
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, halo_mass_function,
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
                  halos = None, other_params = {}, mass_sheet_correction = True):
 
         self._mass_sheet_correction  = mass_sheet_correction
@@ -47,10 +47,10 @@ class Realization(object):
 
         if halos is None:
 
-            for mi, xi, yi, r2di, r3di, mdefi, zi in zip(masses, x, y, r2d, r3d,
-                           mdefs, z):
+            for mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r2d, r3d,
+                           mdefs, z, subhalo_flag):
 
-                self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi)
+                self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag)
 
             if other_params['include_subhalos']:
                 assert 'subhalo_args' in other_params.keys(), \
@@ -60,7 +60,7 @@ class Realization(object):
         else:
 
             for halo in halos:
-                self._add_halo(None, None, None, None, None, None, None, halo=halo)
+                self._add_halo(None, None, None, None, None, None, None, None, halo=halo)
 
         self._reset()
 
@@ -75,14 +75,14 @@ class Realization(object):
             new_halo.y += centroid_coordinates[1]
             halos.append(new_halo)
 
-        realization = Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+        realization = Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                                   halos=halos, other_params=self._prof_params)
 
         return realization
 
-    def add_halo(self, mass, x, y, r2d, r3d, mdef, z):
+    def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
 
-        new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], self.halo_mass_function,
+        new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], [sub_flag], self.halo_mass_function,
                                halos = None, other_params=self._prof_params,
                                mass_sheet_correction=self._mass_sheet_correction)
 
@@ -97,7 +97,7 @@ class Realization(object):
                 subhalos = halo.add_subhalos(args)
 
                 for subhalo in subhalos:
-                    self._add_halo(None, None, None, None, None, None, None, subhalo)
+                    self._add_halo(None, None, None, None, None, None, None, None, subhalo)
 
         self._reset()
 
@@ -112,9 +112,9 @@ class Realization(object):
 
                 halos.append(halo)
 
-        subhalo_realization = Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+        subhalo_realization = Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                                           halos = subhalos, other_params= self._prof_params)
-        halo_realization = Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+        halo_realization = Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                                        halos = halos, other_params= self._prof_params)
 
         return halo_realization, subhalo_realization
@@ -134,7 +134,7 @@ class Realization(object):
             duplicate.mdef = new_mdef
             new_halos.append(duplicate)
 
-        return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = new_halos, other_params= self._prof_params,
                            mass_sheet_correction = self.mass_sheet_correction())
 
@@ -175,7 +175,7 @@ class Realization(object):
             if tag not in short:
                 halos.append(halos_long[i])
 
-        return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = halos, other_params= self._prof_params,
                            mass_sheet_correction = self.mass_sheet_correction())
 
@@ -211,10 +211,10 @@ class Realization(object):
 
         self._unique_redshifts = np.unique(self.redshifts)
 
-    def _add_halo(self, m, x, y, r2, r3, md, z, halo=None):
+    def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:
 
-            halo = Halo(mass=m, x=x, y=y, r2d=r2, r3d=r3, mdef=md, z=z, cosmo_m_prof=self.cosmo_mass_profile,
+            halo = Halo(mass=m, x=x, y=y, r2d=r2, r3d=r3, mdef=md, z=z, sub_flag=sub_flag, cosmo_m_prof=self.cosmo_mass_profile,
                         args=self._prof_params)
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
@@ -468,7 +468,7 @@ class Realization(object):
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 
-        return Realization(None, None, None, None, None, None, None, self.halo_mass_function,
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = halos, other_params= self._prof_params, mass_sheet_correction = self.mass_sheet_correction())
 
         #return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,

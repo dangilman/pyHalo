@@ -207,8 +207,8 @@ class CosmoMassProfiles(object):
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, 0)
 
-        assert args['beta'] >= 0
-        assert args['c0'] > 0
+        assert args['beta'] >= 0, 'beta values < 0 are unphysical.'
+        assert args['c0'] > 0, 'negative normalizations are unphysical.'
 
         c = args['c0'] * (1+z) ** (args['zeta']) * (nu/nu_ref) ** (-args['beta'])
 

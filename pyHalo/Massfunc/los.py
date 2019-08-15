@@ -211,7 +211,7 @@ class LOSPowerLaw(LOS):
                 r2d, r3d = np.append(r2d, r2di_2halo), np.append(r3d, r3di_2halo)
                 z = np.append(z, zi_2halo)
 
-        return masses, x, y, r2d, r3d, z
+        return masses, x, y, r2d, r3d, z, [False]*len(masses)
 
 
     def _mfunc(self,args):

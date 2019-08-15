@@ -37,7 +37,7 @@ class MainLensPowerLaw(object):
         y_arcsec = y*self._lens_cosmo._kpc_per_asec_zlens ** -1
 
         return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d), np.array(r3d), np.array(
-            [self._lens_cosmo.z_lens] * len(masses))
+            [self._lens_cosmo.z_lens] * len(masses)), [True] * len(masses)
 
     def _spatial(self,args):
 

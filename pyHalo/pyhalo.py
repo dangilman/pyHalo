@@ -28,7 +28,7 @@ class pyHalo(object):
         self._halo_mass_function_args = halo_mass_function_args
         self._kwargs_massfunc = kwargs_massfunc
 
-    def render(self, type, args, nrealizations=1):
+    def render(self, type, args, nrealizations=1, verbose=False):
 
         realizations = []
 
@@ -42,7 +42,7 @@ class pyHalo(object):
                 args[i] = self._add_profile_params(ai)
 
         for n in range(nrealizations):
-            realizations.append(self._render_single(type, args))
+            realizations.append(self._render_single(type, args, verbose))
 
         return realizations
 
@@ -81,7 +81,7 @@ class pyHalo(object):
 
         return self.halo_mass_function
 
-    def _render_single(self, type, args):
+    def _render_single(self, type, args, verbose):
 
         executables_list, mass_def_list, model_names = self._build(type, args)
 
@@ -92,13 +92,20 @@ class pyHalo(object):
 
             for i, (mdef, func) in enumerate(zip(mass_def, executables)):
 
-                m, x, y, r2, r3, z = func()
+                if verbose:
+                    if i==0:
+                        print('generating first executable... ')
+                    else:
+                        print('generating second executable... ')
+
+                m, x, y, r2, r3, z, sub_flag = func()
 
                 L = int(len(m))
                 mdefs += [mdef] * L
 
                 if i == 0:
                     masses, xpos, ypos, r2d, r3d, redshifts = m, x, y, r2, r3, z
+                    subhalo_flag = sub_flag
 
                 else:
 
@@ -108,6 +115,7 @@ class pyHalo(object):
                     r2d = np.append(r2d, r2)
                     r3d = np.append(r3d, r3)
                     redshifts = np.append(redshifts, z)
+                    subhalo_flag += sub_flag
 
             if not hasattr(self, '_geometry'):
                 self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
@@ -120,11 +128,13 @@ class pyHalo(object):
                     mass_sheet = False
 
             if init:
-                realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, self.halo_mass_function,
+                if verbose: print('computing halo physical parameters... ')
+                realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, subhalo_flag, self.halo_mass_function,
                                           other_params=args[component_index], mass_sheet_correction=mass_sheet)
                 init = False
             else:
-                new = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, self.halo_mass_function,
+                if verbose: print('computing halo physical parameters... ')
+                new = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, subhalo_flag, self.halo_mass_function,
                                   other_params=args[component_index], mass_sheet_correction=mass_sheet)
                 realization = realization.join(new)
 

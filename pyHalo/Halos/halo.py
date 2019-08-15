@@ -17,7 +17,8 @@ class Halo(object):
 
     has_core = ['coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod', 'cNFWmod_trunc']
 
-    def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None, cosmo_m_prof=None, args={}):
+    def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None,
+                 sub_flag = None, cosmo_m_prof=None, args={}):
 
         self.mass = mass
 
@@ -32,7 +33,7 @@ class Halo(object):
         self.mdef = mdef
         self.z = z
         self.cosmo_prof = cosmo_m_prof
-        self._z_deflector = cosmo_m_prof.lens_cosmo.z_lens
+        self._is_main_subhalo = sub_flag
         self._args = args
         # compute these at the end
         self.mass_def_arg = self.profile_parameters()
@@ -128,12 +129,12 @@ class Halo(object):
         else:
             return False, None
 
-    def _transform_redshift(self, args):
+    def _transform_redshift(self):
 
-        if self.z == self._z_deflector:
+        if self._is_main_subhalo:
 
-            if isinstance(args['mc_model'], dict):
-                if 'z_accreted' in args['mc_model'].keys() and args['mc_model']['z_accreted']:
+            if isinstance(self._args['mc_model'], dict):
+                if 'z_accreted' in self._args['mc_model'].keys() and self._args['mc_model']['z_accreted']:
                     return self.z_accreted_from_z(self.z, self._args['parent_m200'])
                 else:
                     return self.z
@@ -150,9 +151,9 @@ class Halo(object):
 
         if self.mdef in self.has_concentration:
             
-            z = self._transform_redshift(self._args)
+            z_concentration = self._transform_redshift()
 
-            nfw_c = self.cosmo_prof.NFW_concentration(self.mass, z, logmhm=self._args['log_m_break'],
+            nfw_c = self.cosmo_prof.NFW_concentration(self.mass, z_concentration, logmhm=self._args['log_m_break'],
                                                       c_scale=self._args['c_scale'], c_power=self._args['c_power'],
                                                       scatter=self._args['c_scatter'], model=self._args['mc_model'])
             mdef_args.append(np.round(nfw_c,2))
