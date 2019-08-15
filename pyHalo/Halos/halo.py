@@ -32,6 +32,7 @@ class Halo(object):
         self.mdef = mdef
         self.z = z
         self.cosmo_prof = cosmo_m_prof
+        self._z_deflector = cosmo_m_prof.lens_cosmo.z_lens
         self._args = args
         # compute these at the end
         self.mass_def_arg = self.profile_parameters()
@@ -127,13 +128,31 @@ class Halo(object):
         else:
             return False, None
 
+    def _transform_redshift(self, args):
+
+        if self.z == self._z_deflector:
+
+            if isinstance(args['mc_model'], dict):
+                if 'z_accreted' in args['mc_model'].keys() and args['mc_model']['z_accreted']:
+                    return self.z_accreted_from_z(self.z, self._args['parent_m200'])
+                else:
+                    return self.z
+            else:
+                return self.z
+
+        else:
+
+            return self.z
+
     def profile_parameters(self):
 
         mdef_args = []
 
         if self.mdef in self.has_concentration:
+            
+            z = self._transform_redshift(self._args)
 
-            nfw_c = self.cosmo_prof.NFW_concentration(self.mass, self.z, logmhm=self._args['log_m_break'],
+            nfw_c = self.cosmo_prof.NFW_concentration(self.mass, z, logmhm=self._args['log_m_break'],
                                                       c_scale=self._args['c_scale'], c_power=self._args['c_power'],
                                                       scatter=self._args['c_scatter'], model=self._args['mc_model'])
             mdef_args.append(np.round(nfw_c,2))

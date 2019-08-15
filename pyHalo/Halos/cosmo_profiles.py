@@ -207,7 +207,10 @@ class CosmoMassProfiles(object):
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, 0)
 
-        c = args['c0'] * (nu/nu_ref) ** args['c_slope']
+        assert args['beta'] >= 0
+        assert args['c0'] > 0
+
+        c = args['c0'] * (1+z) ** (args['zeta']) * (nu/nu_ref) ** (-args['beta'])
 
         if scatter:
             c += numpy.random.lognormal(numpy.log(c), scatter_amplitude)
@@ -363,20 +366,21 @@ if False:
 
     if one:
 
-        zshift1 = 0.
-        zshift2 = 3
+        zshift1 = 0.3
+        zshift2 = 0.3
 
         model = {'custom': True, 'c0': 17., 'c_slope': -0.8}
-        c_diemer = cprof.NFW_concentration(M * 0.7, zshift1, model='diemer15', scatter=False)
+        #c_diemer = cprof.NFW_concentration(M * 0.7, zshift1, model='diemer15', scatter=False)
         c_custom = cprof.NFW_concentration(M, zshift1, model=model, scatter=False)
 
-        c_diemer2 = cprof.NFW_concentration(M * 0.7, zshift2, model='diemer15', scatter=False)
+        #c_diemer2 = cprof.NFW_concentration(M * 0.7, zshift2, model='diemer15', scatter=False)
+        model = {'custom': True, 'c0': 17., 'c_slope': -1.2}
         c_custom2 = cprof.NFW_concentration(M, zshift2, model=model, scatter=False)
 
-        plt.plot(logm, c_custom/c_diemer, color='g', linestyle='-', label='custom (z=0.3)')
+        plt.plot(logm, c_custom, color='k', linestyle='-', label='custom (z=0.3)')
         #plt.plot(logm, c_diemer, color='k', linestyle='-', label='diemer19 (z=0.3)')
 
-        plt.plot(logm, c_custom2/c_diemer2, color='g', linestyle='--', label='custom (z=1.5)')
+        plt.plot(logm, c_custom2, color='g', linestyle='-', label='custom (z=0.3)')
         #plt.plot(logm, c_diemer2, color='k', linestyle='--', label='diemer19 (z=1.5)')
         plt.annotate(r'$c = 17 \left(\frac{\nu \left(M, z\right)}{\nu\left(10^8, 0\right)}\right)^{-0.8}$'+'\n(no scatter)',
                      xy=(0.05, 0.1), xycoords='axes fraction', fontsize=18)
