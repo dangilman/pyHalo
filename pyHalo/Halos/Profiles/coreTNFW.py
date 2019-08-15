@@ -24,7 +24,7 @@ class coreTNFW(CosmoMassProfiles):
 
         Rs_angle = Rs / D_d / self.lens_cosmo.cosmo.arcsec  # Rs in arcsec
         #theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
-        theta_Rs = self.tnfw_theta_Rs(Rs, rho0, r_t * Rs_angle ** -1)
+        theta_Rs = self.tnfw_theta_Rs(Rs, rho0, 10000)
         eps_crit = self.lens_cosmo.get_epsiloncrit(z, self.lens_cosmo.z_source)
         return Rs_angle, theta_Rs / eps_crit / D_d / self.lens_cosmo.cosmo.arcsec
 
