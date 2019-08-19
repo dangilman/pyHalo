@@ -45,6 +45,9 @@ class Realization(object):
         self._LOS_norm = self._prof_params['LOS_normalization']
         self.break_scale = self._prof_params['break_scale']
 
+        self._logmlow = self._prof_params['log_mlow']
+        self._logmhigh = self._prof_params['log_mhigh']
+
         if halos is None:
 
             for mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r2d, r3d,
@@ -177,7 +180,7 @@ class Realization(object):
 
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = halos, other_params= self._prof_params,
-                           mass_sheet_correction = self.mass_sheet_correction())
+                           mass_sheet_correction = self._mass_sheet_correction)
 
     def _reset(self):
 
@@ -272,8 +275,7 @@ class Realization(object):
             assert mass_sheet_correction_back < 100, 'mass sheet correction should log(M)'
 
             kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow_front = 10**mass_sheet_correction_front,
-                                                                      mlow_back = 10**mass_sheet_correction_back,
-                                                                      mhigh = 10**self._prof_params['log_mhigh'])
+                                                                      mlow_back = 10**mass_sheet_correction_back)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(redshift_list, z_sheets)
@@ -469,16 +471,21 @@ class Realization(object):
                 halos.append(plane_halos[halo_index])
 
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = halos, other_params= self._prof_params, mass_sheet_correction = self.mass_sheet_correction())
+                           halos = halos, other_params= self._prof_params, mass_sheet_correction = self._mass_sheet_correction)
 
         #return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
         #                   wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)
 
-    def mass_sheet_correction(self, mlow_front = 10**7.7, mlow_back = 10**8, mhigh = 10**10):
+    def mass_sheet_correction(self, mlow_front = 10**7.5, mlow_back = 10**8):
 
         kwargs = []
         zsheet = []
         unique_z = np.unique(self.redshifts)
+
+        mhigh = self._logmhigh
+
+        mlow_front = 10**max(np.log10(mlow_front), self._logmlow)
+        mlow_back = 10**max(np.log10(mlow_back), self._logmlow)
 
         for i in range(0, len(unique_z) - 1):
 
