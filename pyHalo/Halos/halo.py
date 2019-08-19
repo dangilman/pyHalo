@@ -163,7 +163,7 @@ class Halo(object):
 
             if self.is_subhalo:
                 truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z, self._args['LOS_truncation'])
-            elif self.z == self.cosmo_prof.lens_cosmo.z_lens:
+            elif self._is_main_subhalo:
                 truncation = self.cosmo_prof.truncation_roche(self.mass, self.r3d, self.z, self._args['RocheNorm'],
                                                               self._args['RocheNu'])
             else:
