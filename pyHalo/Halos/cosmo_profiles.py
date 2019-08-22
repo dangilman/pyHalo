@@ -1,6 +1,7 @@
 import numpy
 from colossus.halo.concentration import concentration, peaks
 from scipy.optimize import minimize
+from scipy.interpolate import interp1d
 
 class CosmoMassProfiles(object):
 
@@ -15,6 +16,8 @@ class CosmoMassProfiles(object):
             lens_comso = LensCosmo(z_lens, z_source)
 
         self.lens_cosmo = lens_comso
+
+        self._mlist, self._dzvals, self._cdfs, self._mins = self._Msub_cdfs()
 
     @property
     def colossus(self):
@@ -357,45 +360,88 @@ class CosmoMassProfiles(object):
 
         return r_trunc_arcsec
 
-if False:
-    import matplotlib.pyplot as plt
-    one=True
-    cprof = CosmoMassProfiles(z_lens=0.5, z_source=2)
-    M = numpy.logspace(6, 10, 20)
-    logm = numpy.log10(M)
+    def z_accreted_from_zlens(self, msub, zlens):
 
-    if one:
+        idx = self._mass_index(msub, self._mlist)
 
-        zshift1 = 0.3
-        zshift2 = 0.3
+        z_accreted = zlens + self._sample_cdf_single(self._cdfs[idx])
 
-        model = {'custom': True, 'c0': 17., 'c_slope': -0.8}
-        #c_diemer = cprof.NFW_concentration(M * 0.7, zshift1, model='diemer15', scatter=False)
-        c_custom = cprof.NFW_concentration(M, zshift1, model=model, scatter=False)
+        return z_accreted
 
-        #c_diemer2 = cprof.NFW_concentration(M * 0.7, zshift2, model='diemer15', scatter=False)
-        model = {'custom': True, 'c0': 17., 'c_slope': -1.2}
-        c_custom2 = cprof.NFW_concentration(M, zshift2, model=model, scatter=False)
+    def _P_fit(self, z, z_lens):
+        # Given the redhsift of the lens, z_lens, return the posibility that a subhalo has
+        # an accretion redhisft of z. This distribution function is normalized.
+        Amp = 2.38069069
+        z_decay = 0.69736479
+        #depth_dip = 1.98707348
+        depth_dip = 0
+        width_dip = 0.19718622
+        z_dip = 0.43105325
+        return Amp * numpy.exp(-(z - z_lens) / z_decay) / (
+                1.0 + depth_dip * numpy.exp(-0.5 * ((z - z_lens - z_dip) / width_dip) ** 2))
 
-        plt.plot(logm, c_custom, color='k', linestyle='-', label='custom (z=0.3)')
-        #plt.plot(logm, c_diemer, color='k', linestyle='-', label='diemer19 (z=0.3)')
+    def _mass_dependence(self, M_sub):
+        # Mass dependence.
+        a = 0.04198975
+        b = 0.07605476
+        return a * numpy.exp(b * numpy.log(M_sub / 1.0e11) ** 2)
 
-        plt.plot(logm, c_custom2, color='g', linestyle='-', label='custom (z=0.3)')
-        #plt.plot(logm, c_diemer2, color='k', linestyle='--', label='diemer19 (z=1.5)')
-        plt.annotate(r'$c = 17 \left(\frac{\nu \left(M, z\right)}{\nu\left(10^8, 0\right)}\right)^{-0.8}$'+'\n(no scatter)',
-                     xy=(0.05, 0.1), xycoords='axes fraction', fontsize=18)
-        ax = plt.gca()
+    def _P_fit_diff_M_sub(self, z, z_lens, M_sub):
+        # Given the redhsift of the lens, z_lens, and the subhalo mass, M_sub, return the
+        # posibility that the subhlao has an accretion redhisft of z. Note thta the parameters
+        # are slightly different from those in P_fit(z,z_lens) and this distribution function
+        # is not normalized, i.e. unlike P_fit(z,z_lens), integrating P_fit_diff_M_sub over
+        # z does not necessary gives 1.
+        Amp = 2.44460084
+        z_decay = 0.76549285
+        #depth_dip = 2.49146758
+        depth_dip = 0
+        width_dip = 0.26322008
+        z_dip = 0.35580254
 
-        plt.legend(fontsize=14, frameon=False)
-        plt.savefig('custom_mc_relation.pdf')
-        plt.show()
-    else:
-        nu = cprof.nu_from_M(M, 1)
-        pk = cprof.power_spectrum_slope_fromM(M, 1)
-        plt.plot(nu, pk)
-        plt.show()
+        decay_mass_dep = self._mass_dependence(M_sub)
+        return Amp * numpy.exp(-(z - z_lens) / z_decay) / (
+                1.0 + depth_dip * numpy.exp(-0.5 * ((z - z_lens - z_dip) / width_dip) ** 2)) \
+               * numpy.exp(-decay_mass_dep * (z - z_lens - 0.64))
 
+    def _cdf(self, m, z_lens, delta_z_values):
 
+        c_d_f = []
+
+        prob = 0
+        for zi in delta_z_values:
+            prob += self._P_fit_diff_M_sub(z_lens + zi, z_lens, m)
+            c_d_f.append(prob)
+        return numpy.array(c_d_f) / c_d_f[-1], c_d_f[0] / c_d_f[-1]
+
+    def _Msub_cdfs(self, z_lens=0.9):
+
+        M_sub_exp = numpy.arange(6.0, 10.1, 0.2)
+        M_sub_list = 10 ** M_sub_exp
+        delta_z = numpy.linspace(0., 4, 4000)
+        funcs = []
+        mins = []
+
+        for mi in M_sub_list:
+            cdfi, mini = self._cdf(mi, z_lens, delta_z)
+            funcs.append(interp1d(cdfi, delta_z))
+            mins.append(mini)
+
+        return M_sub_list, delta_z, funcs, mins
+
+    def _sample_cdf_single(self, cdf_interp):
+
+        u = numpy.random.uniform(0, 1)
+
+        try:
+            return float(cdf_interp(u))
+        except:
+            return 0
+
+    def _mass_index(self, subhalo_mass, mass_array):
+
+        idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
+        return idx
 
 
 
