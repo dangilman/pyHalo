@@ -131,7 +131,7 @@ class pyHalo(object):
                 if verbose:
                     print('computing halo physical parameters... ')
                     if 'mc_model' in args[component_index].keys():
-                        print('using custom mc-relation: ', args[component_index]['mc_model'])
+                        print('using mc-relation: ', args[component_index]['mc_model'])
                 realization = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, subhalo_flag, self.halo_mass_function,
                                           other_params=args[component_index], mass_sheet_correction=mass_sheet)
                 init = False
@@ -139,7 +139,7 @@ class pyHalo(object):
                 if verbose:
                     print('computing halo physical parameters... ')
                     if 'mc_model' in args[component_index].keys():
-                        print('using custom mc-relation: ', args[component_index]['mc_model'])
+                        print('using mc-relation: ', args[component_index]['mc_model'])
                 new = Realization(masses, xpos, ypos, r2d, r3d, mdefs, redshifts, subhalo_flag, self.halo_mass_function,
                                   other_params=args[component_index], mass_sheet_correction=mass_sheet)
                 realization = realization.join(new)
