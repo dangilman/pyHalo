@@ -138,6 +138,7 @@ class Halo(object):
                 if 'z_accreted' in self._args['mc_model'].keys() and self._args['mc_model']['z_accreted'] is False:
                     return self.z
                 else:
+                    
                     return self.cosmo_prof.z_accreted_from_zlens(self.mass, self.z)
             else:
                 return self.z
