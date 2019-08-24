@@ -366,7 +366,7 @@ class CosmoMassProfiles(object):
         idx = self._mass_index(msub, self._mlist)
 
         z_accreted = zlens + self._sample_cdf_single(self._cdfs[idx])
-
+        
         return z_accreted
 
     def _cdf_numerical(self, m, z_lens, delta_z_values):
@@ -394,27 +394,33 @@ class CosmoMassProfiles(object):
 
         return M_sub_list, delta_z, funcs
 
-    def _mass_dependence(self, M_sub):
-        # Mass dependence.
-        a = 0.08431055
-        b = 0.05840685
+    def z_decay_mass_dependence(self, M_sub):
+        # Mass dependence of z_decay.
+        a = 3.21509397
+        b = 1.04659814e-03
 
-        return a * numpy.exp(b * numpy.log(M_sub / 1.0e11) ** 2)
+        return a - b * numpy.log(M_sub / 1.0e6) ** 3
+
+    def z_decay_exp_mass_dependence(self, M_sub):
+        # Mass dependence of z_decay_exp.
+
+        a = 0.30335749
+        b = 3.2777e-4
+
+        return a - b * numpy.log(M_sub / 1.0e6) ** 3
 
     def _P_fit_diff_M_sub(self, z, z_lens, M_sub):
         # Given the redhsift of the lens, z_lens, and the subhalo mass, M_sub, return the
-        # posibility that the subhlao has an accretion redhisft of z. Note that the parameters
-        # are slightly different from those in P_fit(z,z_lens).
+        # posibility that the subhlao has an accretion redhisft of z.
 
-        z_decay = 1.20777434
-        z_turn_over = 0.7
-        decay_mass_dep = self._mass_dependence(M_sub)
+        z_decay = self.z_decay_mass_dependence(M_sub)
+        z_decay_exp = self.z_decay_exp_mass_dependence(M_sub)
+
         normalization = 2.0 / numpy.sqrt(2.0 * numpy.pi) / z_decay \
-                        / (numpy.exp(decay_mass_dep * z_turn_over + 0.5 * decay_mass_dep ** 2 * z_decay ** 2) \
-                           * erfc(decay_mass_dep * z_decay / numpy.sqrt(2.0)))
-
+                        / numpy.exp(0.5 * z_decay ** 2 * z_decay_exp ** 2) \
+                        / erfc(z_decay * z_decay_exp / numpy.sqrt(2.0))
         return normalization * numpy.exp(-0.5 * ((z - z_lens) / z_decay) ** 2) \
-               * numpy.exp(-decay_mass_dep * (z - z_lens - z_turn_over))
+               * numpy.exp(-z_decay_exp * (z - z_lens))
 
     def _sample_cdf_single(self, cdf_interp):
 
