@@ -366,7 +366,7 @@ class CosmoMassProfiles(object):
         idx = self._mass_index(msub, self._mlist)
 
         z_accreted = zlens + self._sample_cdf_single(self._cdfs[idx])
-        
+
         return z_accreted
 
     def _cdf_numerical(self, m, z_lens, delta_z_values):
@@ -383,7 +383,7 @@ class CosmoMassProfiles(object):
 
         M_sub_exp = numpy.arange(6.0, 10.2, 0.2)
         M_sub_list = 10 ** M_sub_exp
-        delta_z = numpy.linspace(0., 4, 8000)
+        delta_z = numpy.linspace(0., 6, 8000)
         funcs = []
 
         for mi in M_sub_list:
