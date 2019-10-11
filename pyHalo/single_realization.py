@@ -122,6 +122,15 @@ class Realization(object):
 
         return halo_realization, subhalo_realization
 
+    def change_profile_params(self, new_args):
+
+        new_params = deepcopy(self._prof_params)
+        new_params.update(new_args)
+
+        return Realization(self.masses, self.x, self.y, self.r2d, self.r3d, self.mdefs,
+                           self.redshifts, self.subhalo_flags, self.halo_mass_function,
+                           other_params=new_params, mass_sheet_correction=self._mass_sheet_correction)
+
     def change_mdef(self, new_mdef):
 
         new_halos = []
@@ -193,6 +202,7 @@ class Realization(object):
         self.mdefs = []
         self.mass_def_args = []
         self._halo_tags = []
+        self.subhalo_flags = []
 
         for halo in self.halos:
             self.masses.append(halo.mass)
@@ -204,6 +214,7 @@ class Realization(object):
             self.mdefs.append(halo.mdef)
             self.mass_def_args.append(halo.mass_def_arg)
             self._halo_tags.append(halo._unique_tag)
+            self.subhalo_flags.append(halo._is_main_subhalo)
 
         self.masses = np.array(self.masses)
         self.x = np.array(self.x)
@@ -574,14 +585,14 @@ class RealizationFast(Realization):
     user-specified halos.
     """
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, z_lens, z_source,
-                 cone_opening_angle = 6, params = None, **kwargs):
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, z_lens, z_source,
+                 cone_opening_angle = 6, params = {}):
 
 
         mfunc = LensingMassFunction(Cosmology(), 10**6, 10**10, z_lens,
                                     z_source, cone_opening_angle)
 
-        tup = (masses, x, y, r2d, r3d, mdefs, z)
+        tup = (masses, x, y, r2d, r3d, mdefs, z, subhalo_flag)
 
         _aslist = False
         for element in tup:
@@ -595,6 +606,8 @@ class RealizationFast(Realization):
                     'All arguments must be either lists or floats.'
 
         else:
-            tup = ([masses], [x], [y], [r2d], [r3d], [mdefs], [z])
+            tup = ([masses], [x], [y], [r2d], [r3d], [mdefs], [z], [subhalo_flag])
 
-        Realization.__init__(self, *tup, mfunc, other_params=params, **kwargs)
+        Realization.__init__(self, *tup, halo_mass_function=mfunc,
+                 halos = None, other_params = params, mass_sheet_correction = False)
+

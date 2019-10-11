@@ -112,7 +112,7 @@ class PowerLaw(object):
             raise Exception('normalization cannot be < 0.')
         else:
             Nhalos_mean = self._moment(normalization, self._mL, self._mH, 0)
-
+          
             self.norm = normalization
 
             self.Nhalos_mean = Nhalos_mean
