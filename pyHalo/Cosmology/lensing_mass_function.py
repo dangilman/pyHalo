@@ -228,6 +228,55 @@ class LensingMassFunction(object):
 
         return moment,norm,plaw_index
 
+    def number_in_cylinder_arcsec(self, cylinder_diameter_arcsec, z_max, m_min=10**6.5, m_max=10**7.5,
+                           z_min=0):
+
+        dz = 0.01
+        zsteps = np.arange(z_min+dz, z_max+dz, dz)
+        nhalos = 0
+        M = np.logspace(7, 10, 25)
+
+        for zi in zsteps:
+
+            dr = self.geometry._delta_R_comoving(zi, dz)
+            cylinder_diameter_kpc = cylinder_diameter_arcsec*self.geometry._cosmo.kpc_per_asec(zi)
+            radius = 0.5 * cylinder_diameter_kpc * 0.001
+            dv_comoving = np.pi*radius**2 * dr
+            nhalos += dv_comoving*self._mass_function_moment(M, self.dN_dMdV_comoving(M, zi), 0, m_min, m_max)[0]
+
+        return nhalos
+
+    def number_in_cylinder_kpc(self, cylinder_diameter_kpc, z_max, m_min=10**6.5, m_max=10**7.5,
+                           z_min=0):
+
+        dz = 0.01
+        zsteps = np.arange(z_min+dz, z_max+dz, dz)
+        nhalos = 0
+        M = np.logspace(7, 10, 25)
+        radius = 0.5 * cylinder_diameter_kpc * 0.001
+
+        for zi in zsteps:
+
+            dr = self.geometry._delta_R_comoving(zi, dz)
+            dv_comoving = np.pi*radius**2 * dr
+            nhalos += dv_comoving*self._mass_function_moment(M, self.dN_dMdV_comoving(M, zi), 0, m_min, m_max)[0]
+
+        return nhalos
+
+    def cylinder_volume(self, cylinder_diameter_kpc, z_max,
+                           z_min=0):
+
+        dz = 0.01
+        zsteps = np.arange(z_min+dz, z_max+dz, dz)
+        volume = 0
+        for zi in zsteps:
+
+            dr = self.geometry._delta_R_comoving(zi, dz)
+            radius = 0.5 * cylinder_diameter_kpc * 0.001
+            dv_comoving = np.pi*radius**2 * dr
+            volume += dv_comoving
+
+        return volume
 
 def write_lookup_table():
 

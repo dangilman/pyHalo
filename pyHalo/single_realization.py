@@ -28,6 +28,7 @@ class Realization(object):
         self._overwrite_mass_sheet = None
         self._kappa_scale = 1
         #self._kappa_scale = 1.269695
+
         # 1.269695 for TNFW halos truncated at r50
 
         self.halo_mass_function = halo_mass_function
@@ -148,7 +149,7 @@ class Realization(object):
 
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = new_halos, other_params= self._prof_params,
-                           mass_sheet_correction = self.mass_sheet_correction())
+                           mass_sheet_correction = self._mass_sheet_correction)
 
     def _tags(self, halos=None):
 
@@ -493,7 +494,7 @@ class Realization(object):
         zsheet = []
         unique_z = np.unique(self.redshifts)
 
-        mhigh = self._logmhigh
+        mhigh = 10**self._logmhigh
 
         mlow_front = 10**max(np.log10(mlow_front), self._logmlow)
         mlow_back = 10**max(np.log10(mlow_back), self._logmlow)
@@ -517,6 +518,7 @@ class Realization(object):
 
                 if kappa > 0:
                     #kwargs.append({'kappa_ext': - 1.269695*kappa})
+
                     kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
                     zsheet.append(z)
 
