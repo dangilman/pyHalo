@@ -45,22 +45,19 @@ class Geometry(object):
         deflector
         """
         a_z = self._cosmo.scale_factor(z)
-        return self._geometry._angle_to_physicalradius(z) / a_z
+        return self.angle_to_physicalradius(z) / a_z
 
     def angle_to_physicalradius(self, z):
 
-        return self._geometry._angle_to_physicalradius(z)
+        #return self._geometry._angle_to_physicalradius(z)
+        scale = self.rendering_scale(z)
+        return scale * self._cosmo.D_A(0, z)
 
     def ray_angle_atz(self, theta, z, z_lens):
 
-        if z <= z_lens:
-            return theta * self._cosmo.D_C_transverse(z) / self._d_comoving_zlens
-        else:
-            # tp * Dz = tE * Dz - alpha * D_dz
-            ratio = (1 - self._d_comoving_zlens / self._cosmo.D_C_transverse(z))
-            alpha = theta * self._reduced_to_phys
+        scale = self.rendering_scale(z)
 
-            return theta * (1 - ratio*alpha)
+        return theta * scale
 
     def rendering_scale(self, z):
 
@@ -154,7 +151,6 @@ class Geometry(object):
         asec_per_mpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value * 1000
 
         return r_co * asec_per_mpc
-
 
 class ConeGeometry(object):
 
