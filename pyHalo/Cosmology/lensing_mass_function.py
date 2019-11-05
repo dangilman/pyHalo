@@ -63,7 +63,7 @@ class LensingMassFunction(object):
 
         norm_dV = self.norm_at_z_density(z)
 
-        dV = self.geometry.volume_element_comoving(z, self.geometry._zlens, delta_z)
+        dV = self.geometry.volume_element_comoving(z, delta_z)
 
         return norm_dV * dV
 

@@ -29,8 +29,6 @@ class Realization(object):
         self._kappa_scale = 1
         #self._kappa_scale = 1.269695
 
-        # 1.269695 for TNFW halos truncated at r50
-
         self.halo_mass_function = halo_mass_function
         self.geometry = halo_mass_function.geometry
         self.lens_cosmo = self.geometry._lens_cosmo
@@ -224,7 +222,7 @@ class Realization(object):
         self.r3d = np.array(self.r3d)
         self.redshifts = np.array(self.redshifts)
 
-        self._unique_redshifts = np.unique(self.redshifts)
+        self.unique_redshifts = np.unique(self.redshifts)
 
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:
@@ -415,7 +413,7 @@ class Realization(object):
         thetax = thetax - centroid[0]
         thetay = thetay - centroid[1]
 
-        for plane_index, zi in enumerate(self._unique_redshifts):
+        for plane_index, zi in enumerate(self.unique_redshifts):
 
             plane_halos = self.halos_at_z(zi)
             inds_at_z = np.where(self.redshifts == zi)[0]
@@ -462,6 +460,8 @@ class Realization(object):
 
                 keep_inds_dr = []
 
+                dr_list = []
+
                 for idx in inds_m_low:
 
                     for (anglex, angley) in zip(ray_at_zx, ray_at_zy):
@@ -471,6 +471,7 @@ class Realization(object):
 
                         if dr <= mindis_back:
                             keep_inds_dr.append(idx)
+                            dr_list.append(dr)
                             break
 
                 keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
@@ -481,6 +482,31 @@ class Realization(object):
 
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
+
+        #
+        # x_kept, y_kept, m_kept, z_kept = [], [], [], []
+        # raysx1, raysx3 = [], []
+        # raysx2, raysx4 = [], []
+        #
+        # for halo in halos:
+        #     x_kept.append(halo.x)
+        #     y_kept.append(halo.y)
+        #     m_kept.append(np.log10(halo.mass))
+        #     z_kept.append(halo.z)
+        # for z_i in self.unique_redshifts:
+        #     rx, ry = self._ray_position_z(thetax, thetay, z_i, source_x, source_y)
+        #
+        #     raysx1.append(rx[0])
+        #     raysx2.append(rx[1])
+        #     raysx3.append(rx[2])
+        #     raysx4.append(rx[3])
+        #
+        # import matplotlib.pyplot as plt
+        # plt.scatter(z_kept, x_kept, s=1*np.array(m_kept)/6)
+        # plt.plot(self.unique_redshifts, raysx1, color='k')
+        #
+        # plt.show()
+        # a=input('continue')
 
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = halos, other_params= self._prof_params, mass_sheet_correction = self._mass_sheet_correction)
@@ -535,7 +561,7 @@ class Realization(object):
 
     def _convergence_at_z(self, m_rendered, z):
 
-        area = self.geometry._angle_to_arcsec_area(self.geometry._zlens, z)
+        area = self.geometry._angle_to_arcsec_area(z)
         scrit = self.geometry._lens_cosmo.get_sigmacrit(z)
 
         return m_rendered / area / scrit
@@ -587,12 +613,12 @@ class RealizationFast(Realization):
     user-specified halos.
     """
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, z_lens, z_source,
-                 cone_opening_angle = 6, params = {}):
+    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, zlens, zsource,
+                 cone_opening_angle, log_mlow=6, log_mhigh=10, mass_sheet_correction=False):
 
 
-        mfunc = LensingMassFunction(Cosmology(), 10**6, 10**10, z_lens,
-                                    z_source, cone_opening_angle)
+        mfunc = LensingMassFunction(Cosmology(), 10**6, 10**10, zlens,
+                                    zsource, cone_opening_angle)
 
         tup = (masses, x, y, r2d, r3d, mdefs, z, subhalo_flag)
 
@@ -610,6 +636,10 @@ class RealizationFast(Realization):
         else:
             tup = ([masses], [x], [y], [r2d], [r3d], [mdefs], [z], [subhalo_flag])
 
+        default_params = {'cone_opening_angle': cone_opening_angle, 'opening_angle_factor': 6,
+                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh}
+
         Realization.__init__(self, *tup, halo_mass_function=mfunc,
-                 halos = None, other_params = params, mass_sheet_correction = False)
+                 halos = None, other_params = default_params,
+                             mass_sheet_correction = mass_sheet_correction)
 

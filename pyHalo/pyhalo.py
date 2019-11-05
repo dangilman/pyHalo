@@ -1,6 +1,6 @@
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lens_cosmo import LensCosmo
-from pyHalo.Cosmology.geometry import Geometry
+from pyHalo.Cosmology.geometry import ConeGeometry
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
 from pyHalo.Massfunc.los import LOSPowerLaw, LOSDelta
@@ -118,7 +118,7 @@ class pyHalo(object):
                     subhalo_flag += sub_flag
 
             if not hasattr(self, '_geometry'):
-                self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
+                self._geometry = ConeGeometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
 
             #profile_params = self._add_profile_params(args[component_index])
 

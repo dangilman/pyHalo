@@ -6,7 +6,7 @@ class coreNFWmodifiedtruncLensing(object):
 
     hybrid = False
 
-    lenstronomy_ID = 'CTNFW_GAUSS_DEC'
+    lenstronomy_ID = 'NumericalAlpha'
 
     def __init__(self, lens_cosmo = None, zlens = None, z_source = None):
 
