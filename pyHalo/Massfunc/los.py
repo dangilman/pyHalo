@@ -75,6 +75,7 @@ class LOSDelta(LOS):
 
             nobjects = self._lensing_mass_func.dN_comoving_deltaFunc(10**pargs['M'], z,
                                                                      delta_z, pargs['mass_fraction'])
+
             nobjects *= pargs['LOS_normalization']
             nobjects = np.random.poisson(nobjects)
             m = np.array([10**pargs['M']] * nobjects)

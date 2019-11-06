@@ -15,7 +15,7 @@ class LensCosmo(object):
 
     # values calibrated from Galacticus runs inside rmax = 20kpc
 
-    def __init__(self,z_lens,z_source):
+    def __init__(self, z_lens, z_source):
 
         self.cosmo = Cosmology()
         self.z_lens, self.z_source = z_lens, z_source

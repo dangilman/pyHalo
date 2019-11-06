@@ -51,7 +51,8 @@ class Geometry(object):
 
         #return self._geometry._angle_to_physicalradius(z)
         scale = self.rendering_scale(z)
-        return scale * self._cosmo.D_A(0, z)
+        radius = 0.5 * self._geometry.cone_opening_angle * self._cosmo.arcsec
+        return radius * scale * self._cosmo.D_A(0, z)
 
     def ray_angle_atz(self, theta, z, z_lens):
 
