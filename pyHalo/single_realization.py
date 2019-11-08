@@ -350,68 +350,66 @@ class Realization(object):
 
         for tx, ty in zip(thetax, thetay):
 
-            angle_x_atz = self.geometry.ray_angle_atz(tx, zi, self.geometry._zlens)
-            angle_y_atz = self.geometry.ray_angle_atz(ty, zi, self.geometry._zlens)
-
             if zi > self.geometry._zlens:
-                angle_x_atz += source_x
-                angle_y_atz += source_y
+                angle_x_atz = self.geometry.ray_angle_atz(tx, zi, source_x)
+                angle_y_atz = self.geometry.ray_angle_atz(ty, zi, source_y)
+            else:
+                angle_x_atz = self.geometry.ray_angle_atz(tx, zi)
+                angle_y_atz = self.geometry.ray_angle_atz(ty, zi)
 
             ray_angle_atz_x.append(angle_x_atz)
             ray_angle_atz_y.append(angle_y_atz)
 
         return ray_angle_atz_x, ray_angle_atz_y
 
-    def _interp_ray_angle_z(self, background_redshifts, Tzlist_background,
-                            ray_x, ray_y, zi, thetax, thetay):
+    def _interp_ray_angle_z(self, ray_comoving_x, ray_comoving_y, redshifts, zi, Tzlist, Tz_current):
 
-        angle_x, angle_y = [], []
+        redshifts = np.array(redshifts)
 
-        if zi in background_redshifts:
+        if zi in redshifts:
+            angle_x, angle_y = [], []
+            idx = np.where(redshifts == zi)[0][0].astype(int)
+            for i in range(0, 4):
 
-            idx = np.where(background_redshifts == zi)[0][0].astype(int)
-
-            for i, (tx, ty) in enumerate(zip(thetax, thetay)):
-
-                angle_x.append(ray_x[idx][i] / Tzlist_background[idx])
-                angle_y.append(ray_y[idx][i] / Tzlist_background[idx])
+                angle_x.append(ray_comoving_x[idx][i] / Tzlist[idx])
+                angle_y.append(ray_comoving_y[idx][i] / Tzlist[idx])
+            angle_x = np.array(angle_x)
+            angle_y = np.array(angle_y)
 
         else:
 
-            ind_low = np.where(background_redshifts - zi < 0)[0][-1].astype(int)
-            ind_high = np.where(background_redshifts - zi > 0)[0][0].astype(int)
+            adjacent_redshift_inds = np.argsort(np.absolute(redshifts - zi))[0:2]
+            adjacent_redshifts = redshifts[adjacent_redshift_inds]
 
-            Tz = self.geometry._cosmo.T_xy(0, zi)
+            if adjacent_redshifts[0] < adjacent_redshifts[1]:
 
-            for i in range(0, len(thetax)):
+                Tzlow, Tzhigh = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
+                xlow, xhigh = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
+                ylow, yhigh = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
+            else:
 
-                x0 = Tzlist_background[ind_low]
-                bx = ray_x[ind_low][i]
-                by = ray_y[ind_low][i]
+                Tzhigh, Tzlow = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
+                xhigh, xlow = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
+                yhigh, ylow = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
 
-                run = (Tzlist_background[ind_high] -x0)
-                slopex = (ray_x[ind_high][i] - bx) * run ** -1
-                slopey = (ray_y[ind_high][i] - by) * run ** -1
+            angle_x, angle_y = self.geometry.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current)
 
-                delta_x = Tz - x0
-
-                newx = slopex * delta_x + bx
-                newy = slopey * delta_x + by
-
-                angle_x.append(newx / Tz)
-                angle_y.append(newy / Tz)
-
-        return np.array(angle_x), np.array(angle_y)
+        return angle_x, angle_y
 
     def filter(self, thetax, thetay, mindis_front=0.5, mindis_back=0.5, logmasscut_front=6, logmasscut_back=8,
                source_x=0, source_y=0, ray_x=None, ray_y=None,
                logabsolute_mass_cut_back=0, path_redshifts=None, path_Tzlist=None,
-               logabsolute_mass_cut_front=0, centroid = [0, 0]):
+               logabsolute_mass_cut_front=0, centroid = [0, 0], zmin=None, zmax=None):
 
         halos = []
 
         thetax = thetax - centroid[0]
         thetay = thetay - centroid[1]
+
+        if zmax is None:
+            zmax = self.geometry._zsource
+        if zmin is None:
+            zmin = 0
 
         for plane_index, zi in enumerate(self.unique_redshifts):
 
@@ -420,6 +418,11 @@ class Realization(object):
             x_at_z = self.x[inds_at_z] - centroid[0]
             y_at_z = self.y[inds_at_z] - centroid[1]
             masses_at_z = self.masses[inds_at_z]
+
+            if zi < zmin:
+                continue
+            if zi > zmax:
+                continue
 
             if zi <= self.geometry._zlens:
 
@@ -439,6 +442,7 @@ class Realization(object):
                         if dr <= mindis_front:
                             keep_inds_dr.append(idx)
                             break
+
                 keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
                 if logabsolute_mass_cut_front > 0:
@@ -450,9 +454,10 @@ class Realization(object):
                 if ray_x is None or ray_y is None:
                     ray_at_zx, ray_at_zy = self._ray_position_z(thetax, thetay, zi, source_x, source_y)
                 else:
-                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(path_redshifts, path_Tzlist, ray_x,
-                                                                    ray_y,
-                                                                    zi, thetax, thetay)
+
+                    Tz_current = self.geometry._cosmo.T_xy(0, zi)
+                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(ray_x, ray_y,
+                                                 path_redshifts, zi, path_Tzlist, Tz_current)
 
                 keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
 
@@ -561,7 +566,7 @@ class Realization(object):
 
     def _convergence_at_z(self, m_rendered, z):
 
-        area = self.geometry._angle_to_arcsec_area(z)
+        area = self.geometry._angle_to_arcsec_area(0.5*self.geometry.cone_opening_angle, z)
         scrit = self.geometry._lens_cosmo.get_sigmacrit(z)
 
         return m_rendered / area / scrit

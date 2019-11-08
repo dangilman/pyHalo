@@ -4,8 +4,6 @@ from pyHalo.Massfunc.parameterizations import *
 from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 from pyHalo.Scattering.sidm_interp import logrho
 
-_cosmo_prof = CosmoMassProfiles(z_lens=0.5, z_source=1.5)
-
 class Halo(object):
 
     is_subhalo = False

@@ -94,51 +94,30 @@ class MainLensPowerLaw(object):
             except:
                 raise ValueError('must specify a value for ' + key)
 
-        if 'norm_A0' in args.keys():
-
-            args_mfunc['normalization'] = args['norm_A0']
-
-        elif 'a0_area' in args.keys():
-
-            a0_area_parent_halo = self._lens_cosmo.\
-                subhalo_mass_function_amplitude(args['a0_area'], args['R_ein_main'], self._lens_cosmo.z_lens)
-
-            norm_0 = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
-                           self._lens_cosmo.z_lens, args['cone_opening_angle'],
-                           args_mfunc['power_law_index'], m_pivot = 10**8)
-
-            args_mfunc['normalization'] = norm_0
-
-        elif 'sigma_sub' in args.keys():
+        if 'sigma_sub' in args.keys():
 
             a0_area_parent_halo = args['sigma_sub']*a0area_main(args['parent_m200'], self._lens_cosmo.z_lens)
 
-            norm_0 = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
+            args_mfunc['normalization'] = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
                            self._lens_cosmo.z_lens, args['cone_opening_angle'],
-                           args_mfunc['power_law_index'], m_pivot = 10**8)
+                           args_mfunc['power_law_index'], m_pivot=10**8)
 
-            args_mfunc['normalization'] = norm_0
 
-        elif 'fsub' in args.keys():
+        elif 'mass_in_subhalos' in args.keys():
 
-            norm_0 = self._lens_cosmo.convert_fsub_to_norm(args['fsub'],args['cone_opening_angle'],
-                                                                                       args_mfunc[
-                                                                                           'power_law_index'],
-                                                                                       10 ** args_mfunc[
-                                                                                           'log_mlow'],
-                                                                                       10 ** args_mfunc[
-                                                                                           'log_mhigh'])
-            ml, mh, index = 10 ** args_mfunc['log_mlow'], 10 ** args_mfunc['log_mhigh'], \
-                            args_mfunc['power_law_index']
-            denom = mh ** (2 + index) - ml ** (2 + index)
-            denom_norm = (10 ** 10) ** (2 + index) - (10 ** 6) ** (2 + index)
-            rescale = denom * denom_norm ** -1
+            a0_area_parent_halo = self._lens_cosmo.convert_fsub_to_norm(
+                args['mass_in_subhalos'], args['cone_opening_angle'], self._lens_cosmo.z_lens,
+                args_mfunc['power_law_index'], 10**args_mfunc['log_mlow'],
+                10 ** args_mfunc['log_mhigh'], mpivot=10**8)
 
-            args_mfunc['normalization'] = norm_0 * rescale
+            args_mfunc['normalization'] = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
+                                                          self._lens_cosmo.z_lens, args['cone_opening_angle'],
+                                                          args_mfunc['power_law_index'], m_pivot=10**8)
+
 
         else:
-            raise ValueError('must either specify the normalization "a0_area" direclty, or specify the mass fraction'
-                             'in substructure at the Einstein radius "fsub".')
+            raise Exception('Must specify normalization of the subhalo '
+                             'mass function in terms of sigma_sub or total mass in substructure.')
 
 
         return args_mfunc

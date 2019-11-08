@@ -21,6 +21,7 @@ class LensCone(object):
     def fermat_potential(self, x, y):
 
         pot = self.lensmodel.po
+        return pot
 
     def first_derivatives_point(self, x, y):
 

@@ -15,12 +15,24 @@ class CosmoDefaults(object):
 
         # default from WMAP9
         self.H0 = 69.7
-        self.omega_baryon = 0.0464
+        self.Ob0 = 0.0464
         self.omega_DM = 0.235
+        self.Om0 = self.Ob0 + self.omega_DM
         self.sigma8 = 0.82
+        self.curvature = 'flat'
+        self.ns = 0.9608
 
-        self.default_args = {'H0': self.H0, 'omega_baryon': self.omega_baryon,
-                             'omega_DM': self.omega_DM, 'sigma8': self.sigma8}
+        self._cosmo_param_dictionary = {'H0': self.H0, 'Ob0': self.Ob0, 'Om0': self.Om0,
+                                        'Odm0': self.omega_DM, 'sigma8': self.sigma8, 'flat': self.curvature,
+                                        'ns': self.ns}
+
+    def __call__(self, key):
+
+        try:
+            return self._cosmo_param_dictionary[key]
+        except:
+            raise Exception(key + ' not a recognized cosmology key word argument.')
+
 
 class LensConeDefaults(object):
 

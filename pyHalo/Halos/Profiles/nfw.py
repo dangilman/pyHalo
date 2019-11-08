@@ -24,7 +24,7 @@ class NFW(CosmoMassProfiles):
         :param c: NFW concentration parameter (r200/r_s)
         :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
         """
-        D_d = self.lens_cosmo.cosmo.D_A(0, z)
+        D_d = self.lens_cosmo.cosmo.D_A_z(z)
         rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
 
         Rs_angle = Rs / D_d / self.lens_cosmo.cosmo.arcsec  # Rs in arcsec

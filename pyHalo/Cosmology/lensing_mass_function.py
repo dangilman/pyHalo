@@ -7,12 +7,11 @@ from colossus.lss.bias import twoHaloTerm
 class LensingMassFunction(object):
 
     def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
-                 model_kwargs={'model':'sheth99'},
-                 use_lookup_table=True, two_halo_term = True):
+                 mass_function_model='sheth99', use_lookup_table=True, two_halo_term = True):
 
         self._cosmo = cosmology
         self.geometry = Geometry(cosmology, zlens, zsource, cone_opening_angle)
-        self._model_kwargs = model_kwargs
+        self._mass_function_model = mass_function_model
         self._mlow, self._mhigh = mlow, mhigh
         self._two_halo_term = two_halo_term
 
@@ -20,10 +19,10 @@ class LensingMassFunction(object):
 
         if use_lookup_table:
 
-            if model_kwargs['model'] == 'sheth99':
+            if self._mass_function_model == 'sheth99':
                 from pyHalo.Cosmology.lookup_tables import lookup_sheth99_simple as table
             else:
-                raise ValueError('lookup table '+model_kwargs['model']+' not found.')
+                raise ValueError('lookup table '+self._mass_function_model+' not found.')
 
             norm_z_dV = table.norm_z_dV
             plaw_index_z = table.plaw_index_z

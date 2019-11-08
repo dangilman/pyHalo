@@ -1,6 +1,6 @@
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lens_cosmo import LensCosmo
-from pyHalo.Cosmology.geometry import ConeGeometry
+from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
 from pyHalo.Massfunc.los import LOSPowerLaw, LOSDelta
@@ -11,22 +11,28 @@ from pyHalo.single_realization import Realization
 
 class pyHalo(object):
 
-    def __init__(self, zlens, zsource, cosmo_args = None,
-                 halo_mass_function_args=None, kwargs_massfunc = {}):
+    def __init__(self, zlens, zsource, cosmology_kwargs={},
+                 kwargs_halo_mass_function={}):
+
+        """
+
+        :param zlens: lens redshift
+        :param zsource: source redshift
+        :param cosmology_kwargs:
+        keyword arguments for 'Cosmology' class. See documentation in cosmology.py
+        :param halo_mass_function_args:
+        keyword arguments for 'LensingMassFunction' class. See documentation in lensing_mass_function.py
+        :param kwargs_massfunc:
+        keyword arguments
+        """
 
         self.zlens = zlens
         self.zsource = zsource
 
-        if cosmo_args is None:
-            cosmo_args = cosmo_default.default_args
+        self._cosmology = Cosmology(**cosmology_kwargs)
+        self._lens_cosmo = LensCosmo(zlens, zsource, self._cosmology)
 
-        self._cosmology = Cosmology(**cosmo_args)
-        self._lens_cosmo = LensCosmo(zlens, zsource)
-
-        if halo_mass_function_args is None:
-            halo_mass_function_args = {'model': cosmo_default.default_mass_function, 'mdef': cosmo_default.default_mdef}
-        self._halo_mass_function_args = halo_mass_function_args
-        self._kwargs_massfunc = kwargs_massfunc
+        self._halo_mass_function_args = kwargs_halo_mass_function
 
     def render(self, type, args, nrealizations=1, verbose=False):
 
@@ -46,7 +52,7 @@ class pyHalo(object):
 
         return realizations
 
-    def _LOS_mass_func(self, args):
+    def _build_LOS_mass_function(self, args):
 
         if not hasattr(self, 'halo_mass_function'):
 
@@ -69,13 +75,14 @@ class pyHalo(object):
                 else:
                     logLOS_mhigh = args['log_mhigh_los']
 
-            if 'two_halo_term' not in self._kwargs_massfunc.keys():
-                self._kwargs_massfunc.update({'two_halo_term': realization_default.two_halo_term})
+            if 'two_halo_term' not in self._halo_mass_function_args.keys():
+                self._halo_mass_function_args.update({'two_halo_term': realization_default.two_halo_term})
+            if 'mass_function_model' not in self._halo_mass_function_args.keys():
+                self._halo_mass_function_args.update({'mass_function_model': cosmo_default.default_mass_function})
 
             self.halo_mass_function = LensingMassFunction(self._cosmology, 10 ** logLOS_mlow, 10 ** logLOS_mhigh, self.zlens, self.zsource,
                                                           cone_opening_angle=args['cone_opening_angle'],
-                                                          model_kwargs=self._halo_mass_function_args,
-                                                          **self._kwargs_massfunc)
+                                                          **self._halo_mass_function_args)
 
             self._geometry = self.halo_mass_function.geometry
 
@@ -118,9 +125,7 @@ class pyHalo(object):
                     subhalo_flag += sub_flag
 
             if not hasattr(self, '_geometry'):
-                self._geometry = ConeGeometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
-
-            #profile_params = self._add_profile_params(args[component_index])
+                self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, args[0]['cone_opening_angle'])
 
             mass_sheet = True
             if 'mass_func_type' in args[component_index].keys():
@@ -181,8 +186,7 @@ class pyHalo(object):
 
         for mod, args in zip(model_name, model_args):
 
-            if not hasattr(self, 'halo_mass_function'):
-                _ = self._LOS_mass_func(args)
+            _ = self._build_LOS_mass_function(args)
 
             if mod == 'composite_powerlaw':
 

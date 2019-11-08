@@ -2,9 +2,7 @@ import numpy.testing as npt
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
-from time import time
 import numpy as np
-from scipy.integrate import quad
 
 class TestConeGeometry(object):
 
@@ -15,41 +13,71 @@ class TestConeGeometry(object):
         self.zsource = 2
         self.angle_diameter = 2/self.arcsec
         self.angle_radius = 0.5*self.angle_diameter
-        self.cosmo = Cosmology(H0=70, omega_baryon = 0, omega_DM = 0.3, sigma8 = 0.82)
-        self.geometry = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter,
-                                 rendering_volume='cone')
 
-    def test_distances(self):
+        H0 = 70
+        omega_baryon = 0.0
+        omega_DM = 0.3
+        sigma8 = 0.82
+        curvature = 'flat'
+        ns = 0.9608
+        cosmo_params = {'H0': H0, 'Om0': omega_baryon + omega_DM, 'Ob0': omega_baryon,
+                      'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
+        self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
+        self.geometry = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter)
+
+    def test_distances_lensing(self):
 
         z = 0.3
-        radius_physical = self.geometry.angle_to_physicalradius(z)
+
+        radius_physical = self.geometry.angle_to_physicalradius(self.angle_radius, z)
         npt.assert_almost_equal(radius_physical, 919, 0)
 
-        comoving_radius = self.geometry.angle_to_comovingradius(z)
+        comoving_radius = self.geometry.angle_to_comovingradius(self.angle_radius, z)
         npt.assert_almost_equal(comoving_radius, radius_physical * (1 + z), 3)
 
         z = 1
-        radius_physical = self.geometry.angle_to_physicalradius(z)
+        radius_physical = self.geometry.angle_to_physicalradius(self.angle_radius, z)
         npt.assert_almost_equal(radius_physical, 1651, 0)
 
-        comoving_radius = self.geometry.angle_to_comovingradius(z)
+        comoving_radius = self.geometry.angle_to_comovingradius(self.angle_radius, z)
         npt.assert_almost_equal(comoving_radius, radius_physical * (1+z), 3)
 
-    def test_lenscone_distances(self):
+    def test_lenscone_angles(self):
 
-        angle_at_zlens = self.geometry.ray_angle_atz(self.angle_diameter, self.zlens, self.zlens)
+        angle_at_zlens = self.geometry.ray_angle_atz(self.angle_diameter, self.zlens, 0)
         npt.assert_almost_equal(angle_at_zlens, self.angle_diameter)
 
-        angle_at_zsource = self.geometry.ray_angle_atz(self.angle_diameter, self.zsource, self.zlens)
+        angle_at_zsource = self.geometry.ray_angle_atz(self.angle_radius, self.zsource, 0)
         npt.assert_almost_equal(0, angle_at_zsource)
 
-    #def test_lensing_distances(self):
+        angle_at_zsource = self.geometry.ray_angle_atz(self.angle_radius, self.zsource, 0.1)
+        npt.assert_almost_equal(0.1, angle_at_zsource)
+
+    def test_volume(self):
+
+        cone_arcsec = 3
+        radius = cone_arcsec*0.5
+        geo = Geometry(self.cosmo, 1, 1.5, cone_arcsec)
+        astropy = geo._lens_cosmo.cosmo.astropy
+
+        delta_z = 1e-3
+        steradian = (radius * self.arcsec) ** 2
+        dV_pyhalo = geo.volume_element_comoving(0.6, delta_z)
+        dV = astropy.differential_comoving_volume(0.6).value
+
+        # astropy steradian 'area' is d^2, whereas I define area as pi*d^2
+        dV_persteradian = dV * delta_z
+        npt.assert_almost_equal(dV_persteradian * np.pi * steradian, dV_pyhalo, 5)
+
+
+
 
 
 test = TestConeGeometry()
 test.setup()
+#test.test_distances()
+#test.test_lenscone_angles()
 test.test_distances()
-test.test_lenscone_distances()
 
 #if __name__ == '__main__':
 #    pytest.main()
