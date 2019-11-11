@@ -104,7 +104,7 @@ class Geometry(object):
         :param z:
         :return: integrand element in comoving Mpc (for use in scipy.integrate quad)
         """
-        area_comoving = self._angle_to_comoving_area(radius_arcsec, z)
+        area_comoving = self.angle_to_comoving_area(radius_arcsec, z)
 
         dR = self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z) ** -1
 
@@ -123,7 +123,7 @@ class Geometry(object):
 
         return np.pi * theta ** 2
 
-    def _angle_to_comoving_area(self, radius_arcsec, z):
+    def angle_to_comoving_area(self, radius_arcsec, z):
         """
         computes the area corresponding to the angular radius of a plane at redshift z for a double cone with base at z_base
         :param theta: lens cone opening angle in arcsec
@@ -136,7 +136,7 @@ class Geometry(object):
 
         return np.pi * r ** 2
 
-    def _angle_to_physical_area(self, radius_arcsec, z):
+    def angle_to_physical_area(self, radius_arcsec, z):
         """
         computes the area corresponding to the angular radius of a plane at redshift z for a double cone with base at z_base
         :param theta: lens cone opening angle in arcsec
@@ -145,25 +145,19 @@ class Geometry(object):
         :return: comoving area
         """
 
-        area_comoving = self._angle_to_comoving_area(radius_arcsec, z)
+        area_comoving = self.angle_to_comoving_area(radius_arcsec, z)
 
         a_z = self._cosmo.scale_factor(z)
 
         return area_comoving * a_z ** 2
 
     def _angle_to_arcsec_radius(self, radius_arcsec, z):
-        """
-        computes the area corresponding to the angular radius of a plane at redshift z for a double cone with base at z_base
-        :param theta: lens cone opening angle in arcsec
-        :param z: redshift of plane
-        :param z_lens: redshift of main lens
-        :return: comoving area
-        """
 
-        r_co = self.angle_to_comovingradius(radius_arcsec, z)
-        asec_per_mpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value * 1000
+        r_co_mpc = self.angle_to_comovingradius(radius_arcsec, z)
+        r_co_kpc = r_co_mpc * 1000
+        asec_per_kpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value
 
-        return r_co * asec_per_mpc
+        return r_co_kpc * asec_per_kpc
 
 
 

@@ -107,6 +107,13 @@ class MainLensPowerLaw(object):
                                                                              args_mfunc['power_law_index'], m_pivot=10**8)
 
 
+        elif 'amp_at_8' in args.keys():
+
+            args_mfunc['normalization'] = norm_A0_from_a0area(args['amp_at_8'],
+                                                              self._geometry._kpc_per_arcsec_zlens,
+                                                              args['cone_opening_angle'],
+                                                              args_mfunc['power_law_index'], m_pivot=10 ** 8)
+
         elif 'mass_in_subhalos' in args.keys():
 
             a0_area_parent_halo = convert_fsub_to_norm(

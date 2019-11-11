@@ -482,10 +482,12 @@ class Realization(object):
 
     def _convergence_at_z(self, m_rendered, z):
 
-        area = self.geometry._angle_to_arcsec_area(0.5*self.geometry.cone_opening_angle, z)
-        scrit = self.lens_cosmo.get_sigmacrit(z)
+        #area = self.geometry._angle_to_arcsec_area(0.5*self.geometry.cone_opening_angle, z)
+        #scrit = self.lens_cosmo.get_sigmacrit(z)
+        area = self.geometry.angle_to_physical_area(0.5*self.geometry.cone_opening_angle, z)
+        sigma_crit_mpc = self.lens_cosmo.get_epsiloncrit(z, self.geometry._zsource)
 
-        return m_rendered / area / scrit
+        return m_rendered / area / sigma_crit_mpc
 
     def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
 

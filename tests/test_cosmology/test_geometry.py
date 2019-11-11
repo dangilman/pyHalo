@@ -42,6 +42,8 @@ class TestConeGeometry(object):
         comoving_radius = self.geometry.angle_to_comovingradius(self.angle_radius, z)
         npt.assert_almost_equal(comoving_radius, radius_physical * (1+z), 3)
 
+        z = 0.3
+
     def test_lenscone_angles(self):
 
         angle_at_zlens = self.geometry.ray_angle_atz(self.angle_diameter, self.zlens, 0)
@@ -53,12 +55,65 @@ class TestConeGeometry(object):
         angle_at_zsource = self.geometry.ray_angle_atz(self.angle_radius, self.zsource, 0.1)
         npt.assert_almost_equal(0.1, angle_at_zsource)
 
+
+        z1, z2, z3 = 0.3, 0.7, 0.48
+        theta = self.geometry._cosmo.arcsec ** -1
+        xlow = theta * self.geometry._cosmo.D_C(z1)
+        xhigh = theta * self.geometry._cosmo.D_C(z2)
+        ylow = 0.5*theta * self.geometry._cosmo.D_C(z1)
+        yhigh = 0.5*theta * self.geometry._cosmo.D_C(z2)
+
+        Tzlow = self.geometry._cosmo.D_C(z1)
+        Tzhigh = self.geometry._cosmo.D_C(z2)
+        Tzcurrent = self.geometry._cosmo.D_C(z3)
+
+        x_interp, y_interp = self.geometry.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tzcurrent)
+
+        npt.assert_almost_equal(x_interp, theta)
+        npt.assert_almost_equal(y_interp, 0.5 * theta)
+
+        z1, z2, z3 = 1, 2, 1.6
+        xlow = self.geometry.angle_to_comovingradius(theta, z1)
+        xhigh = self.geometry.angle_to_comovingradius(theta, z2)
+        ylow = self.geometry.angle_to_comovingradius(0.5 * theta, z1)
+        yhigh = self.geometry.angle_to_comovingradius(0.5 * theta, z2)
+        Tzlow = self.geometry._cosmo.D_C(z1)
+        Tzhigh = self.geometry._cosmo.D_C(z2)
+        Tzcurrent = self.geometry._cosmo.D_C(z3)
+        x_interp, y_interp = self.geometry.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tzcurrent)
+
+        run = Tzhigh - Tzlow
+        risex, risey = 0 - xlow, 0 - ylow
+        delta = Tzcurrent - Tzlow
+
+        x_true = (delta * risex / run + xlow) / Tzcurrent
+        y_true = (delta * risey / run + ylow) / Tzcurrent
+
+        npt.assert_almost_equal(x_true, x_interp)
+        npt.assert_almost_equal(y_true, y_interp)
+
+        z1, z2, z3 = 1, 2, 1.99999
+        xlow = self.geometry.angle_to_comovingradius(theta, z1)
+        xhigh = self.geometry.angle_to_comovingradius(theta, z2)
+        ylow = self.geometry.angle_to_comovingradius(0.5 * theta, z1)
+        yhigh = self.geometry.angle_to_comovingradius(0.5 * theta, z2)
+        Tzlow = self.geometry._cosmo.D_C(z1)
+        Tzhigh = self.geometry._cosmo.D_C(z2)
+        Tzcurrent = self.geometry._cosmo.D_C(z3)
+        x_interp, y_interp = self.geometry.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tzcurrent)
+
+        x_true = 0
+        y_true = 0
+
+        npt.assert_almost_equal(x_true, x_interp, 5)
+        npt.assert_almost_equal(y_true, y_interp, 5)
+
     def test_volume(self):
 
         cone_arcsec = 3
         radius = cone_arcsec*0.5
         geo = Geometry(self.cosmo, 1, 1.5, cone_arcsec)
-        astropy = geo._lens_cosmo.cosmo.astropy
+        astropy = geo._cosmo.astropy
 
         delta_z = 1e-3
         steradian = (radius * self.arcsec) ** 2
@@ -71,13 +126,11 @@ class TestConeGeometry(object):
 
 
 
-
-
 test = TestConeGeometry()
 test.setup()
-#test.test_distances()
-#test.test_lenscone_angles()
-test.test_distances()
+test.test_distances_lensing()
+test.test_lenscone_angles()
+test.test_volume()
 
 #if __name__ == '__main__':
 #    pytest.main()
