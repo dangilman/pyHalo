@@ -404,31 +404,6 @@ class Realization(object):
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 
-        #
-        # x_kept, y_kept, m_kept, z_kept = [], [], [], []
-        # raysx1, raysx3 = [], []
-        # raysx2, raysx4 = [], []
-        #
-        # for halo in halos:
-        #     x_kept.append(halo.x)
-        #     y_kept.append(halo.y)
-        #     m_kept.append(np.log10(halo.mass))
-        #     z_kept.append(halo.z)
-        # for z_i in self.unique_redshifts:
-        #     rx, ry = self._ray_position_z(thetax, thetay, z_i, source_x, source_y)
-        #
-        #     raysx1.append(rx[0])
-        #     raysx2.append(rx[1])
-        #     raysx3.append(rx[2])
-        #     raysx4.append(rx[3])
-        #
-        # import matplotlib.pyplot as plt
-        # plt.scatter(z_kept, x_kept, s=1*np.array(m_kept)/6)
-        # plt.plot(self.unique_redshifts, raysx1, color='k')
-        #
-        # plt.show()
-        # a=input('continue')
-
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = halos, other_params= self._prof_params, mass_sheet_correction = self._mass_sheet_correction)
 
@@ -453,21 +428,15 @@ class Realization(object):
 
             if z != self.geometry._zlens:
 
-                if self._subtract_theory_mass_sheets:
-                    if z < self.geometry._zlens:
-                        kappa = self.convergence_at_z_theory(z, mlow_front, mhigh, delta_z,
-                                                             self.m_break_scale, self.break_index, self.break_scale)
-                    else:
-                        kappa = self.convergence_at_z_theory(z, mlow_back, mhigh, delta_z, self.m_break_scale,
-                                                             self.break_index,  self.break_scale)
+                if z < self.geometry._zlens:
+                    kappa = self.convergence_at_z_theory(z, mlow_front, mhigh, delta_z,
+                                                         self.m_break_scale, self.break_index, self.break_scale)
                 else:
-                    kappa = self.convergence_at_z(z, 0)
+                    kappa = self.convergence_at_z_theory(z, mlow_back, mhigh, delta_z, self.m_break_scale,
+                                                         self.break_index,  self.break_scale)
 
-                if kappa > 0:
-                    #kwargs.append({'kappa_ext': - 1.269695*kappa})
-
-                    kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
-                    zsheet.append(z)
+                kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
+                zsheet.append(z)
 
         return kwargs, zsheet
 
@@ -480,52 +449,20 @@ class Realization(object):
 
         return halos
 
-    def _convergence_at_z(self, m_rendered, z):
-
-        #area = self.geometry._angle_to_arcsec_area(0.5*self.geometry.cone_opening_angle, z)
-        #scrit = self.lens_cosmo.get_sigmacrit(z)
-        area = self.geometry.angle_to_physical_area(0.5*self.geometry.cone_opening_angle, z)
-        sigma_crit_mpc = self.lens_cosmo.get_epsiloncrit(z, self.geometry._zsource)
-
-        return m_rendered / area / sigma_crit_mpc
-
     def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
 
         m_theory = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index, break_scale)
 
-        return self._convergence_at_z(m_theory, z)
+        area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
+        sigma_crit_mpc = self.lens_cosmo.get_epsiloncrit(z, self.geometry._zsource)
 
-    def convergence_at_z(self, z, m_scale):
-
-        m = self.mass_at_z(z, m_scale)
-
-        return self._convergence_at_z(m, z)
+        return m_theory / area / sigma_crit_mpc
 
     def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale):
-
-        #m_rendered = self.mass_at_z(z, log_m_break)
-        #if m_rendered > 0:
-        #    mhigh = min(m_rendered, mhigh)
 
         mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh, log_m_break,
                                                                break_index, break_scale=break_scale,
                                                                norm_scale=self._LOS_norm)
-
-        return mass
-
-    def mass_at_z(self,z, logmcut = 0):
-
-        def z_is_close(z1, z2):
-            return np.absolute(z2 - z1) < lenscone_default.default_z_step * 0.01
-
-        mass = 0
-
-        for i, mi in enumerate(self.masses):
-
-            if z_is_close(self.redshifts[i], z):
-
-                if np.log10(mi) >= logmcut:
-                    mass += mi
 
         return mass
 
