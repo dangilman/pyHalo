@@ -1,5 +1,4 @@
 import numpy as np
-from pyHalo.Cosmology.lens_cosmo import LensCosmo
 from scipy.integrate import quad
 #from pyHalo.defaults import *
 
@@ -10,15 +9,20 @@ class Geometry(object):
     def __init__(self, cosmology, z_lens, z_source, opening_angle):
 
         self._cosmo = cosmology
-        self._lens_cosmo = LensCosmo(z_lens, z_source, cosmology)
-        self._reduced_to_phys = self._lens_cosmo.D_s * self._lens_cosmo.D_ds ** -1
+
+        self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
 
         self._zlens, self._zsource = z_lens, z_source
 
-        self._d_comoving_zlens = self._cosmo.D_C_transverse(z_lens)
-
         self.cone_opening_angle = opening_angle
+
         self._arcsec = self._cosmo.arcsec
+
+        self._kpc_per_arcsec_zlens = self._cosmo.kpc_per_asec(self._zlens)
+
+    def kpc_per_arcsec(self, z):
+
+        return self._cosmo.kpc_per_asec(z)
 
     def angle_to_physicalradius(self, radius_arcsec, z):
 

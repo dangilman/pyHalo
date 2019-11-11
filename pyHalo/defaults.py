@@ -55,6 +55,7 @@ class DMHaloDefaults(object):
     def __init__(self):
 
         self.mass_concentration_relation = 'diemer19'
+        self.evaluate_mc_at_zlens = True
 
         if self.mass_concentration_relation == 'diemer19':
             self.mc_mdef = '200c'
@@ -157,6 +158,9 @@ def set_default_kwargs(profile_params):
 
     if 'mc_model' not in profile_params.keys():
         profile_params.update({'mc_model': halo_default.mass_concentration_relation})
+
+    if 'evaluate_mc_at_zlens' not in profile_params.keys():
+        profile_params.update({'evaluate_mc_at_zlens': halo_default.evaluate_mc_at_zlens})
 
     if 'c_scatter' not in profile_params.keys():
         profile_params.update({'c_scatter': halo_default.scatter})

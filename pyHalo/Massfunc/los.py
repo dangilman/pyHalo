@@ -7,10 +7,11 @@ from pyHalo.defaults import *
 
 class LOS(object):
 
-    def __init__(self, args, lensing_mass_func, lens_cosmo = None):
+    def __init__(self, args, lensing_mass_func):
 
         self._lensing_mass_func = lensing_mass_func
-        self._lens_cosmo = lens_cosmo
+
+        self._geometry = self._lensing_mass_func.geometry
 
         spatial_args, parameterization_args = self._set_kwargs(args)
 
@@ -43,10 +44,13 @@ class LOS(object):
 
     def _render_positions_atz(self, z, nhalos):
 
-        # EVERYTHING EXPRESSED IN ARCSEC
-        x, y, r2d, r3d = self._spatial_parameterization.draw(nhalos, z)
+        x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z)
 
-        return x, y, r2d, r3d
+        kpc_per_asec = self._geometry.kpc_per_arcsec(z)
+        x_arcsec = x_kpc * kpc_per_asec ** -1
+        y_arcsec = y_kpc * kpc_per_asec ** -1
+
+        return x_arcsec, y_arcsec, r2d_kpc, r3d_kpc
 
 class LOSDelta(LOS):
 

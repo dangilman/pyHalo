@@ -1,26 +1,27 @@
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
-from pyHalo.Spatial.nfw import NFW_3D, NFW3DFast
-from pyHalo.Halos.Profiles.nfw import NFW
+from pyHalo.Spatial.nfw import NFW3DFast
+from pyHalo.Halos.lens_cosmo import LensCosmo
 
 class MainLensPowerLaw(object):
 
-    interp_redshifts = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
-    interp_values = [[0.79871744, 0.1385], [0.85326291, 0.2048],
-                     [0.87740329, 0.2479], [0.87212949, 0.31635],
-                     [0.90235063, 0.36065], [0.85694561, 0.4112],
-                     [0.8768506, 0.4522]]
-    mass_norm = 13.0
-    norm_norm = 0.01
+    def __init__(self, args, geometry):
 
-    def __init__(self, args, lens_cosmo):
+        self._geometry = geometry
 
-        self._lens_cosmo = lens_cosmo
-        self._nfw_cosmo = NFW(lens_cosmo)
         spatial_args, parameterization_args = self._set_kwargs(args)
 
         self._mass_func_parameterization = BrokenPowerLaw(**parameterization_args)
+
         self._spatial_parameterization = NFW3DFast(**spatial_args)
+
+    @property
+    def _lenscosmo(self):
+
+        if not hasattr(self, '_lens_cosmo'):
+            self._lens_comso = LensCosmo(self._geometry._zlens, self._geometry._zsource, self._geometry._cosmo)
+
+        return self._lens_comso
 
     def __call__(self):
         """
@@ -31,29 +32,32 @@ class MainLensPowerLaw(object):
         masses = self._mass_func_parameterization.draw()
 
         # EVERYTHING EXPRESSED IN KPC
-        x, y, r2d, r3d = self._spatial_parameterization.draw(len(masses))
+        x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(len(masses))
 
-        x_arcsec = x*self._lens_cosmo._kpc_per_asec_zlens ** -1
-        y_arcsec = y*self._lens_cosmo._kpc_per_asec_zlens ** -1
+        x_arcsec = x_kpc * self._geometry._kpc_per_arcsec_zlens ** -1
+        y_arcsec = y_kpc * self._geometry._kpc_per_arcsec_zlens ** -1
 
-        return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d), np.array(r3d), np.array(
-            [self._lens_cosmo.z_lens] * len(masses)), [True] * len(masses)
+        return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d_kpc), np.array(r3d_kpc), np.array(
+            [self._geometry._zlens] * len(masses)), [True] * len(masses)
 
     def _spatial(self,args):
 
         args_spatial = {}
 
         # EVERYTHING EXPRESSED IN KPC
-        args_spatial['rmax2d'] = 0.5*args['cone_opening_angle']*\
-                                 self._lens_cosmo.cosmo.kpc_per_asec(self._lens_cosmo.z_lens)
+        args_spatial['rmax2d'] = 0.5*args['cone_opening_angle']*self._geometry._kpc_per_arcsec_zlens
 
         if 'parent_m200' in args.keys():
             # EVERYTHING EXPRESSED IN KPC
             if 'parent_c' not in args.keys():
-                args['parent_c'] = self._nfw_cosmo.NFW_concentration(args['parent_m200'], self._lens_cosmo.z_lens)
-            rho0_kpc, parent_Rs, parent_r200 = self._nfw_cosmo.NFW_params_physical(args['parent_m200'],
-                                                                                    args['parent_c'],
-                                                                                    self._lens_cosmo.z_lens)
+                args['parent_c'] = self._lenscosmo.NFW_concentration(args['parent_m200'], self._geometry._zlens)
+
+            if 'parent_Rs' not in args.keys():
+                parent_Rs = self._lenscosmo.NFW_params_physical(args['parent_m200'],
+                                                                args['parent_c'], self._geometry._zlens)[1]
+
+            parent_r200 = parent_Rs * args['parent_c']
+
             args_spatial['Rs'] = parent_Rs
             args_spatial['rmax3d'] = parent_r200
         else:
@@ -96,23 +100,23 @@ class MainLensPowerLaw(object):
 
         if 'sigma_sub' in args.keys():
 
-            a0_area_parent_halo = args['sigma_sub']*a0area_main(args['parent_m200'], self._lens_cosmo.z_lens)
+            a0_area_parent_halo = args['sigma_sub']*a0area_main(args['parent_m200'], self._geometry._zlens)
 
-            args_mfunc['normalization'] = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
-                           self._lens_cosmo.z_lens, args['cone_opening_angle'],
-                           args_mfunc['power_law_index'], m_pivot=10**8)
+            args_mfunc['normalization'] = norm_A0_from_a0area(a0_area_parent_halo,
+                                                                             self._geometry._kpc_per_arcsec_zlens, args['cone_opening_angle'],
+                                                                             args_mfunc['power_law_index'], m_pivot=10**8)
 
 
         elif 'mass_in_subhalos' in args.keys():
 
-            a0_area_parent_halo = self._lens_cosmo.convert_fsub_to_norm(
-                args['mass_in_subhalos'], args['cone_opening_angle'], self._lens_cosmo.z_lens,
+            a0_area_parent_halo = convert_fsub_to_norm(
+                args['mass_in_subhalos'], args['cone_opening_angle'], self._geometry._zlens,
                 args_mfunc['power_law_index'], 10**args_mfunc['log_mlow'],
                 10 ** args_mfunc['log_mhigh'], mpivot=10**8)
 
-            args_mfunc['normalization'] = self._lens_cosmo.norm_A0_from_a0area(a0_area_parent_halo,
-                                                          self._lens_cosmo.z_lens, args['cone_opening_angle'],
-                                                          args_mfunc['power_law_index'], m_pivot=10**8)
+            args_mfunc['normalization'] = norm_A0_from_a0area(a0_area_parent_halo,
+                                                              self._geometry._kpc_per_arcsec_zlens, args['cone_opening_angle'],
+                                                              args_mfunc['power_law_index'], m_pivot=10**8)
 
 
         else:
@@ -140,3 +144,22 @@ def a0area_main(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
     logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * np.log10(z + 0.5)
 
     return 10**logscaling
+
+def norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens, cone_opening_angle, plaw_index, m_pivot = 10**8):
+
+    R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
+
+    area = np.pi * R_kpc ** 2
+
+    return a0_per_kpc2 * m_pivot ** (-plaw_index-1) * area
+
+def convert_fsub_to_norm(mass_in_subhalos, cone_opening_angle, kpc_per_asec_zlens, plaw_index, mlow,
+                         mhigh, mpivot=10**8):
+
+    power = 2+plaw_index
+    R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
+    area = np.pi * R_kpc ** 2
+    integral = (mpivot/power) * ((mhigh/mpivot)**power - (mlow/mpivot)**power)
+    sigma_sub =  mass_in_subhalos / integral / area
+
+    return sigma_sub

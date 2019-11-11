@@ -1,66 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
-class NFW_2D(object):
-
-    def __init__(self, Rs, rmax2d, xoffset=0, yoffset = 0):
-
-        """
-        all distances expressed in (physical) kpc
-
-        :param Rs: scale radius
-        :param rmax2d: maximum 2d radius
-        :param rmax3d: maximum 3d radius (basically sets the distribution of z coordinates)
-        :param xoffset: centroid of NFW
-        :param yoffset: centroid of NFW
-
-        """
-
-        self.rmax2d = rmax2d
-        self.rs = Rs
-
-        self.xoffset = xoffset
-        self.yoffset = yoffset
-
-        self.xoffset,self.yoffset = xoffset,yoffset
-
-        self.xmin = 0.001
-
-    def _density_2d(self, x):
-
-        if x < 1:
-            f = np.sqrt(1-x**2)
-            func = np.arctanh(f) * f ** -1
-        elif x > 1:
-            f = np.sqrt(-1 + x ** 2)
-            func = np.arctan(f) * f ** -1
-
-        return 2 * (1 - func) * (x**2 - 1)
-
-    def draw(self, N):
-
-        x, y, r2d = [], [], []
-        rho2d_max = self._density_2d(self.xmin)
-
-        while len(r2d) < N:
-
-            theta = np.random.uniform(0, 2 * np.pi)
-
-            r_2 = np.random.uniform(0, self.rmax2d ** 2) ** 0.5
-
-            _x = r_2 * self.rs ** -1
-
-            draw = self._density_2d(_x) * rho2d_max ** -1
-
-            if draw > np.random.rand():
-                x.append(r_2 * np.cos(theta))
-                y.append(r_2 * np.sin(theta))
-                r2d.append(r_2)
-
-        # just make r3d some big number for truncation purposes
-        r3d = np.ones_like(r2d) * 400
-        return np.array(x) + self.xoffset, np.array(y) + self.yoffset, np.array(r2d), r3d
-
 class NFW_3D(object):
 
     def __init__(self, Rs, rmax2d, rmax3d, xoffset=0, yoffset = 0, tidal_core=False, r_core_parent = None):
@@ -266,7 +206,7 @@ class NFW3DFast(object):
                 prob = rhonfw_x(X1) * rhonfw_x(X2) ** -1
             accept = prob > np.random.rand()
 
-            if _r3d <= self.rmax3d and accept:
+            if accept and _r3d <= self.rmax3d:
                 x.append(x_value)
                 y.append(y_value)
                 r2d.append(_r2d)

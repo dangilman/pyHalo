@@ -6,46 +6,48 @@ class LensConeUniform(object):
 
         self._cosmo_geometry = cosmo_geometry
 
-        self._dd_comoving = self._cosmo_geometry._cosmo.D_C_transverse(
-            self._cosmo_geometry._lens_cosmo.z_lens
-        )
-        self._d_ds_comoving = self._cosmo_geometry._cosmo.D_C_transverse(
-            self._cosmo_geometry._lens_cosmo.z_source) - self._dd_comoving
-
-        self._uni = Uniform(cone_opening_angle * 0.5)
+        self._uni = Uniform(cone_opening_angle * 0.5, cosmo_geometry)
 
     def draw(self,N, z_plane, center_x = 0, center_y = 0):
 
         if N == 0:
-            return [], [], [], []
+            return np.array([]), np.array([]), np.array([]), np.array([])
 
         rescale = self._cosmo_geometry.rendering_scale(z_plane)
 
-        x, y, r2d, r3d = self._uni.draw(N, rescale=rescale,
+        x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._uni.draw(N, z_plane, rescale=rescale,
                                         center_x = center_x, center_y = center_y)
 
-        return x, y, r2d, r3d
+        return x_kpc, y_kpc, r2d_kpc, r3d_kpc
 
 class Uniform(object):
 
-    def __init__(self, rmax2d_arcsec=None):
+    def __init__(self, rmax2d_arcsec, geometry):
 
         self.rmax2d_arcsec = rmax2d_arcsec
+        self._geo = geometry
 
-    def draw(self, N, rescale=1, center_x = 0, center_y = 0):
+    def draw(self, N, z_plane, rescale=1, center_x = 0, center_y = 0):
 
         if N == 0:
             return [], [], [], []
         angle = np.random.uniform(0, 2 * np.pi, int(N))
-        r = np.random.uniform(0, (self.rmax2d_arcsec * rescale) ** 2, int(N))
 
-        x = r ** .5 * np.cos(angle)
-        y = r ** .5 * np.sin(angle)
-        r2d = (x ** 2 + y ** 2) ** .5
+        rmax = self.rmax2d_arcsec * rescale
 
-        zcoord = np.random.uniform(0, ((self.rmax2d_arcsec*rescale) ** 2 - r2d ** 2) ** 0.5)
+        r = np.random.uniform(0, rmax ** 2, int(N))
 
-        x += center_x
-        y += center_y
+        x_arcsec = r ** .5 * np.cos(angle)
+        y_arcsec = r ** .5 * np.sin(angle)
 
-        return x, y, r2d, np.sqrt(zcoord ** 2 + r2d ** 2)
+        x_arcsec += center_x
+        y_arcsec += center_y
+        kpc_per_asec = self._geo.kpc_per_arcsec(z_plane)
+        x_kpc, y_kpc = x_arcsec * kpc_per_asec, y_arcsec * kpc_per_asec
+        rmax_kpc = rmax * kpc_per_asec
+
+        r2d_kpc = (x_kpc ** 2 + y_kpc ** 2) ** .5
+
+        zcoord = np.random.uniform(0, (rmax_kpc ** 2 - r2d_kpc ** 2) ** 0.5)
+
+        return np.array(x_kpc), np.array(y_kpc), np.array(r2d_kpc), np.sqrt(zcoord ** 2 + r2d_kpc ** 2)

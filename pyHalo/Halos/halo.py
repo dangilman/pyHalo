@@ -1,12 +1,13 @@
-import numpy as np
-from pyHalo.Spatial.nfw import NFW_3D
 from pyHalo.Massfunc.parameterizations import *
-from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
 from pyHalo.Scattering.sidm_interp import logrho
+from pyHalo.Halos.HaloModels.collisionless_nfw import \
+    TNFWFieldHalo, TNFWMainSubhalo, NFWFieldHalo, NFWMainSubhalo
+from pyHalo.Halos.HaloModels.SIDM_nfw import truncatedSIDMMainSubhalo, truncatedSIDMFieldHalo
+from pyHalo.Halos.HaloModels.PBH import PrimordialBlackHole
 
 class Halo(object):
 
-    is_subhalo = False
+    _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW']
 
     has_concentration = ['NFW', 'TNFW', 'coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod',
                          'cNFWmod_trunc']
@@ -33,183 +34,84 @@ class Halo(object):
         self.cosmo_prof = cosmo_m_prof
         self._is_main_subhalo = sub_flag
         self._args = args
-        # compute these at the end
-        self.mass_def_arg = self.profile_parameters()
-
         self._unique_tag = np.random.rand()
 
-    def add_subhalos(self, subhalo_args):
+        assert mdef in self._recognized_mass_definitions, 'mass definition '+str(mdef)+' not recognized.'
 
-        if self.is_subhalo is True:
+    def get_z_infall(self):
 
-            return []
+        if not hasattr(self, 'z_infall'):
 
-        elif not hasattr(self, 'subhalos'):
+            self.z_infall = self.cosmo_prof.z_accreted_from_zlens(self.mass, self.z)
 
-            self.subhalos = []
+        return self.z_infall
 
-            if self.mdef not in ['NFW', 'TNFW', 'CNFW']:
-                raise Exception('subhalos only implemented for NFW-like profiles.')
+    @property
+    def halo_age(self):
 
-            if not hasattr(self, '_spatial'):
-
-                r200_arcsec = self.cosmo_prof.rN_M_nfw_physical_arcsec(self.mass, 200, self.z)
-                c = self.cosmo_prof.NFW_concentration(self.mass, self.z, logmhm=self._args['log_m_break'],
-                                                      c_scale=self._args['c_scale'], c_power=self._args['c_power'])
-
-                rs_arcsec = r200_arcsec * c ** -1
-
-                self._spatial = NFW_3D(rs_arcsec, r200_arcsec, r200_arcsec, xoffset=self.x, yoffset=self.y,
-                                       tidal_core=False)
-
-            if subhalo_args['mdef'] == 'POINT_MASS':
-                func = self._POINT_MASS_subhalos
-            elif subhalo_args['mdef'] == 'NFW':
-                func = self._NFW_subhalos
-            elif subhalo_args['mdef'] == 'TNFW':
-                func = self._NFW_subhalos
+        if not hasattr(self, '_halo_age'):
+            if 'halo_age' in self._args.keys():
+                self._halo_age = self._args['halo_age']
             else:
-                raise Exception('subhalo mass profile '+
-                                subhalo_args['mdef']+' not recognized.')
+                self._halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
+        return self._halo_age
 
-            subhalos_exist, properties = func(subhalo_args)
+    @property
+    def profile_args(self):
 
-            if subhalos_exist:
-                msub, xsub, ysub, r2dsub, r3dsub = properties[0], properties[1], properties[2], \
-                                                   properties[3], properties[4]
+        if not hasattr(self, '_mass_def_arg'):
+            self._mass_def_arg = self._halo_type.halo_parameters
 
-                # reduce the parent mass
-                new_parent_mass = self.mass - np.sum(msub)
+        return self._mass_def_arg
 
-                while new_parent_mass < 0:
+    @property
+    def is_subhalo(self):
+        return False
 
-                    msub = np.delete(msub, np.argmax(msub))
-                    new_parent_mass = self.mass - np.sum(msub)
+    @property
+    def _halo_type(self):
 
-                self.mass = new_parent_mass
-                if self.mdef in self.has_concentration:
-                    self.mass_def_arg['concentration'] = self.cosmo_prof.NFW_concentration(self.mass,
-                                                                                           self.z, logmhm=self._args['log_m_break'],
-                                                                                           c_scale=self._args['c_scale'], c_power=self._args['c_power'])
+        if not hasattr(self, '_halo_profile_instance'):
 
-                for (mi, xi, yi, r2i, r3i) in zip(msub, xsub, ysub, r2dsub, r3dsub):
-                    new_object = Halo(mass=mi, x=xi, y=yi, r2d=None, r3d=None, mdef=subhalo_args['mdef'], z=self.z,
-                                      cosmo_m_prof=self.cosmo_prof, args=self._args)
-                    new_object.is_subhalo = True
-                    self.subhalos.append(new_object)
+            if self._is_main_subhalo is True:
 
-        return self.subhalos
+                if self.mdef == 'NFW':
 
-    def _POINT_MASS_subhalos(self, subhalo_args):
+                    halo_type = NFWMainSubhalo(self)
 
-        mfraction = subhalo_args['mass_fraction'] * self.mass * 10 ** subhalo_args['log_mean_mass'] ** -1
-        nsub = np.random.poisson(mfraction)
+                elif self.mdef == 'TNFW':
 
-        if nsub > 0:
-            subx, suby, subr2d, subr3d = self._spatial.draw(nsub)
-            mass_dis = Gaussian(subhalo_args['log_mean_mass'], 1, nsub)
-            msub = mass_dis.draw()
+                    halo_type = TNFWMainSubhalo(self)
 
-            return True, [msub, subx, suby, subr2d, subr3d]
-        else:
-            return False, None
+                elif self.mdef == 'SIDM_TNFW':
 
-    def _NFW_subhalos(self, subhalo_args):
+                    halo_type = truncatedSIDMMainSubhalo(self)
 
-        if not hasattr(self, '_submfunc'):
-            self._submfunc = SubhaloPowerLaw(10**subhalo_args['log_mlow'], self.mass)
+                elif self.mdef == 'PBH':
 
-        msub = self._submfunc.draw()
-
-        if len(msub) > 0:
-            subx, suby, subr2d, subr3d = self._spatial.draw(len(msub))
-            return True, [msub, subx, suby, subr2d, subr3d]
-        else:
-            return False, None
-
-    def _transform_redshift(self):
-
-        if self._is_main_subhalo:
-
-            if isinstance(self._args['mc_model'], dict):
-
-                if 'z_accreted' in self._args['mc_model'].keys() and self._args['mc_model']['z_accreted'] is False:
-                    return self.z
-                else:
-
-                    return self.cosmo_prof.z_accreted_from_zlens(self.mass, self.z)
-            else:
-                return self.z
-
-        else:
-
-            return self.z
-
-    def profile_parameters(self):
-
-        mdef_args = []
-
-        if self.mdef in self.has_concentration:
-            
-            z_concentration = self._transform_redshift()
-
-            nfw_c = self.cosmo_prof.NFW_concentration(self.mass, z_concentration, logmhm=self._args['log_m_break'],
-                                                      c_scale=self._args['c_scale'], c_power=self._args['c_power'],
-                                                      scatter=self._args['c_scatter'], model=self._args['mc_model'])
-            mdef_args.append(np.round(nfw_c,2))
-            #mdef_args.update({'concentration': np.round(nfw_c,2)})
-
-        if self.mdef in self.has_truncation:
-
-            if self.is_subhalo:
-                truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z, self._args['LOS_truncation'])
-            elif self._is_main_subhalo:
-                truncation = self.cosmo_prof.truncation_roche(self.mass, self.r3d, self.z, self._args['RocheNorm'],
-                                                              self._args['RocheNu'])
-            else:
-                truncation = self.cosmo_prof.LOS_truncation(self.mass, self.z)
-
-            mdef_args.append(np.round(truncation, 3))
-            #mdef_args.update({'r_trunc': np.round(truncation, 3)})
-
-        if self.mdef in self.has_core:
-
-            if self.mdef in ['cNFWmod_trunc', 'cNFWmod', 'CNFW']:
-
-                if 'core_ratio' in self._args.keys():
-                    if 'SIDMcross' in self._args.keys():
-                        raise Exception('You have specified both core_ratio and SIDMcross arguments. '
-                                        'You should pick one or the other')
-                    core_ratio = self._args['core_ratio']
-
-                else:
-
-                    cmean = self.cosmo_prof.NFW_concentration(self.mass, self.z, scatter=False)
-                    rho_mean, rs_mean, _ = self.cosmo_prof.NFW_params_physical(self.mass, cmean, self.z)
-
-                    if 'halo_age' not in self._args.keys():
-                        halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
-                    else:
-                        halo_age = self._args['halo_age']
-
-                    zeta = self._args['SIDMcross'] * halo_age
-
-                    rho_sidm = 10 ** logrho(self.mass, self.z, zeta, cmean,
-                                            nfw_c, self._args['vpower'])
-
-                    core_ratio = rho_mean * rho_sidm ** -1
-
-                core_ratio = np.round(core_ratio, 2)
-                mdef_args.append(core_ratio)
+                    halo_type = PrimordialBlackHole()
 
             else:
-                #mdef_args.update({'b': np.round(self._args['core_ratio'],2)})
-                mdef_args.append(np.round(self._args['core_ratio'], 2))
 
-        if self.mdef == 'POINT_MASS':
-            pass
+                if self.mdef == 'NFW':
 
-        return mdef_args
+                    halo_type = NFWFieldHalo(self)
+
+                elif self.mdef == 'TNFW':
+
+                    halo_type = TNFWFieldHalo(self)
+
+                elif self.mdef == 'SIDM_TNFW':
+
+                    halo_type = truncatedSIDMFieldHalo(self)
+
+                elif self.mdef == 'PBH':
+
+                    halo_type = PrimordialBlackHole()
+
+            self._halo_profile_instance = halo_type
+
+        return self._halo_profile_instance
 
 
 

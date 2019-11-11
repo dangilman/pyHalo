@@ -6,7 +6,7 @@ from pyHalo.Scattering.vdis_nfw import _velocity_dispersion_NFW
 from pyHalo.Scattering.Enfw import _energyNFW
 from copy import copy
 from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.Halos.cosmo_profiles import CosmoMassProfiles
+from pyHalo.Halos.lens_cosmo import LensCosmo
 
 class ISONFW(object):
 
@@ -425,7 +425,7 @@ def _solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.
 def solve_mass_range(masses, common_redshift, cross_class):
 
     logrho0 = []
-    prof = CosmoMassProfiles(z_lens=0.5, z_source=3)
+    prof = LensCosmo(z_lens=0.5, z_source=3)
     fitquality = []
 
     for mi in masses:
@@ -442,7 +442,7 @@ def solve_mass_range(masses, common_redshift, cross_class):
 def solve_z_range(mass, redshifts, cross_class):
 
     logrho0 = []
-    prof = CosmoMassProfiles(z_lens=0.5, z_source=3)
+    prof = LensCosmo(z_lens=0.5, z_source=3)
     fitquality = []
 
     for zi in redshifts:
@@ -457,7 +457,7 @@ def solve_z_range(mass, redshifts, cross_class):
 
 def solve_cross_range(mass, z, cross_classes):
     logrho0 = []
-    prof = CosmoMassProfiles(z_lens=0.5, z_source=3)
+    prof = LensCosmo(z_lens=0.5, z_source=3)
     fitquality = []
     for cross_class in cross_classes:
         rhos, rs, _ = prof.NFW_params_physical_fromM(mass, z)

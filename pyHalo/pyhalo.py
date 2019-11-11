@@ -1,5 +1,5 @@
 from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.Cosmology.lens_cosmo import LensCosmo
+from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
@@ -30,7 +30,6 @@ class pyHalo(object):
         self.zsource = zsource
 
         self._cosmology = Cosmology(**cosmology_kwargs)
-        self._lens_cosmo = LensCosmo(zlens, zsource, self._cosmology)
 
         self._halo_mass_function_args = kwargs_halo_mass_function
 
@@ -176,7 +175,7 @@ class pyHalo(object):
         if 'mdef_main' not in args.keys():
             raise ValueError('specify mass definition for lens plane halos with mdef_main.')
 
-        return mdef, MainLensPowerLaw(args, self._lens_cosmo)
+        return mdef, MainLensPowerLaw(args, self._geometry)
 
     def _build(self, model_name, model_args):
 
