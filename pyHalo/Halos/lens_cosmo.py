@@ -28,9 +28,17 @@ class LensCosmo(object):
 
         self._kpc_per_arcsec_zlens = self.cosmo.kpc_per_asec(self.z_lens)
 
-        self._mlist, self._dzvals, self._cdfs = self._Msub_cdfs(self.z_lens)
-
         self._halo_structure = HaloStructure(self)
+
+    @property
+    def _subhalo_accretion_pdfs(self):
+
+        if not hasattr(self, '_mlist') or not hasattr(self, '_dzvals') \
+        or not hasattr(self, '_cdfs'):
+
+            self._mlist, self._dzvals, self._cdfs = self._Msub_cdfs(self.z_lens)
+
+        return self._mlist, self._dzvals, self._cdfs
 
     @property
     def colossus(self):
@@ -180,9 +188,11 @@ class LensCosmo(object):
     ##################################################################################
     def z_accreted_from_zlens(self, msub, zlens):
 
-        idx = self._mass_index(msub, self._mlist)
+        mlist, dzvals, cdfs = self._subhalo_accretion_pdfs
 
-        z_accreted = zlens + self._sample_cdf_single(self._cdfs[idx])
+        idx = self._mass_index(msub, mlist)
+
+        z_accreted = zlens + self._sample_cdf_single(cdfs[idx])
 
         return z_accreted
 
@@ -196,7 +206,7 @@ class LensCosmo(object):
             c_d_f.append(prob)
         return numpy.array(c_d_f) / c_d_f[-1]
 
-    def _Msub_cdfs(self, z_lens=0.9):
+    def _Msub_cdfs(self, z_lens):
 
         M_sub_exp = numpy.arange(6.0, 10.2, 0.2)
         M_sub_list = 10 ** M_sub_exp
