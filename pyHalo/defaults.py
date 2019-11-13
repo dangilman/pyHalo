@@ -50,6 +50,12 @@ class TruncationDefaults(object):
         self.RocheNu = 2
         self.LOS_truncation = 50 # truncate at 'r50'
 
+        trunc_routines = ['truncate_at_mean_density_compositehost',
+                          'truncate_at_mean_density_NFWhost',
+                          'truncate_simple']
+
+        self.routine = trunc_routines[2]
+
 class DMHaloDefaults(object):
 
     def __init__(self):
@@ -74,7 +80,7 @@ class RealizationDefaults(object):
 
 
         # opening angle = opening_anlge_factor * Rein
-        self.opening_angle_factor = 5
+        self.opening_angle_factor = 6
 
         self.default_mhm = 0
         self.default_break_scale = 1
@@ -92,6 +98,7 @@ class RealizationDefaults(object):
 
         self.m_parent = 10**13
 
+        self.subtract_exact_mass_sheets = False
 
 ####################################################################################
 
@@ -111,6 +118,9 @@ def set_default_kwargs(profile_params):
     else:
         profile_params.update({'include_subhalos':
                                    realization_default.default_include_subhalos})
+
+    if 'subtract_exact_mass_sheets' not in profile_params.keys():
+        profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
 
     if 'log_m_break' in profile_params.keys():
         if 'break_index' not in profile_params.keys():
@@ -170,6 +180,8 @@ def set_default_kwargs(profile_params):
         if realization_default.default_include_subhalos is True:
             raise Exception('not yet implemented.')
 
+    if 'truncation_routine' not in profile_params.keys():
+        profile_params.update({'truncation_routine': truncation_default.routine})
     if 'RocheNorm' not in profile_params.keys():
         profile_params.update({'RocheNorm': truncation_default.RocheNorm})
     if 'RocheNu' not in profile_params.keys():

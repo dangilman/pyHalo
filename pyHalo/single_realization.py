@@ -23,6 +23,7 @@ class Realization(object):
         self._mass_sheet_correction  = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
         self._overwrite_mass_sheet = None
+
         self._kappa_scale = 1
         #self._kappa_scale = 1.269695
 
@@ -426,17 +427,25 @@ class Realization(object):
             z = unique_z[i]
             delta_z = unique_z[i+1] - z
 
+
             if z != self.geometry._zlens:
 
                 if z < self.geometry._zlens:
-                    kappa = self.convergence_at_z_theory(z, mlow_front, mhigh, delta_z,
+                    kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
                                                          self.m_break_scale, self.break_index, self.break_scale)
                 else:
-                    kappa = self.convergence_at_z_theory(z, mlow_back, mhigh, delta_z, self.m_break_scale,
+                    kappa = self.convergence_at_z(z, mlow_back, mhigh, delta_z, self.m_break_scale,
                                                          self.break_index,  self.break_scale)
 
                 kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
                 zsheet.append(z)
+
+            # elif z == self.geometry._zlens and self._prof_params['subtract_exact_mass_sheets']:
+            #     kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
+            #                 self.m_break_scale, self.break_index, self.break_scale)
+            #
+            #     kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
+            #     zsheet.append(z)
 
         return kwargs, zsheet
 
@@ -449,14 +458,32 @@ class Realization(object):
 
         return halos
 
-    def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
+    def convergence_at_z(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
 
-        m_theory = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index, break_scale)
+        if self._prof_params['subtract_exact_mass_sheets']:
+            return self.convergence_at_z_exact(z)
+        else:
+            return self.convergence_at_z_theory(z, mlow, mhigh, delta_z, m_break, break_index, break_scale)
+
+    def _sigma_crit_mass(self, z):
 
         area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
         sigma_crit_mpc = self.lens_cosmo.get_epsiloncrit(z, self.geometry._zsource)
 
-        return m_theory / area / sigma_crit_mpc
+        return area * sigma_crit_mpc
+
+    def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
+
+        m_theory = self.mass_at_z_theory(z, delta_z, mlow, mhigh, m_break, break_index, break_scale)
+
+        return m_theory / self._sigma_crit_mass(z)
+
+    def convergence_at_z_exact(self, z):
+
+        inds = np.where(self.redshifts == z)
+        m_exact = np.sum(self.masses[inds])
+
+        return m_exact / self._sigma_crit_mass(z)
 
     def mass_at_z_theory(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale):
 

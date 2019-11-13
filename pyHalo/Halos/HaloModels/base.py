@@ -1,8 +1,23 @@
+from pyHalo.Halos.halo_util import *
+
 class MainSubhaloBase(object):
 
     def __init__(self, halo_class):
 
         self._halo_class = halo_class
+
+    @property
+    def halo_redshift_eval(self):
+
+        if not hasattr(self, '_z_eval'):
+            if self._halo_class._args['evaluate_mc_at_zlens']:
+                z_eval = self._halo_class.z
+            else:
+                z_eval = self._halo_class.get_z_infall()
+
+            self._z_eval = z_eval
+
+        return self._z_eval
 
     @property
     def concentration(self):
@@ -19,17 +34,16 @@ class MainSubhaloBase(object):
                                                  scatter=self._halo_class._args['c_scatter'],
                                                  model=self._halo_class._args['mc_model'])
 
-    @property
-    def truncation_radius(self):
-        return self._halo_class.cosmo_prof.truncation_roche(self._halo_class.mass, self._halo_class.r3d, self._halo_class.z,
-                                                self._halo_class._args['RocheNorm'],
-                                                self._halo_class._args['RocheNu'])
-
 
 class FieldHaloBase(object):
 
     def __init__(self, halo_class):
         self._halo_class = halo_class
+
+    @property
+    def halo_redshift_eval(self):
+
+        return self._halo_class.z
 
     @property
     def concentration(self):

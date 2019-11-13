@@ -1,5 +1,6 @@
 from pyHalo.Halos.HaloModels.base import MainSubhaloBase, FieldHaloBase
 from pyHalo.Scattering.sidm_interp import logrho
+from pyHalo.Halos.halo_util import *
 
 class truncatedSIDMMainSubhalo(MainSubhaloBase):
 
@@ -9,7 +10,61 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
         return [self.concentration, self.truncation_radius, self.core_radius]
 
     @property
+    def truncation_radius(self):
+
+        condition_1 = self._halo_class._args['truncation_routine'] == \
+                      'truncate_at_mean_density_NFWhost'
+        condition_2 = self._halo_class._args['truncation_routine'] == \
+                      'truncate_at_mean_density_compositehost'
+
+        if condition_1 or condition_2:
+
+            subhalo_density_function = cored_rho_nfw
+            rho_sub, rs_sub, _ = self._halo_class.cosmo_prof.NFW_params_physical(self._halo_class.mass,
+                                                                                 self.concentration,
+                                                                                 self.halo_redshift_eval)
+
+            subhalo_args = ((rs_sub, rho_sub), self.core_radius * rs_sub)
+            initial_guess = 8*rs_sub
+            r_ein_kpc = self._halo_class._args['R_ein_main'] * \
+                        self._halo_class.cosmo_prof._kpc_per_arcsec_zlens
+
+            if condition_1:
+
+                r_t = self._halo_class.cosmo_prof.truncation_mean_density((self._halo_class.mass, self.concentration,
+                                                                          self._halo_class._args['parent_m200'],
+                                                                          self._halo_class.r3d, self.halo_redshift_eval,
+                                                                          self._halo_class.cosmo_prof.z_lens,
+                                                                          r_ein_kpc, subhalo_density_function,
+                                                                          subhalo_args, initial_guess))
+
+            elif condition_2:
+
+                sigmacrit_kpc = self._halo_class.cosmo_prof.epsilon_crit_kpc
+
+                r_t = self._halo_class.cosmo_prof.truncation_mean_density_isothermal_host((self._halo_class.mass,
+                                                                                          self.concentration,
+                                                                                          self._halo_class._args[
+                                                                                              'parent_m200'],
+                                                                                          self._halo_class.r3d,
+                                                                                          self.halo_redshift_eval,
+                                                                                          self._halo_class.cosmo_prof.z_lens,
+                                                                                          r_ein_kpc, sigmacrit_kpc,
+                                                                                          subhalo_density_function,
+                                                                                          subhalo_args, initial_guess))
+
+        else:
+            r_t = self._halo_class.cosmo_prof.truncation_roche((self._halo_class.mass, self._halo_class.r3d,
+                                                               self._halo_class.z,
+                                                               self._halo_class._args['RocheNorm'],
+                                                               self._halo_class._args['RocheNu']))
+
+
+        return r_t
+
+    @property
     def core_radius(self):
+
         if 'core_ratio' in self._halo_class._args.keys():
             if 'SIDMcross' in self._halo_class._args.keys():
                 raise Exception('You have specified both core_ratio and SIDMcross arguments. '
@@ -47,6 +102,8 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
 
     @property
     def core_radius(self):
+
+
         if 'core_ratio' in self._halo_class._args.keys():
             if 'SIDMcross' in self._halo_class._args.keys():
                 raise Exception('You have specified both core_ratio and SIDMcross arguments. '

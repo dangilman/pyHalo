@@ -16,6 +16,8 @@ class LensCosmo(object):
 
         # critical density for lensing in units M_sun * Mpc ^ -2
         self.epsilon_crit = self.get_epsiloncrit(z_lens, z_source)
+        # critical density for lensing in units M_sun * kpc ^ -2
+        self.epsilon_crit_kpc = self.epsilon_crit * (0.001) ** 2
         # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
         self.sigmacrit = self.epsilon_crit * (0.001) ** 2 * self.cosmo.kpc_per_asec(z_lens) ** 2
         # lensing distances
@@ -38,8 +40,14 @@ class LensCosmo(object):
     """ACCESS ROUTINES IN STRUCTURAL PARAMETERS CLASS"""
     ######################################################
 
-    def truncation_roche(self, M, r3d, z, k, nu):
-        return self._halo_structure.truncation_roche(M, r3d, z, k, nu)
+    def truncation_roche(self, args):
+        return self._halo_structure.truncation_roche(*args)
+
+    def truncation_mean_density(self, args):
+        return self._halo_structure.truncation_mean_density_NFW_host(*args)
+
+    def truncation_mean_density_isothermal_host(self, args):
+        return self._halo_structure.truncation_mean_density_isothermal_host(*args)
 
     def LOS_truncation(self, M, z, N=50):
         return self._halo_structure.LOS_truncation(M, z, N)
@@ -88,6 +96,10 @@ class LensCosmo(object):
         epsilon_crit = (self.cosmo.c**2*(4*numpy.pi*self.cosmo.G)**-1)*(D_s*D_ds**-1*D_d**-1)
 
         return epsilon_crit
+
+    def get_epsiloncrit_kpc(self, z1, z2):
+
+        return self.get_epsiloncrit(z1, z2) * 0.001 ** 2
 
     def get_sigmacrit(self, z):
 
@@ -157,6 +169,11 @@ class LensCosmo(object):
         rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
+
+    def NFW_params_physical_fromM(self, M, z, mc_kwargs={}):
+
+        c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
+        return self.NFW_params_physical(M, c, z)
 
     ##################################################################################
     """ACCRETION REDSHIFT PDF FROM GALACTICUS"""
