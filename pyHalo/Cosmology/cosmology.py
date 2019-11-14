@@ -30,10 +30,25 @@ class Cosmology(object):
         self._age_today = self.astropy.age(0).value
 
         self._DA_interp = self._interp_angular_diamter_distance()
+        
+        self._kpc_per_asec_interp = self._interp_kpc_per_asec()
 
     def D_A_z(self, z):
 
         return self._DA_interp(z)
+    
+    def kpc_per_asec(self, z):
+        
+        return self._kpc_per_asec_interp(z)
+    
+    def _interp_kpc_per_asec(self):
+        
+        zmin, zmax = 0, 4
+        z = np.arange(zmin, zmax + 0.05, 0.05)
+        kpc_per_asec = [self._kpc_per_asec(zi) for zi in z]
+        kpc_per_asec = np.array(kpc_per_asec)
+        
+        return interp1d(z, kpc_per_asec)
 
     def _interp_angular_diamter_distance(self):
 
@@ -115,7 +130,7 @@ class Cosmology(object):
 
         return self.astropy.efunc(z)
 
-    def kpc_per_asec(self,z):
+    def _kpc_per_asec(self,z):
 
         return self.astropy.arcsec_per_kpc_proper(z).value ** -1
 

@@ -1,6 +1,6 @@
 import numpy as np
 from pyHalo.Massfunc.parameterizations import BrokenPowerLaw
-from pyHalo.Spatial.nfw import NFW3DFast
+from pyHalo.Spatial.nfw import NFW3D
 from pyHalo.Halos.lens_cosmo import LensCosmo
 
 class MainLensPowerLaw(object):
@@ -13,7 +13,7 @@ class MainLensPowerLaw(object):
 
         self._mass_func_parameterization = BrokenPowerLaw(**parameterization_args)
 
-        self._spatial_parameterization = NFW3DFast(**spatial_args)
+        self._spatial_parameterization = NFW3D(**spatial_args)
 
     @property
     def _lenscosmo(self):
@@ -33,7 +33,7 @@ class MainLensPowerLaw(object):
 
         # EVERYTHING EXPRESSED IN KPC
         x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(len(masses))
-
+        
         x_arcsec = x_kpc * self._geometry._kpc_per_arcsec_zlens ** -1
         y_arcsec = y_kpc * self._geometry._kpc_per_arcsec_zlens ** -1
 

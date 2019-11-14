@@ -57,6 +57,11 @@ class Halo(object):
         return self._halo_age
 
     @property
+    def physical_args(self):
+        
+        return self._halo_type.physical_args
+
+    @property
     def profile_args(self):
 
         if not hasattr(self, '_mass_def_arg'):

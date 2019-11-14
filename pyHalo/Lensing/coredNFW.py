@@ -12,10 +12,10 @@ class coreTNFW(object):
         self.lens_cosmo = lens_cosmo
         self.numerical_class = InterpCNFWmodtrunc()
 
-    def params(self, x, y, mass, redshift, concentration, r_trunc, b):
+    def params(self, x, y, mass, redshift, concentration, r_trunc_kpc, b):
 
         Rs_angle, theta_Rs_nfw = self.lens_cosmo.nfw_physical2angle(mass,
-                                                                     concentration, redshift)
+                            concentration, redshift)
 
         normalization = self._normalize(Rs_angle, theta_Rs_nfw)
 
@@ -24,6 +24,8 @@ class coreTNFW(object):
         Rs_angle = np.round(Rs_angle, 6)
 
         r_core = np.round(b * Rs_angle, 6)
+
+        r_trunc = r_trunc_kpc * self._lens_cosmo.cosmo.kpc_per_asec(redshift) ** -1
 
         kwargs = {'center_x': x, 'center_y': y, 'Rs': Rs_angle,
                   'r_core': r_core, 'norm': normalization, 'r_trunc': r_trunc}

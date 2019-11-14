@@ -61,9 +61,9 @@ class HaloStructure(object):
         """
 
         exponent = nu * 3 ** -1
-        rtrunc_kpc = k*(M / 10**6) ** (1./3) * (r3d * 100 ** -1) ** (exponent)
+        rtrunc_kpc = k*(M / 10**7) ** (1./3) * (r3d * 50 ** -1) ** (exponent)
 
-        return numpy.round(rtrunc_kpc * self._lens_cosmo.cosmo.kpc_per_asec(z) ** -1, 3)
+        return numpy.round(rtrunc_kpc, 3)
 
     def LOS_truncation(self, M, z, N):
         """
@@ -79,9 +79,9 @@ class HaloStructure(object):
 
         rN_physical_Mpc = self._lens_cosmo.rN_M_nfw_comoving(M * h, N) * a_z / h
         rN_physical_kpc = rN_physical_Mpc * 1000
-        r_trunc_arcsec = rN_physical_kpc * self._lens_cosmo.cosmo.kpc_per_asec(z) ** -1
+        #r_trunc_arcsec = rN_physical_kpc * self._lens_cosmo.cosmo.kpc_per_asec(z) ** -1
 
-        return r_trunc_arcsec
+        return rN_physical_kpc
 
     def _NFW_concentration(self, M, z, model, mdef, logmhm,
                           scatter, c_scale, c_power, scatter_amplitude):

@@ -1,105 +1,85 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
-class NFW_3D(object):
 
-    def __init__(self, Rs, rmax2d, rmax3d, xoffset=0, yoffset = 0, tidal_core=False, r_core_parent = None):
+class NFW3D(object):
 
-        """
-        all distances expressed in (physical) kpc
+    def __init__(self, Rs, rmax2d, rmax3d, r_core_parent=None):
 
-        :param Rs: scale radius
-        :param rmax2d: maximum 2d radius
-        :param rmax3d: maximum 3d radius (basically sets the distribution of z coordinates)
-        :param xoffset: centroid of NFW
-        :param yoffset: centroid of NFW
-        :param tidal_core: flag to draw from a uniform denity inside r_core
-        :param r_core: format 'number * Rs' where number is a float.
-        specifies an inner radius where the distribution is uniform
-        see Figure 4 in Jiang+van den Bosch 2016
-        """
+        self._Rs = Rs
+        self._rmax2d = rmax2d
+        self._rmax3d = rmax3d
+        self._x3dmax = rmax3d / Rs
 
-        self.rmax3d = rmax3d
-        self.rmax2d = rmax2d
-        self.rs = Rs
-
-        self.xoffset = xoffset
-        self.yoffset = yoffset
-
-        rmin = Rs*0.005
-
-        self.xoffset,self.yoffset = xoffset,yoffset
-        self.tidal_core = tidal_core
-
-        self.r_core = r_core_parent
-
-        self.xmin = rmin * Rs ** -1
-        self.xmax = rmax3d * Rs ** -1
-
-    def draw(self,N):
-
-        r3d, x, y, r2d,z = [], [], [], [],[]
-
-        while len(r3d) < N:
-
-            theta = np.random.uniform(0,2*np.pi)
-            phi = np.random.uniform(0,2*np.pi)
-
-            r2 = np.random.uniform(0,self.rmax2d**2) ** 0.5
-
-            if r2 > self.rmax2d:
-                continue
-
-            r_z = np.random.uniform(0,self.rmax3d**2) ** 0.5
-
-            x_value,y_value = r2*np.cos(theta),r2*np.sin(theta)
-            z_value = r_z * np.sin(phi)
-
-            r3 = (r2**2+z_value**2)**0.5
-
-            if r3 > self.rmax3d:
-                continue
-
-            if self._acceptance_prob(r3) > np.random.uniform(0,1):
-                r3d.append(r3)
-                x.append(x_value+self.xoffset)
-                y.append(y_value+self.yoffset)
-                z.append(z_value)
-                r2d.append(r2)
-
-        x = np.array(x)
-        y = np.array(y)
-        r2d = np.array(r2d)
-        r3d = np.array(r3d)
-
-        return x,y,r2d,r3d
-
-    def _acceptance_prob(self, r3d):
-
-        if self.tidal_core:
-
-            prob = self._density_3d(max(self.r_core, r3d)) * \
-                   self._upper_bound()**-1
+        if r_core_parent is not None:
+            self._xmin = r_core_parent / Rs
         else:
-            prob = self._density_3d(r3d) * self._upper_bound() ** -1
+            self._xmin = 0.001 * Rs
 
-        return prob
+        self._norm = self._eval_rho(self._xmin)
+        self._x2dmax = self._rmax2d / Rs
 
-    def _density_3d(self, r):
+    @staticmethod
+    def _eval_rho(x):
+        return (x * (1 + x) ** 2) ** -1
 
-        x = r*self.rs**-1
+    def _sample_uniform_xy(self):
+        theta = np.random.uniform(0, 2 * np.pi)
+        x2d = np.sqrt(np.random.uniform(0, self._rmax2d ** 2))
+        x_kpc, y_kpc = x2d * np.cos(theta), x2d * np.sin(theta)
+        return x_kpc, y_kpc
 
-        if isinstance(x,float) or isinstance(x,int):
-            x = max(self.xmin,x)
-        else:
-            x[np.where(x<self.xmin)] = self.xmin
+    def _generate_proposal(self):
 
-        return (x*(1+x)**2)**-1
+        x_kpc, y_kpc = self._sample_uniform_xy()
 
-    def _upper_bound(self):
+        z_kpc = self._sample_z()
 
-        norm = self._density_3d(self.xmin * self.rs)
-        return norm
+        return x_kpc, y_kpc, z_kpc
+
+    def _sample_z(self):
+
+        z = np.random.uniform(self._xmin * self._Rs, self._x3dmax * self._Rs)
+        return z
+
+    def _density(self, x):
+
+        constant_prob = 1
+        max_x = max(self._xmin, x)
+        ratio = self._eval_rho(max_x) / self._eval_rho(self._xmin)
+        return constant_prob * ratio
+
+    def _draw_single(self):
+
+        # all in kpc
+        while True:
+            xprop, yprop, zprop = self._generate_proposal()
+
+            r2dprop = (xprop ** 2 + yprop ** 2) ** 0.5
+
+            r3dprop = (r2dprop ** 2 + zprop ** 2) ** 0.5
+
+            X3d = r3dprop / self._Rs
+
+            u = np.random.rand()
+
+            prob = self._density(X3d)
+
+            if prob >= u:
+                return xprop, yprop, r2dprop, r3dprop
+
+    def draw(self, N):
+
+        x_kpc, y_kpc, r2d_kpc, r3d_kpc = [], [], [], []
+
+        for i in range(0, N):
+            out = self._draw_single()
+            x_kpc.append(out[0])
+            y_kpc.append(out[1])
+            r2d_kpc.append(out[2])
+            r3d_kpc.append(out[3])
+
+        return np.array(x_kpc), np.array(y_kpc), np.array(r2d_kpc), np.array(r3d_kpc)
 
 
 def approx_cdf_1d(x_array, pdf_array):
@@ -163,7 +143,7 @@ class NFW3DFast(object):
 
         self.xoffset = xoffset
         self.yoffset = yoffset
-        xmin, xmax = 0.001, rmax3d * Rs ** -1
+        xmin, xmax = 0.0001, rmax3d * Rs ** -1
         x = np.arange(xmin, xmax, 0.01)
 
         if tidal_core:

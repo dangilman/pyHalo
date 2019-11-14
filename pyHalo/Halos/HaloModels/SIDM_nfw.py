@@ -5,6 +5,17 @@ from pyHalo.Halos.halo_util import *
 class truncatedSIDMMainSubhalo(MainSubhaloBase):
 
     @property
+    def physical_args(self):
+
+        if not hasattr(self, '_rho_sub') or not hasattr(self, '_rs_sub'):
+            self._rho_sub, self._rs_sub, _ = self._halo_class.cosmo_prof.NFW_params_physical(self._halo_class.mass,
+                                                                                             self.concentration,
+                                                                                             self.halo_redshift_eval)
+
+        return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration,
+                'rt': self.truncation_radius, 'rc': self.core_radius*self._rs_sub}
+
+    @property
     def halo_parameters(self):
 
         return [self.concentration, self.truncation_radius, self.core_radius]
@@ -13,9 +24,9 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
     def truncation_radius(self):
 
         condition_1 = self._halo_class._args['truncation_routine'] == \
-                      'truncate_at_mean_density_NFWhost'
+                      'mean_NFWhost'
         condition_2 = self._halo_class._args['truncation_routine'] == \
-                      'truncate_at_mean_density_compositehost'
+                      'mean_ISOhost'
 
         if condition_1 or condition_2:
 
@@ -94,6 +105,17 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
         return core_ratio
 
 class truncatedSIDMFieldHalo(FieldHaloBase):
+
+    @property
+    def physical_args(self):
+
+        if not hasattr(self, '_rho_sub') or not hasattr(self, '_rs_sub'):
+            self._rho_sub, self._rs_sub, _ = self._halo_class.cosmo_prof.NFW_params_physical(self._halo_class.mass,
+                                                                                             self.concentration,
+                                                                                             self.halo_redshift_eval)
+
+        return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration,
+                'rt': self.truncation_radius, 'rc': self.core_radius*self._rs_sub}
 
     @property
     def halo_parameters(self):
