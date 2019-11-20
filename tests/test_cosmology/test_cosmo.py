@@ -27,7 +27,6 @@ class TestCosmology(object):
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
         self.geometry = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter)
 
-
     def test_cosmo(self):
 
         da_true = self.cosmo.D_A(0, 1.824)

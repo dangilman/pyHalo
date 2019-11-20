@@ -21,7 +21,20 @@ class TestLensCosmo(object):
 
         zlens, zsource = 0.5, 1.5
         self.lens_cosmo = LensCosmo(zlens, zsource, self.cosmo)
-       
 
-    def test(self):
-        pass
+    def test_routines(self):
+
+        m_thermal = 3.3
+        mhm = self.lens_cosmo.mthermal_to_halfmode(m_thermal)
+        m_thermal_2 = self.lens_cosmo.halfmode_to_thermal(mhm)
+
+        npt.assert_almost_equal(mhm/10**8.478, 1, 3)
+        npt.assert_almost_equal(m_thermal/m_thermal_2, 1, 3)
+
+        eps_crit = self.lens_cosmo.get_epsiloncrit(0.5, 1.5)
+        npt.assert_almost_equal(eps_crit/10**15.3611, 1, 4)
+        eps_crit_asec = self.lens_cosmo.get_sigmacrit_z1z2(0.5, 1.5)
+        eps_crit_kpc = eps_crit_asec * self.cosmo.kpc_per_asec(0.5) ** -2
+        npt.assert_almost_equal(eps_crit_kpc / 10 ** 15.3611, 0.001**2, 4)
+
+

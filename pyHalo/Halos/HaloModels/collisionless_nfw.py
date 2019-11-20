@@ -88,7 +88,7 @@ class TNFWMainSubhalo(MainSubhaloBase):
                                                                                  self.concentration,
                                                                                  self.halo_redshift_eval)
 
-            initial_guess = 8 * rs_sub
+            initial_guess = 5 * rs_sub
             r_ein_kpc = self._halo_class._args['R_ein_main'] * \
                         self._halo_class.cosmo_prof._kpc_per_arcsec_zlens
 

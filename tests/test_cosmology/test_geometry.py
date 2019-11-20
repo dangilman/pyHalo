@@ -124,13 +124,5 @@ class TestConeGeometry(object):
         dV_persteradian = dV * delta_z
         npt.assert_almost_equal(dV_persteradian * np.pi * steradian, dV_pyhalo, 5)
 
-
-
-test = TestConeGeometry()
-test.setup()
-test.test_distances_lensing()
-test.test_lenscone_angles()
-test.test_volume()
-
-#if __name__ == '__main__':
-#    pytest.main()
+if __name__ == '__main__':
+    pytest.main()

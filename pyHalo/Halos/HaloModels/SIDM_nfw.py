@@ -36,7 +36,7 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
                                                                                  self.halo_redshift_eval)
 
             subhalo_args = ((rs_sub, rho_sub), self.core_radius * rs_sub)
-            initial_guess = 8*rs_sub
+            initial_guess = 5*rs_sub
             r_ein_kpc = self._halo_class._args['R_ein_main'] * \
                         self._halo_class.cosmo_prof._kpc_per_arcsec_zlens
 
@@ -96,9 +96,8 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
 
             zeta = self._halo_class._args['SIDMcross'] * halo_age
 
-            nfw_c = self.concentration
             rho_sidm = 10 ** logrho(self._halo_class.mass, self._halo_class.z, zeta, cmean,
-                                    nfw_c, self._halo_class._args['vpower'])
+                                    self.concentration, self._halo_class._args['vpower'])
 
             core_ratio = rho_mean * rho_sidm ** -1
 
@@ -146,10 +145,9 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
 
             zeta = self._halo_class._args['SIDMcross'] * halo_age
 
-            nfw_c = self.concentration
             rho_sidm = 10 ** logrho(self._halo_class.mass, self._halo_class.z, zeta, cmean,
-                                    nfw_c, self._halo_class._args['vpower'])
+                                    self.concentration, self._halo_class._args['vpower'])
 
             core_ratio = rho_mean * rho_sidm ** -1
-
+            
         return core_ratio

@@ -98,7 +98,7 @@ class MainLensPowerLaw(object):
             except:
                 raise ValueError('must specify a value for ' + key)
 
-        if 'sigma_sub' in args.keys():
+        if 'sigma_sub' in args.keys() and 'mass_in_subhalos' not in args.keys():
 
             a0_area_parent_halo = args['sigma_sub']*a0area_main(args['parent_m200'], self._geometry._zlens)
 
@@ -106,8 +106,7 @@ class MainLensPowerLaw(object):
                                                                              self._geometry._kpc_per_arcsec_zlens, args['cone_opening_angle'],
                                                                              args_mfunc['power_law_index'], m_pivot=10**8)
 
-
-        elif 'amp_at_8' in args.keys():
+        elif 'amp_at_8' in args.keys() and 'mass_in_subhalos' not in args.keys():
 
             args_mfunc['normalization'] = norm_A0_from_a0area(args['amp_at_8'],
                                                               self._geometry._kpc_per_arcsec_zlens,
@@ -117,9 +116,9 @@ class MainLensPowerLaw(object):
         elif 'mass_in_subhalos' in args.keys():
 
             a0_area_parent_halo = convert_fsub_to_norm(
-                args['mass_in_subhalos'], args['cone_opening_angle'], self._geometry._zlens,
-                args_mfunc['power_law_index'], 10**args_mfunc['log_mlow'],
-                10 ** args_mfunc['log_mhigh'], mpivot=10**8)
+                        args['mass_in_subhalos'], args['cone_opening_angle'], self._geometry._zlens,
+                        args_mfunc['power_law_index'], 10**args_mfunc['log_mlow'],
+                        10 ** args_mfunc['log_mhigh'], mpivot=10**8)
 
             args_mfunc['normalization'] = norm_A0_from_a0area(a0_area_parent_halo,
                                                               self._geometry._kpc_per_arcsec_zlens, args['cone_opening_angle'],
@@ -143,6 +142,7 @@ class MainLensPowerLaw(object):
                 args_mfunc[key] = args[key]
 
         return args_spatial, args_mfunc
+
 
 def a0area_main(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
 
