@@ -183,6 +183,11 @@ class LensCosmo(object):
         c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
         return self.NFW_params_physical(M, c, z)
 
+    def vdis_to_Rein(self, zd, zsrc, vdis):
+
+        return 4 * numpy.pi * (vdis * (0.001 * self.cosmo.c * self.cosmo.Mpc) ** -1) ** 2 * \
+               self.cosmo.D_A(zd, zsrc) * self.cosmo.D_A_z(zsrc) ** -1 * self.cosmo.arcsec ** -1
+
     ##################################################################################
     """ACCRETION REDSHIFT PDF FROM GALACTICUS"""
     ##################################################################################
