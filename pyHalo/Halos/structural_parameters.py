@@ -14,36 +14,44 @@ class HaloStructure(object):
 
     @staticmethod
     def _penalty_func(rt, rho_mean_host, subhalo_density_function, profile_args):
-        rho_mean_sub = mean_density(rt, subhalo_density_function, profile_args)
+        
+        if subhalo_density_function == rho_nfw:
+            rho_mean_sub = nfw_profile_mean_density(rt, *profile_args)
+        else:
+            rho_mean_sub = mean_density_numerical(rt, subhalo_density_function, profile_args)
+            
         return np.absolute(rho_mean_host - rho_mean_sub)
 
     def truncation_mean_density_NFW_host(self, msub, csub, mhost, r_sub_3d,
                                          z_sub_eval, z_host_eval, r_ein_kpc, subhalo_density_function,
                                          subhalo_args, initial_guess):
-
-        rho_sub, rs_sub, _ = self._lens_cosmo.NFW_params_physical(msub, csub, z_sub_eval)
-        if r_sub_3d < r_ein_kpc:
+        
+        if r_sub_3d < 0.5*r_ein_kpc:
+            rho_sub, rs_sub, _ = self._lens_cosmo.NFW_params_physical(msub, csub, z_sub_eval)
             return 0.1 * rs_sub
 
         rho_host, rs_host, _ = self._lens_cosmo.NFW_params_physical_fromM(mhost, z_host_eval)
 
-        host_mean_density = mean_density(r_sub_3d, rho_nfw, (rs_host, rho_host))
-
+        host_mean_density = nfw_profile_mean_density(r_sub_3d, rs_host, rho_host)
+        
         args = (host_mean_density, subhalo_density_function, subhalo_args)
+        
         opt = minimize(self._penalty_func, initial_guess, args, method='Nelder-Mead')
+        
         return opt['x'][0]
 
     def truncation_mean_density_isothermal_host(self, msub, csub, mhost, r_sub_3d, z_sub_eval, z_host_eval,
                                                 r_ein_kpc, sigmacrit_kpc, subhalo_density_function, subhalo_args,
                                                 initial_guess):
 
-        rho_sub, rs_sub, _ = self._lens_cosmo.NFW_params_physical(msub, csub, z_sub_eval)
-        if r_sub_3d < r_ein_kpc:
+        if r_sub_3d < 0.5*r_ein_kpc:
+            rho_sub, rs_sub, _ = self._lens_cosmo.NFW_params_physical(msub, csub, z_sub_eval)
             return 0.1 * rs_sub
 
         rho_host, rs_host, _ = self._lens_cosmo.NFW_params_physical_fromM(mhost, z_host_eval)
-
-        host_mean_density = mean_density(r_sub_3d, rho_composite, (rs_host, r_ein_kpc, sigmacrit_kpc))
+        
+        rho0 = density_norm(rs_host, r_ein_kpc, sigmacrit_kpc)
+        host_mean_density = composite_profile_mean_density(r_sub_3d, rs_host, rho0)
 
         args = (host_mean_density, subhalo_density_function, subhalo_args)
 
@@ -86,8 +94,9 @@ class HaloStructure(object):
     def _NFW_concentration(self, M, z, model, mdef, logmhm,
                           scatter, c_scale, c_power, scatter_amplitude):
 
+        
         if isinstance(model, dict):
-
+           
             assert 'custom' in model.keys()
 
             if isinstance(M, float) or isinstance(M, int):
@@ -135,6 +144,7 @@ class HaloStructure(object):
 
         assert args['beta'] >= 0, 'beta values < 0 are unphysical.'
         assert args['c0'] > 0, 'negative normalizations are unphysical.'
+        assert args['zeta']<=0, 'positive values of zeta are unphysical'
 
         c = args['c0'] * (1 + z) ** (args['zeta']) * (nu / nu_ref) ** (-args['beta'])
 

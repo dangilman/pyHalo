@@ -21,7 +21,7 @@ class MainSubhaloBase(object):
 
     @property
     def concentration(self):
-
+        
         return self._halo_class.cosmo_prof.NFW_concentration(self._halo_class.mass, self.halo_redshift_eval,
                                                  logmhm=self._halo_class._args['log_m_break'],
                                                  c_scale=self._halo_class._args['c_scale'],
@@ -42,6 +42,7 @@ class FieldHaloBase(object):
 
     @property
     def concentration(self):
+        
         return self._halo_class.cosmo_prof.NFW_concentration(self._halo_class.mass, self._halo_class.z,
                                                              logmhm=self._halo_class._args['log_m_break'],
                                                              c_scale=self._halo_class._args['c_scale'],

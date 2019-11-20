@@ -201,7 +201,6 @@ def integrate_profile(rho0, s0, r_s, r_1, rmax_fac=1.2):
 
     return res['t'] * length_scale, rho0 * np.exp(res.y[0])
 
-
 def profile_mass(r_iso, rho_iso, rmax):
 
     m = 0
@@ -437,7 +436,6 @@ def solve_mass_range(masses, common_redshift, cross_class):
     cut = np.where(np.array(fitquality) < 0.05)[0]
 
     return np.array(masses)[cut], np.array(logrho0)[cut], np.array(fitquality)[cut]
-
 
 def solve_z_range(mass, redshifts, cross_class):
 

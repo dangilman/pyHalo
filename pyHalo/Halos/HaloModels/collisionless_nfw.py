@@ -41,12 +41,16 @@ class TNFWFieldHalo(FieldHaloBase):
     @property
     def physical_args(self):
         if not hasattr(self, '_rho_sub') or not hasattr(self, '_rs_sub'):
+
             self._rho_sub, self._rs_sub, _ = self._halo_class.cosmo_prof.NFW_params_physical(self._halo_class.mass,
                                                                                              self.concentration,
                                                                                              self.halo_redshift_eval)
 
+        bound_mass = tnfw_bound_mass_from_rhors(self._rho_sub, self._rs_sub, self.concentration,
+                                                self.truncation_radius/self._rs_sub)
+
         return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration, 
-                'rt': self.truncation_radius}
+                'rt': self.truncation_radius, 'bound_mass': bound_mass}
 
 class TNFWMainSubhalo(MainSubhaloBase):
     
@@ -57,9 +61,13 @@ class TNFWMainSubhalo(MainSubhaloBase):
             self._rho_sub, self._rs_sub, _ = self._halo_class.cosmo_prof.NFW_params_physical(self._halo_class.mass,
                                                                                  self.concentration,
                                                                                  self.halo_redshift_eval)
-        
-        return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration, 
-                'rt': self.truncation_radius}
+        bound_mass = tnfw_bound_mass_from_rhors(self._rho_sub, self._rs_sub, self.concentration,
+                                                self.truncation_radius/self._rs_sub)
+
+        return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration,
+                    'rt': self.truncation_radius,
+                'bound_mass': bound_mass}
+
         
     @property
     def halo_parameters(self):

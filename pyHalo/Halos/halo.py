@@ -9,13 +9,6 @@ class Halo(object):
 
     _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW']
 
-    has_concentration = ['NFW', 'TNFW', 'coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod',
-                         'cNFWmod_trunc']
-
-    has_truncation = ['TNFW', 'cNFWmod_trunc']
-
-    has_core = ['coreBURKERT', 'cBURKcNFW', 'CNFW', 'cNFWmod', 'cNFWmod_trunc']
-
     def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None,
                  sub_flag = None, cosmo_m_prof=None, args={}):
 
@@ -58,7 +51,7 @@ class Halo(object):
 
     @property
     def physical_args(self):
-        
+
         return self._halo_type.physical_args
 
     @property
