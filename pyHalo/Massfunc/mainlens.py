@@ -100,7 +100,7 @@ class MainLensPowerLaw(object):
 
         if 'sigma_sub' in args.keys() and 'mass_in_subhalos' not in args.keys():
 
-            a0_area_parent_halo = args['sigma_sub']*a0area_main(args['parent_m200'], self._geometry._zlens)
+            a0_area_parent_halo = args['sigma_sub'] * host_scaling_function(args['parent_m200'], self._geometry._zlens)
 
             args_mfunc['normalization'] = norm_A0_from_a0area(a0_area_parent_halo,
                                                                              self._geometry._kpc_per_arcsec_zlens, args['cone_opening_angle'],
@@ -113,10 +113,10 @@ class MainLensPowerLaw(object):
                                                               args['cone_opening_angle'],
                                                               args_mfunc['power_law_index'], m_pivot=10 ** 8)
 
-        elif 'mass_in_subhalos' in args.keys():
+        elif 'f_sub' in args.keys():
 
             a0_area_parent_halo = convert_fsub_to_norm(
-                        args['mass_in_subhalos'], args['cone_opening_angle'], self._geometry._zlens,
+                        args['f_sub'], args['parent_m200'], self._geometry._zlens, args['cone_opening_angle'], self._geometry._zlens,
                         args_mfunc['power_law_index'], 10**args_mfunc['log_mlow'],
                         10 ** args_mfunc['log_mhigh'], mpivot=10**8)
 
@@ -143,8 +143,7 @@ class MainLensPowerLaw(object):
 
         return args_spatial, args_mfunc
 
-
-def a0area_main(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
+def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
 
     # interpolated from galacticus
 
@@ -160,13 +159,17 @@ def norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens, cone_opening_angle, pla
 
     return a0_per_kpc2 * m_pivot ** (-plaw_index-1) * area
 
-def convert_fsub_to_norm(mass_in_subhalos, cone_opening_angle, kpc_per_asec_zlens, plaw_index, mlow,
+def convert_fsub_to_norm(f_sub, m_host, zhost, cone_opening_angle, kpc_per_asec_zlens, plaw_index, mlow,
                          mhigh, mpivot=10**8):
 
     power = 2+plaw_index
     R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
     area = np.pi * R_kpc ** 2
+
     integral = (mpivot/power) * ((mhigh/mpivot)**power - (mlow/mpivot)**power)
-    sigma_sub =  mass_in_subhalos / integral / area
+
+    m_sub_scaled = f_sub * m_host * host_scaling_function(m_host, zhost)
+
+    sigma_sub = m_sub_scaled / integral / area
 
     return sigma_sub
