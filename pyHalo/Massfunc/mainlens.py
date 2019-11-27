@@ -130,7 +130,7 @@ class MainLensPowerLaw(object):
 
         else:
             raise Exception('Must specify normalization of the subhalo '
-                             'mass function in terms of sigma_sub or total mass in substructure.')
+                             'mass function in terms of sigma_sub or f_sub (fraction of total host mass).')
 
 
         return args_mfunc
@@ -149,7 +149,7 @@ class MainLensPowerLaw(object):
 def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
 
     # interpolated from galacticus
-  
+
     logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * np.log10(z + 0.5)
 
     return 10**logscaling
@@ -167,6 +167,7 @@ def convert_fsub_to_norm(f_sub, m_host, zhost, cone_opening_angle, kpc_per_asec_
 
     power = 2+plaw_index
     R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
+
     area = np.pi * R_kpc ** 2
 
     integral = (mpivot/power) * ((mhigh/mpivot)**power - (mlow/mpivot)**power)
