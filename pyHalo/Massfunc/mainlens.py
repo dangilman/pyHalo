@@ -119,7 +119,7 @@ class MainLensPowerLaw(object):
                 args['f_sub'] = 10**args['log_f_sub']
 
             a0_area_parent_halo = convert_fsub_to_norm(
-                        args['f_sub'], args['parent_m200'], self._geometry._zlens, args['cone_opening_angle'], self._geometry._zlens,
+                        args['f_sub'], args['parent_m200'], self._geometry._zlens, args['R_ein_main'], args['cone_opening_angle'], self._geometry._zlens,
                         args_mfunc['power_law_index'], 10**args_mfunc['log_mlow'],
                         10 ** args_mfunc['log_mhigh'], mpivot=10**8)
 
@@ -162,11 +162,13 @@ def norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens, cone_opening_angle, pla
 
     return a0_per_kpc2 * m_pivot ** (-plaw_index-1) * area
 
-def convert_fsub_to_norm(f_sub, m_host, zhost, cone_opening_angle, kpc_per_asec_zlens, plaw_index, mlow,
+def convert_fsub_to_norm(f_sub, m_host, zhost, rein_arcsec, cone_opening_angle, kpc_per_asec_zlens, plaw_index, mlow,
                          mhigh, mpivot=10**8):
+
 
     power = 2+plaw_index
     R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
+    #R_kpc = kpc_per_asec_zlens * rein_arcsec
 
     area = np.pi * R_kpc ** 2
 
