@@ -113,7 +113,10 @@ class MainLensPowerLaw(object):
                                                               args['cone_opening_angle'],
                                                               args_mfunc['power_law_index'], m_pivot=10 ** 8)
 
-        elif 'f_sub' in args.keys():
+        elif 'f_sub' in args.keys() or 'log_f_sub' in args.keys():
+
+            if 'log_f_sub' in args.keys():
+                args['f_sub'] = 10**args['log_f_sub']
 
             a0_area_parent_halo = convert_fsub_to_norm(
                         args['f_sub'], args['parent_m200'], self._geometry._zlens, args['cone_opening_angle'], self._geometry._zlens,
@@ -146,7 +149,7 @@ class MainLensPowerLaw(object):
 def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
 
     # interpolated from galacticus
-
+  
     logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * np.log10(z + 0.5)
 
     return 10**logscaling
@@ -173,3 +176,4 @@ def convert_fsub_to_norm(f_sub, m_host, zhost, cone_opening_angle, kpc_per_asec_
     sigma_sub = m_sub_scaled / integral / area
 
     return sigma_sub
+
