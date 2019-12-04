@@ -71,5 +71,11 @@ class TestCosmology(object):
         npt.assert_almost_equal(rho_dark_matter, rho_matter * (self._dm / (self._dm + self._bar)))
         npt.assert_almost_equal(rho_dark_matter, self.cosmo.rho_dark_matter_crit(0.4))
 
+        dTz = self.cosmo.D_C_transversez1z2(0.5, 1.5)
+        dTz2 = self.cosmo.D_C_transverse(1.5) - self.cosmo.D_C_transverse(0.5)
+        dTz3 = self.cosmo.D_C_transversez1z2(0., 1.5) - self.cosmo.D_C_transversez1z2(0., 0.5)
+        npt.assert_almost_equal(dTz, dTz2)
+        npt.assert_almost_equal(dTz, dTz3)
+
 if __name__ == '__main__':
     pytest.main()

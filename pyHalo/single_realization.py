@@ -17,6 +17,8 @@ def realization_at_z(realization,z):
 
 class Realization(object):
 
+    shifted_to_source = False
+
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
                  halos = None, other_params = {}, mass_sheet_correction = True):
 
@@ -174,6 +176,67 @@ class Realization(object):
         self.redshifts = np.array(self.redshifts)
 
         self.unique_redshifts = np.unique(self.redshifts)
+
+    def shift_background_to_source(self, source_x, source_y, lens_reshift, source_redshift):
+
+        """
+
+        :param source_x: estimated angular source x coordinate [arcsec]
+        :param source_y: estimated angular source y coordinate [arcsec]
+        :param source_redshift: source redshift
+        :return: an instance of realization in which all halos behind the
+        main deflector are shifted such that the rendering volume closes at the
+        offset source position
+        """
+
+        if self.shifted_to_source:
+            print('Realization already shifted to estimated background source.')
+            return self
+        else:
+            self.shifted_to_source = True
+
+        # add all halos in front of main deflector with positions unchanged
+        halos = []
+        background_halos = []
+
+        for halo in self.halos:
+            if halo.z <= lens_reshift:
+                halos.append(halo)
+            else:
+                background_halos.append(halo)
+
+        background_lens_planes = self.unique_redshifts[
+            np.where(self.unique_redshifts>lens_reshift)]
+
+        distance_calc = self.lens_cosmo.cosmo.D_C_transversez1z2
+
+        Tz_lens = distance_calc(0, lens_reshift)
+        Tz_source = distance_calc(0, source_redshift)
+
+        dT_perp_x_source = source_x * Tz_source
+        dT_perp_y_source = source_y * Tz_source
+
+        xlow, ylow = 0, 0
+
+        for idx, zi in enumerate(background_lens_planes):
+
+            Tz_current = distance_calc(0, zi)
+
+            shiftx, shifty = self.geometry.interp_ray_angle(xlow, dT_perp_x_source,
+                             ylow, dT_perp_y_source, Tz_lens, Tz_source, Tz_current)
+
+            for halo in background_halos:
+                if halo.z == zi:
+                    halo.x += shiftx
+                    halo.y += shifty
+
+        all_halos = halos + background_halos
+
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
+                           halos = all_halos, other_params= self._prof_params,
+                           mass_sheet_correction=self._mass_sheet_correction)
+
+
 
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:

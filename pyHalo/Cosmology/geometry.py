@@ -66,6 +66,17 @@ class Geometry(object):
 
     def interp_ray_angle(self, xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current):
 
+        """
+
+        :param xlow: starting transverse comoving distance in x direction [all in Mpc]
+        :param xhigh: ending transverse comoving distance in x direction
+        :param ylow: " in y direction
+        :param yhigh: " in ydirection
+        :param Tzlow: comoving distance to xlow lens plane
+        :param Tzhigh: comoving distance to xhigh lens plane
+        :param Tz_current: comoving distance to where the interpolated path is needed
+        :return:
+        """
         delta = Tz_current - Tzlow
         rise_x, rise_y = xhigh - xlow, yhigh - ylow
         run = Tzhigh - Tzlow

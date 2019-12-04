@@ -126,6 +126,10 @@ class Cosmology(object):
 
         return self.astropy.comoving_transverse_distance(z).value
 
+    def D_C_transversez1z2(self, z1, z2):
+
+        return self.D_C_transverse(z2) - self.D_C_transverse(z1)
+
     def E_z(self,z):
 
         return self.astropy.efunc(z)
