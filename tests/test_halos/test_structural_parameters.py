@@ -23,3 +23,17 @@ class TestStructuralParameters(object):
         self.lens_cosmo = LensCosmo(zlens, zsource, self.cosmo)
 
         self.structure = HaloStructure(self.lens_cosmo)
+
+    def test_nfw(self):
+
+        M = 10**8
+        z = 0.5
+
+        c1 = self.lens_cosmo.NFW_concentration(M, z, scatter=False)
+        c2 = 2*c1
+        rho1, rs1, r2001 = self.lens_cosmo.NFW_params_physical(M, c1, z)
+        rho2, rs2, r2002 = self.lens_cosmo.NFW_params_physical(M, c2, z)
+
+        m200_1 = 4 * np.pi * rs1 ** 3 * rho1 * (np.log(1 + c1) - c1 / (1 + c1))
+        m200_2 = 4 * np.pi * rs2 ** 3 * rho2 * (np.log(1 + c2) - c2 / (1 + c2))
+        npt.assert_almost_equal(m200_1/m200_2)

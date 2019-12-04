@@ -28,7 +28,7 @@ class Geometry(object):
 
         angle_radian = radius_arcsec * self._arcsec
 
-        return angle_radian * self.rendering_scale(z) * self._cosmo.D_A(0, z)
+        return angle_radian * self.rendering_scale(z) * self._cosmo.D_A_z(z)
 
     def angle_to_comovingradius(self, radius_arcsec, z):
 
@@ -45,7 +45,7 @@ class Geometry(object):
             return 1
         else:
             D_dz = self._cosmo.D_A(self._zlens, z)
-            D_z = self._cosmo.D_A(0, z)
+            D_z = self._cosmo.D_A_z(z)
             ratio = D_dz / D_z
 
             return 1 - self._reduced_to_phys * ratio
@@ -57,7 +57,7 @@ class Geometry(object):
         else:
 
             D_dz = self._cosmo.D_A(self._zlens, z)
-            D_z = self._cosmo.D_A(0, z)
+            D_z = self._cosmo.D_A_z(z)
 
             delta_theta = theta_arcsec - source_pos
             subtract_angle = delta_theta * (D_dz / D_z) * self._reduced_to_phys

@@ -20,7 +20,7 @@ class Realization(object):
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
                  halos = None, other_params = {}, mass_sheet_correction = True):
 
-        self._mass_sheet_correction  = mass_sheet_correction
+        self._mass_sheet_correction = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
         self._overwrite_mass_sheet = None
 

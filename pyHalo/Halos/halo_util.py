@@ -128,7 +128,6 @@ def kappa(r2d, func, func_args, zmax):
 def _mean_kappa_integrand(r2d, func, func_args, zmax):
     return r2d * kappa(r2d, func, func_args, zmax)
 
-
 def mean_kappa(R, func, func_args, zmax):
     return (2 / R ** 2) * quad(_mean_kappa_integrand, 0, R, args=(func, func_args, zmax))[0]
 
