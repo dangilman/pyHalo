@@ -13,6 +13,15 @@ class HaloStructure(object):
         self._lens_cosmo = lens_cosmo
 
     @staticmethod
+    def _pericenter_given_r3d(r3d):
+
+        ellip = np.absolute(np.random.normal(0.5, 0.2))
+        min_scale = 1-ellip
+        max_scae = 1
+        scale = np.random.uniform(min_scale, max_scae)
+        return r3d * scale
+
+    @staticmethod
     def _penalty_func(rt, rho_mean_host, subhalo_density_function, profile_args):
         
         if subhalo_density_function == rho_nfw:

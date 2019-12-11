@@ -48,6 +48,10 @@ class LensCosmo(object):
     """ACCESS ROUTINES IN STRUCTURAL PARAMETERS CLASS"""
     ######################################################
 
+    @staticmethod
+    def _pericenter_given_r3d(self, r3d):
+        return self._halo_structure._pericenter_given_r3d(r3d)
+
     def truncation_roche(self, args):
         return self._halo_structure.truncation_roche(*args)
 
