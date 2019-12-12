@@ -98,7 +98,7 @@ class TNFWMainSubhalo(MainSubhaloBase):
 
                 r_t = self._halo_class.cosmo_prof.truncation_mean_density((self._halo_class.mass, self.concentration,
                                                                       self._halo_class._args['parent_m200'],
-                                                                      self._halo_class.r3d, self.halo_redshift_eval,
+                                                                      self._halo_class.pericenter, self.halo_redshift_eval,
                                                                       self._halo_class.cosmo_prof.z_lens,
                                                                       r_ein_kpc, subhalo_density_function,
                                                                       subhalo_args, initial_guess))
@@ -108,13 +108,13 @@ class TNFWMainSubhalo(MainSubhaloBase):
                 sigmacrit_kpc = self._halo_class.cosmo_prof.epsilon_crit_kpc
 
                 r_t = self._halo_class.cosmo_prof.truncation_mean_density_isothermal_host((self._halo_class.mass, self.concentration,
-                                                self._halo_class._args['parent_m200'],self._halo_class.r3d,
+                                                self._halo_class._args['parent_m200'],self._halo_class.pericenter,
                                                  self.halo_redshift_eval, self._halo_class.cosmo_prof.z_lens,
                                                     r_ein_kpc, sigmacrit_kpc, subhalo_density_function,
                                                                  subhalo_args, initial_guess))
 
         else:
-            r_t = self._halo_class.cosmo_prof.truncation_roche((self._halo_class.mass, self._halo_class.r3d,
+            r_t = self._halo_class.cosmo_prof.truncation_roche((self._halo_class.mass, self._halo_class.pericenter,
                                                                self._halo_class.z,
                                                                self._halo_class._args['RocheNorm'],
                                                                self._halo_class._args['RocheNu']))

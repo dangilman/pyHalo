@@ -15,10 +15,11 @@ class HaloStructure(object):
     @staticmethod
     def _pericenter_given_r3d(r3d):
 
-        ellip = np.absolute(np.random.normal(0.5, 0.2))
+        #ellip = np.absolute(np.random.normal(0.5, 0.2))
+        ellip = np.absolute(np.random.uniform(0.1, 0.9))
         min_scale = 1-ellip
-        max_scae = 1
-        scale = np.random.uniform(min_scale, max_scae)
+        max_scale = 1
+        scale = np.random.uniform(min_scale, max_scale)
         return r3d * scale
 
     @staticmethod

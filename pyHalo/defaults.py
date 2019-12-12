@@ -55,6 +55,7 @@ class TruncationDefaults(object):
                           'simple']
 
         self.routine = trunc_routines[2]
+        self.truncate_at_pericenter = False
 
 class DMHaloDefaults(object):
 
@@ -99,6 +100,7 @@ class RealizationDefaults(object):
         self.m_parent = 10**13
 
         self.subtract_exact_mass_sheets = False
+        self.subtract_subhalo_mass_sheets = False
 
 ####################################################################################
 
@@ -121,6 +123,8 @@ def set_default_kwargs(profile_params):
 
     if 'subtract_exact_mass_sheets' not in profile_params.keys():
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
+    if 'subtract_subhalo_mass_sheets' not in profile_params.keys():
+        profile_params.update({'subtract_subhalo_mass_sheet': realization_default.subtract_subhalo_mass_sheets})
 
     if 'log_m_break' in profile_params.keys():
         if 'break_index' not in profile_params.keys():
@@ -182,10 +186,13 @@ def set_default_kwargs(profile_params):
 
     if 'truncation_routine' not in profile_params.keys():
         profile_params.update({'truncation_routine': truncation_default.routine})
-    if 'RocheNorm' not in profile_params.keys():
-        profile_params.update({'RocheNorm': truncation_default.RocheNorm})
-    if 'RocheNu' not in profile_params.keys():
-        profile_params.update({'RocheNu': truncation_default.RocheNu})
+    if profile_params['truncation_routine'] == 'simple':
+        if 'RocheNorm' not in profile_params.keys():
+            profile_params.update({'RocheNorm': truncation_default.RocheNorm})
+        if 'RocheNu' not in profile_params.keys():
+            profile_params.update({'RocheNu': truncation_default.RocheNu})
+    if 'truncate_at_pericenter' not in profile_params.keys():
+        profile_params.update({'truncate_at_pericenter': truncation_default.truncate_at_pericenter})
     if 'LOS_truncation_factor' not in profile_params.keys():
         profile_params.update({'LOS_truncation_factor': truncation_default.LOS_truncation})
 

@@ -12,6 +12,8 @@ class Halo(object):
     def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None,
                  sub_flag = None, cosmo_m_prof=None, args={}):
 
+        self.cosmo_prof = cosmo_m_prof
+
         self.mass = mass
 
         # x and y in arcsec
@@ -21,10 +23,13 @@ class Halo(object):
         # r2d and r3d in kpc
         self.r2d = r2d
         self.r3d = r3d
+        if args['truncate_at_pericenter']:
+            self.pericenter = self.cosmo_prof.pericenter_given_r3d(r3d)
+        else:
+            self.pericenter = r3d
 
         self.mdef = mdef
         self.z = z
-        self.cosmo_prof = cosmo_m_prof
         self._is_main_subhalo = sub_flag
         self._args = args
         self._unique_tag = np.random.rand()

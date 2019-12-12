@@ -481,30 +481,29 @@ class Realization(object):
         mlow_front = 10**max(np.log10(mlow_front), self._logmlow)
         mlow_back = 10**max(np.log10(mlow_back), self._logmlow)
 
-        for i in range(0, len(unique_z) - 1):
+        for i in range(0, len(unique_z)-1):
 
             z = unique_z[i]
+
             delta_z = unique_z[i+1] - z
 
+            kappa = None
 
-            if z != self.geometry._zlens:
+            if z < self.geometry._zlens:
+                kappa = self._kappa_scale*self.convergence_at_z(z, mlow_front, mhigh, delta_z,
+                                                     self.m_break_scale, self.break_index, self.break_scale)
+            elif z > self.geometry._zlens:
+                kappa = self._kappa_scale*self.convergence_at_z(z, mlow_back, mhigh, delta_z, self.m_break_scale,
+                                                     self.break_index,  self.break_scale)
 
-                if z < self.geometry._zlens:
-                    kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
-                                                         self.m_break_scale, self.break_index, self.break_scale)
-                else:
-                    kappa = self.convergence_at_z(z, mlow_back, mhigh, delta_z, self.m_break_scale,
-                                                         self.break_index,  self.break_scale)
-
-                kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
+            if kappa is not None:
+                kwargs.append({'kappa_ext': - kappa})
                 zsheet.append(z)
 
-            # elif z == self.geometry._zlens and self._prof_params['subtract_exact_mass_sheets']:
-            #     kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
-            #                 self.m_break_scale, self.break_index, self.break_scale)
-            #
-            #     kwargs.append({'kappa_ext': - self._kappa_scale * kappa})
-            #     zsheet.append(z)
+        if self._prof_params['subtract_subhalo_mass_sheets']:
+            kappa = self.convergence_at_z_exact(self.geometry._zlens)
+            kwargs.append({'kappa_ext': - kappa})
+            zsheet.append(self.geometry._zlens)
 
         return kwargs, zsheet
 
