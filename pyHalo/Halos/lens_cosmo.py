@@ -21,7 +21,7 @@ class LensCosmo(object):
         # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
         self.sigmacrit = self.epsilon_crit * (0.001) ** 2 * self.cosmo.kpc_per_asec(z_lens) ** 2
         # lensing distances
-        self.D_d, self.D_s, self.D_ds = self.cosmo.D_A(0, z_lens), self.cosmo.D_A(0, z_source), self.cosmo.D_A(
+        self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
             z_lens, z_source)
         # hubble distance in Mpc
         self._d_hubble = self.cosmo.c * self.cosmo.Mpc * 0.001 * (self.cosmo.h * 100)
@@ -190,6 +190,13 @@ class LensCosmo(object):
 
         return 4 * numpy.pi * (vdis * (0.001 * self.cosmo.c * self.cosmo.Mpc) ** -1) ** 2 * \
                self.cosmo.D_A(zd, zsrc) * self.cosmo.D_A_z(zsrc) ** -1 * self.cosmo.arcsec ** -1
+
+    @property
+    def point_mass_factor(self):
+
+        factor = 4 * self.cosmo.G * self.cosmo.c ** -2 * \
+                 self.D_ds * (self.D_d * self.D_s) ** -1
+        return factor ** 0.5 / self.cosmo.arcsec
 
     ##################################################################################
     """ACCRETION REDSHIFT PDF FROM GALACTICUS"""

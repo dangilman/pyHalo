@@ -311,9 +311,9 @@ class Realization(object):
             from pyHalo.Lensing.coredNFW import coreTNFW
             lens = coreTNFW(self.lens_cosmo)
 
-        elif halo.mdef == 'PBH':
-            from pyHalo.Lensing.PTmass import PTmass
-            lens = PTmass(self.lens_cosmo)
+        elif halo.mdef == 'PT_MASS':
+            from pyHalo.Lensing.PTmass import PTmassLensing
+            lens = PTmassLensing(self.lens_cosmo)
 
         else:
             raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')

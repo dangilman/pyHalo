@@ -1,5 +1,4 @@
 import numpy as np
-from pyHalo.Halos.HaloModels.ptmass import PTmass
 
 class PTmassLensing(object):
 
@@ -15,7 +14,8 @@ class PTmassLensing(object):
 
         center_x = x
         center_y = y
-        factor = self._lens_cosmo.point_mass_fac(redshift)
+        factor = self._lens_cosmo.point_mass_factor
+
         theta_E = factor * np.sqrt(mass)
 
         return {'center_x':center_x, 'center_y': center_y, 'theta_E': theta_E}, None

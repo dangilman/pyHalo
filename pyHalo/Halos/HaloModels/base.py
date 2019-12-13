@@ -1,4 +1,8 @@
-from pyHalo.Halos.halo_util import *
+class PointMassBase(object):
+
+    @property
+    def halo_parameters(self):
+        return []
 
 class MainSubhaloBase(object):
 

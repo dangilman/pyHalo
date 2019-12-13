@@ -3,11 +3,11 @@ from pyHalo.Scattering.sidm_interp import logrho
 from pyHalo.Halos.HaloModels.collisionless_nfw import \
     TNFWFieldHalo, TNFWMainSubhalo, NFWFieldHalo, NFWMainSubhalo
 from pyHalo.Halos.HaloModels.SIDM_nfw import truncatedSIDMMainSubhalo, truncatedSIDMFieldHalo
-from pyHalo.Halos.HaloModels.PBH import PrimordialBlackHole
+from pyHalo.Halos.HaloModels.base import PointMassBase
 
 class Halo(object):
 
-    _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW']
+    _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW', 'PT_MASS']
 
     def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None,
                  sub_flag = None, cosmo_m_prof=None, args={}):
@@ -90,9 +90,9 @@ class Halo(object):
 
                     halo_type = truncatedSIDMMainSubhalo(self)
 
-                elif self.mdef == 'PBH':
+                elif self.mdef == 'PT_MASS':
 
-                    halo_type = PrimordialBlackHole()
+                    halo_type = PointMassBase()
 
             else:
 
@@ -108,9 +108,9 @@ class Halo(object):
 
                     halo_type = truncatedSIDMFieldHalo(self)
 
-                elif self.mdef == 'PBH':
+                elif self.mdef == 'PT_MASS':
 
-                    halo_type = PrimordialBlackHole()
+                    halo_type = PointMassBase()
 
             self._halo_profile_instance = halo_type
 
