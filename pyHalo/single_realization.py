@@ -18,14 +18,11 @@ def realization_at_z(realization,z):
 class Realization(object):
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
-                 halos = None, other_params = {}, mass_sheet_correction = True):
+                 halos=None, other_params = {}, mass_sheet_correction=True):
 
         self._mass_sheet_correction = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
         self._overwrite_mass_sheet = None
-
-        self._kappa_scale = 1
-        #self._kappa_scale = 1.269695
 
         self.halo_mass_function = halo_mass_function
         self.geometry = halo_mass_function.geometry
@@ -52,10 +49,8 @@ class Realization(object):
 
                 self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag)
 
-            if other_params['include_subhalos']:
-                assert 'subhalo_args' in other_params.keys(), \
-                    'Must specify subhalo args in including subhalos.'
-                self.add_subhalos(other_params['subhalo_args'])
+            if self._prof_params['include_subhalos']:
+                raise Exception('subhalos of halos not yet implemented.')
 
         else:
 
@@ -231,8 +226,6 @@ class Realization(object):
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
                            halos = all_halos, other_params= self._prof_params,
                            mass_sheet_correction=self._mass_sheet_correction)
-
-
 
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:
@@ -490,10 +483,10 @@ class Realization(object):
             kappa = None
 
             if z < self.geometry._zlens:
-                kappa = self._kappa_scale*self.convergence_at_z(z, mlow_front, mhigh, delta_z,
+                kappa = self._prof_params['kappa_scale'] * self.convergence_at_z(z, mlow_front, mhigh, delta_z,
                                                      self.m_break_scale, self.break_index, self.break_scale)
             elif z > self.geometry._zlens:
-                kappa = self._kappa_scale*self.convergence_at_z(z, mlow_back, mhigh, delta_z, self.m_break_scale,
+                kappa = self._prof_params['kappa_scale'] * self.convergence_at_z(z, mlow_back, mhigh, delta_z, self.m_break_scale,
                                                      self.break_index,  self.break_scale)
 
             if kappa is not None:
@@ -501,7 +494,7 @@ class Realization(object):
                 zsheet.append(z)
 
         if self._prof_params['subtract_subhalo_mass_sheets']:
-            kappa = self.convergence_at_z_exact(self.geometry._zlens)
+            kappa = self._prof_params['kappa_scale'] * self.convergence_at_z_exact(self.geometry._zlens)
             kwargs.append({'kappa_ext': - kappa})
             zsheet.append(self.geometry._zlens)
 

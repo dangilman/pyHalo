@@ -102,6 +102,8 @@ class RealizationDefaults(object):
         self.subtract_exact_mass_sheets = False
         self.subtract_subhalo_mass_sheets = False
 
+        self.kappa_scale = 1
+
 ####################################################################################
 
 cosmo_default = CosmoDefaults()
@@ -125,6 +127,8 @@ def set_default_kwargs(profile_params):
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
     if 'subtract_subhalo_mass_sheets' not in profile_params.keys():
         profile_params.update({'subtract_subhalo_mass_sheet': realization_default.subtract_subhalo_mass_sheets})
+    if 'kappa_scale' not in profile_params.keys():
+        profile_params.update({'kappa_scale': realization_default.kappa_scale})
 
     if 'log_m_break' in profile_params.keys():
         if 'break_index' not in profile_params.keys():
