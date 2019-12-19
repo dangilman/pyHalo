@@ -493,7 +493,7 @@ class Realization(object):
                 kwargs.append({'kappa_ext': - kappa})
                 zsheet.append(z)
 
-        if self._prof_params['subtract_subhalo_mass_sheets']:
+        if self._prof_params['subtract_subhalo_mass_sheet']:
             kappa = self._prof_params['kappa_scale'] * self.convergence_at_z_exact(self.geometry._zlens)
             kwargs.append({'kappa_ext': - kappa})
             zsheet.append(self.geometry._zlens)

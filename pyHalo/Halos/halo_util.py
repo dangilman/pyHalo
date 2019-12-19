@@ -22,6 +22,15 @@ def rho_nfw(r, r_s, rho_s):
 
     return rho_s * (x * (1 + x) ** 2) ** -1
 
+def rho_tnfw(r, r_s, rho_s, r_t):
+
+    tau = r_t/r_s
+    softening = 0.001 * r_s
+    x = (r + softening) / r_s
+
+    trunc_term = tau ** 2 / (x ** 2 + tau ** 2)
+    return trunc_term * rho_s * (x * (1 + x) ** 2) ** -1
+
 def nfw_profile_mass(r, r_s, rho_s):
 
     x = r/r_s

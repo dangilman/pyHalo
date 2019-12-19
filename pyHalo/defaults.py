@@ -100,7 +100,7 @@ class RealizationDefaults(object):
         self.m_parent = 10**13
 
         self.subtract_exact_mass_sheets = False
-        self.subtract_subhalo_mass_sheets = False
+        self.subtract_subhalo_mass_sheet = False
 
         self.kappa_scale = 1
 
@@ -126,7 +126,7 @@ def set_default_kwargs(profile_params):
     if 'subtract_exact_mass_sheets' not in profile_params.keys():
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
     if 'subtract_subhalo_mass_sheets' not in profile_params.keys():
-        profile_params.update({'subtract_subhalo_mass_sheet': realization_default.subtract_subhalo_mass_sheets})
+        profile_params.update({'subtract_subhalo_mass_sheet': realization_default.subtract_subhalo_mass_sheet})
     if 'kappa_scale' not in profile_params.keys():
         profile_params.update({'kappa_scale': realization_default.kappa_scale})
 
