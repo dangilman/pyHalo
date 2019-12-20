@@ -2,7 +2,7 @@ from pyHalo.Scattering.isothermal_jeans import compute_r1, solve_iterative, inte
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.interpolate import interp1d
-from pyHalo.Scattering.fast_sidm_defangles import deflection_angle_fast
+from pyHalo.Halos.halo_util import deflection_angle
 import numpy as np
 
 cosmo = Cosmology()
@@ -84,9 +84,9 @@ class CompositeSIDMProfile(object):
     def deflection_angle(self, x, zmax_factor=500):
 
         if isinstance(x, float) or isinstance(x, int):
-            def_angle = deflection_angle_fast(x, self, (), zmax_factor*self.r_s)
+            def_angle = deflection_angle(x, self, (), zmax_factor*self.r_s)
         else:
-            def_angle = [deflection_angle_fast(xi, self, (), zmax_factor*self.r_s) for xi in x]
+            def_angle = [deflection_angle(xi, self, (), zmax_factor*self.r_s) for xi in x]
             def_angle = np.array(def_angle)
         return def_angle
 
