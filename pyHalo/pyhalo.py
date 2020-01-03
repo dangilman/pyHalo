@@ -33,6 +33,10 @@ class pyHalo(object):
 
         self._halo_mass_function_args = kwargs_halo_mass_function
 
+    @property
+    def cosmo(self):
+        return self._cosmology.astropy
+
     def render(self, type, args, nrealizations=1, verbose=False):
 
         realizations = []

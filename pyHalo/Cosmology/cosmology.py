@@ -2,7 +2,7 @@ from colossus.halo.concentration import *
 from colossus.cosmology import cosmology
 import astropy.cosmology as astropy_cosmo
 from scipy.interpolate import interp1d
-from pyHalo.defaults import CosmoDefaults
+from pyHalo.defaults import *
 
 cosmo_defaults = CosmoDefaults()
 
@@ -35,7 +35,10 @@ class Cosmology(object):
 
     def D_A_z(self, z):
 
-        return self._DA_interp(z)
+        try:
+            return self._DA_interp(z)
+        except:
+            return self.D_A(0, z)
     
     def kpc_per_asec(self, z):
         
@@ -52,9 +55,9 @@ class Cosmology(object):
 
     def _interp_angular_diamter_distance(self):
 
-        zmin = 0.0
         zmax = 4
-        z = np.arange(zmin, zmax+0.025, 0.025)
+        zstep = lenscone_default.default_z_step
+        z = np.arange(zstep, zmax+zstep, zstep)
         da = []
         for zi in z:
             da.append(self.D_A(0, zi))
