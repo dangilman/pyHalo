@@ -100,7 +100,7 @@ class RealizationDefaults(object):
         self.m_parent = 10**13
 
         self.subtract_exact_mass_sheets = False
-        self.subtract_subhalo_mass_sheet = False
+        self.subtract_subhalo_mass_sheet = True
 
         self.kappa_scale = 1
 
