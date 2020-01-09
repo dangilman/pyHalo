@@ -301,7 +301,7 @@ class Realization(object):
             lens = TNFWLensing(self.lens_cosmo)
 
         elif halo.mdef == 'SIDM_TNFW':
-            from pyHalo.Lensing.coredNFW import coreTNFW
+            from pyHalo.Lensing.coredTNFW import coreTNFW
             lens = coreTNFW(self.lens_cosmo)
 
         elif halo.mdef == 'PT_MASS':

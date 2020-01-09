@@ -857,7 +857,7 @@ def logrho_Mz_75(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, inte
 
     return logrho_central
 
-def logrho(m, z, zeta, cmean, c, vpower):
+def _logrho(m, z, zeta, cmean, c, vpower):
 
     slope_polynomial, intercept_polynomial, zeta_values, delta_zeta = get_interps(vpower)
 
@@ -875,3 +875,32 @@ def logrho(m, z, zeta, cmean, c, vpower):
         return logrho_Mz_7(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
     elif vpower == 0.75:
         return logrho_Mz_75(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
+
+def logrho(m, z, zeta, cmean, c, vpower):
+
+    pre_computed = [0, 0.25, 0.4, 0.6, 0.7, 0.75]
+    if vpower < pre_computed[0] or vpower > pre_computed[-1]:
+        raise Exception('Specified velocity dependence '+str(vpower)+' out of bounds. '
+                   'Velocity dependence only computed between 0 and 0.75.')
+
+    if vpower in pre_computed:
+        return _logrho(m, z, zeta, cmean, c, vpower)
+    else:
+
+        dv = np.absolute(np.array(pre_computed) - vpower)
+        sorted = np.argsort(dv)
+
+        vpower1, vpower2 = pre_computed[sorted[0]], pre_computed[sorted[1]]
+        dv = abs(vpower1 - vpower2)
+
+        weight2 = abs(vpower1 - vpower) / dv
+        weight1 = abs(vpower2 - vpower) / dv
+
+        norm = 1/(weight1 + weight2)
+        weight1 *= norm
+        weight2 *= norm
+
+        rho0_one = _logrho(m, z, zeta, cmean, c, vpower1)
+        rho0_two = _logrho(m, z, zeta, cmean, c, vpower2)
+
+        return weight1 * rho0_one + weight2 * rho0_two
