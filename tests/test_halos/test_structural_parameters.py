@@ -36,4 +36,4 @@ class TestStructuralParameters(object):
 
         m200_1 = 4 * np.pi * rs1 ** 3 * rho1 * (np.log(1 + c1) - c1 / (1 + c1))
         m200_2 = 4 * np.pi * rs2 ** 3 * rho2 * (np.log(1 + c2) - c2 / (1 + c2))
-        npt.assert_almost_equal(m200_1/m200_2)
+        npt.assert_almost_equal(m200_1/m200_2, 1)

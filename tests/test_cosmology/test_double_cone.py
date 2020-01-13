@@ -1,10 +1,11 @@
 import numpy.testing as npt
-from pyHalo.Cosmology.geometry import GeometryBase
+from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.pyhalo import pyHalo
 import pytest
 import numpy as np
 
-class TestGeometryDoubleCone(object):
+class TestDoubleCone(object):
 
     def setup(self):
 
@@ -23,7 +24,14 @@ class TestGeometryDoubleCone(object):
         cosmo_params = {'H0': H0, 'Om0': omega_baryon + omega_DM, 'Ob0': omega_baryon,
                       'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-        self.geometry = GeometryBase(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'DOUBLE_CONE')
+        self.geometry = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'DOUBLE_CONE')
+
+        cosmo_params_instance = {'cosmo_kwargs': cosmo_params}
+        pyhalo_instance = pyHalo(self.zlens, self.zsource, cosmology_kwargs=cosmo_params_instance,
+                                 kwargs_halo_mass_function={'geometry_type': 'DOUBLE_CONE'})
+        args = {'cone_opening_angle': self.angle_diameter}
+        mfunc = pyhalo_instance._build_LOS_mass_function(args)
+        self.geometry_from_instance = mfunc.geometry
 
     def test_distances_lensing(self):
 
@@ -31,30 +39,39 @@ class TestGeometryDoubleCone(object):
 
         radius_physical = self.geometry.angle_to_physicalradius(self.angle_radius, z)
         npt.assert_almost_equal(radius_physical, 919, 0)
+        radius_physical_instance = self.geometry_from_instance.angle_to_physicalradius(self.angle_radius, z)
+        npt.assert_almost_equal(radius_physical_instance, radius_physical, 4)
 
         comoving_radius = self.geometry.angle_to_comovingradius(self.angle_radius, z)
         npt.assert_almost_equal(comoving_radius, radius_physical * (1 + z), 3)
+        comoving_radius_from_instance = self.geometry_from_instance.angle_to_comovingradius(self.angle_radius, z)
+        npt.assert_almost_equal(comoving_radius_from_instance, comoving_radius)
 
-        z = 1
+        z = 1.
         radius_physical = self.geometry.angle_to_physicalradius(self.angle_radius, z)
         npt.assert_almost_equal(radius_physical, 1651, 0)
 
         comoving_radius = self.geometry.angle_to_comovingradius(self.angle_radius, z)
         npt.assert_almost_equal(comoving_radius, radius_physical * (1+z), 3)
-
-        z = 0.3
+        comoving_radius_from_instance = self.geometry_from_instance.angle_to_comovingradius(self.angle_radius, z)
+        npt.assert_almost_equal(comoving_radius_from_instance, comoving_radius)
 
     def test_lenscone_angles(self):
 
         angle_at_zlens = self.geometry.ray_angle_atz(self.angle_diameter, self.zlens, 0)
         npt.assert_almost_equal(angle_at_zlens, self.angle_diameter)
+        angle_at_zlens_from_instance = self.geometry_from_instance.ray_angle_atz(self.angle_diameter, self.zlens, 0)
+        npt.assert_almost_equal(angle_at_zlens_from_instance, angle_at_zlens)
 
         angle_at_zsource = self.geometry.ray_angle_atz(self.angle_radius, self.zsource, 0)
         npt.assert_almost_equal(0, angle_at_zsource)
+        angle_at_zsource_from_instance = self.geometry_from_instance.ray_angle_atz(self.angle_radius, self.zsource, 0)
+        npt.assert_almost_equal(angle_at_zsource_from_instance, angle_at_zsource)
 
         angle_at_zsource = self.geometry.ray_angle_atz(self.angle_radius, self.zsource, 0.1)
         npt.assert_almost_equal(0.1, angle_at_zsource)
-
+        angle_at_zsource_from_instance = self.geometry_from_instance.ray_angle_atz(self.angle_radius, self.zsource, 0.1)
+        npt.assert_almost_equal(angle_at_zsource_from_instance, angle_at_zsource)
 
         z1, z2, z3 = 0.3, 0.7, 0.48
         theta = self.geometry._cosmo.arcsec ** -1
@@ -112,7 +129,7 @@ class TestGeometryDoubleCone(object):
 
         cone_arcsec = 3
         radius = cone_arcsec*0.5
-        geo = GeometryBase(self.cosmo, 1, 1.5, cone_arcsec, 'DOUBLE_CONE')
+        geo = Geometry(self.cosmo, 1, 1.5, cone_arcsec, 'DOUBLE_CONE')
         astropy = geo._cosmo.astropy
 
         delta_z = 1e-3

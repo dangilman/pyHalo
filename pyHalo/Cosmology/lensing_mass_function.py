@@ -18,7 +18,7 @@ class LensingMassFunction(object):
         if geometry_type is None:
             geometry_type = lenscone_default.default_geometry
 
-        self.geometry = GeometryBase(cosmology, zlens, zsource, cone_opening_angle, geometry_type)
+        self.geometry = Geometry(cosmology, zlens, zsource, cone_opening_angle, geometry_type)
         self._mass_function_model = mass_function_model
         self._mlow, self._mhigh = mlow, mhigh
         self._two_halo_term = two_halo_term

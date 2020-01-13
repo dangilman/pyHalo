@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import quad
 #from pyHalo.defaults import *
 
-class GeometryBase(object):
+class Geometry(object):
 
     _delta_z_min = 1e-4
 
@@ -159,8 +159,10 @@ class Cylinder(object):
     def __init__(self, cosmology, z_lens, z_source, opening_angle):
 
         self.opening_angle_radians = opening_angle * cosmology.arcsec
-        self.comoving_radius_cylinder = 0.5 * self.opening_angle_radians * \
-                                        cosmology.D_C_transverse(z_lens)
+
+        self.d_c_lens = cosmology.D_C_transverse(z_lens)
+
+        self.comoving_radius_cylinder = 0.5 * self.opening_angle_radians * self.d_c_lens
 
         self._cosmo = cosmology
 
@@ -169,17 +171,13 @@ class Cylinder(object):
     def rendering_scale(self, z):
 
         d_c = self._cosmo.D_C_transverse(z)
+        xi = self.d_c_lens/d_c
 
-        d_ratio = self.comoving_radius_cylinder/d_c
-
-        if z <= self._zlens:
-            return d_ratio
-        else:
-           return d_ratio ** -1
+        return xi
 
     def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
 
-        return theta_arcsec * self.rendering_scale(z)
+        return theta_arcsec
 
 class DoubleCone(object):
 

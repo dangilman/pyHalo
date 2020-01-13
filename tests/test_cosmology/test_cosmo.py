@@ -1,5 +1,5 @@
 import numpy.testing as npt
-from pyHalo.Cosmology.geometry import GeometryBase
+from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.cosmology import Cosmology
 import astropy.units as un
 import numpy as np
@@ -25,7 +25,7 @@ class TestCosmology(object):
                       'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
         self._dm, self._bar = omega_DM, omega_baryon
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-        self.geometry = GeometryBase(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'DOUBLE_CONE')
+        self.geometry = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'DOUBLE_CONE')
 
     def test_cosmo(self):
 
