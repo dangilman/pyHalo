@@ -9,12 +9,6 @@ from pyHalo.Scattering.sidm_interp import logrho
 cosmo = Cosmology()
 lens_cosmo = LensCosmo(0.5, 1.5, cosmo)
 
-def cored_sidm_profile(x, tau, r_s, rhos, rho0, a=10):
-
-    r_c = rhos/rho0
-    beta = r_c/r_s
-    core_term = (beta ** a + x ** a)**(-1./a)
-    return core_term * rhos * tau ** 2 / ((1 + x) ** 2) / (x ** 2 + tau ** 2)
 
 def sidm_central_density_from_mass(cross_section, vpower, m, z, c_scatter=False):
 

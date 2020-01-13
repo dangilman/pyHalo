@@ -6,9 +6,8 @@ from scipy.integrate import quad
 Functions for computing properties of spherical truncated NFW profiles
 """
 ##################################################################################
-
 def tnfw_bound_mass_from_rhors(rho_s, rs, X, tau):
-    
+
     denom = ((1 + X)*(1 + tau**2)**2)
     numerator = (2 * rho_s * np.pi * rs ** 3 *tau ** 2 * (-2 * X * (1 + tau ** 2) + 4 * (1 + X) * tau *
        np.arctan(X / tau) + 2*(1 + X)*(-1 + tau**2)*np.log((1 + X)*tau) - (1 + X)*(-1 + tau**2)*np.log(X**2 + tau**2)))
@@ -30,6 +29,15 @@ def rho_tnfw(r, r_s, rho_s, r_t):
 
     trunc_term = tau ** 2 / (x ** 2 + tau ** 2)
     return trunc_term * rho_s * (x * (1 + x) ** 2) ** -1
+
+def rho_coredtnfw(r, r_s, rho_s, r_t, rho0, a=10):
+
+    x = r/r_s
+    beta = rho_s/rho0
+    tau = r_t/r_s
+
+    core_term = (beta ** a + x ** a)**(-1./a)
+    return core_term * rho_s * tau ** 2 / ((1 + x) ** 2) / (x ** 2 + tau ** 2)
 
 def nfw_profile_mass(r, r_s, rho_s):
 
@@ -88,7 +96,7 @@ def composite_profile_mean_density(r, r_s_host, rho0):
 
     volume = 4*np.pi*r**3/3
     return composite_profile_mass(r, r_s_host, rho0)/volume
-    
+
 ##################################################################################
 """
 Functions for computing properties of a cored NFW profile
