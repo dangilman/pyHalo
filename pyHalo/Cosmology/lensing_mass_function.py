@@ -6,11 +6,19 @@ from colossus.lss.bias import twoHaloTerm
 
 class LensingMassFunction(object):
 
-    def __init__(self,cosmology,mlow,mhigh,zlens,zsource,cone_opening_angle,
-                 mass_function_model='sheth99', use_lookup_table=True, two_halo_term = True):
+    def __init__(self, cosmology, mlow, mhigh, zlens, zsource, cone_opening_angle,
+                 mass_function_model=None, use_lookup_table=True, two_halo_term = True,
+                 geometry_type=None):
 
         self._cosmo = cosmology
-        self.geometry = Geometry(cosmology, zlens, zsource, cone_opening_angle)
+
+        if mass_function_model is None:
+            mass_function_model = realization_default.default_mass_function
+
+        if geometry_type is None:
+            geometry_type = lenscone_default.default_geometry
+
+        self.geometry = GeometryBase(cosmology, zlens, zsource, cone_opening_angle, geometry_type)
         self._mass_function_model = mass_function_model
         self._mlow, self._mhigh = mlow, mhigh
         self._two_halo_term = two_halo_term

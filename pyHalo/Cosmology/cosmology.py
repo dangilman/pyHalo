@@ -47,7 +47,7 @@ class Cosmology(object):
     def _interp_kpc_per_asec(self):
 
         zmin, zmax = 0.001, 4
-        z = np.arange(zmin, zmax + 0.05, 0.05)
+        z = np.arange(zmin, zmax + 0.025, 0.025)
         kpc_per_asec = [self._kpc_per_asec(zi) for zi in z]
         kpc_per_asec = np.array(kpc_per_asec)
 

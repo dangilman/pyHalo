@@ -1,10 +1,10 @@
 import numpy.testing as npt
-from pyHalo.Cosmology.geometry import Geometry
+from pyHalo.Cosmology.geometry import GeometryBase
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
 import numpy as np
 
-class TestConeGeometry(object):
+class TestGeometryDoubleCone(object):
 
     def setup(self):
 
@@ -23,7 +23,7 @@ class TestConeGeometry(object):
         cosmo_params = {'H0': H0, 'Om0': omega_baryon + omega_DM, 'Ob0': omega_baryon,
                       'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-        self.geometry = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter)
+        self.geometry = GeometryBase(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'DOUBLE_CONE')
 
     def test_distances_lensing(self):
 
@@ -112,7 +112,7 @@ class TestConeGeometry(object):
 
         cone_arcsec = 3
         radius = cone_arcsec*0.5
-        geo = Geometry(self.cosmo, 1, 1.5, cone_arcsec)
+        geo = GeometryBase(self.cosmo, 1, 1.5, cone_arcsec, 'DOUBLE_CONE')
         astropy = geo._cosmo.astropy
 
         delta_z = 1e-3

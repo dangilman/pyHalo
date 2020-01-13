@@ -1,5 +1,5 @@
 import numpy.testing as npt
-from pyHalo.Cosmology.geometry import Geometry
+from pyHalo.Cosmology.geometry import GeometryBase
 from pyHalo.Cosmology.cosmology import Cosmology
 import astropy.units as un
 import numpy as np
@@ -25,7 +25,7 @@ class TestCosmology(object):
                       'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
         self._dm, self._bar = omega_DM, omega_baryon
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-        self.geometry = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter)
+        self.geometry = GeometryBase(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'DOUBLE_CONE')
 
     def test_cosmo(self):
 
@@ -46,7 +46,7 @@ class TestCosmology(object):
         npt.assert_almost_equal(ez / ez_astropy, 1)
 
         kpc_per_asec = self.cosmo.kpc_per_asec(0.5)
-        npt.assert_almost_equal(kpc_per_asec, 6.14712, 4)
+        npt.assert_almost_equal(kpc_per_asec, 6.147, 3)
 
         txy_1 = self.cosmo.D_C(0.8)
         npt.assert_almost_equal(txy_1, self.cosmo.T_xy(0, 0.8))
@@ -78,4 +78,4 @@ class TestCosmology(object):
         npt.assert_almost_equal(dTz, dTz3)
 
 if __name__ == '__main__':
-    pytest.main()
+     pytest.main()

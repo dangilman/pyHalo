@@ -41,6 +41,7 @@ class LensConeDefaults(object):
         self.distance_resolution_MPC = 1
         self.default_z_round = 2
         self.default_z_step = 0.02
+        self.default_geometry = 'DOUBLE_CONE'
 
 class TruncationDefaults(object):
 
@@ -89,6 +90,8 @@ class RealizationDefaults(object):
         self.default_r_tidal = 0.5 # r_tidal = 'default_r_ridal * Rs'
 
         self.default_type = 'composite_powerlaw'
+
+        self.default_mass_function = 'sheth99'
 
         self.default_include_subhalos = False
         self.default_LOS_normalization = 1
