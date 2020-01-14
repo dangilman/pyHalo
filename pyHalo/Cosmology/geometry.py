@@ -9,9 +9,9 @@ class Geometry(object):
     def __init__(self, cosmology, z_lens, z_source, opening_angle, geometry_type):
 
         if geometry_type == 'DOUBLE_CONE':
-            self._geometrytype = DoubleCone(cosmology, z_lens, z_source)
+            self._geometrytype = DoubleCone(cosmology, z_lens, z_source, opening_angle)
         elif geometry_type == 'CONE':
-            self._geometrytype = Cone(cosmology, z_lens, z_source)
+            self._geometrytype = Cone(cosmology, z_lens, z_source, opening_angle)
         elif geometry_type == 'CYLINDER':
             self._geometrytype = Cylinder(cosmology, z_lens, z_source, opening_angle)
         else:
@@ -168,6 +168,9 @@ class Cylinder(object):
 
         self._zlens, self._zsource = z_lens, z_source
 
+        self._total_volume = np.pi * self.comoving_radius_cylinder ** 2 * \
+                             cosmology.D_C_transverse(self._zsource)
+
     def rendering_scale(self, z):
 
         d_c = self._cosmo.D_C_transverse(z)
@@ -181,13 +184,22 @@ class Cylinder(object):
 
 class DoubleCone(object):
 
-    def __init__(self, cosmology, z_lens, z_source):
+    def __init__(self, cosmology, z_lens, z_source, opening_angle):
 
         self._cosmo = cosmology
+
+        d_c_lens = self._cosmo.D_C_transverse(z_lens)
+        d_c_lens_source = self._cosmo.D_C_transverse(z_source) - d_c_lens
+
+        comoving_radius_zlens = 0.5 * opening_angle * self._cosmo.arcsec * d_c_lens
 
         self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
 
         self._zlens, self._zsource = z_lens, z_source
+
+        volume_foreground = (np.pi/3) * comoving_radius_zlens ** 2 * d_c_lens
+        volume_background = (np.pi/3) * comoving_radius_zlens ** 2 * d_c_lens_source
+        self._total_volume = volume_background + volume_foreground
 
     def rendering_scale(self, z):
 
@@ -216,13 +228,19 @@ class DoubleCone(object):
 
 class Cone(object):
 
-    def __init__(self, cosmology, z_lens, z_source):
+    def __init__(self, cosmology, z_lens, z_source, opening_angle):
 
         self._cosmo = cosmology
 
         self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
 
         self._zlens, self._zsource = z_lens, z_source
+
+        d_c_source = self._cosmo.D_C_transverse(z_source)
+
+        comoving_radius_zsource = 0.5 * opening_angle * self._cosmo.arcsec * d_c_source
+
+        self._total_volume = (np.pi/3) * comoving_radius_zsource ** 2 * d_c_source
 
     def rendering_scale(self, z):
 

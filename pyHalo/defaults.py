@@ -42,6 +42,8 @@ class LensConeDefaults(object):
         self.default_z_round = 2
         self.default_z_step = 0.02
         self.default_geometry = 'DOUBLE_CONE'
+        # other possibilities:
+        # CONE, CYLINDER
 
 class TruncationDefaults(object):
 
