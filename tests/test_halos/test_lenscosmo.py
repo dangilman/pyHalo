@@ -37,4 +37,7 @@ class TestLensCosmo(object):
         eps_crit_kpc = eps_crit_asec * self.cosmo.kpc_per_asec(0.5) ** -2
         npt.assert_almost_equal(eps_crit_kpc / 10 ** 15.3611, 0.001**2, 4)
 
+if __name__ == '__main__':
+    pytest.main()
+
 

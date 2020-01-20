@@ -59,6 +59,14 @@ class Realization(object):
 
         self._reset()
 
+    @classmethod
+    def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction):
+
+        realization = Realization(None, None, None, None, None, None, None, None, halo_mass_function,
+                           halos=halos, other_params=prof_params,
+                           mass_sheet_correction=msheet_correction)
+        return realization
+
     def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
 
         new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], [sub_flag], self.halo_mass_function,
@@ -235,8 +243,8 @@ class Realization(object):
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
-    def lensing_quantities(self, mass_sheet_correction_front = 7.7,
-                           mass_sheet_correction_back = 8):
+    def lensing_quantities(self, mass_sheet_correction_front=7.7,
+                           mass_sheet_correction_back=8):
 
         if self._overwrite_mass_sheet is not None:
             mass_sheet_correction_front = self._overwrite_mass_sheet
@@ -273,8 +281,8 @@ class Realization(object):
             assert isinstance(mass_sheet_correction_back, float) or isinstance(mass_sheet_correction_back, int)
             assert mass_sheet_correction_back < 100, 'mass sheet correction should log(M)'
 
-            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow_front = 10**mass_sheet_correction_front,
-                                                                      mlow_back = 10**mass_sheet_correction_back)
+            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow_front=10**mass_sheet_correction_front,
+                                                                      mlow_back=10**mass_sheet_correction_back)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(redshift_list, z_sheets)
@@ -364,6 +372,17 @@ class Realization(object):
             angle_x, angle_y = self.geometry.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current)
 
         return angle_x, angle_y
+
+    def filter_by_mass(self, mlow):
+
+        halos = []
+        for halo in self.halos:
+            if halo.mass >= mlow:
+                halos.append(halo)
+
+        return Realization.from_halos(halos, self.halo_mass_function,
+                                      self._prof_params, self._mass_sheet_correction)
+
 
     def filter(self, thetax, thetay, mindis_front=0.5, mindis_back=0.5, logmasscut_front=6, logmasscut_back=8,
                source_x=0, source_y=0, ray_x=None, ray_y=None,
@@ -543,6 +562,27 @@ class Realization(object):
                                                                norm_scale=self._LOS_norm)
 
         return mass
+
+    def number_of_halos_before_redshift(self, z):
+        n = 0
+        for halo in self.halos:
+            if halo.z <= z:
+                n += 1
+        return n
+
+    def number_of_halos_after_redshift(self, z):
+        n = 0
+        for halo in self.halos:
+            if halo.z > z:
+                n += 1
+        return n
+
+    def number_of_halos_at_redshift(self, z):
+        n = 0
+        for halo in self.halos:
+            if halo.z == z:
+                n += 1
+        return n
 
 class RealizationFast(Realization):
 

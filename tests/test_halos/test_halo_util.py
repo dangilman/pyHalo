@@ -74,10 +74,6 @@ class TestStructuralParameters(object):
         mean_kappa_numerical = mean_kappa(self.r_ein_kpc, density_profile, args, 20000*self.rs)
         npt.assert_almost_equal(mean_kappa_numerical/self.sigmacrit, 1, 3)
 
-        
 
-t = TestStructuralParameters()
-t.setup()
-rein = 10.1
-print(t.test_composite())
-
+if __name__ == '__main__':
+    pytest.main()

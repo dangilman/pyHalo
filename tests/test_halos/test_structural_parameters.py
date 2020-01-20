@@ -37,3 +37,25 @@ class TestStructuralParameters(object):
         m200_1 = 4 * np.pi * rs1 ** 3 * rho1 * (np.log(1 + c1) - c1 / (1 + c1))
         m200_2 = 4 * np.pi * rs2 ** 3 * rho2 * (np.log(1 + c2) - c2 / (1 + c2))
         npt.assert_almost_equal(m200_1/m200_2, 1)
+
+        rho0c = 2.77536627e11 # [h^2 Msun/Mpc^3]
+
+        npt.assert_almost_equal(rho0c/self.lens_cosmo.rhoc, 1, 3)
+
+        rho0 = 1.576764e+16
+        rs = 0.000711265
+        r200 = 0.00640138
+
+        (rho0_2, rs_2, r200_2) = self.lens_cosmo._nfwParam_physical_Mpc(10**8, 9, 0.5)
+        npt.assert_almost_equal(rho0/rho0_2, 1, 2)
+        npt.assert_almost_equal(rs/rs_2, 1, 2)
+        npt.assert_almost_equal(r200/r200_2, 1, 2)
+
+        rs, alpha_rs = 0.11527, 0.000693
+        rs_2, alpha_rs_2 = self.lens_cosmo.nfw_physical2angle(10**8, 9, 0.5)
+        npt.assert_almost_equal(rs/rs_2, 1, 3)
+        npt.assert_almost_equal(alpha_rs / alpha_rs_2, 1, 2)
+
+
+if __name__ == '__main__':
+    pytest.main()

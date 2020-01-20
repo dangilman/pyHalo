@@ -12,7 +12,8 @@ class LensCosmo(object):
         self.cosmo = cosmology
         self.z_lens, self.z_source = z_lens, z_source
         # critical density of the universe in M_sun Mpc^-3
-        self.rhoc = self.cosmo.astropy.critical_density0.value * self.cosmo.density_to_MsunperMpc
+        self.rhoc = self.cosmo.astropy.critical_density0.value * \
+                    self.cosmo.density_to_MsunperMpc / self.cosmo.h ** 2
 
         # critical density for lensing in units M_sun * Mpc ^ -2
         self.epsilon_crit = self.get_epsiloncrit(z_lens, z_source)
@@ -154,19 +155,11 @@ class LensCosmo(object):
         return (3 * M / (4 * numpy.pi * self.rhoc * N)) ** (1. / 3.)
 
     def _nfwParam_physical_Mpc(self, M, c, z):
-        """
-        returns the NFW parameters in physical units
-        :param M: physical mass in M_sun
-        :param c: concentration
-        :return:
-        """
 
         h = self.cosmo.h
-        a_z = self.cosmo.scale_factor(z)
-
-        r200 = self.rN_M_nfw_comoving(M * h, 200) * a_z / h  # physical radius r200
+        a_z = (1+z) ** -1
+        r200 = self.rN_M_nfw_comoving(M * h, 200) / h * a_z  # physical radius r200
         rho0 = self.rho0_c_NFW(c) * h ** 2 / a_z ** 3  # physical density in M_sun/Mpc**3
-
         Rs = r200 / c
         return rho0, Rs, r200
 
