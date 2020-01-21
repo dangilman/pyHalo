@@ -3,6 +3,7 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.structural_parameters import HaloStructure
 import numpy as np
+from astropy.cosmology import FlatLambdaCDM
 import pytest
 
 class TestStructuralParameters(object):
@@ -18,7 +19,7 @@ class TestStructuralParameters(object):
                         'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
         self._dm, self._bar = omega_DM, omega_baryon
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-
+        self.astropy = self.cosmo.astropy
         zlens, zsource = 0.5, 1.5
         self.lens_cosmo = LensCosmo(zlens, zsource, self.cosmo)
 
@@ -38,7 +39,7 @@ class TestStructuralParameters(object):
         m200_2 = 4 * np.pi * rs2 ** 3 * rho2 * (np.log(1 + c2) - c2 / (1 + c2))
         npt.assert_almost_equal(m200_1/m200_2, 1)
 
-        rho0c = 2.77536627e11 # [h^2 Msun/Mpc^3]
+        rho0c = 2.77536627e11
 
         npt.assert_almost_equal(rho0c/self.lens_cosmo.rhoc, 1, 3)
 
@@ -51,11 +52,15 @@ class TestStructuralParameters(object):
         npt.assert_almost_equal(rs/rs_2, 1, 2)
         npt.assert_almost_equal(r200/r200_2, 1, 2)
 
+        (rho0_3, rs_3, r200_3) = self.lens_cosmo.NFW_params_physical(10 ** 8, 9, 0.5)
+        npt.assert_almost_equal(rho0_3*1000 ** 3 / rho0_2, 1, 2)
+        npt.assert_almost_equal(rs_3 * 0.001 / rs_2, 1, 2)
+        npt.assert_almost_equal(r200_3 * 0.001 / r200_2, 1, 2)
+
         rs, alpha_rs = 0.11527, 0.000693
         rs_2, alpha_rs_2 = self.lens_cosmo.nfw_physical2angle(10**8, 9, 0.5)
         npt.assert_almost_equal(rs/rs_2, 1, 3)
         npt.assert_almost_equal(alpha_rs / alpha_rs_2, 1, 2)
 
-
 if __name__ == '__main__':
-    pytest.main()
+     pytest.main()

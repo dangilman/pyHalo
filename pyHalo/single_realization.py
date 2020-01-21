@@ -184,6 +184,8 @@ class Realization(object):
 
         :param source_x: estimated angular source x coordinate [arcsec]
         :param source_y: estimated angular source y coordinate [arcsec]
+        :param center_x_lens: lens centroid x [arcsec]
+        :param center_y_lens: lens centroid y [arcsec]
         :param source_redshift: source redshift
         :return: an instance of realization in which all halos behind the
         main deflector are shifted such that the rendering volume closes at the
