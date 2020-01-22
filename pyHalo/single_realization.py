@@ -70,7 +70,6 @@ class Realization(object):
         return realization
 
 
-
     def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
 
         new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], [sub_flag], self.halo_mass_function,
