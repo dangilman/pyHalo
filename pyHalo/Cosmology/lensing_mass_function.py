@@ -7,7 +7,7 @@ from colossus.lss.bias import twoHaloTerm
 class LensingMassFunction(object):
 
     def __init__(self, cosmology, mlow, mhigh, zlens, zsource, cone_opening_angle,
-                 mass_function_model=None, use_lookup_table=True, two_halo_term = True,
+                 mass_function_model=None, use_lookup_table=True, two_halo_term=True,
                  geometry_type=None):
 
         self._cosmo = cosmology
@@ -27,8 +27,10 @@ class LensingMassFunction(object):
 
         if use_lookup_table:
 
-            if self._mass_function_model == 'sheth99':
+            if self._mass_function_model == 'sheth99_old':
                 from pyHalo.Cosmology.lookup_tables import lookup_sheth99_simple as table
+            elif self._mass_function_model == 'sheth99':
+                from pyHalo.Cosmology.lookup_tables import lookup_sheth99_updated as table
             else:
                 raise ValueError('lookup table '+self._mass_function_model+' not found.')
 
@@ -110,7 +112,7 @@ class LensingMassFunction(object):
 
         #z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
 
-        M = np.logspace(8, np.log10(mhigh), 20)
+        M = np.logspace(np.log10(mlow), np.log10(mhigh), 20)
 
         norm, index = [], []
 
@@ -160,7 +162,7 @@ class LensingMassFunction(object):
 
         M_h = M*h
 
-        return h ** 3 * massFunction(M_h, z, q_out='dndlnM') * M_h ** -1
+        return h ** 4 * massFunction(M_h, z, q_out='dndlnM') * M_h ** -1
 
     def dN_comoving_deltaFunc(self, M, z, delta_z, component_fraction):
 
@@ -295,22 +297,23 @@ def write_lookup_table():
             f.write(']\n')
 
     from pyHalo.Cosmology.cosmology import Cosmology
-    l = LensingMassFunction(Cosmology(), 10**5, 10**10, 0.2, 4, cone_opening_angle=6, use_lookup_table=False)
+    # new interpolation is optimized to fit correctly over 4 decades in mass
+    l = LensingMassFunction(Cosmology(), 10**7.5, 10**8.7, 0.1, 4., 6., use_lookup_table=False)
 
-    fname = './lookup_tables/lookup_sheth99_simple.py'
+    fname = './lookup_tables/lookup_sheth99_updated.py'
 
     with open(fname, 'w') as f:
         f.write('import numpy as np\n')
 
-    write_to_file(fname, 'norm_z_dV', l._norm_z_dV, 'a')
-    write_to_file(fname, 'plaw_index_z', l._plaw_index_z, 'a')
+    write_to_file(fname, 'norm_z_dV', np.round(l._norm_z_dV, 2), 'a')
+    write_to_file(fname, 'plaw_index_z', np.round(l._plaw_index_z,2), 'a')
 
     with open(fname, 'a') as f:
         f.write('z_range = np.array([')
         for zi in l._z_range:
-            f.write(str(zi)+', ')
+            f.write(str(np.round(zi,2))+', ')
         f.write('])\n\n')
 
     with open(fname, 'a') as f:
-        f.write('delta_z = '+str(l._delta_z)+'\n\n')
+        f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
 
