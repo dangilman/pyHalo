@@ -33,7 +33,7 @@ class MainLensPowerLaw(object):
 
         # EVERYTHING EXPRESSED IN KPC
         x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(len(masses))
-        
+
         x_arcsec = x_kpc * self._geometry._kpc_per_arcsec_zlens ** -1
         y_arcsec = y_kpc * self._geometry._kpc_per_arcsec_zlens ** -1
 
@@ -100,11 +100,11 @@ class MainLensPowerLaw(object):
 
         if 'sigma_sub' in args.keys() and 'mass_in_subhalos' not in args.keys():
 
-            a0_area_parent_halo = args['sigma_sub'] * host_scaling_function(args['parent_m200'], self._geometry._zlens)
-
-            args_mfunc['normalization'] = norm_A0_from_a0area(a0_area_parent_halo,
-                                                                             self._geometry._kpc_per_arcsec_zlens, args['cone_opening_angle'],
-                                                                             args_mfunc['power_law_index'], m_pivot=10**8)
+            args_mfunc['normalization'] = norm_AO_from_sigmasub(args['sigma_sub'], args['parent_m200'],
+                                                                self._geometry._zlens,
+                                                                self._geometry._kpc_per_arcsec_zlens,
+                                                                args['cone_opening_angle'],
+                                                                args['power_law_index'], m_pivot=10**8)
 
         elif 'amp_at_8' in args.keys() and 'mass_in_subhalos' not in args.keys():
 
@@ -153,6 +153,12 @@ def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
     logscaling = k1 * np.log10(mhalo * 10**-13) + k2 * np.log10(z + 0.5)
 
     return 10**logscaling
+
+def norm_AO_from_sigmasub(sigma_sub, parent_m200, zlens, kpc_per_asec_zlens, cone_opening_angle, plaw_index, m_pivot=10**8):
+
+    a0_per_kpc2 = sigma_sub * host_scaling_function(parent_m200, zlens)
+    return norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens,
+                               cone_opening_angle, plaw_index, m_pivot)
 
 def norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens, cone_opening_angle, plaw_index, m_pivot = 10**8):
 

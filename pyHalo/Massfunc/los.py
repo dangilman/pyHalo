@@ -17,7 +17,7 @@ class LOS(object):
 
         zmin, zmax = parameterization_args['zmin'], parameterization_args['zmax']
         self._redshift_range = _redshift_range_LOS(zmin, zmax, lenscone_default.default_z_step)
-
+        self._redshift_range = np.round(self._redshift_range, 2)
         self._spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
                                                          lensing_mass_func.geometry)
         self._parameterization_args = parameterization_args
@@ -159,7 +159,7 @@ class LOSPowerLaw(LOS):
         delta_z = self._redshift_range[1] - self._redshift_range[0]
 
         for idx, zcurrent in enumerate(self._redshift_range):
-            
+
             if zcurrent == self._lensing_mass_func.geometry._zlens:
                 continue
 
@@ -223,7 +223,8 @@ class LOSPowerLaw(LOS):
 
         args_mfunc = {}
         required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow_los',
-                         'log_mhigh_los', 'parent_m200', 'LOS_normalization']
+                         'log_mhigh_los', 'parent_m200', 'LOS_normalization',
+                         'draw_poission']
 
         for key in required_keys:
 
@@ -252,7 +253,9 @@ class LOSPowerLaw(LOS):
                 continue
 
             try:
+
                 args_mfunc[key] = args[key]
+
             except:
                 if key == 'zmin':
                     args_mfunc['zmin'] = lenscone_default.default_zstart

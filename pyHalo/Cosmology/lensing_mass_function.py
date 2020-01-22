@@ -106,7 +106,7 @@ class LensingMassFunction(object):
 
     def _build(self, mlow, mhigh, zsource):
 
-        z_range = np.arange(lenscone_default.default_zstart, 4+lenscone_default.default_zstart, 0.02)
+        z_range = np.arange(lenscone_default.default_zstart, zsource + 0.02, 0.02)
 
         #z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
 
@@ -160,7 +160,7 @@ class LensingMassFunction(object):
 
         M_h = M*h
 
-        return h ** 3 * massFunction(M_h, z, q_out='dndlnM', **self._model_kwargs) * M_h ** -1
+        return h ** 3 * massFunction(M_h, z, q_out='dndlnM') * M_h ** -1
 
     def dN_comoving_deltaFunc(self, M, z, delta_z, component_fraction):
 
@@ -200,12 +200,12 @@ class LensingMassFunction(object):
 
         plaw_index = self.plaw_index_z(z)
 
-        moment = self._integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
-                                           break_index = break_index, break_scale=break_scale)
+        moment = self.integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
+                                          break_index=break_index, break_scale=break_scale)
 
         return moment
 
-    def _integrate_power_law(self, norm, m_low, m_high, log_m_break, n, plaw_index, break_index=0, break_scale=1):
+    def integrate_power_law(self, norm, m_low, m_high, log_m_break, n, plaw_index, break_index=0, break_scale=1):
 
         def _integrand(m, m_break, plaw_index, n):
 
@@ -231,7 +231,7 @@ class LensingMassFunction(object):
 
         else:
 
-            moment = self._integrate_power_law(norm, m_low, m_high, 0, n, plaw_index)
+            moment = self.integrate_power_law(norm, m_low, m_high, 0, n, plaw_index)
 
         return moment,norm,plaw_index
 
