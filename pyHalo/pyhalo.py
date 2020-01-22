@@ -30,19 +30,15 @@ class pyHalo(object):
         self._kwargs_mass_function = kwargs_halo_mass_function
         self._halo_mass_function_args = kwargs_halo_mass_function
 
-        self.set_redshifts(zlens, zsource)
+        self.reset_redshifts(zlens, zsource)
 
-    def set_redshifts(self, zlens, zsource):
+    def reset_redshifts(self, zlens, zsource):
 
         self.zlens = zlens
         self.zsource = zsource
         self._cosmology = Cosmology(**self._cosmology_kwargs)
         self.halo_mass_function = None
         self._geometry = None
-
-    def _set_geometry(self, cone_opening_angle):
-
-        self._geometry = Geometry(self._cosmology, self.zlens, self.zsource, cone_opening_angle)
 
     @property
     def astropy_cosmo(self):
@@ -68,7 +64,7 @@ class pyHalo(object):
 
     def _build_LOS_mass_function(self, args):
 
-        if self.halo_mass_function is not None:
+        if self.halo_mass_function is None:
 
             if 'mass_func_type' not in args.keys():
                 args['mass_func_type'] = realization_default.default_type
@@ -101,6 +97,9 @@ class pyHalo(object):
         return self.halo_mass_function
 
     def _render_single(self, type, args, verbose):
+
+        self.halo_mass_function = self._build_LOS_mass_function(args[0])
+        self._geometry = self.halo_mass_function.geometry
 
         executables_list, mass_def_list, model_names = self._build(type, args)
 

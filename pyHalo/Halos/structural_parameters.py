@@ -93,7 +93,7 @@ class HaloStructure(object):
         :return:
         """
         a_z = (1 + z) ** -1
-        h = self._lens_cosmo.astropy_cosmo.h
+        h = self._lens_cosmo.cosmo.h
 
         rN_physical_Mpc = self._lens_cosmo.rN_M_nfw_comoving(M * h, N) * a_z / h
         rN_physical_kpc = rN_physical_Mpc * 1000
@@ -147,8 +147,8 @@ class HaloStructure(object):
 
     def _NFW_concentration_custom(self, M, z, args, scatter, scatter_amplitude):
 
-        M_h = M * self._lens_cosmo.astropy_cosmo.h
-        Mref_h = 10 ** 8 * self._lens_cosmo.astropy_cosmo.h
+        M_h = M * self._lens_cosmo.cosmo.h
+        Mref_h = 10 ** 8 * self._lens_cosmo.cosmo.h
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, 0)
 
@@ -172,11 +172,11 @@ class HaloStructure(object):
             return 0.026 * z_val - 0.04
 
         if isinstance(M, float) or isinstance(M, int):
-            c = concentration(M * self._lens_cosmo.astropy_cosmo.h, mdef=mdef, model=model, z=z)
+            c = concentration(M * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z)
         else:
             con = []
             for i, mi in enumerate(M):
-                con.append(concentration(mi * self._lens_cosmo.astropy_cosmo.h, mdef=mdef, model=model, z=z[i]))
+                con.append(concentration(mi * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z[i]))
             c = numpy.array(con)
 
         if logmhm != 0:

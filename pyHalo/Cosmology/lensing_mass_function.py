@@ -193,9 +193,11 @@ class LensingMassFunction(object):
 
         return norm,plaw_index
 
-    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n = 1,
+    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n=1,
                                 norm_scale = 1):
 
+        norm = self.norm_at_z(z, delta_z)
+        plaw_index = self.plaw_index_z(z)
         moment = self.integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
                                           break_index=break_index, break_scale=break_scale)
 
