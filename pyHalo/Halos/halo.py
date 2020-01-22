@@ -51,7 +51,7 @@ class Halo(object):
             if 'halo_age' in self._args.keys():
                 self._halo_age = self._args['halo_age']
             else:
-                self._halo_age = self.cosmo_prof.lens_cosmo.cosmo.halo_age(self.z)
+                self._halo_age = self.cosmo_prof.lens_cosmo.astropy_cosmo.halo_age(self.z)
         return self._halo_age
 
     @property

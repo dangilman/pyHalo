@@ -24,18 +24,18 @@ class HaloStructure(object):
 
     @staticmethod
     def _penalty_func(rt, rho_mean_host, subhalo_density_function, profile_args):
-        
+
         if subhalo_density_function == rho_nfw:
             rho_mean_sub = nfw_profile_mean_density(rt, *profile_args)
         else:
             rho_mean_sub = mean_density_numerical(rt, subhalo_density_function, profile_args)
-            
+
         return np.absolute(rho_mean_host - rho_mean_sub)
 
     def truncation_mean_density_NFW_host(self, msub, csub, mhost, r_sub_3d,
                                          z_sub_eval, z_host_eval, r_ein_kpc, subhalo_density_function,
                                          subhalo_args, initial_guess):
-        
+
         if r_sub_3d < 0.5*r_ein_kpc:
             rho_sub, rs_sub, _ = self._lens_cosmo.NFW_params_physical(msub, csub, z_sub_eval)
             return 0.1 * rs_sub
@@ -43,11 +43,11 @@ class HaloStructure(object):
         rho_host, rs_host, _ = self._lens_cosmo.NFW_params_physical_fromM(mhost, z_host_eval)
 
         host_mean_density = nfw_profile_mean_density(r_sub_3d, rs_host, rho_host)
-        
+
         args = (host_mean_density, subhalo_density_function, subhalo_args)
-        
+
         opt = minimize(self._penalty_func, initial_guess, args, method='Nelder-Mead')
-        
+
         return opt['x'][0]
 
     def truncation_mean_density_isothermal_host(self, msub, csub, mhost, r_sub_3d, z_sub_eval, z_host_eval,
@@ -59,7 +59,7 @@ class HaloStructure(object):
             return 0.1 * rs_sub
 
         rho_host, rs_host, _ = self._lens_cosmo.NFW_params_physical_fromM(mhost, z_host_eval)
-        
+
         rho0 = density_norm(rs_host, r_ein_kpc, sigmacrit_kpc)
         host_mean_density = composite_profile_mean_density(r_sub_3d, rs_host, rho0)
 
@@ -93,7 +93,7 @@ class HaloStructure(object):
         :return:
         """
         a_z = (1 + z) ** -1
-        h = self._lens_cosmo.cosmo.h
+        h = self._lens_cosmo.astropy_cosmo.h
 
         rN_physical_Mpc = self._lens_cosmo.rN_M_nfw_comoving(M * h, N) * a_z / h
         rN_physical_kpc = rN_physical_Mpc * 1000
@@ -104,9 +104,9 @@ class HaloStructure(object):
     def _NFW_concentration(self, M, z, model, mdef, logmhm,
                           scatter, c_scale, c_power, scatter_amplitude):
 
-        
+
         if isinstance(model, dict):
-           
+
             assert 'custom' in model.keys()
 
             if isinstance(M, float) or isinstance(M, int):
@@ -147,8 +147,8 @@ class HaloStructure(object):
 
     def _NFW_concentration_custom(self, M, z, args, scatter, scatter_amplitude):
 
-        M_h = M * self._lens_cosmo.cosmo.h
-        Mref_h = 10 ** 8 * self._lens_cosmo.cosmo.h
+        M_h = M * self._lens_cosmo.astropy_cosmo.h
+        Mref_h = 10 ** 8 * self._lens_cosmo.astropy_cosmo.h
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, 0)
 
@@ -172,11 +172,11 @@ class HaloStructure(object):
             return 0.026 * z_val - 0.04
 
         if isinstance(M, float) or isinstance(M, int):
-            c = concentration(M * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z)
+            c = concentration(M * self._lens_cosmo.astropy_cosmo.h, mdef=mdef, model=model, z=z)
         else:
             con = []
             for i, mi in enumerate(M):
-                con.append(concentration(mi * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z[i]))
+                con.append(concentration(mi * self._lens_cosmo.astropy_cosmo.h, mdef=mdef, model=model, z=z[i]))
             c = numpy.array(con)
 
         if logmhm != 0:

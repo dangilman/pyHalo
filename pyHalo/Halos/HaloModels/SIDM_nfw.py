@@ -90,7 +90,7 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
                                                                                    cmean, self._halo_class.z)
 
             if 'halo_age' not in self._halo_class._args.keys():
-                halo_age = self._halo_class.cosmo_prof.cosmo.halo_age(self._halo_class.z)
+                halo_age = self._halo_class.cosmo_prof.astropy_cosmo.halo_age(self._halo_class.z)
             else:
                 halo_age = self._halo_class._args['halo_age']
 
@@ -139,7 +139,7 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
                                                                                    cmean, self._halo_class.z)
 
             if 'halo_age' not in self._halo_class._args.keys():
-                halo_age = self._halo_class.cosmo_prof.cosmo.halo_age(self._halo_class.z)
+                halo_age = self._halo_class.cosmo_prof.astropy_cosmo.halo_age(self._halo_class.z)
             else:
                 halo_age = self._halo_class._args['halo_age']
 
@@ -149,5 +149,5 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
                                     self.concentration, self._halo_class._args['vpower'])
 
             core_ratio = rho_mean * rho_sidm ** -1
-            
+
         return core_ratio

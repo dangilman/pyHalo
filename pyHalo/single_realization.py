@@ -595,9 +595,11 @@ class Realization(object):
             raise Exception('cannot subtract subhalo '
                             'mass sheets for this mass funciton.')
 
-        m_theory = self.halo_mass_function.integrate_power_law(norm, mlow, mhigh, m_break,
-                                                               1., self._prof_params['power_law_index'], break_index,
-                                                               break_scale)
+        def _integrand(m):
+            return (norm * m ** plaw_idx) * \
+                   (1 + break_scale*m_break/m) ** break_index
+
+        m_theory = quad(_integrand, mlow, mhigh)[0]
 
         return m_theory
 

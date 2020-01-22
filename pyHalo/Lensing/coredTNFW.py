@@ -25,8 +25,8 @@ class coreTNFW(object):
 
         r_core = np.round(b * Rs_angle, 6)
 
-        r_trunc = r_trunc_kpc * self.lens_cosmo.cosmo.kpc_per_asec(redshift) ** -1
-        
+        r_trunc = r_trunc_kpc * self.lens_cosmo.astropy_cosmo.kpc_per_asec(redshift) ** -1
+
         kwargs = {'center_x': x, 'center_y': y, 'Rs': Rs_angle,
                   'r_core': r_core, 'norm': normalization, 'r_trunc': r_trunc}
 
