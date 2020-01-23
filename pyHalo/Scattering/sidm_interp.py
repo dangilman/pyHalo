@@ -319,21 +319,26 @@ for i in range(0, len(mass_values)):
     interps_vpower0.append(
         RectBivariateSpline(z_values, c0_values, log_rho0_vpower0[i, :, :]))
 
-interps_list = [interps_vpower0, interps_vpower25, interps_vpower50,
-                interps_vpower75, interps_vpower1]
+#interps_list = [interps_vpower0, interps_vpower25, interps_vpower50,
+#                interps_vpower75, interps_vpower1]
 
+from scipy.interpolate import RegularGridInterpolator
 
-# interp_array = np.zeros((N_mass, N_redshift, N_norm))
+values = np.stack((log_rho0_vpower0, log_rho0_vpower25, log_rho0_vpower50,
+                    log_rho0_vpower75, log_rho0_vpower1))
 
-def logrho(log_mass, z, zeta, v_dep, delta_concentration):
+points = (v_powers, mass_values, z_values, c0_values)
+interp = RegularGridInterpolator(points, values)
+
+def logrho(log_mass, z, zeta, v_dep, delta_concentration_dex,
+            concentration_scatter_scale=0.3):
     """
-
-    :param log_mass: log(m200)
-    :param z: redshift
-    :param zeta: cross section times (halo age/10 [Gyr])
-    :param v_dep: velocity dependence of cross section v^-v_dependence
-    :param delta_concentration: (c - cmean)/cmean
-    :return:
+        :param log_mass: log(m200)
+        :param z: redshift
+        :param zeta: cross section times (halo age/10 [Gyr])
+        :param v_dep: velocity dependence of cross section v^-v_dependence
+        :param delta_concentration: (c - cmean)/cmean
+        :return:
     """
 
     if v_dep < 0:
@@ -342,31 +347,51 @@ def logrho(log_mass, z, zeta, v_dep, delta_concentration):
     elif v_dep > 1:
         raise Exception('velocity dep must be < 1.')
 
-    diff = np.absolute(v_dep - v_powers)
-    min_indexes = np.argsort(diff)[0:2]
-    idx1, idx2 = min_indexes[0], min_indexes[1]
-    dv_min = abs(v_dep - v_powers[idx1])
-    w1 = 1 - dv_min / vstep
-    w2 = dv_min / vstep
-
-    interp_grid1, interp_grid2 = interps_list[idx1], interps_list[idx2]
-    rho1 = _eval_at_vpower(log_mass, z, zeta, interp_grid1)
-    rho2 = _eval_at_vpower(log_mass, z, zeta, interp_grid2)
-
-    logrho_value = rho1 * w1 + rho2 * w2
-    logrho_value += 0.3 * delta_concentration
-
-    return logrho_value
+    xi = (v_dep, log_mass, z, zeta)
+    log_rho = interp(xi)
+    log_rho += delta_concentration_dex * concentration_scatter_scale
+    return log_rho
 
 
-def _eval_at_vpower(log_mass, z, zeta, interps_vpower):
-    diff = np.absolute(mass_values - log_mass)
-    min_indexes = np.argsort(diff)[0:2]
-    idx1, idx2 = min_indexes[0], min_indexes[1]
-    dm_min = abs(log_mass - mass_values[idx1])
-    w1 = 1 - dm_min / mstep
-    w2 = dm_min / mstep
-    rho1 = interps_vpower[idx1](z, zeta)[0][0]
-    rho2 = interps_vpower[idx2](z, zeta)[0][0]
 
-    return rho1 * w1 + rho2 * w2
+# def logrho(log_mass, z, zeta, v_dep, delta_concentration,
+#            concentration_scatter_scale=0.3):
+#     """
+#
+#     :param log_mass: log(m200)
+#     :param z: redshift
+#     :param zeta: cross section times (halo age/10 [Gyr])
+#     :param v_dep: velocity dependence of cross section v^-v_dependence
+#     :param delta_concentration: (c - cmean)/cmean
+#     :return:
+#     """
+#
+#     if v_dep < 0:
+#         raise Exception('velocity dep must be positive. '
+#                         '(sigma ~ v^(-v_dep)')
+#     elif v_dep > 1:
+#         raise Exception('velocity dep must be < 1.')
+#
+#     diff = np.absolute(v_dep - v_powers)
+#     min_indexes = np.argsort(diff)[0:2]
+#     idx1, idx2 = min_indexes[0], min_indexes[1]
+#     dv_min = abs(v_dep - v_powers[idx1])
+#     w1 = 1 - dv_min / vstep
+#     w2 = dv_min / vstep
+#
+#     interp_grid1, interp_grid2 = interps_list[idx1], interps_list[idx2]
+#     rho1 = _eval_at_vpower(log_mass, z, zeta, interp_grid1)
+#     rho2 = _eval_at_vpower(log_mass, z, zeta, interp_grid2)
+#     return rho1 + concentration_scatter_scale + delta_concentration
+
+# def _eval_at_vpower(log_mass, z, zeta, interps_vpower):
+#     diff = np.absolute(mass_values - log_mass)
+#     min_indexes = np.argsort(diff)[0:2]
+#     idx1, idx2 = min_indexes[0], min_indexes[1]
+#     dm_min = abs(log_mass - mass_values[idx1])
+#     w1 = 1 - dm_min / mstep
+#     w2 = dm_min / mstep
+#     rho1 = interps_vpower[idx1](z, zeta)[0][0]
+#     rho2 = interps_vpower[idx2](z, zeta)[0][0]
+#
+#     return rho1 * w1 + rho2 * w2

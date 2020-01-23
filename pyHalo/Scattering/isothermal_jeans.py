@@ -344,24 +344,33 @@ def solve(rhonfw, rsnfw, cross_section_class,
 def solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.002):
 
     rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_class,
-                                                                N, plot=plot, tol=tol)
+                                                                N, plot=plot, tol=tol,
+                                                                s0min_scale=0.4, s0max_scale=1.6,
+                                                                rhomin_scale=0.25, rhomax_scale=3.6)
 
-    #if fit_quality > 0.1:
-    #    print('using energy boundary conditions')
-    #    rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_class, N, do_E=True)
+    if fit_quality > 0.1:
+        rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_class,
+                                                                    8, plot=plot, tol=tol,
+                                                                    s0min_scale=0.2, s0max_scale=2.0,
+                                                                    rhomin_scale=0.1, rhomax_scale=4.5)
+    if fit_quality > 0.1:
+        rho0, s0, core_size_unitsrs, fit_quality = np.nan, np.nan, np.nan, np.nan
 
     return rho0, s0, core_size_unitsrs, fit_quality
 
-def _solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.002, do_E = False):
+def _solve_iterative(rhonfw, rsnfw, cross_section_class,
+                     N, plot=False, tol = 0.002, do_E = False,
+                     s0min_scale=0.5, s0max_scale=1.5,
+                     rhomin_scale=0.3, rhomax_scale=3.5):
 
     fit_quality = 100
 
-    rhomin = rhonfw * 0.4
-    rhomax = rhonfw * 3
+    rhomin = rhonfw * rhomin_scale
+    rhomax = rhonfw * rhomax_scale
     rho_range = np.log10(rhomax) - np.log10(rhomin)
 
     s0nfw = velocity_dispersion_NFW(rsnfw, rhonfw, rsnfw)
-    s0min, s0max = s0nfw*0.5,  s0nfw*1.5
+    s0min, s0max = s0nfw*s0min_scale,  s0nfw*s0max_scale
 
     s0_range = s0max - s0min
 
