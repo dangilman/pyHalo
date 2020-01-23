@@ -34,6 +34,8 @@ class Halo(object):
         self._args = args
         self._unique_tag = np.random.rand()
 
+        self.observed_convention_index = False
+
         assert mdef in self._recognized_mass_definitions, 'mass definition '+str(mdef)+' not recognized.'
 
     def get_z_infall(self):

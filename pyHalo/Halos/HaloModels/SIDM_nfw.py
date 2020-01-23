@@ -90,14 +90,18 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
                                                                                    cmean, self._halo_class.z)
 
             if 'halo_age' not in self._halo_class._args.keys():
-                halo_age = self._halo_class.cosmo_prof.astropy_cosmo.halo_age(self._halo_class.z)
+                halo_age = self._halo_class.cosmo_prof.halo_age(self._halo_class.z)
             else:
                 halo_age = self._halo_class._args['halo_age']
 
-            zeta = self._halo_class._args['SIDMcross'] * halo_age
+            zeta = self._halo_class._args['SIDMcross'] * (halo_age/10)
 
-            rho_sidm = 10 ** logrho(self._halo_class.mass, self._halo_class.z, zeta, cmean,
-                                    self.concentration, self._halo_class._args['vpower'])
+            delta_concentration = (self.concentration - cmean)/cmean
+
+            rho_sidm = 10 ** logrho(np.log10(self._halo_class.mass),
+                                    self._halo_class.z, zeta,
+                                    self._halo_class._args['vpower'],
+                                    delta_concentration)
 
             core_ratio = rho_mean * rho_sidm ** -1
 
@@ -143,10 +147,14 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
             else:
                 halo_age = self._halo_class._args['halo_age']
 
-            zeta = self._halo_class._args['SIDMcross'] * halo_age
+            zeta = self._halo_class._args['SIDMcross'] * (halo_age / 10)
 
-            rho_sidm = 10 ** logrho(self._halo_class.mass, self._halo_class.z, zeta, cmean,
-                                    self.concentration, self._halo_class._args['vpower'])
+            delta_concentration = (self.concentration - cmean) / cmean
+
+            rho_sidm = 10 ** logrho(np.log10(self._halo_class.mass),
+                                    self._halo_class.z, zeta,
+                                    self._halo_class._args['vpower'],
+                                    delta_concentration)
 
             core_ratio = rho_mean * rho_sidm ** -1
 

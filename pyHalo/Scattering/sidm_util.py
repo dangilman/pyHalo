@@ -4,20 +4,31 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.interpolate import interp1d
 from pyHalo.Halos.halo_util import deflection_angle
 import numpy as np
-from pyHalo.Scattering.sidm_interp import logrho
+from pyHalo.Scattering.sidm_interp_2 import logrho
+from pyHalo.Scattering.cross_sections import VelocityDependentCross
 
 cosmo = Cosmology()
 lens_cosmo = LensCosmo(0.5, 1.5, cosmo)
+lens_cosmo.rhoc *= 0.7 ** 2
+def sidm_central_density_from_mass_exact(c_norm, vpower, m, z, N=5, plot=False):
 
+    cross = VelocityDependentCross(c_norm, v_pow=vpower)
+    c = lens_cosmo.NFW_concentration(m, z, scatter=False)
+    rhonfw, rs_nfw, _ = lens_cosmo.NFW_params_physical(m, c, z)
+    rho0, s0, core_size_unitsrs, fit_quality = \
+        solve_iterative(rhonfw, rs_nfw, cross, N, plot)
+    return rho0
 
-def sidm_central_density_from_mass(cross_section, vpower, m, z, c_scatter=False):
+def sidm_central_density_from_mass_interpolated(cross_section, vpower, m, z, c_scatter=False):
 
     c = lens_cosmo.NFW_concentration(m, z, scatter=c_scatter)
     cmean = lens_cosmo.NFW_concentration(m, z, scatter=False)
-    halo_age = cosmo.halo_age(z)
-    zeta = cross_section * halo_age
-
-    return logrho(m, z, zeta, cmean, c, vpower)
+    rhos, rs, _ = lens_cosmo.NFW_params_physical_fromM(m, z)
+    halo_age_scaled = cosmo.halo_age(z)/10
+    zeta = cross_section * halo_age_scaled
+    logrho0 = logrho(np.log10(m), z, zeta, vpower)
+    rho0 = 10**logrho0
+    return rho0, rhos/rho0, rs * rhos/rho0
 
 def nfw_density_truncated(x, tau, rhos):
     return rhos * tau ** 2 / (x * (1 + x) ** 2) / (x ** 2 + tau ** 2)

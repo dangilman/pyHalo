@@ -469,4 +469,3 @@ def _velocity_dispersion_NFW(r, rhos, rs):
 
     return factor * vdis_interp(X)
 
-

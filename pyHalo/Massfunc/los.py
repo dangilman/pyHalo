@@ -62,11 +62,12 @@ class LOSDelta(LOS):
         delta_z = self._redshift_range[1] - zstart
         pargs = copy(self._parameterization_args)
 
-        nobjects = self._lensing_mass_func.dN_comoving_deltaFunc(10**pargs['M'], zstart, delta_z, pargs['mass_fraction'])
+        nobjects = self._lensing_mass_func.\
+            dN_comoving_deltaFunc(10**pargs['logM_delta'], zstart, delta_z, pargs['mass_fraction'])
         nobjects *= pargs['LOS_normalization']
         nobjects = np.random.poisson(nobjects)
 
-        masses = np.array([10**pargs['M']]*nobjects)
+        masses = np.array([10**pargs['logM_delta']]*nobjects)
 
         x, y, r2d, r3d = self._render_positions_atz(zstart, len(masses))
 
@@ -77,12 +78,12 @@ class LOSDelta(LOS):
 
             pargs = copy(self._parameterization_args)
 
-            nobjects = self._lensing_mass_func.dN_comoving_deltaFunc(10**pargs['M'], z,
+            nobjects = self._lensing_mass_func.dN_comoving_deltaFunc(10**pargs['logM_delta'], z,
                                                                      delta_z, pargs['mass_fraction'])
 
             nobjects *= pargs['LOS_normalization']
             nobjects = np.random.poisson(nobjects)
-            m = np.array([10**pargs['M']] * nobjects)
+            m = np.array([10**pargs['logM_delta']] * nobjects)
 
             xi, yi, r2di, r3di = self._render_positions_atz(z, len(m))
 
@@ -94,12 +95,13 @@ class LOSDelta(LOS):
             if len(m) > 0:
                 redshifts += [z]*len(m)
 
-        return np.array(masses), np.array(x), np.array(y), np.array(r2d), np.array(r3d), np.array(redshifts)
+        return np.array(masses), np.array(x), np.array(y), np.array(r2d), \
+               np.array(r3d), np.array(redshifts), [False]*len(masses)
 
     def _mfunc(self,args):
 
         args_mfunc = {}
-        required_keys = ['zmin', 'zmax', 'M', 'mass_fraction', 'LOS_normalization']
+        required_keys = ['zmin', 'zmax', 'logM_delta', 'mass_fraction', 'LOS_normalization']
 
         for key in required_keys:
 

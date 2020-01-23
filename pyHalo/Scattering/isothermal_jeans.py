@@ -3,7 +3,6 @@ from scipy.integrate import solve_ivp
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from pyHalo.Scattering.vdis_nfw import _velocity_dispersion_NFW
-from pyHalo.Scattering.Enfw import _energyNFW
 from copy import copy
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
@@ -154,10 +153,6 @@ def velocity_dispersion_NFW_slow(r, rho_s, rs):
 def velocity_dispersion_NFW(r, rhos, rs):
 
     return _velocity_dispersion_NFW(r, rhos, rs)
-
-def energyNFW(rhos, rs, r):
-    # numerical fudge factor
-    return _energyNFW(r, rhos, rs) * 1.045
 
 def energyNFW_slow(rhos, rs, r):
 

@@ -1,906 +1,372 @@
 import numpy as np
 
-def get_interps(vpower):
-
-    if vpower == 0:
-        zeta_values = np.array([15, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
-        delta_zeta = 10
-
-        slopes_fit15 = np.array([-0.00873369, 0.04547522, -0.29734756])
-        intercept_fit15 = np.array([0.07877708, -0.38898387, 10.5698512])
-
-        slopes_fit20 = np.array([-0.00918773, 0.0488793, -0.29863145])
-        intercept_fit20 = np.array([0.07010828, -0.36470976, 10.46369133])
-
-        slopes_fit30 = np.array([-0.00241264, 0.02423532, -0.27256061])
-        intercept_fit30 = np.array([4.88893147e-03, -1.17866173e-01, 1.01118786e+01])
-
-        slopes_fit40 = np.array([-0.00290296, 0.02673381, -0.2688431])
-        intercept_fit40 = np.array([6.07813845e-03, -1.21838139e-01, 1.00005009e+01])
-
-        slopes_fit50 = np.array([0.00044168, 0.01763467, -0.26034332])
-        intercept_fit50 = np.array([-0.02583692, -0.02511449, 9.86354876])
-
-        slopes_fit60 = np.array([0.00093022, 0.01567164, -0.25349179])
-        intercept_fit60 = np.array([-3.16140435e-02, 2.30547410e-03, 9.75835143e+00])
-
-        slopes_fit70 = np.array([-0.00082639, 0.02240234, -0.25545913])
-        intercept_fit70 = np.array([-0.01940403, -0.04151627, 9.73603133])
-
-        slopes_fit80 = np.array([-2.40575064e-04, 2.22435083e-02, -2.53736741e-01])
-        intercept_fit80 = np.array([-0.02435385, -0.03561933, 9.69079706])
-
-        slopes_fit90 = np.array([-1.84122523e-04, 2.23516959e-02, -2.49861931e-01])
-        intercept_fit90 = np.array([-0.02648198, -0.0264818, 9.62954199])
-
-        slopes_fit100 = np.array([0.00107284, 0.01941302, -0.24634224])
-        intercept_fit100 = np.array([-3.73727259e-02, 1.53168502e-03, 9.57909464e+00])
-
-        slopes_fit110 = np.array([-4.55463887e-05, 2.31114321e-02, -2.46727988e-01])
-        intercept_fit110 = np.array([-0.03068813, -0.01717815, 9.5574457])
-
-        slopes_fit120 = np.array([-0.00051066, 0.0256819, -0.24616056])
-        intercept_fit120 = np.array([-0.02726755, -0.03379491, 9.53504005])
-
-        slope_polynomial = [slopes_fit15, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50, slopes_fit60,
-                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
-
-        intercept_polynomial = [intercept_fit15, intercept_fit20, intercept_fit30, intercept_fit40, intercept_fit50,
-                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
-                                intercept_fit100, intercept_fit110, intercept_fit120]
-
-    elif vpower == 0.25:
-
-        zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
-        delta_zeta = 10
-
-        v_power = 0.25
-
-        slopes_fit5 = np.array([0.00265324, 0.0013187, -0.23389509])
-        intercept_fit5 = np.array([-0.01416015, -0.0436715, 10.29509811])
-
-        slopes_fit10 = np.array([-0.00244904, 0.01822089, -0.22663368])
-        intercept_fit10 = np.array([0.01668281, -0.11724189, 9.95671085])
-
-        slopes_fit20 = np.array([-0.00406356, 0.02438003, -0.22862712])
-        intercept_fit20 = np.array([0.01234056, -0.0892347, 9.73510325])
-
-        slopes_fit30 = np.array([0.00379082, -0.00085764, -0.20774859])
-        intercept_fit30 = np.array([-0.05609376, 0.13923396, 9.45090133])
-
-        slopes_fit40 = np.array([0.00022811, 0.01055014, -0.21209176])
-        intercept_fit40 = np.array([-0.02789103, 0.05653192, 9.41670283])
-
-        slopes_fit50 = np.array([0.00156431, 0.00819971, -0.20830772])
-        intercept_fit50 = np.array([-0.04147038, 0.0899329, 9.32832227])
-
-        slopes_fit60 = np.array([0.00185098, 0.008343, -0.20757718])
-        intercept_fit60 = np.array([-0.04674078, 0.10276386, 9.2784344])
-
-        slopes_fit70 = np.array([0.00265975, 0.00491357, -0.20274943])
-        intercept_fit70 = np.array([-0.05378208, 0.13671694, 9.20575002])
-
-        slopes_fit80 = np.array([0.00276225, 0.00710798, -0.20554342])
-        intercept_fit80 = np.array([-0.05615454, 0.12678472, 9.20104849])
-
-        slopes_fit90 = np.array([0.00167941, 0.01078237, -0.20590455])
-        intercept_fit90 = np.array([-0.05054303, 0.11153491, 9.17377731])
-
-        slopes_fit100 = np.array([0.00130484, 0.01211627, -0.20549199])
-        intercept_fit100 = np.array([-0.04693703, 0.10302725, 9.15061961])
-
-        slopes_fit110 = np.array([0.00151193, 0.01281393, -0.2050846])
-        intercept_fit110 = np.array([-0.05048566, 0.10626126, 9.12707519])
-
-        slopes_fit120 = np.array([0.00177043, 0.01211839, -0.20268432])
-        intercept_fit120 = np.array([-0.05287078, 0.11606177, 9.09110859])
-
-        slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
-                            slopes_fit60,
-                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
-
-        intercept_polynomial = [intercept_fit5, intercept_fit10, intercept_fit20, intercept_fit30, intercept_fit40,
-                                intercept_fit50,
-                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
-                                intercept_fit100, intercept_fit110, intercept_fit120]
-
-    elif vpower == 0.4:
-
-        zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
-        delta_zeta = 10
-
-        slopes_fit5 = np.array([0.15961935, -0.6056795, 0.27743768])
-        intercept_fit5 = np.array([-1.19772122, 4.54910621, 6.3036186])
-
-        slopes_fit10 = np.array([-0.00066629, 0.01213143, -0.19620701])
-        intercept_fit10 = np.array([-1.12017166e-02, -7.26001369e-03, 9.59743358e+00])
-
-        slopes_fit20 = np.array([0.00467656, -0.00875179, -0.17701287])
-        intercept_fit20 = np.array([-0.0666846, 0.2160626, 9.23163342])
-
-        slopes_fit30 = np.array([0.00280357, 0.00045004, -0.18216039])
-        intercept_fit30 = np.array([-0.05221757, 0.15167468, 9.1749843])
-
-        slopes_fit40 = np.array([0.00178267, 0.00395416, -0.18325958])
-        intercept_fit40 = np.array([-0.04618201, 0.13696309, 9.11572964])
-
-        slopes_fit50 = np.array([0.00209424, 0.00252393, -0.18106064])
-        intercept_fit50 = np.array([-0.05096114, 0.16131746, 9.04605069])
-
-        slopes_fit60 = np.array([0.00301758, 0.002483, -0.18321019])
-        intercept_fit60 = np.array([-0.05972626, 0.16918253, 9.0259463])
-
-        slopes_fit70 = np.array([0.00343449, 0.00115228, -0.18177905])
-        intercept_fit70 = np.array([-0.06508904, 0.19271624, 8.97753326])
-
-        slopes_fit80 = np.array([3.78459538e-03, -1.21050722e-04, -1.79476704e-01])
-        intercept_fit80 = np.array([-0.06889257, 0.2106829, 8.93042337])
-
-        slopes_fit90 = np.array([0.00279943, 0.00364632, -0.18093018])
-        intercept_fit90 = np.array([-0.06191401, 0.1872276, 8.91996702])
-
-        slopes_fit100 = np.array([0.00285508, 0.00400034, -0.18209596])
-        intercept_fit100 = np.array([-0.06450729, 0.19490901, 8.90676437])
-
-        slopes_fit110 = np.array([0.00415302, -0.00112172, -0.1762421])
-        intercept_fit110 = np.array([-0.07595476, 0.24258089, 8.84230485])
-
-        slopes_fit120 = np.array([0.00282095, 0.00537875, -0.18258776])
-        intercept_fit120 = np.array([-0.06649255, 0.19674746, 8.87858429])
-
-        slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
-                            slopes_fit60,
-                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
-
-        intercept_polynomial = [intercept_fit5, intercept_fit10, intercept_fit20, intercept_fit30, intercept_fit40,
-                                intercept_fit50,
-                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
-                                intercept_fit100, intercept_fit110, intercept_fit120]
-
-    elif vpower == 0.5:
-
-        zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
-        delta_zeta = 10
-
-        slopes_fit5 = np.array([0.0012989, -0.00151646, -0.15982686])
-        intercept_fit5 = np.array([-0.01229278, 0.0428837, 9.49031537])
-
-        slopes_fit10 = np.array([-0.00025443, 0.01007318, -0.17423818])
-        intercept_fit10 = np.array([-0.0169306, 0.02538956, 9.363078])
-
-        slopes_fit20 = np.array([0.00320873, -0.00437765, -0.16328214])
-        intercept_fit20 = np.array([-0.05463304, 0.18431916, 9.08253523])
-
-        slopes_fit30 = np.array([0.00308802, -0.00220246, -0.16433341])
-        intercept_fit30 = np.array([-0.05864577, 0.19309639, 8.98506665])
-
-        slopes_fit40 = np.array([0.00321089, -0.00261928, -0.16619568])
-        intercept_fit40 = np.array([-0.06121329, 0.20783084, 8.93435083])
-
-        slopes_fit50 = np.array([0.00248163, 0.00078203, -0.16693899])
-        intercept_fit50 = np.array([-0.05739456, 0.19123372, 8.89263283])
-
-        slopes_fit60 = np.array([0.00483479, -0.0057663, -0.16375015])
-        intercept_fit60 = np.array([-0.07757196, 0.25334904, 8.82731654])
-
-        slopes_fit70 = np.array([0.00465157, -0.00559884, -0.16428474])
-        intercept_fit70 = np.array([-0.07582748, 0.2570401, 8.80085341])
-
-        slopes_fit80 = np.array([0.00353611, -0.00084991, -0.16869627])
-        intercept_fit80 = np.array([-0.06987584, 0.23252822, 8.80845793])
-
-        slopes_fit90 = np.array([0.00476609, -0.00431403, -0.16640688])
-        intercept_fit90 = np.array([-0.08219107, 0.27246728, 8.76596329])
-
-        slopes_fit100 = np.array([0.0046619, -0.00344269, -0.1671239])
-        intercept_fit100 = np.array([-0.08314166, 0.27455759, 8.75212681])
-
-        slopes_fit110 = np.array([3.60339922e-03, 1.31360162e-04, -1.69504826e-01])
-        intercept_fit110 = np.array([-0.07480173, 0.24838737, 8.7579539])
-
-        slopes_fit120 = np.array([0.00449002, -0.00314914, -0.16767864])
-        intercept_fit120 = np.array([-0.084442, 0.28699014, 8.72455021])
-
-        slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
-                            slopes_fit60,
-                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
-
-        intercept_polynomial = [intercept_fit5, intercept_fit10, intercept_fit20, intercept_fit30, intercept_fit40,
-                                intercept_fit50,
-                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
-                                intercept_fit100, intercept_fit110, intercept_fit120]
-
-    elif vpower == 0.6:
-
-        zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
-        delta_zeta = 10
-
-        slopes_fit5 = np.array([0.00532636, -0.01548608, -0.13258164])
-        intercept_fit5 = np.array([-0.0542423, 0.19769615, 9.1914769])
-
-        slopes_fit10 = np.array([0.00293763, -0.00363292, -0.14594608])
-        intercept_fit10 = np.array([-0.04713896, 0.15778479, 9.07856056])
-
-        slopes_fit20 = np.array([0.00391073, -0.00694817, -0.14507455])
-        intercept_fit20 = np.array([-0.06310773, 0.22103103, 8.88605547])
-
-        slopes_fit30 = np.array([0.00354745, -0.00529315, -0.14761838])
-        intercept_fit30 = np.array([-0.06342665, 0.2277179, 8.80870428])
-
-        slopes_fit40 = np.array([0.0046871, -0.00689681, -0.15193929])
-        intercept_fit40 = np.array([-0.07500406, 0.25314633, 8.78264004])
-
-        slopes_fit50 = np.array([0.00588497, -0.01022511, -0.14838062])
-        intercept_fit50 = np.array([-0.08722261, 0.29470006, 8.70281808])
-
-        slopes_fit60 = np.array([0.0058367, -0.01147992, -0.14880548])
-        intercept_fit60 = np.array([-0.08785315, 0.31421723, 8.66913953])
-
-        slopes_fit70 = np.array([0.00479057, -0.00778304, -0.15202999])
-        intercept_fit70 = np.array([-0.08236731, 0.29833731, 8.66421279])
-
-        slopes_fit80 = np.array([0.0054714, -0.00831967, -0.15432778])
-        intercept_fit80 = np.array([-0.08914859, 0.31142856, 8.65769244])
-
-        slopes_fit90 = np.array([0.00557633, -0.00948703, -0.1530476])
-        intercept_fit90 = np.array([-0.09116717, 0.32822673, 8.62772145])
-
-        slopes_fit100 = np.array([0.00549166, -0.00790876, -0.15720378])
-        intercept_fit100 = np.array([-0.09117963, 0.32292029, 8.64287672])
-
-        slopes_fit110 = np.array([0.00560193, -0.00876665, -0.15554193])
-        intercept_fit110 = np.array([-0.09636302, 0.34416616, 8.61085698])
-
-        slopes_fit120 = np.array([0.00550915, -0.00813063, -0.15671411])
-        intercept_fit120 = np.array([-0.0950345, 0.34060712, 8.61002036])
-
-        slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
-                            slopes_fit60,
-                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
-
-        intercept_polynomial = [intercept_fit5, intercept_fit10, intercept_fit20, intercept_fit30, intercept_fit40,
-                                intercept_fit50,
-                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
-                                intercept_fit100, intercept_fit110, intercept_fit120]
-
-    elif vpower == 0.75:
-
-        zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
-        delta_zeta = 10
-
-        slopes_fit5 = np.array([0.0073363, -0.02420357, -0.09743076])
-        intercept_fit5 = np.array([-0.08196289, 0.31987498, 8.7988166])
-
-        slopes_fit10 = np.array([0.00495241, -0.01149054, -0.11406175])
-        intercept_fit10 = np.array([-0.07120591, 0.25632146, 8.73628973])
-
-        slopes_fit20 = np.array([0.00495698, -0.01178013, -0.11984633])
-        intercept_fit20 = np.array([-0.07586772, 0.28437172, 8.61415064])
-
-        slopes_fit30 = np.array([0.00499943, -0.01043922, -0.12621999])
-        intercept_fit30 = np.array([-0.0795134, 0.29215373, 8.57422544])
-
-        slopes_fit40 = np.array([0.00514806, -0.0125641, -0.12733293])
-        intercept_fit40 = np.array([-0.08215261, 0.32048692, 8.52443904])
-
-        slopes_fit50 = np.array([0.00576937, -0.01298645, -0.13094439])
-        intercept_fit50 = np.array([-0.08940453, 0.33749282, 8.50861492])
-
-        slopes_fit60 = np.array([0.00657674, -0.01635683, -0.13171033])
-        intercept_fit60 = np.array([-0.09874747, 0.37915242, 8.47964869])
-
-        slopes_fit70 = np.array([0.00721867, -0.01789994, -0.1337875])
-        intercept_fit70 = np.array([-0.1066543, 0.40535467, 8.46740017])
-
-        slopes_fit80 = np.array([0.00677051, -0.01602363, -0.13624527])
-        intercept_fit80 = np.array([-0.10582565, 0.40272525, 8.46368238])
-
-        slopes_fit90 = np.array([0.00676115, -0.01486285, -0.14071791])
-        intercept_fit90 = np.array([-0.10639645, 0.39954191, 8.48195431])
-
-        slopes_fit100 = np.array([0.00627056, -0.01415308, -0.14064908])
-        intercept_fit100 = np.array([-0.10258477, 0.39774229, 8.46783375])
-
-        slopes_fit110 = np.array([0.00612255, -0.01429915, -0.14259594])
-        intercept_fit110 = np.array([-0.10294788, 0.40782717, 8.46947815])
-
-        slopes_fit120 = np.array([0.00694064, -0.01748712, -0.14233947])
-        intercept_fit120 = np.array([-0.11045529, 0.44054946, 8.45525846])
-
-        slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
-                            slopes_fit60,
-                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
-
-        intercept_polynomial = [intercept_fit5, intercept_fit10, intercept_fit20, intercept_fit30, intercept_fit40,
-                                intercept_fit50,
-                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
-                                intercept_fit100, intercept_fit110, intercept_fit120]
-
-    elif vpower == 0.7:
-
-        zeta_values = np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
-        delta_zeta = 10
-
-        if True:
-            slopes_fit5 = np.array([0.00973678, -0.03142519, -0.10343325])
-            intercept_fit5 = np.array([-0.09799922, 0.36181552, 8.88336984])
-
-            slopes_fit10 = np.array([0.00714848, -0.01957806, -0.11861516])
-            intercept_fit10 = np.array([-0.08880488, 0.31876295, 8.79644261])
-
-            slopes_fit20 = np.array([0.00411244, -0.00903825, -0.12928106])
-            intercept_fit20 = np.array([-0.06723712, 0.25336723, 8.71316201])
-
-            slopes_fit30 = np.array([0.00513231, -0.01154284, -0.13102058])
-            intercept_fit30 = np.array([-0.07900466, 0.29230299, 8.6350889])
-
-            slopes_fit40 = np.array([0.00411038, -0.00778135, -0.13599851])
-            intercept_fit40 = np.array([-0.07365812, 0.27845067, 8.61030438])
-
-            slopes_fit50 = np.array([0.00476455, -0.00881367, -0.13811168])
-            intercept_fit50 = np.array([-0.07911127, 0.29318647, 8.58592318])
-
-            slopes_fit60 = np.array([0.00656568, -0.01527028, -0.13717628])
-            intercept_fit60 = np.array([-0.09664753, 0.36046842, 8.54096375])
-
-            slopes_fit70 = np.array([0.00610427, -0.01403559, -0.13881117])
-            intercept_fit70 = np.array([-0.09533585, 0.36328051, 8.525243])
-
-            slopes_fit80 = np.array([0.00569853, -0.01228741, -0.14159118])
-            intercept_fit80 = np.array([-0.09355446, 0.358146, 8.52499591])
-
-            slopes_fit90 = np.array([0.00717163, -0.01529502, -0.14327842])
-            intercept_fit90 = np.array([-0.10825774, 0.3949343, 8.51707394])
-
-            slopes_fit100 = np.array([0.00580987, -0.01071642, -0.14694581])
-            intercept_fit100 = np.array([-0.09798099, 0.36326058, 8.53191791])
-
-            slopes_fit110 = np.array([0.00575655, -0.01198294, -0.14610312])
-            intercept_fit110 = np.array([-0.09857626, 0.38093526, 8.50976205])
-
-            slopes_fit120 = np.array([0.00601038, -0.01233357, -0.14800367])
-            intercept_fit120 = np.array([-0.10127382, 0.38955701, 8.51349066])
-
-        else:
-            slopes_fit5 = np.array([-0.00196707, -0.11596073])
-            intercept_fit5 = np.array([0.06532406, 9.00945706])
-
-            slopes_fit10 = np.array([0.0020493, -0.12781251])
-            intercept_fit10 = np.array([0.05008846, 8.91070026])
-
-            slopes_fit20 = np.array([0.00340371, -0.13457218])
-            intercept_fit20 = np.array([0.04994487, 8.79967026])
-
-            slopes_fit30 = np.array([0.00398468, -0.13762388])
-            intercept_fit30 = np.array([0.05327855, 8.73673745])
-
-            slopes_fit40 = np.array([0.00465438, -0.14128698])
-            intercept_fit40 = np.array([0.05560193, 8.70507398])
-
-            slopes_fit50 = np.array([0.00560122, -0.14424182])
-            intercept_fit50 = np.array([0.0538395, 8.68770889])
-
-            slopes_fit60 = np.array([0.00459384, -0.14562378])
-            intercept_fit60 = np.array([0.06806642, 8.66531186])
-
-            slopes_fit70 = np.array([0.00443256, -0.14666501])
-            intercept_fit70 = np.array([0.07484694, 8.64790349])
-
-            slopes_fit80 = np.array([0.00495319, -0.14892299])
-            intercept_fit80 = np.array([0.07510193, 8.64536443])
-
-            slopes_fit90 = np.array([0.00640236, -0.15250554])
-            intercept_fit90 = np.array([0.06740622, 8.65635991])
-
-            slopes_fit100 = np.array([0.00686102, -0.15442087])
-            intercept_fit100 = np.array([0.06682426, 8.65798167])
-
-            slopes_fit110 = np.array([0.0054332, -0.15350959])
-            intercept_fit110 = np.array([0.082698, 8.63659169])
-
-            slopes_fit120 = np.array([0.00585052, -0.15573671])
-            intercept_fit120 = np.array([0.08315841, 8.64379102])
-
-        slope_polynomial = [slopes_fit5, slopes_fit10, slopes_fit20, slopes_fit30, slopes_fit40, slopes_fit50,
-                            slopes_fit60,
-                            slopes_fit70, slopes_fit80, slopes_fit90, slopes_fit100, slopes_fit110, slopes_fit120]
-
-        intercept_polynomial = [intercept_fit5, intercept_fit10, intercept_fit20, intercept_fit30, intercept_fit40,
-                                intercept_fit50,
-                                intercept_fit60, intercept_fit70, intercept_fit80, intercept_fit90,
-                                intercept_fit100, intercept_fit110, intercept_fit120]
-
-    else:
-        raise Exception('v_power '+str(vpower)+' not recognized.')
-
-    return slope_polynomial, intercept_polynomial, zeta_values, delta_zeta
-
-def _logrho_Mz(m, z, idx, slope_polynomial, intercept_polynomial):
-
-    try:
-        slope = slope_polynomial[idx][0] * z ** 2 + slope_polynomial[idx][1] * z + slope_polynomial[idx][2]
-        intercept = intercept_polynomial[idx][0] * z ** 2 + intercept_polynomial[idx][1] * z + intercept_polynomial[idx][2]
-    except:
-        slope = slope_polynomial[idx][0] * z + slope_polynomial[idx][1]
-        intercept = intercept_polynomial[idx][0] * z + intercept_polynomial[idx][1]
-    # print(slope, intercept)
-
-    return intercept + np.log10(m) * slope
-
-def logrho_Mz_0(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
-
-    if zeta >= 15 and zeta < 20:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta > 20 and zeta <= 22.5:
-        inds = [1, 2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
-        logm = np.log10(m)
-
-        if logm < 6:
-            rho_at_0 = 10
-        elif logm <= 7:
-            rho_at_0 = 9
-        elif logm <= 8:
-            rho_at_0 = 8.8
-        else:
-            rho_at_0 = 8.5
-
-        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
-
-        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
-
-    elif zeta > 120:
-        nmax = int(len(zeta_values))-1
-        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1)) + rho_0) * delta_zeta ** -1
-        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
-
-    else:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        #w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    logrho_central += 0.5 * (c - cmean) * cmean ** -1
-
-    return logrho_central
-
-def logrho_Mz_25(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
-
-    if zeta >= 5 and zeta < 10:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta >= 10 and zeta < 12.5:
-        inds = [1, 2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
-
-        logm = np.log10(m)
-        if logm < 6:
-            rho_at_0 = 10
-        elif logm <= 7:
-            rho_at_0 = 9
-        elif logm <= 8:
-            rho_at_0 = 8.8
-        else:
-            rho_at_0 = 8.5
-
-        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
-
-        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
-
-    elif zeta > 120:
-        nmax = int(len(zeta_values))-1
-        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1)) + rho_0, slope_poly, intercept_poly) * delta_zeta ** -1
-        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
-
-    else:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        #w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    logrho_central += 0.5 * (c - cmean) * cmean ** -1
-
-    return logrho_central
-
-
-def logrho_Mz_4(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
-
-    if zeta >= 5 and zeta < 10:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta >= 10 and zeta < 12.5:
-        inds = [1, 2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
-
-        rho_at_0 = 10
-
-        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
-
-        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
-
-    elif zeta > 120:
-        nmax = int(len(zeta_values))-1
-        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1)) + rho_0) * delta_zeta ** -1
-        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
-
-    else:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        #w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    logrho_central += 0.5 * (c - cmean) * cmean ** -1
-
-    return logrho_central
-
-def logrho_Mz_5(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
-
-    if zeta >= 5 and zeta < 10:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta >= 10 and zeta < 12.5:
-        inds = [1, 2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
-
-        rho_at_0 = 10
-
-        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
-
-        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
-
-    elif zeta > 120:
-        nmax = int(len(zeta_values))-1
-        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1), slope_poly, intercept_poly) + rho_0) * delta_zeta ** -1
-        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
-
-    else:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        #w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    logrho_central += 0.5 * (c - cmean) * cmean ** -1
-
-    return logrho_central
-
-def logrho_Mz_6(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
-
-    if zeta >= 5 and zeta < 10:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta >= 10 and zeta < 12.5:
-        inds = [1, 2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
-
-        rho_at_0 = 10
-
-        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
-
-        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
-
-    elif zeta > 120:
-        nmax = int(len(zeta_values))-1
-        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1), slope_poly, intercept_poly) + rho_0) * delta_zeta ** -1
-        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
-
-    else:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        #w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    logrho_central += 0.5 * (c - cmean) * cmean ** -1
-
-    return logrho_central
-
-def logrho_Mz_7(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
-
-    if zeta >= 5 and zeta < 10:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta >= 10 and zeta < 12.5:
-        inds = [1, 2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
-
-        rho_at_0 = 10
-
-        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
-
-        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
-
-    elif zeta > 120:
-        nmax = int(len(zeta_values))-1
-        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1), slope_poly, intercept_poly) + rho_0) * delta_zeta ** -1
-        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
-
-    else:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        #w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    logrho_central += 0.5 * (c - cmean) * cmean ** -1
-
-    return logrho_central
-
-def logrho_Mz_75(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_poly, intercept_poly):
-
-    if zeta >= 5 and zeta < 10:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * 5 ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta >= 10 and zeta < 12.5:
-        inds = [1, 2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        # w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    elif zeta < zeta_values[0]:
-        rho_0 = _logrho_Mz(m, z, 0, slope_poly, intercept_poly)
-
-        rho_at_0 = 10
-
-        derivative = (rho_0 - rho_at_0) * delta_zeta ** -1
-
-        logrho_central = (zeta - zeta_values[0]) * derivative + rho_0
-
-    elif zeta > 120:
-        nmax = int(len(zeta_values))-1
-        rho_0 = _logrho_Mz(m, z, nmax, slope_poly, intercept_poly)
-        derivative = (-_logrho_Mz(m, z, int(nmax-1), slope_poly, intercept_poly) + rho_0) * delta_zeta ** -1
-        logrho_central = (zeta - zeta_values[-1]) * derivative + rho_0
-
-    else:
-
-        inds = np.argsort(np.absolute(zeta_values - zeta))[0:2]
-
-        w1 = np.absolute(1 - np.absolute(zeta - zeta_values[inds[0]]) * delta_zeta ** -1)
-        w2 = 1 - w1
-        #w1, w2 = 1, 0
-
-        rho1 = w1 * _logrho_Mz(m, z, inds[0], slope_poly, intercept_poly)
-        rho2 = w2 * _logrho_Mz(m, z, inds[1], slope_poly, intercept_poly)
-
-        logrho_central = rho1 + rho2
-
-    logrho_central += 0.5 * (c - cmean) * cmean ** -1
-
-    return logrho_central
-
-def _logrho(m, z, zeta, cmean, c, vpower):
-
-    slope_polynomial, intercept_polynomial, zeta_values, delta_zeta = get_interps(vpower)
-
-    if vpower == 0:
-        return logrho_Mz_0(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
-    elif vpower == 0.25:
-        return logrho_Mz_25(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
-    elif vpower == 0.4:
-        return logrho_Mz_4(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
-    elif vpower == 0.5:
-        return logrho_Mz_5(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
-    elif vpower == 0.6:
-        return logrho_Mz_6(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
-    elif vpower == 0.7:
-        return logrho_Mz_7(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
-    elif vpower == 0.75:
-        return logrho_Mz_75(m, z, zeta, cmean, c, zeta_values, delta_zeta, slope_polynomial, intercept_polynomial)
-
-def logrho(m, z, zeta, cmean, c, vpower):
-
-    pre_computed = [0, 0.25, 0.4, 0.6, 0.7, 0.75]
-    if vpower < pre_computed[0] or vpower > pre_computed[-1]:
-        raise Exception('Specified velocity dependence '+str(vpower)+' out of bounds. '
-                   'Velocity dependence only computed between 0 and 0.75.')
-
-    if vpower in pre_computed:
-        return _logrho(m, z, zeta, cmean, c, vpower)
-    else:
-
-        dv = np.absolute(np.array(pre_computed) - vpower)
-        sorted = np.argsort(dv)
-
-        vpower1, vpower2 = pre_computed[sorted[0]], pre_computed[sorted[1]]
-        dv = abs(vpower1 - vpower2)
-
-        weight2 = abs(vpower1 - vpower) / dv
-        weight1 = abs(vpower2 - vpower) / dv
-
-        norm = 1/(weight1 + weight2)
-        weight1 *= norm
-        weight2 *= norm
-
-        rho0_one = _logrho(m, z, zeta, cmean, c, vpower1)
-        rho0_two = _logrho(m, z, zeta, cmean, c, vpower2)
-
-        return weight1 * rho0_one + weight2 * rho0_two
+log_rho0_vpower1 = np.array([[[7.9924, 7.6997, 7.589, 7.5446, 7.5192, 7.4994],
+                              [8.0802, 7.8132, 7.7302, 7.6977, 7.6833, 7.685],
+                              [8.1324, 7.8811, 7.8113, 7.7894, 7.7945, 7.8377],
+                              [8.1626, 7.9263, 7.8567, 7.8513, 7.8802, 8.5937],
+                              [8.1826, 7.9597, 7.8936, 7.8932, 7.9304, 8.0274],
+                              [8.2034, 7.9769, 7.9201, 7.923, 7.9779, 8.3721],
+                              [8.209, 7.9942, 7.9378, 7.9453, 8.7225, 8.2521],
+                              [8.2199, 8.0045, 7.9538, 7.9761, 8.0519, 8.2643],
+                              [8.2257, 8.0152, 7.9679, 7.9935, 8.0803, 8.2515],
+                              [8.2274, 8.0283, 7.9814, 8.0094, 8.6096, 8.2548],
+                              [8.2399, 8.0381, 7.9946, 8.026, 8.562, 8.2532]],
+                             [[7.9354, 7.6212, 7.4975, 7.4376, 7.4082, 7.3853],
+                              [8.0152, 7.727, 7.6178, 7.5805, 7.5515, 7.5436],
+                              [8.0647, 7.7958, 7.6998, 7.6661, 7.6501, 7.6518],
+                              [8.0956, 7.8369, 7.7505, 7.7156, 7.7136, 7.7211],
+                              [8.116, 7.8548, 7.7818, 7.7541, 7.7558, 7.7822],
+                              [8.1317, 7.8762, 7.8073, 7.7821, 7.7838, 7.8278],
+                              [8.144, 7.8921, 7.8256, 7.8038, 7.8113, 7.8578],
+                              [8.1532, 7.9045, 7.8414, 7.822, 7.8295, 7.8819],
+                              [8.1582, 7.9153, 7.8547, 7.8387, 7.8643, 8.6386],
+                              [8.162, 7.9355, 7.8726, 7.8541, 7.883, 7.953],
+                              [8.17, 7.946, 7.8856, 7.8729, 7.9026, 7.9836]],
+                             [[7.8672, 7.54, 7.3947, 7.3331, 7.2915, 7.2679],
+                              [7.9538, 7.6348, 7.522, 7.4578, 7.433, 7.4113],
+                              [7.9918, 7.6991, 7.5884, 7.544, 7.5186, 7.4988],
+                              [8.0255, 7.7365, 7.6298, 7.5916, 7.5758, 7.5615],
+                              [8.0367, 7.7645, 7.6686, 7.6291, 7.6059, 7.6039],
+                              [8.0561, 7.7807, 7.6907, 7.6536, 7.6342, 7.6334],
+                              [8.0699, 7.7986, 7.7094, 7.6747, 7.6587, 7.6604],
+                              [8.0772, 7.8102, 7.7272, 7.6981, 7.6803, 7.682],
+                              [8.0902, 7.8298, 7.7417, 7.715, 7.7007, 7.7048],
+                              [8.103, 7.8419, 7.7546, 7.7231, 7.7202, 7.7285],
+                              [8.1238, 7.8534, 7.7729, 7.7439, 7.7401, 7.7674]],
+                             [[7.8142, 7.4508, 7.3026, 7.2254, 7.1753, 7.1463],
+                              [7.8731, 7.5419, 7.415, 7.3484, 7.3017, 7.2782],
+                              [7.9193, 7.6017, 7.4735, 7.4163, 7.3835, 7.3581],
+                              [7.9458, 7.6369, 7.5241, 7.46, 7.4352, 7.4135],
+                              [7.966, 7.6596, 7.5487, 7.4994, 7.4672, 7.4531],
+                              [7.9833, 7.6827, 7.5722, 7.5244, 7.4965, 7.4856],
+                              [7.992, 7.7027, 7.592, 7.5451, 7.5222, 7.5024],
+                              [8.0037, 7.7204, 7.6071, 7.5682, 7.5431, 7.5271],
+                              [8.0173, 7.7307, 7.624, 7.5867, 7.5709, 7.5532],
+                              [8.0302, 7.7521, 7.6423, 7.6075, 7.5942, 7.5798],
+                              [8.0402, 7.768, 7.6688, 7.6326, 7.6094, 7.6074]],
+                             [[7.7588, 7.3627, 7.1997, 7.1141, 7.0563, 7.023],
+                              [7.8078, 7.4494, 7.302, 7.2248, 7.1748, 7.1433],
+                              [7.8481, 7.5026, 7.3586, 7.2921, 7.249, 7.214],
+                              [7.8691, 7.5428, 7.4016, 7.3349, 7.2933, 7.2698],
+                              [7.864, 7.5637, 7.4333, 7.3708, 7.3364, 7.3064],
+                              [7.9046, 7.5816, 7.4603, 7.3938, 7.3611, 7.3398],
+                              [7.9241, 7.5955, 7.4792, 7.4185, 7.3892, 7.3662],
+                              [7.9388, 7.6255, 7.5018, 7.4419, 7.415, 7.3954],
+                              [7.9571, 7.6474, 7.5296, 7.4777, 7.444, 7.4247],
+                              [7.9681, 7.6716, 7.5508, 7.5015, 7.4703, 7.4552],
+                              [7.9788, 7.686, 7.5745, 7.5276, 7.5022, 7.4913]]])
+
+log_rho0_vpower75 = np.array([[[8.2231, 7.8735, 7.7257, 7.6555, 7.6123, 7.5773],
+                               [8.2848, 7.9604, 7.8323, 7.7716, 7.7389, 7.7168],
+                               [8.3149, 8.0119, 7.9011, 7.8484, 7.8205, 7.8055],
+                               [8.3438, 8.0487, 7.9404, 7.899, 7.8706, 7.8542],
+                               [8.3547, 8.0715, 7.9657, 7.925, 7.9092, 7.8915],
+                               [8.3734, 8.0903, 7.9805, 7.9457, 7.9323, 7.918],
+                               [8.3796, 8.0984, 8.0025, 7.963, 7.9398, 7.9378],
+                               [8.3867, 8.1062, 8.0128, 7.9757, 7.9538, 7.953],
+                               [8.3899, 8.111, 8.021, 7.9873, 7.9679, 7.9662],
+                               [8.3959, 8.1213, 8.032, 7.9974, 7.9814, 7.983],
+                               [8.3999, 8.1303, 8.0418, 8.0025, 7.9946, 7.9962]],
+
+                              [[8.1429, 7.7629, 7.6119, 7.5409, 7.4933, 7.4575],
+                               [8.1519, 7.8424, 7.7153, 7.6443, 7.612, 7.5909],
+                               [8.2212, 7.9071, 7.78, 7.7307, 7.697, 7.6753],
+                               [8.2424, 7.9302, 7.8143, 7.7725, 7.7413, 7.7215],
+                               [8.2559, 7.9539, 7.8458, 7.8014, 7.776, 7.7562],
+                               [8.2637, 7.9779, 7.8621, 7.8232, 7.7981, 7.7821],
+                               [8.2753, 7.9837, 7.8779, 7.8373, 7.8083, 7.8038],
+                               [8.2774, 8.0002, 7.8968, 7.8531, 7.8364, 7.822],
+                               [8.2839, 8.0051, 7.9068, 7.8664, 7.8408, 7.8387],
+                               [8.2877, 8.0131, 7.9172, 7.8768, 7.857, 7.8549],
+                               [8.2982, 8.0202, 7.9277, 7.8931, 7.8712, 7.8704]],
+
+                              [[8.0248, 7.6484, 7.4909, 7.4146, 7.3672, 7.3357],
+                               [8.0602, 7.7324, 7.5893, 7.5235, 7.4811, 7.4576],
+                               [8.105, 7.7812, 7.6573, 7.5908, 7.5581, 7.5378],
+                               [8.1326, 7.8185, 7.7023, 7.6323, 7.6084, 7.5867],
+                               [8.1479, 7.8367, 7.7213, 7.6686, 7.6374, 7.6233],
+                               [8.1529, 7.8658, 7.7376, 7.6907, 7.6619, 7.6519],
+                               [8.1606, 7.8619, 7.7528, 7.706, 7.6806, 7.6731],
+                               [8.172, 7.8769, 7.7662, 7.7238, 7.6997, 7.6824],
+                               [8.1773, 7.8899, 7.7773, 7.7384, 7.7167, 7.7007],
+                               [8.1851, 7.8985, 7.8016, 7.7546, 7.7388, 7.721],
+                               [8.1972, 7.9141, 7.8043, 7.7695, 7.7562, 7.7418]],
+
+                              [[7.9205, 7.5239, 7.3715, 7.2858, 7.2312, 7.1928],
+                               [7.9657, 7.6087, 7.4612, 7.394, 7.345, 7.3075],
+                               [7.9953, 7.6565, 7.5262, 7.4571, 7.4104, 7.3869],
+                               [7.9999, 7.6852, 7.5615, 7.495, 7.4622, 7.4352],
+                               [8.0318, 7.6999, 7.5802, 7.5229, 7.4902, 7.4706],
+                               [8.0491, 7.7232, 7.607, 7.5455, 7.5182, 7.4965],
+                               [8.0545, 7.7449, 7.627, 7.5628, 7.5414, 7.5222],
+                               [8.0661, 7.7496, 7.6387, 7.5894, 7.5582, 7.5431],
+                               [8.0719, 7.768, 7.6532, 7.6063, 7.5809, 7.5676],
+                               [8.0749, 7.7822, 7.6715, 7.6258, 7.6017, 7.5819],
+                               [8.0889, 7.8007, 7.6874, 7.6484, 7.6234, 7.6074]],
+
+                              [[7.7942, 7.4049, 7.2307, 7.1384, 7.085, 7.0394],
+                               [7.8557, 7.4728, 7.3184, 7.2482, 7.1947, 7.1523],
+                               [7.8838, 7.5235, 7.3819, 7.3096, 7.2606, 7.2256],
+                               [7.9024, 7.5571, 7.4141, 7.3449, 7.3026, 7.2798],
+                               [7.864, 7.5753, 7.4449, 7.3791, 7.3324, 7.3123],
+                               [7.9046, 7.5957, 7.4686, 7.397, 7.3588, 7.3432],
+                               [7.941, 7.6156, 7.485, 7.4244, 7.3917, 7.3696],
+                               [7.9557, 7.6313, 7.5076, 7.4444, 7.415, 7.3954],
+                               [7.9638, 7.6482, 7.532, 7.4777, 7.443, 7.4247],
+                               [7.9681, 7.6617, 7.5508, 7.5015, 7.4703, 7.4552],
+                               [7.989, 7.686, 7.5745, 7.5276, 7.5022, 7.4913]]])
+
+log_rho0_vpower50 = np.array([[[8.5181, 8.0752, 7.9026, 7.811, 7.7517, 7.7121],
+                               [8.5333, 8.1387, 7.9796, 7.9149, 7.859, 7.819],
+                               [8.5748, 8.1823, 8.0348, 7.9676, 7.9186, 7.8811],
+                               [8.5662, 8.2108, 8.067, 7.9928, 7.9521, 7.9205],
+                               [8.5623, 8.2234, 8.0907, 8.024, 7.974, 7.9538],
+                               [8.5262, 8.2342, 8.0979, 8.0354, 7.9921, 7.9711],
+                               [8.546, 8.2341, 8.1036, 8.0385, 8.0125, 7.9847],
+                               [8.5621, 8.2415, 8.1178, 8.0513, 8.0186, 7.9974],
+                               [8.5762, 8.2483, 8.1227, 8.0596, 8.0269, 8.0048],
+                               [8.5896, 8.2442, 8.1245, 8.0672, 8.0345, 8.0149],
+                               [8.5859, 8.264, 8.1345, 8.0746, 8.0452, 8.0223]],
+
+                              [[8.3608, 7.9287, 7.7545, 7.6588, 7.6029, 7.5607],
+                               [8.3769, 7.9889, 7.8347, 7.7551, 7.7076, 7.6761],
+                               [8.4, 8.0321, 7.8888, 7.8166, 7.7709, 7.7359],
+                               [8.4177, 8.0598, 7.9167, 7.8535, 7.8052, 7.7817],
+                               [8.3624, 8.0736, 7.9399, 7.8774, 7.8307, 7.8072],
+                               [8.3904, 8.0809, 7.9479, 7.8828, 7.8569, 7.8315],
+                               [8.412, 8.089, 7.9644, 7.9013, 7.8685, 7.8448],
+                               [8.4303, 8.1016, 7.971, 7.9103, 7.8785, 7.8556],
+                               [8.4334, 8.1016, 7.9844, 7.9187, 7.8893, 7.8697],
+                               [8.4429, 8.1127, 7.9906, 7.9291, 7.9043, 7.8792],
+                               [8.4423, 8.1165, 8.0037, 7.946, 7.9147, 7.8931]],
+
+                              [[8.1965, 7.7743, 7.6001, 7.5053, 7.4485, 7.403],
+                               [8.2227, 7.8347, 7.6747, 7.5985, 7.5501, 7.5186],
+                               [8.2466, 7.8787, 7.7296, 7.6607, 7.6142, 7.5792],
+                               [8.2588, 7.9011, 7.7639, 7.6972, 7.6531, 7.6296],
+                               [8.2121, 7.9175, 7.7838, 7.7213, 7.678, 7.657],
+                               [8.2425, 7.9311, 7.804, 7.7376, 7.7024, 7.6777],
+                               [8.267, 7.939, 7.8111, 7.7504, 7.7177, 7.6956],
+                               [8.2818, 7.9457, 7.826, 7.7628, 7.7334, 7.7114],
+                               [8.2785, 7.955, 7.8364, 7.7748, 7.7476, 7.7259],
+                               [8.282, 7.9664, 7.8502, 7.7958, 7.7621, 7.7429],
+                               [8.296, 7.9675, 7.8593, 7.8066, 7.7753, 7.7612]],
+
+                              [[8.0496, 7.6067, 7.4291, 7.3417, 7.2858, 7.2403],
+                               [8.0608, 7.6712, 7.5152, 7.4416, 7.3848, 7.3457],
+                               [8.0812, 7.7141, 7.5691, 7.4969, 7.4479, 7.4129],
+                               [8.0958, 7.7412, 7.5948, 7.5315, 7.4833, 7.4541],
+                               [8.0454, 7.7566, 7.6229, 7.5579, 7.5113, 7.4902],
+                               [8.0795, 7.7707, 7.6436, 7.5746, 7.5338, 7.5182],
+                               [8.1086, 7.7857, 7.6527, 7.592, 7.5593, 7.5372],
+                               [8.1185, 7.7965, 7.667, 7.6071, 7.5777, 7.5548],
+                               [8.1243, 7.8044, 7.6882, 7.6215, 7.5967, 7.5751],
+                               [8.134, 7.8161, 7.7007, 7.6446, 7.6134, 7.5992],
+                               [8.1362, 7.8389, 7.7081, 7.6638, 7.635, 7.6251]],
+
+                              [[7.8441, 7.4353, 7.2557, 7.1682, 7.1051, 7.0563],
+                               [7.9016, 7.4957, 7.3387, 7.2553, 7.2024, 7.1682],
+                               [7.9193, 7.5393, 7.3859, 7.3139, 7.2748, 7.2315],
+                               [7.9291, 7.5669, 7.4366, 7.3515, 7.3084, 7.2857],
+                               [7.9265, 7.5877, 7.4465, 7.3883, 7.3382, 7.3147],
+                               [7.9046, 7.5951, 7.4646, 7.397, 7.3711, 7.3436],
+                               [7.941, 7.613, 7.4875, 7.4244, 7.395, 7.3704],
+                               [7.9591, 7.6338, 7.5076, 7.4477, 7.4184, 7.3954],
+                               [7.9638, 7.6482, 7.532, 7.4777, 7.444, 7.4247],
+                               [7.985, 7.6682, 7.5399, 7.4982, 7.4703, 7.4552],
+                               [7.989, 7.6801, 7.5687, 7.5243, 7.4988, 7.4791]]])
+
+log_rho0_vpower25 = np.array([[[8.7897, 8.3422, 8.1056, 8.0093, 7.9392, 7.8868],
+                               [8.8752, 8.2916, 8.1683, 8.0728, 8.0205, 7.9629],
+                               [8.8586, 8.3842, 8.204, 8.1148, 8.0555, 8.021],
+                               [8.8454, 8.3962, 8.2283, 8.1366, 8.0771, 8.0404],
+                               [8.844, 8.4035, 8.2436, 8.1517, 8.0947, 8.0638],
+                               [8.8429, 8.4097, 8.2441, 8.1633, 8.1138, 8.0703],
+                               [8.8394, 8.411, 8.2506, 8.1661, 8.1153, 8.0835],
+                               [8.8272, 8.4166, 8.2501, 8.1854, 8.1261, 8.0946],
+                               [8.8229, 8.4183, 8.2566, 8.1803, 8.1285, 8.0971],
+                               [8.8146, 8.4142, 8.2667, 8.1838, 8.1337, 8.1022],
+                               [8.8162, 8.4165, 8.2625, 8.1937, 8.1352, 8.1062]],
+
+                              [[8.6655, 8.1429, 7.9185, 7.813, 7.7471, 7.6944],
+                               [8.6386, 8.1519, 7.9764, 7.8863, 7.8207, 7.7693],
+                               [8.6251, 8.1756, 8.0263, 7.9238, 7.8817, 7.8276],
+                               [8.6269, 8.1985, 8.044, 7.9557, 7.8994, 7.8601],
+                               [8.6158, 8.2095, 8.0477, 7.9798, 7.9206, 7.8891],
+                               [8.6154, 8.2149, 8.0617, 7.9845, 7.9286, 7.8996],
+                               [8.5891, 8.2183, 8.0664, 7.9929, 7.9437, 7.9071],
+                               [8.6074, 8.2223, 8.0732, 7.9937, 7.957, 7.9162],
+                               [8.624, 8.2282, 8.0774, 8.0085, 7.962, 7.9245],
+                               [8.6048, 8.2311, 8.0774, 8.0097, 7.9665, 7.9315],
+                               [8.597, 8.2331, 8.0969, 8.0143, 7.9745, 7.9395]],
+
+                              [[8.4369, 7.9173, 7.705, 7.6144, 7.5462, 7.4943],
+                               [8.4103, 7.9504, 7.779, 7.6864, 7.6282, 7.586],
+                               [8.4, 7.9783, 7.8162, 7.733, 7.6825, 7.6398],
+                               [8.3948, 7.9943, 7.8444, 7.7639, 7.7138, 7.6823],
+                               [8.3892, 8.0092, 7.8608, 7.7814, 7.7338, 7.7014],
+                               [8.4196, 8.0162, 7.8599, 7.7982, 7.7517, 7.7167],
+                               [8.3962, 8.0349, 7.8903, 7.8052, 7.7621, 7.7393],
+                               [8.3944, 8.0324, 7.8835, 7.8202, 7.772, 7.7428],
+                               [8.398, 8.0351, 7.8999, 7.8247, 7.7831, 7.7596],
+                               [8.3293, 8.0347, 7.9044, 7.8385, 7.7952, 7.7741],
+                               [8.3501, 8.0406, 7.9077, 7.8425, 7.8166, 7.7887]],
+
+                              [[8.1937, 7.6371, 7.5042, 7.4108, 7.3359, 7.2949],
+                               [8.18, 7.7346, 7.5687, 7.4877, 7.4248, 7.394],
+                               [8.1695, 7.7698, 7.6074, 7.5302, 7.4827, 7.4513],
+                               [8.177, 7.7919, 7.6319, 7.5633, 7.5241, 7.4833],
+                               [8.1745, 7.8191, 7.6538, 7.586, 7.5378, 7.5113],
+                               [8.1854, 7.8133, 7.6737, 7.607, 7.563, 7.5361],
+                               [8.1086, 7.8307, 7.6861, 7.6236, 7.577, 7.5534],
+                               [8.1354, 7.8259, 7.6929, 7.6278, 7.6019, 7.574],
+                               [8.1615, 7.8377, 7.7114, 7.6449, 7.6155, 7.5909],
+                               [8.178, 7.8453, 7.7256, 7.6598, 7.6305, 7.6109],
+                               [8.1852, 7.8534, 7.7423, 7.6757, 7.6509, 7.6292]],
+
+                              [[8.0183, 7.4421, 7.2841, 7.1925, 7.1215, 7.0791],
+                               [7.9415, 7.5175, 7.3544, 7.2678, 7.2132, 7.1772],
+                               [7.9193, 7.5559, 7.4025, 7.3256, 7.2739, 7.2347],
+                               [7.9500, 7.5771, 7.434, 7.3574, 7.3058, 7.2817],
+                               [7.9582, 7.596, 7.4523, 7.3857, 7.3416, 7.3181],
+                               [7.9046, 7.6034, 7.4714, 7.4079, 7.3646, 7.3436],
+                               [7.941, 7.6172, 7.4909, 7.4244, 7.395, 7.3704],
+                               [7.9625, 7.6338, 7.5076, 7.4444, 7.415, 7.3954],
+                               [7.974, 7.6508, 7.5296, 7.4654, 7.444, 7.4247],
+                               [7.985, 7.6708, 7.5399, 7.4957, 7.4669, 7.4438],
+                               [7.9788, 7.6794, 7.5687, 7.5239, 7.4988, 7.4791]]])
+
+log_rho0_vpower0 = np.array([[[9.0551, 8.7101, 8.4106, 8.2827, 8.1056, 8.0988],
+                              [9.1632, 8.6583, 8.4074, 8.2848, 8.202, 8.1387],
+                              [9.314, 8.6444, 8.3977, 8.3014, 8.2223, 8.179],
+                              [9.2313, 8.6375, 8.4232, 8.3149, 8.245, 8.1917],
+                              [9.2278, 8.6365, 8.4305, 8.3243, 8.2568, 8.2019],
+                              [9.2084, 8.6321, 8.4299, 8.3275, 8.2576, 8.2057],
+                              [9.1948, 8.6278, 8.4295, 8.3273, 8.2631, 8.2149],
+                              [9.1666, 8.5621, 8.4292, 8.3358, 8.2609, 8.2199],
+                              [9.1596, 8.5762, 8.4233, 8.3298, 8.2639, 8.214],
+                              [9.1502, 8.5896, 8.4266, 8.3334, 8.2658, 8.2259],
+                              [9.1316, 8.6028, 8.4274, 8.3348, 8.2683, 8.2229]],
+
+                             [[8.8871, 8.3834, 8.1429, 7.9658, 7.9118, 7.8425],
+                              [8.9853, 8.3652, 8.1384, 8.0286, 7.9582, 7.9055],
+                              [8.9405, 8.3642, 8.1621, 8.0596, 8.0051, 7.9357],
+                              [8.8969, 8.3635, 8.169, 8.0788, 8.0129, 7.9597],
+                              [8.8776, 8.3624, 8.176, 8.0894, 8.0229, 7.9766],
+                              [8.8629, 8.3667, 8.1824, 8.0892, 8.0333, 7.9877],
+                              [8.842, 8.3647, 8.1933, 8.0948, 8.0295, 7.9945],
+                              [8.8428, 8.3678, 8.204, 8.1016, 8.0536, 8.002],
+                              [8.8203, 8.3574, 8.1915, 8.1047, 8.0477, 8.011],
+                              [8.819, 8.3567, 8.1976, 8.101, 8.0515, 8.0131],
+                              [8.802, 8.3629, 8.1965, 8.1133, 8.0604, 8.0177]],
+
+                             [[8.6621, 8.0714, 7.8114, 7.7219, 7.6535, 7.6001],
+                              [8.6465, 8.0868, 7.8812, 7.7824, 7.7206, 7.669],
+                              [8.5984, 8.0982, 7.9113, 7.8162, 7.7569, 7.7225],
+                              [8.5823, 8.1072, 7.9435, 7.841, 7.793, 7.7414],
+                              [8.568, 8.1057, 7.9441, 7.855, 7.8004, 7.762],
+                              [8.5475, 8.1105, 7.9447, 7.8592, 7.8083, 7.7741],
+                              [8.5436, 8.1141, 7.9498, 7.8702, 7.8227, 7.7879],
+                              [8.5253, 8.1131, 7.9574, 7.8769, 7.8268, 7.7953],
+                              [8.5223, 8.1152, 7.9609, 7.8865, 7.8347, 7.804],
+                              [8.5064, 8.1179, 7.9664, 7.8869, 7.8502, 7.8127],
+                              [8.5272, 8.1238, 7.9702, 7.9, 7.8568, 7.8218]],
+
+                             [[8.4005, 7.8142, 7.5746, 7.4707, 7.4008, 7.3483],
+                              [8.3108, 7.8106, 7.627, 7.5295, 7.4736, 7.4307],
+                              [8.2887, 7.8264, 7.657, 7.5707, 7.5211, 7.4827],
+                              [8.2716, 7.847, 7.6793, 7.6031, 7.5522, 7.5208],
+                              [8.2587, 7.8517, 7.6973, 7.6229, 7.577, 7.5404],
+                              [8.2566, 7.8608, 7.7029, 7.6377, 7.5921, 7.5571],
+                              [8.2453, 7.8765, 7.7261, 7.6434, 7.6037, 7.5687],
+                              [8.2463, 7.8701, 7.7295, 7.657, 7.6154, 7.5919],
+                              [8.1615, 7.8802, 7.739, 7.674, 7.6274, 7.6063],
+                              [8.1881, 7.8762, 7.7521, 7.6832, 7.6423, 7.6267],
+                              [8.2156, 7.8877, 7.7597, 7.699, 7.6663, 7.6409]],
+
+                             [[8.0466, 7.4421, 7.3092, 7.21, 7.1409, 7.0999],
+                              [7.9975, 7.531, 7.372, 7.2802, 7.2231, 7.1889],
+                              [7.9789, 7.5668, 7.4077, 7.3305, 7.2771, 7.249],
+                              [7.9904, 7.587, 7.4334, 7.3632, 7.3201, 7.2851],
+                              [7.9699, 7.5954, 7.4582, 7.3857, 7.3441, 7.3205],
+                              [7.9046, 7.6067, 7.4704, 7.4079, 7.3646, 7.3457],
+                              [7.941, 7.6172, 7.4875, 7.4244, 7.3917, 7.3696],
+                              [7.9692, 7.6279, 7.5076, 7.4419, 7.4171, 7.3954],
+                              [7.974, 7.6416, 7.5237, 7.471, 7.4398, 7.4223],
+                              [7.9681, 7.665, 7.5392, 7.4923, 7.4635, 7.4536],
+                              [7.9788, 7.6762, 7.5594, 7.5205, 7.4964, 7.477]]])
+
+c0_values = np.array([0.5, 2., 4., 6, 8, 10.])
+z_values = np.arange(0, 3 + 0.3, 0.3)
+mass_values = np.array([6, 7, 8, 9, 10])
+v_powers = np.array([0., 0.25, 0.5, 0.75, 1.])
+vstep = 0.25
+mstep = 1.
+
+from scipy.interpolate import RectBivariateSpline
+
+interps_vpower1, interps_vpower75, interps_vpower50, interps_vpower25, interps_vpower0 = \
+    [], [], [], [], []
+for i in range(0, len(mass_values)):
+    interps_vpower1.append(
+        RectBivariateSpline(z_values, c0_values, log_rho0_vpower1[i, :, :]))
+    interps_vpower75.append(
+        RectBivariateSpline(z_values, c0_values, log_rho0_vpower75[i, :, :]))
+    interps_vpower50.append(
+        RectBivariateSpline(z_values, c0_values, log_rho0_vpower50[i, :, :]))
+    interps_vpower25.append(
+        RectBivariateSpline(z_values, c0_values, log_rho0_vpower25[i, :, :]))
+    interps_vpower0.append(
+        RectBivariateSpline(z_values, c0_values, log_rho0_vpower0[i, :, :]))
+
+interps_list = [interps_vpower0, interps_vpower25, interps_vpower50,
+                interps_vpower75, interps_vpower1]
+
+
+# interp_array = np.zeros((N_mass, N_redshift, N_norm))
+
+def logrho(log_mass, z, zeta, v_dep, delta_concentration):
+    """
+
+    :param log_mass: log(m200)
+    :param z: redshift
+    :param zeta: cross section times (halo age/10 [Gyr])
+    :param v_dep: velocity dependence of cross section v^-v_dependence
+    :param delta_concentration: (c - cmean)/cmean
+    :return:
+    """
+
+    if v_dep < 0:
+        raise Exception('velocity dep must be positive. '
+                        '(sigma ~ v^(-v_dep)')
+    elif v_dep > 1:
+        raise Exception('velocity dep must be < 1.')
+
+    diff = np.absolute(v_dep - v_powers)
+    min_indexes = np.argsort(diff)[0:2]
+    idx1, idx2 = min_indexes[0], min_indexes[1]
+    dv_min = abs(v_dep - v_powers[idx1])
+    w1 = 1 - dv_min / vstep
+    w2 = dv_min / vstep
+
+    interp_grid1, interp_grid2 = interps_list[idx1], interps_list[idx2]
+    rho1 = _eval_at_vpower(log_mass, z, zeta, interp_grid1)
+    rho2 = _eval_at_vpower(log_mass, z, zeta, interp_grid2)
+
+    logrho_value = rho1 * w1 + rho2 * w2
+    logrho_value += 0.3 * delta_concentration
+
+    return logrho_value
+
+
+def _eval_at_vpower(log_mass, z, zeta, interps_vpower):
+    diff = np.absolute(mass_values - log_mass)
+    min_indexes = np.argsort(diff)[0:2]
+    idx1, idx2 = min_indexes[0], min_indexes[1]
+    dm_min = abs(log_mass - mass_values[idx1])
+    w1 = 1 - dm_min / mstep
+    w2 = dm_min / mstep
+    rho1 = interps_vpower[idx1](z, zeta)[0][0]
+    rho2 = interps_vpower[idx2](z, zeta)[0][0]
+
+    return rho1 * w1 + rho2 * w2

@@ -41,8 +41,17 @@ class Realization(object):
         self._LOS_norm = self._prof_params['LOS_normalization']
         self.break_scale = self._prof_params['break_scale']
 
-        self._logmlow = self._prof_params['log_mlow']
-        self._logmhigh = self._prof_params['log_mhigh']
+        if 'log_mlow' in self._prof_params.keys():
+            self._logmlow = self._prof_params['log_mlow']
+            self._logmhigh = self._prof_params['log_mhigh']
+            convergence_sheet_type = 'integrated'
+        elif 'logM_delta' in self._prof_params.keys():
+            self._logM_delta = self._prof_params['logM_delta']
+            convergence_sheet_type = 'fixed'
+        else:
+            raise Exception('did not recognize required mass function parameter.')
+
+        self._convergence_sheet_type = convergence_sheet_type
 
         if halos is None:
 
@@ -500,37 +509,54 @@ class Realization(object):
         zsheet = []
         unique_z = np.unique(self.redshifts)
 
-        mhigh = 10**self._logmhigh
+        if self._convergence_sheet_type == 'integrated':
 
-        mlow_front = 10**max(np.log10(mlow_front), self._logmlow)
-        mlow_back = 10**max(np.log10(mlow_back), self._logmlow)
+            mhigh = 10**self._logmhigh
 
-        kappa = None
-        if len(unique_z) == 1 and unique_z[0] == self.geometry._zlens:
-            if self._prof_params['subtract_subhalo_mass_sheet']:
-                kappa = self.convergence_at_z(self.geometry._zlens,
-                                              mlow_front, mhigh,None,self.m_break_scale,
-                                              self.break_index,self.break_scale)
-        if kappa is not None:
-            kwargs.append({'kappa_ext': - self._prof_params['subhalo_mass_sheet_scale'] * kappa})
-            zsheet.append(unique_z[0])
-
-        for i in range(0, len(unique_z)-1):
-
-            z = unique_z[i]
-
-            delta_z = unique_z[i+1] - z
+            mlow_front = 10**max(np.log10(mlow_front), self._logmlow)
+            mlow_back = 10**max(np.log10(mlow_back), self._logmlow)
 
             kappa = None
-            if z < self.geometry._zlens:
-                kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
-                                                     self.m_break_scale, self.break_index, self.break_scale)
-            elif z > self.geometry._zlens:
-                kappa = self.convergence_at_z(z, mlow_back, mhigh, delta_z,
-                                                    self.m_break_scale, self.break_index, self.break_scale)
-
+            if len(unique_z) == 1 and unique_z[0] == self.geometry._zlens:
+                if self._prof_params['subtract_subhalo_mass_sheet']:
+                    kappa = self.convergence_at_z(self.geometry._zlens,
+                                                  mlow_front, mhigh,None,self.m_break_scale,
+                                                  self.break_index,self.break_scale)
             if kappa is not None:
-                kwargs.append({'kappa_ext': - self._prof_params['kappa_scale']*kappa})
+                kwargs.append({'kappa_ext': - self._prof_params['subhalo_mass_sheet_scale'] * kappa})
+                zsheet.append(unique_z[0])
+
+            for i in range(0, len(unique_z)-1):
+
+                z = unique_z[i]
+
+                delta_z = unique_z[i+1] - z
+
+                kappa = None
+                if z < self.geometry._zlens:
+                    kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
+                                                         self.m_break_scale, self.break_index, self.break_scale)
+                elif z > self.geometry._zlens:
+                    kappa = self.convergence_at_z(z, mlow_back, mhigh, delta_z,
+                                                        self.m_break_scale, self.break_index, self.break_scale)
+
+                if kappa is not None:
+                    kwargs.append({'kappa_ext': - self._prof_params['kappa_scale']*kappa})
+                    zsheet.append(z)
+
+        elif self._convergence_sheet_type == 'fixed':
+
+            assert 'logM_delta' in self._prof_params.keys()
+            M = self._prof_params['logM_delta']
+            for i in range(0, len(unique_z) - 1):
+
+                z = unique_z[i]
+                delta_z = unique_z[i + 1] - z
+                N_theory = self.halo_mass_function.dN_comoving_deltaFunc(M, z,
+                                         delta_z, self._prof_params['mass_fraction'])/M
+                N = np.random.poisson(N_theory)
+                kappa = N * M/self._sigma_crit_mass(z) # to convergence units
+                kwargs.append({'kappa_ext': - self._prof_params['kappa_scale'] * kappa})
                 zsheet.append(z)
 
         return kwargs, zsheet

@@ -71,8 +71,8 @@ class pyHalo(object):
 
             if args['mass_func_type'] == 'delta':
 
-                logLOS_mlow = args['M'] - 0.01
-                logLOS_mhigh = args['M'] + 0.01
+                logLOS_mlow = args['logM_delta'] - 0.01
+                logLOS_mhigh = args['logM_delta'] + 0.01
 
             else:
                 if 'log_mlow_los' not in args.keys():

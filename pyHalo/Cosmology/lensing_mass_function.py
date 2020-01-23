@@ -32,7 +32,7 @@ class LensingMassFunction(object):
             elif self._mass_function_model == 'sheth99':
                 from pyHalo.Cosmology.lookup_tables import lookup_sheth99_updated as table
             else:
-                raise ValueError('lookup table '+self._mass_function_model+' not found.')
+                raise Exception('lookup table '+self._mass_function_model+' not found.')
 
             norm_z_dV = table.norm_z_dV
             plaw_index_z = table.plaw_index_z
@@ -173,9 +173,9 @@ class LensingMassFunction(object):
         :return: the number of objects of mass M * Mpc^-3
         """
 
-        dN_dV = self._cosmo.rho_matter_crit(z) * component_fraction * M ** -1
+        dN_dV = component_fraction * self._cosmo.rho_dark_matter_crit(z)/M
 
-        return dN_dV * self.geometry.volume_element_comoving(z, self.geometry._zlens, delta_z)
+        return dN_dV * self.geometry.volume_element_comoving(z, delta_z)
 
     def _fit_norm_index(self, M, dNdM, order=1):
         """
