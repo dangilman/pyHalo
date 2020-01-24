@@ -154,6 +154,58 @@ class Geometry(object):
 
         return r_co_kpc * asec_per_kpc
 
+    def ray_position_z(self, thetax, thetay, zi, source_x, source_y):
+
+        ray_angle_atz_x, ray_angle_atz_y = [], []
+
+        for tx, ty in zip(thetax, thetay):
+
+            if zi > self._zlens:
+                angle_x_atz = self.ray_angle_atz(tx, zi, source_x)
+                angle_y_atz = self.ray_angle_atz(ty, zi, source_y)
+            else:
+                angle_x_atz = self.ray_angle_atz(tx, zi)
+                angle_y_atz = self.ray_angle_atz(ty, zi)
+
+            ray_angle_atz_x.append(angle_x_atz)
+            ray_angle_atz_y.append(angle_y_atz)
+
+        return ray_angle_atz_x, ray_angle_atz_y
+
+    def interpolate_ray_angle_z(self, ray_comoving_x, ray_comoving_y, redshifts, zi, Tzlist, Tz_current):
+
+        redshifts = np.array(redshifts)
+
+        if zi in redshifts:
+            angle_x, angle_y = [], []
+            idx = np.where(redshifts == zi)[0][0].astype(int)
+            for i in range(0, 4):
+
+                angle_x.append(ray_comoving_x[idx][i] / Tzlist[idx])
+                angle_y.append(ray_comoving_y[idx][i] / Tzlist[idx])
+            angle_x = np.array(angle_x)
+            angle_y = np.array(angle_y)
+
+        else:
+
+            adjacent_redshift_inds = np.argsort(np.absolute(redshifts - zi))[0:2]
+            adjacent_redshifts = redshifts[adjacent_redshift_inds]
+
+            if adjacent_redshifts[0] < adjacent_redshifts[1]:
+
+                Tzlow, Tzhigh = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
+                xlow, xhigh = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
+                ylow, yhigh = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
+            else:
+
+                Tzhigh, Tzlow = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
+                xhigh, xlow = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
+                yhigh, ylow = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
+
+            angle_x, angle_y = self.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current)
+
+        return angle_x, angle_y
+
 class Cylinder(object):
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle):

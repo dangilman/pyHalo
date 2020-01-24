@@ -78,6 +78,18 @@ class Realization(object):
                            mass_sheet_correction=msheet_correction)
         return realization
 
+    def halo_angular_coorindates(self):
+
+        xcoords, ycoords, masses = [], [], []
+        for halo in self.halos:
+            D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
+            x_arcsec, y_arcsec = halo.x, halo.y
+            x_comoving, y_comoving = D * x_arcsec, D * y_arcsec
+            xcoords.append(x_comoving)
+            ycoords.append(y_comoving)
+            masses.append(halo.mass)
+        return np.array(xcoords), np.array(ycoords), np.log10(masses)
+
 
     def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
 
@@ -342,58 +354,6 @@ class Realization(object):
 
         return lens
 
-    def _ray_position_z(self, thetax, thetay, zi, source_x, source_y):
-
-        ray_angle_atz_x, ray_angle_atz_y = [], []
-
-        for tx, ty in zip(thetax, thetay):
-
-            if zi > self.geometry._zlens:
-                angle_x_atz = self.geometry.ray_angle_atz(tx, zi, source_x)
-                angle_y_atz = self.geometry.ray_angle_atz(ty, zi, source_y)
-            else:
-                angle_x_atz = self.geometry.ray_angle_atz(tx, zi)
-                angle_y_atz = self.geometry.ray_angle_atz(ty, zi)
-
-            ray_angle_atz_x.append(angle_x_atz)
-            ray_angle_atz_y.append(angle_y_atz)
-
-        return ray_angle_atz_x, ray_angle_atz_y
-
-    def _interp_ray_angle_z(self, ray_comoving_x, ray_comoving_y, redshifts, zi, Tzlist, Tz_current):
-
-        redshifts = np.array(redshifts)
-
-        if zi in redshifts:
-            angle_x, angle_y = [], []
-            idx = np.where(redshifts == zi)[0][0].astype(int)
-            for i in range(0, 4):
-
-                angle_x.append(ray_comoving_x[idx][i] / Tzlist[idx])
-                angle_y.append(ray_comoving_y[idx][i] / Tzlist[idx])
-            angle_x = np.array(angle_x)
-            angle_y = np.array(angle_y)
-
-        else:
-
-            adjacent_redshift_inds = np.argsort(np.absolute(redshifts - zi))[0:2]
-            adjacent_redshifts = redshifts[adjacent_redshift_inds]
-
-            if adjacent_redshifts[0] < adjacent_redshifts[1]:
-
-                Tzlow, Tzhigh = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
-                xlow, xhigh = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
-                ylow, yhigh = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
-            else:
-
-                Tzhigh, Tzlow = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
-                xhigh, xlow = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
-                yhigh, ylow = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
-
-            angle_x, angle_y = self.geometry.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current)
-
-        return angle_x, angle_y
-
     def filter_by_mass(self, mlow):
 
         halos = []
@@ -461,11 +421,11 @@ class Realization(object):
             else:
 
                 if ray_x is None or ray_y is None:
-                    ray_at_zx, ray_at_zy = self._ray_position_z(thetax, thetay, zi, source_x, source_y)
+                    ray_at_zx, ray_at_zy = self.geometry.ray_position_z(thetax, thetay, zi, source_x, source_y)
                 else:
 
                     Tz_current = self.geometry._cosmo.T_xy(0, zi)
-                    ray_at_zx, ray_at_zy = self._interp_ray_angle_z(ray_x, ray_y,
+                    ray_at_zx, ray_at_zy = self.geometry.interpolate_ray_angle_z(ray_x, ray_y,
                                                  path_redshifts, zi, path_Tzlist, Tz_current)
 
                 keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
