@@ -78,9 +78,9 @@ class Realization(object):
                            mass_sheet_correction=msheet_correction)
         return realization
 
-    def halo_angular_coorindates(self):
+    def halo_physical_coordinates(self):
 
-        xcoords, ycoords, masses = [], [], []
+        xcoords, ycoords, masses, redshifts = [], [], [], []
         for halo in self.halos:
             D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
             x_arcsec, y_arcsec = halo.x, halo.y
@@ -88,7 +88,8 @@ class Realization(object):
             xcoords.append(x_comoving)
             ycoords.append(y_comoving)
             masses.append(halo.mass)
-        return np.array(xcoords), np.array(ycoords), np.log10(masses)
+            redshifts.append(halo.z)
+        return np.array(xcoords), np.array(ycoords), np.log10(masses), np.array(redshifts)
 
 
     def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):

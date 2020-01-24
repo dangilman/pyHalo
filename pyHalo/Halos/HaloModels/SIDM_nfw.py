@@ -2,6 +2,8 @@ from pyHalo.Halos.HaloModels.base import MainSubhaloBase, FieldHaloBase
 from pyHalo.Scattering.sidm_interp import logrho
 from pyHalo.Halos.halo_util import *
 
+global_s = 0.5
+
 class truncatedSIDMMainSubhalo(MainSubhaloBase):
 
     @property
@@ -102,8 +104,7 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
                                     self._halo_class.z, zeta,
                                     self._halo_class._args['vpower'],
                                     delta_concentration)
-
-            core_ratio = rho_mean * rho_sidm ** -1
+            core_ratio = global_s * rho_mean * rho_sidm ** -1
 
         return core_ratio
 
@@ -143,7 +144,7 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
                                                                                    cmean, self._halo_class.z)
 
             if 'halo_age' not in self._halo_class._args.keys():
-                halo_age = self._halo_class.cosmo_prof.astropy_cosmo.halo_age(self._halo_class.z)
+                halo_age = self._halo_class.cosmo_prof.cosmo.halo_age(self._halo_class.z)
             else:
                 halo_age = self._halo_class._args['halo_age']
 
@@ -151,11 +152,12 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
 
             delta_concentration = (self.concentration - cmean) / cmean
 
-            rho_sidm = 10 ** logrho(np.log10(self._halo_class.mass),
+            log_rho0 = logrho(np.log10(self._halo_class.mass),
                                     self._halo_class.z, zeta,
                                     self._halo_class._args['vpower'],
                                     delta_concentration)
+            rho_sidm = 10 ** log_rho0
 
-            core_ratio = rho_mean * rho_sidm ** -1
+            core_ratio = global_s * rho_mean * rho_sidm ** -1
 
         return core_ratio

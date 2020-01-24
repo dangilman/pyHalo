@@ -950,9 +950,10 @@ logrho_z30 = np.array([[[9.1315, 8.8391, 8.6075, 8.4292, 8.3365, 8.2677, 8.2179]
 
 redshifts = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6,
              1.8, 2.0, 2.25, 2.5, 2.75, 3.0]
-c0_values = np.array([0.5, 1., 2., 4., 6, 8, 10.])
+c0_values = [0.5, 1., 2., 4., 6, 8, 10.]
 v_dependence = [0., 0.2, 0.4, 0.6, 0.8, 1.]
 mass_values = [6, 6.5, 7., 7.5, 8., 8.5, 9, 9.5, 10]
+
 vstep = 0.25
 mstep = 1.
 
@@ -982,9 +983,21 @@ def logrho(log_mass, z, zeta, v_dep, delta_concentration_dex,
     elif v_dep > 1:
         raise Exception('velocity dep must be < 1.')
 
-    xi = (v_dep, log_mass, z, zeta)
+    if zeta < c0_values[0]:
+        return 10.
+    elif zeta > c0_values[-1]:
+        zeta = c0_values[-1]
+
+    if log_mass < 6 or log_mass > 10:
+        raise Exception('log_mass must be between 6 and 10')
+
+    xi = (z, log_mass, v_dep, zeta)
+
     log_rho = interp(xi)
-    log_rho += delta_concentration_dex * concentration_scatter_scale
+    #scale = np.log(s * 10 ** log_rho) / (log_rho * np.log(10))
+    #log_rho *= scale
+    #log_rho += delta_concentration_dex * concentration_scatter_scale
+
     return log_rho
 
 
