@@ -150,7 +150,7 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
 
             zeta = self._halo_class._args['SIDMcross'] * (halo_age / 10)
 
-            delta_concentration = (self.concentration - cmean) / cmean
+            delta_concentration = (self.concentration - cmean)/cmean
 
             log_rho0 = logrho(np.log10(self._halo_class.mass),
                                     self._halo_class.z, zeta,

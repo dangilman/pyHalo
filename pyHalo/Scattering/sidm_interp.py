@@ -994,52 +994,7 @@ def logrho(log_mass, z, zeta, v_dep, delta_concentration_dex,
     xi = (z, log_mass, v_dep, zeta)
 
     log_rho = interp(xi)
-    #scale = np.log(s * 10 ** log_rho) / (log_rho * np.log(10))
-    #log_rho *= scale
-    #log_rho += delta_concentration_dex * concentration_scatter_scale
+
+    log_rho += delta_concentration_dex * concentration_scatter_scale
 
     return log_rho
-
-
-
-# def logrho(log_mass, z, zeta, v_dep, delta_concentration,
-#            concentration_scatter_scale=0.3):
-#     """
-#
-#     :param log_mass: log(m200)
-#     :param z: redshift
-#     :param zeta: cross section times (halo age/10 [Gyr])
-#     :param v_dep: velocity dependence of cross section v^-v_dependence
-#     :param delta_concentration: (c - cmean)/cmean
-#     :return:
-#     """
-#
-#     if v_dep < 0:
-#         raise Exception('velocity dep must be positive. '
-#                         '(sigma ~ v^(-v_dep)')
-#     elif v_dep > 1:
-#         raise Exception('velocity dep must be < 1.')
-#
-#     diff = np.absolute(v_dep - v_powers)
-#     min_indexes = np.argsort(diff)[0:2]
-#     idx1, idx2 = min_indexes[0], min_indexes[1]
-#     dv_min = abs(v_dep - v_powers[idx1])
-#     w1 = 1 - dv_min / vstep
-#     w2 = dv_min / vstep
-#
-#     interp_grid1, interp_grid2 = interps_list[idx1], interps_list[idx2]
-#     rho1 = _eval_at_vpower(log_mass, z, zeta, interp_grid1)
-#     rho2 = _eval_at_vpower(log_mass, z, zeta, interp_grid2)
-#     return rho1 + concentration_scatter_scale + delta_concentration
-
-# def _eval_at_vpower(log_mass, z, zeta, interps_vpower):
-#     diff = np.absolute(mass_values - log_mass)
-#     min_indexes = np.argsort(diff)[0:2]
-#     idx1, idx2 = min_indexes[0], min_indexes[1]
-#     dm_min = abs(log_mass - mass_values[idx1])
-#     w1 = 1 - dm_min / mstep
-#     w2 = dm_min / mstep
-#     rho1 = interps_vpower[idx1](z, zeta)[0][0]
-#     rho2 = interps_vpower[idx2](z, zeta)[0][0]
-#
-#     return rho1 * w1 + rho2 * w2
