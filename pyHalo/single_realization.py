@@ -78,10 +78,11 @@ class Realization(object):
                            mass_sheet_correction=msheet_correction)
         return realization
 
-    def halo_physical_coordinates(self):
+    def halo_physical_coordinates(self, halos):
 
         xcoords, ycoords, masses, redshifts = [], [], [], []
-        for halo in self.halos:
+
+        for halo in halos:
             D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
             x_arcsec, y_arcsec = halo.x, halo.y
             x_comoving, y_comoving = D * x_arcsec, D * y_arcsec
@@ -259,7 +260,7 @@ class Realization(object):
         all_halos = halos + shifted_background_halos
 
         return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = all_halos, other_params= self._prof_params,
+                           halos=all_halos, other_params= self._prof_params,
                            mass_sheet_correction=self._mass_sheet_correction)
 
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
