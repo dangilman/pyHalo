@@ -153,7 +153,10 @@ class LOSPowerLaw(LOS):
         compute_two_halo = self._lensing_mass_func._two_halo_term
 
         if compute_two_halo:
-            z_2halo_term = self._redshift_range[np.where(self._redshift_range<zlens)][-1]
+            try:
+                z_2halo_term = self._redshift_range[np.where(self._redshift_range<zlens)][-1]
+            except:
+                z_2halo_term = None
         else:
             z_2halo_term = None
 

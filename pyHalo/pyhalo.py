@@ -48,16 +48,17 @@ class pyHalo(object):
 
         realizations = []
 
-        if not isinstance(type, list):
-            type = [type]
-        if not isinstance(args, list):
-            args = self._add_profile_params(args)
-            args = [args]
-        else:
-            for i, ai in enumerate(args):
-                args[i] = self._add_profile_params(ai)
-
         for n in range(nrealizations):
+
+            if not isinstance(type, list):
+                type = [type]
+            if not isinstance(args, list):
+                args = self._add_profile_params(args)
+                args = [args]
+            else:
+                for i, ai in enumerate(args):
+                    args[i] = self._add_profile_params(ai)
+
             realizations.append(self._render_single(type, args, verbose))
 
         return realizations

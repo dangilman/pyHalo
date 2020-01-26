@@ -158,49 +158,64 @@ class Geometry(object):
 
         ray_angle_atz_x, ray_angle_atz_y = [], []
 
-        for tx, ty in zip(thetax, thetay):
+        assert isinstance(thetay, type(thetax))
+
+        if isinstance(thetax, np.ndarray) or isinstance(thetax, list):
+
+            for tx, ty in zip(thetax, thetay):
+
+                if zi > self._zlens:
+                    angle_x_atz = self.ray_angle_atz(tx, zi, source_x)
+                    angle_y_atz = self.ray_angle_atz(ty, zi, source_y)
+                else:
+                    angle_x_atz = self.ray_angle_atz(tx, zi)
+                    angle_y_atz = self.ray_angle_atz(ty, zi)
+
+                ray_angle_atz_x.append(angle_x_atz)
+                ray_angle_atz_y.append(angle_y_atz)
+
+        else:
 
             if zi > self._zlens:
-                angle_x_atz = self.ray_angle_atz(tx, zi, source_x)
-                angle_y_atz = self.ray_angle_atz(ty, zi, source_y)
+                ray_angle_atz_x = self.ray_angle_atz(thetax, zi, source_x)
+                ray_angle_atz_y = self.ray_angle_atz(thetay, zi, source_y)
             else:
-                angle_x_atz = self.ray_angle_atz(tx, zi)
-                angle_y_atz = self.ray_angle_atz(ty, zi)
-
-            ray_angle_atz_x.append(angle_x_atz)
-            ray_angle_atz_y.append(angle_y_atz)
+                ray_angle_atz_x = self.ray_angle_atz(thetax, zi)
+                ray_angle_atz_y = self.ray_angle_atz(thetay, zi)
 
         return ray_angle_atz_x, ray_angle_atz_y
 
-    def interpolate_ray_angle_z(self, ray_comoving_x, ray_comoving_y, redshifts, zi, Tzlist, Tz_current):
+    def interpolate_ray_angle_z(self, ray_comoving_x, ray_comoving_y,
+                                redshifts, zi, Tzlist, Tz_current):
 
         redshifts = np.array(redshifts)
 
         if zi in redshifts:
-            angle_x, angle_y = [], []
-            idx = np.where(redshifts == zi)[0][0].astype(int)
-            for i in range(0, 4):
 
-                angle_x.append(ray_comoving_x[idx][i] / Tzlist[idx])
-                angle_y.append(ray_comoving_y[idx][i] / Tzlist[idx])
-            angle_x = np.array(angle_x)
-            angle_y = np.array(angle_y)
+            idx = np.where(redshifts == zi)[0][0].astype(int)
+
+            angle_x = ray_comoving_x[idx] / Tzlist[idx]
+            angle_y = ray_comoving_y[idx] / Tzlist[idx]
 
         else:
 
-            adjacent_redshift_inds = np.argsort(np.absolute(redshifts - zi))[0:2]
-            adjacent_redshifts = redshifts[adjacent_redshift_inds]
+            delta_z = redshifts - zi
 
-            if adjacent_redshifts[0] < adjacent_redshifts[1]:
-
-                Tzlow, Tzhigh = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
-                xlow, xhigh = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
-                ylow, yhigh = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
+            # find first positive value:
+            count = 0
+            for delta_z_i in delta_z:
+                if delta_z_i>0:
+                    z1, z2 = redshifts[count-1], redshifts[count]
+                    Tzlow, Tzhigh = Tzlist[count-1], Tzlist[count]
+                    xlow, ylow = ray_comoving_x[count-1], ray_comoving_x[count-1]
+                    xhigh, yhigh = ray_comoving_x[count], ray_comoving_x[count]
+                    break
+                else:
+                    count += 1
+                    continue
             else:
-
-                Tzhigh, Tzlow = Tzlist[adjacent_redshift_inds[0]], Tzlist[adjacent_redshift_inds[1]]
-                xhigh, xlow = ray_comoving_x[adjacent_redshift_inds[0]], ray_comoving_x[adjacent_redshift_inds[1]]
-                yhigh, ylow = ray_comoving_y[adjacent_redshift_inds[0]], ray_comoving_y[adjacent_redshift_inds[1]]
+                raise Exception('redshift range: '+str(redshifts)+ ' does not '
+                                              'include '+str(zi))
 
             angle_x, angle_y = self.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current)
 

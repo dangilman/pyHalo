@@ -168,9 +168,11 @@ class Realization(object):
             if tag not in short:
                 halos.append(halos_long[i])
 
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = halos, other_params= self._prof_params,
-                           mass_sheet_correction = self._mass_sheet_correction)
+        return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
+                                      self._mass_sheet_correction)
+        # return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
+        #                    halos = halos, other_params= self._prof_params,
+        #                    mass_sheet_correction = self._mass_sheet_correction)
 
     def _reset(self):
 
@@ -204,7 +206,9 @@ class Realization(object):
 
         self.unique_redshifts = np.unique(self.redshifts)
 
-    def shift_background_to_source(self, source_x, source_y):
+    def shift_background_to_source(self, source_x, source_y,
+                                   z_start, z_stop,
+                                   comoving_x_offset=0., comoving_y_offset=0.):
 
         """
 
@@ -223,23 +227,23 @@ class Realization(object):
         background_halos = []
 
         for halo in self.halos:
-            if halo.z <= self.geometry._zlens:
+            if halo.z <= z_start:
+                halos.append(halo)
+            elif halo.z > z_stop:
                 halos.append(halo)
             else:
                 background_halos.append(halo)
 
         background_lens_planes = self.unique_redshifts[
-            np.where(self.unique_redshifts>self.geometry._zlens)]
+            np.where(self.unique_redshifts>z_start)]
 
         distance_calc = self.lens_cosmo.cosmo.D_C_transversez1z2
 
-        Tz_lens = distance_calc(0, self.geometry._zlens)
-        Tz_source = distance_calc(0, self.geometry._zsource)
+        Tz_lens = distance_calc(0, z_start)
+        Tz_source = distance_calc(0, z_stop)
 
         dT_perp_x_source = source_x * Tz_source
         dT_perp_y_source = source_y * Tz_source
-
-        xlow, ylow = 0, 0
 
         shifted_background_halos = []
 
@@ -247,21 +251,29 @@ class Realization(object):
 
             Tz_current = distance_calc(0, zi)
 
-            shiftx, shifty = self.geometry.interp_ray_angle(xlow, dT_perp_x_source,
-                             ylow, dT_perp_y_source, Tz_lens, Tz_source, Tz_current)
+            shiftx, shifty = self.geometry.interp_ray_angle(comoving_x_offset, dT_perp_x_source,
+                             comoving_y_offset, dT_perp_y_source, Tz_lens, Tz_source, Tz_current)
 
             for halo in background_halos:
+
                 if halo.z == zi:
-                    new_x, new_y = halo.x + shiftx, halo.y + shifty
-                    new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
-                                    sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo, args=self._prof_params)
-                    shifted_background_halos.append(new_halo)
+                    if halo.has_been_shifted:
+                        shifted_background_halos.append(halo)
+                    else:
+                        new_x, new_y = halo.x + shiftx, halo.y + shifty
+                        new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
+                                        sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo,
+                                        args=self._prof_params, shifted=True)
+                        shifted_background_halos.append(new_halo)
 
         all_halos = halos + shifted_background_halos
 
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos=all_halos, other_params= self._prof_params,
-                           mass_sheet_correction=self._mass_sheet_correction)
+        return Realization.from_halos(all_halos, self.halo_mass_function, self._prof_params,
+                                      self._mass_sheet_correction)
+
+        # return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
+        #                    halos=all_halos, other_params= self._prof_params,
+        #                    mass_sheet_correction=self._mass_sheet_correction)
 
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:
@@ -366,16 +378,22 @@ class Realization(object):
         return Realization.from_halos(halos, self.halo_mass_function,
                                       self._prof_params, self._mass_sheet_correction)
 
-
-    def filter(self, thetax, thetay, mindis_front=0.5, mindis_back=0.5, logmasscut_front=6, logmasscut_back=8,
-               source_x=0, source_y=0, ray_x=None, ray_y=None,
-               logabsolute_mass_cut_back=0, path_redshifts=None, path_Tzlist=None,
-               logabsolute_mass_cut_front=0, centroid = [0, 0], zmin=None, zmax=None):
+    def filter(self, x_image, y_image,
+                   aperture_radius_front,
+                   aperture_radius_back,
+                   aperture_front_min_logmass, aperture_back_min_logmass,
+                   global_front_min_logmass,
+                   global_back_min_logmass,
+                   source_x, source_y,
+                   ray_paths_x=None, ray_paths_y=None,
+                   path_redshifts=None, path_Tzlist=None,
+                   zmin=None, zmax=None):
 
         halos = []
+        x_image, y_image = np.array(x_image), np.array(y_image)
 
-        thetax = thetax - centroid[0]
-        thetay = thetay - centroid[1]
+        if ray_paths_x is None or ray_paths_y is None:
+            ray_paths_x, ray_paths_y = [None] * len(x_image), [None] * len(y_image)
 
         if zmax is None:
             zmax = self.geometry._zsource
@@ -386,8 +404,8 @@ class Realization(object):
 
             plane_halos = self.halos_at_z(zi)
             inds_at_z = np.where(self.redshifts == zi)[0]
-            x_at_z = self.x[inds_at_z] - centroid[0]
-            y_at_z = self.y[inds_at_z] - centroid[1]
+            x_at_z = self.x[inds_at_z]
+            y_at_z = self.y[inds_at_z]
             masses_at_z = self.masses[inds_at_z]
 
             if zi < zmin:
@@ -397,9 +415,112 @@ class Realization(object):
 
             if zi <= self.geometry._zlens:
 
-                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_front)[0]
+                keep_inds_mass = np.where(masses_at_z >= 10 ** global_front_min_logmass)[0]
 
-                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_front)[0]
+                inds_m_low = np.where(masses_at_z < 10 ** global_front_min_logmass)[0]
+
+                keep_inds_dr = []
+
+                for idx in inds_m_low:
+
+                    for (anglex, angley) in zip(x_image, y_image):
+
+                        dr = ((x_at_z[idx] - anglex) ** 2 +
+                              (y_at_z[idx] - angley) ** 2) ** 0.5
+
+                        if dr <= aperture_radius_front:
+                            keep_inds_dr.append(idx)
+                            break
+
+                keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
+
+                tempmasses = masses_at_z[keep_inds]
+                keep_inds = keep_inds[np.where(
+                    tempmasses >= 10 ** aperture_front_min_logmass
+                )[0]]
+
+            else:
+
+                aperture_x, aperture_y = [], []
+
+                for (ray_x, ray_y, ximg, yimg) in zip(ray_paths_x, ray_paths_y, x_image, y_image):
+                    if ray_x is None or ray_y is None:
+                        ray_at_zx, ray_at_zy = self.geometry.ray_position_z([ximg], [yimg],
+                                                                 zi, source_x, source_y)
+
+                    else:
+                        Tz_current = self.geometry._cosmo.T_xy(0, zi)
+                        ray_at_zx, ray_at_zy = self.geometry.interpolate_ray_angle_z(
+                            ray_x, ray_y, path_redshifts, zi, path_Tzlist, Tz_current)
+
+                    aperture_x.append(ray_at_zx)
+                    aperture_y.append(ray_at_zy)
+
+                keep_inds_mass = np.where(masses_at_z >= 10 ** global_back_min_logmass)[0]
+
+                inds_m_low = np.where(masses_at_z < 10 ** global_back_min_logmass)[0]
+
+                keep_inds_dr = []
+
+                dr_list = []
+
+                for idx in inds_m_low:
+
+                    for (anglex, angley) in zip(aperture_x, aperture_y):
+
+                        dr = ((x_at_z[idx] - anglex) ** 2 +
+                              (y_at_z[idx] - angley) ** 2) ** 0.5
+
+                        if dr <= aperture_radius_back:
+                            keep_inds_dr.append(idx)
+                            dr_list.append(dr)
+                            break
+
+                keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
+
+                if aperture_back_min_logmass > 0:
+                    tempmasses = masses_at_z[keep_inds]
+                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** aperture_back_min_logmass)[0]]
+
+            for halo_index in keep_inds:
+                halos.append(plane_halos[halo_index])
+
+        return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
+                                      self._mass_sheet_correction)
+
+    def filter_old(self, thetax, thetay, aperture_radius_front,
+                   aperture_radius_back,
+                   aperture_front_min_logmass, aperture_back_min_logmass,
+                   global_front_min_logmass,
+                   global_back_min_logmass,
+                   source_x, source_y, ray_x=None, ray_y=None,
+                    path_redshifts=None, path_Tzlist=None, zmin=None, zmax=None):
+
+        halos = []
+
+        if zmax is None:
+            zmax = self.geometry._zsource
+        if zmin is None:
+            zmin = 0
+
+        for plane_index, zi in enumerate(self.unique_redshifts):
+
+            plane_halos = self.halos_at_z(zi)
+            inds_at_z = np.where(self.redshifts == zi)[0]
+            x_at_z = self.x[inds_at_z]
+            y_at_z = self.y[inds_at_z]
+            masses_at_z = self.masses[inds_at_z]
+
+            if zi < zmin:
+                continue
+            if zi > zmax:
+                continue
+
+            if zi <= self.geometry._zlens:
+
+                keep_inds_mass = np.where(masses_at_z >= 10 ** global_front_min_logmass)[0]
+
+                inds_m_low = np.where(masses_at_z < 10 ** global_front_min_logmass)[0]
 
                 keep_inds_dr = []
 
@@ -410,15 +531,15 @@ class Realization(object):
                         dr = ((x_at_z[idx] - anglex) ** 2 +
                               (y_at_z[idx] - angley) ** 2) ** 0.5
 
-                        if dr <= mindis_front:
+                        if dr <= aperture_radius_front:
                             keep_inds_dr.append(idx)
                             break
 
                 keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
-                if logabsolute_mass_cut_front > 0:
+                if aperture_front_min_logmass > 0:
                     tempmasses = masses_at_z[keep_inds]
-                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** logabsolute_mass_cut_front)[0]]
+                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** aperture_front_min_logmass)[0]]
 
             else:
 
@@ -430,9 +551,9 @@ class Realization(object):
                     ray_at_zx, ray_at_zy = self.geometry.interpolate_ray_angle_z(ray_x, ray_y,
                                                  path_redshifts, zi, path_Tzlist, Tz_current)
 
-                keep_inds_mass = np.where(masses_at_z >= 10 ** logmasscut_back)[0]
+                keep_inds_mass = np.where(masses_at_z >= 10 ** global_back_min_logmass)[0]
 
-                inds_m_low = np.where(masses_at_z < 10 ** logmasscut_back)[0]
+                inds_m_low = np.where(masses_at_z < 10 ** global_back_min_logmass)[0]
 
                 keep_inds_dr = []
 
@@ -445,22 +566,25 @@ class Realization(object):
                         dr = ((x_at_z[idx] - anglex) ** 2 +
                               (y_at_z[idx] - angley) ** 2) ** 0.5
 
-                        if dr <= mindis_back:
+                        if dr <= aperture_radius_back:
                             keep_inds_dr.append(idx)
                             dr_list.append(dr)
                             break
 
                 keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
-                if logabsolute_mass_cut_back > 0:
+                if aperture_back_min_logmass > 0:
                     tempmasses = masses_at_z[keep_inds]
-                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** logabsolute_mass_cut_back)[0]]
+                    keep_inds = keep_inds[np.where(tempmasses >= 10 ** aperture_back_min_logmass)[0]]
 
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = halos, other_params= self._prof_params, mass_sheet_correction = self._mass_sheet_correction)
+        return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
+                                      self._mass_sheet_correction)
+
+        # return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
+        #                    halos = halos, other_params= self._prof_params, mass_sheet_correction = self._mass_sheet_correction)
 
         #return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function, halos=halos,
         #                   wdm_params=self._wdm_params, mass_sheet_correction=self._mass_sheet_correction)

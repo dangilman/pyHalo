@@ -28,14 +28,16 @@ class TestSingleRealization(object):
     def test_shift_to_source(self):
 
         source_x, source_y = 0, 0
-        realization_shifted = self.realization.shift_background_to_source(source_x, source_y)
+        realization_shifted = self.realization.shift_background_to_source(source_x, source_y,
+                                                                          self.zlens, self.zsource)
         for halo, halo_shifted in zip(self.realization.halos, realization_shifted.halos):
 
             assert halo.x == halo_shifted.x
             assert halo.y == halo_shifted.y
 
         source_x, source_y = 1, 0
-        realization_shifted = self.realization.shift_background_to_source(source_x, source_y)
+        realization_shifted = self.realization.shift_background_to_source(source_x, source_y,
+                                                                          self.zlens, self.zsource)
         for i, (halo, halo_shifted) in enumerate(zip(self.realization.halos, realization_shifted.halos)):
 
             if i==0:

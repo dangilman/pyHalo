@@ -108,7 +108,7 @@ class PowerLaw(object):
         self._mL, self._mH = 10 ** log_mlow, 10 ** log_mhigh
 
         self.draw_poission = draw_poission
-        self.draw_poission = False
+
         if normalization < 0:
             raise Exception('normalization cannot be < 0.')
         else:
