@@ -210,14 +210,10 @@ class Realization(object):
 
         """
 
-        :param source_x: estimated angular source x coordinate [arcsec]
-        :param source_y: estimated angular source y coordinate [arcsec]
-        :param center_x_lens: lens centroid x [arcsec]
-        :param center_y_lens: lens centroid y [arcsec]
-        :param source_redshift: source redshift
-        :return: an instance of realization in which all halos behind the
-        main deflector are shifted such that the rendering volume closes at the
-        offset source position
+        :param ray_interp_x: instance of scipy.interp1d, returns the angular position of a ray
+        fired through the lens center
+        :param ray_interp_y: same but for the y coordinate
+        :return:
         """
 
         # add all halos in front of main deflector with positions unchanged
@@ -360,10 +356,10 @@ class Realization(object):
 
     def filter(self, aperture_radius_front,
                    aperture_radius_back,
-                   aperture_front_min_logmass,
-                   aperture_back_min_logmass,
-                   global_front_min_logmass,
-                   global_back_min_logmass,
+                   mass_allowed_in_apperture_front,
+                   mass_allowed_in_apperture_back,
+                   mass_allowed_global_front,
+                   mass_allowed_global_back,
                    interpolated_x_angle, interpolated_y_angle,
                     zmin=None, zmax=None):
 
@@ -389,14 +385,14 @@ class Realization(object):
 
             if zi <= self.geometry._zlens:
 
-                minimum_mass_everywhere = deepcopy(global_front_min_logmass)
-                minimum_mass_in_window = deepcopy(aperture_front_min_logmass)
+                minimum_mass_everywhere = deepcopy(mass_allowed_global_front)
+                minimum_mass_in_window = deepcopy(mass_allowed_in_apperture_front)
                 position_cut_in_window = deepcopy(aperture_radius_front)
 
             else:
 
-                minimum_mass_everywhere = deepcopy(global_back_min_logmass)
-                minimum_mass_in_window = deepcopy(aperture_back_min_logmass)
+                minimum_mass_everywhere = deepcopy(mass_allowed_global_back)
+                minimum_mass_in_window = deepcopy(mass_allowed_in_apperture_back)
                 position_cut_in_window = deepcopy(aperture_radius_back)
 
             keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]

@@ -25,28 +25,6 @@ class TestSingleRealization(object):
         self.realization = RealizationFast(masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, self.zlens, self.zsource,
                  cone_opening_angle, log_mlow=6, log_mhigh=10, mass_sheet_correction=False)
 
-    def test_shift_to_source(self):
-
-        source_x, source_y = 0, 0
-        realization_shifted = self.realization.shift_background_to_source(source_x, source_y,
-                                                                          self.zlens, self.zsource)
-        for halo, halo_shifted in zip(self.realization.halos, realization_shifted.halos):
-
-            assert halo.x == halo_shifted.x
-            assert halo.y == halo_shifted.y
-
-        source_x, source_y = 1, 0
-        realization_shifted = self.realization.shift_background_to_source(source_x, source_y,
-                                                                          self.zlens, self.zsource)
-        for i, (halo, halo_shifted) in enumerate(zip(self.realization.halos, realization_shifted.halos)):
-
-            if i==0:
-                assert halo.x == halo_shifted.x
-                assert halo.y == halo_shifted.y
-            else:
-                assert halo.x != halo_shifted.x
-                assert halo_shifted.x == source_x
-                assert halo.y == source_y
 
 #t.test_mass_at_z()
 #

@@ -984,7 +984,7 @@ def logrho(log_mass, z, zeta, v_dep, delta_concentration_dex,
         raise Exception('velocity dep must be < 1.')
 
     if zeta < c0_values[0]:
-        return 10.
+        zeta = c0_values[0]
     elif zeta > c0_values[-1]:
         zeta = c0_values[-1]
 

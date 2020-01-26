@@ -92,7 +92,7 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
                                                                                    cmean, self._halo_class.z)
 
             if 'halo_age' not in self._halo_class._args.keys():
-                halo_age = self._halo_class.cosmo_prof.halo_age(self._halo_class.z)
+                halo_age = self._halo_class.cosmo_prof.cosmo.halo_age(self._halo_class.z)
             else:
                 halo_age = self._halo_class._args['halo_age']
 
