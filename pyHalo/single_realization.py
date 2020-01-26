@@ -583,7 +583,7 @@ class RealizationFast(Realization):
     """
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, zlens, zsource,
-                 cone_opening_angle, log_mlow=6, log_mhigh=10, mass_sheet_correction=False):
+                 cone_opening_angle, log_mlow=6, log_mhigh=10, mass_sheet_correction=False, kwargs_halo={}):
 
 
         mfunc = LensingMassFunction(Cosmology(), 10**6, 10**10, zlens,
@@ -607,6 +607,7 @@ class RealizationFast(Realization):
 
         default_params = {'cone_opening_angle': cone_opening_angle, 'opening_angle_factor': 6,
                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh}
+        default_params.update(kwargs_halo)
 
         Realization.__init__(self, *tup, halo_mass_function=mfunc,
                  halos = None, other_params = default_params,
