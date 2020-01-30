@@ -13,18 +13,23 @@ lens_cosmo.rhoc *= 0.7 ** 2
 
 def sidm_central_density_from_mass_exact(c_norm, vpower, m, z, N=5, plot=False):
 
-    cross = VelocityDependentCross(c_norm, v_pow=vpower)
-    c = lens_cosmo.NFW_concentration(m, z, scatter=False)
-    rhonfw, rs_nfw, _ = lens_cosmo.NFW_params_physical(m, c, z)
+    halo_age_scaled = cosmo.halo_age(z) / 10
+    zeta = c_norm * halo_age_scaled
+    cross = VelocityDependentCross(zeta, v_pow=vpower)
+    # c = lens_cosmo.NFW_concentration(m, z, scatter=False)
+    # rhonfw, rs_nfw, _ = lens_cosmo.NFW_params_physical(m, c, z)
+    rhonfw, rs_nfw, _ = lens_cosmo.NFW_params_physical_fromM(m, z)
+
     rho0, s0, core_size_unitsrs, fit_quality = \
         solve_iterative(rhonfw, rs_nfw, cross, N, plot)
-    return rho0, rhonfw/rho0, rs_nfw * rhonfw/rho0
+    return rho0, rhonfw/rho0, rs_nfw * rhonfw/rho0, s0
 
-def sidm_central_density_from_mass_interpolated(cross_section, vpower, m, z, c_scatter=False):
+def sidm_central_density_from_mass_interpolated(c_norm, vpower, m, z, c_scatter=False):
 
+    halo_age_scaled = cosmo.halo_age(z) / 10
+    zeta = c_norm * halo_age_scaled
     rhos, rs, _ = lens_cosmo.NFW_params_physical_fromM(m, z)
-    halo_age_scaled = cosmo.halo_age(z)/10
-    zeta = cross_section * halo_age_scaled
+
     delta_c_dex = 0.
     logrho0 = logrho(np.log10(m), z, zeta, vpower, delta_c_dex)
     rho0 = 10**logrho0

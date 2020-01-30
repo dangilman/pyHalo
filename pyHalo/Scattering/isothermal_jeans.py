@@ -278,14 +278,8 @@ def solve(rhonfw, rsnfw, cross_section_class,
         denarr.append(den_pen)
         cfirstcross.append(first_crossing(r_iso, rho_iso, nfwprofile_density(r_iso, rhonfw, rsnfw)))
 
-        if do_E:
-            er = energyNFW(rhonfw, rsnfw, r1) * (0.5 * coords[i, 1] ** 2 * mass_iso) ** -1
-            er_pen = np.absolute(er - 1)
-            earr.append(er_pen)
-
-        if do_v:
-            vpen = coords[i, 1] * velocity_dispersion_NFW(r1, rhonfw, rsnfw) ** -1
-            varr.append(np.absolute(vpen - 1))
+        vpen = coords[i, 1] * velocity_dispersion_NFW(r1, rhonfw, rsnfw) ** -1
+        varr.append(np.absolute(vpen - 1))
 
     denarr, marr = np.absolute(np.array(denarr).reshape(N, N)), \
                    np.absolute(np.array(marr).reshape(N, N))
