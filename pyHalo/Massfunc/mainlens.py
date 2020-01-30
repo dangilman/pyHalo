@@ -106,6 +106,7 @@ class MainLensPowerLaw(object):
                                                                 args['cone_opening_angle'],
                                                                 args['power_law_index'], m_pivot=10**8)
 
+
         elif 'amp_at_8' in args.keys() and 'mass_in_subhalos' not in args.keys():
 
             args_mfunc['normalization'] = norm_A0_from_a0area(args['amp_at_8'],

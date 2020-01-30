@@ -92,7 +92,6 @@ class Realization(object):
             redshifts.append(halo.z)
         return np.array(xcoords), np.array(ycoords), np.log10(masses), np.array(redshifts)
 
-
     def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
 
         new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], [sub_flag], self.halo_mass_function,
@@ -421,8 +420,7 @@ class Realization(object):
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self._mass_sheet_correction)
 
-
-    def mass_sheet_correction(self, mlow_front = 10**7.5, mlow_back = 10**8):
+    def mass_sheet_correction(self, mlow_front=10**7.5,mlow_back=10**8):
 
         kwargs = []
         zsheet = []
@@ -435,33 +433,43 @@ class Realization(object):
             mlow_front = 10**max(np.log10(mlow_front), self._logmlow)
             mlow_back = 10**max(np.log10(mlow_back), self._logmlow)
 
-            kappa = None
             if len(unique_z) == 1 and unique_z[0] == self.geometry._zlens:
                 if self._prof_params['subtract_subhalo_mass_sheet']:
                     kappa = self.convergence_at_z(self.geometry._zlens,
                                                   mlow_front, mhigh,None,self.m_break_scale,
                                                   self.break_index,self.break_scale)
-            if kappa is not None:
-                kwargs.append({'kappa_ext': - self._prof_params['subhalo_mass_sheet_scale'] * kappa})
-                zsheet.append(unique_z[0])
 
-            for i in range(0, len(unique_z)-1):
+                    kwargs.append({'kappa_ext': - self._prof_params['subhalo_mass_sheet_scale'] * kappa})
+                    zsheet.append(unique_z[0])
 
-                z = unique_z[i]
+            else:
 
-                delta_z = unique_z[i+1] - z
+                if self._prof_params['subtract_subhalo_mass_sheet']:
 
-                kappa = None
-                if z < self.geometry._zlens:
-                    kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
-                                                         self.m_break_scale, self.break_index, self.break_scale)
-                elif z > self.geometry._zlens:
-                    kappa = self.convergence_at_z(z, mlow_back, mhigh, delta_z,
-                                                        self.m_break_scale, self.break_index, self.break_scale)
+                    kappa = self.convergence_at_z(self.geometry._zlens,
+                                                  mlow_front, mhigh, None, self.m_break_scale,
+                                                  self.break_index, self.break_scale)
 
-                if kappa is not None:
-                    kwargs.append({'kappa_ext': - self._prof_params['kappa_scale']*kappa})
-                    zsheet.append(z)
+                    kwargs.append({'kappa_ext': - self._prof_params['subhalo_mass_sheet_scale'] * kappa})
+                    zsheet.append(self.geometry._zlens)
+
+                for i in range(0, len(unique_z)-1):
+
+                    z = unique_z[i]
+
+                    delta_z = unique_z[i+1] - z
+
+                    kappa = None
+                    if z < self.geometry._zlens:
+                        kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
+                                                             self.m_break_scale, self.break_index, self.break_scale)
+                    elif z > self.geometry._zlens:
+                        kappa = self.convergence_at_z(z, mlow_back, mhigh, delta_z,
+                                                            self.m_break_scale, self.break_index, self.break_scale)
+
+                    if kappa is not None:
+                        kwargs.append({'kappa_ext': - self._prof_params['kappa_scale']*kappa})
+                        zsheet.append(z)
 
         elif self._convergence_sheet_type == 'fixed':
 
@@ -532,15 +540,18 @@ class Realization(object):
             zlens = self.geometry._zlens
             kpc_per_asec_zlens = self.geometry._kpc_per_arcsec_zlens
             opening_angle = self._prof_params['cone_opening_angle']
+
             norm = norm_AO_from_sigmasub(sigma_sub, parent_m200,
                                          zlens, kpc_per_asec_zlens,
                                          opening_angle, plaw_idx)
+
+
         else:
             raise Exception('cannot subtract subhalo '
                             'mass sheets for this mass funciton.')
 
         def _integrand(m):
-            return (norm * m ** plaw_idx) * \
+            return (norm * m ** (1+plaw_idx)) * \
                    (1 + break_scale*m_break/m) ** break_index
 
         m_theory = quad(_integrand, mlow, mhigh)[0]
