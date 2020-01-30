@@ -69,3 +69,4 @@ class VelocityDependentCross(object):
         sigma_times_velocity = maxwell_boltzmann_average(v_dis, self.cross_v)
 
         return sigma_times_velocity
+
