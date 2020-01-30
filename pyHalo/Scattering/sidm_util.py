@@ -22,12 +22,11 @@ def sidm_central_density_from_mass_exact(c_norm, vpower, m, z, N=5, plot=False):
 
 def sidm_central_density_from_mass_interpolated(cross_section, vpower, m, z, c_scatter=False):
 
-    c = lens_cosmo.NFW_concentration(m, z, scatter=c_scatter)
-    cmean = lens_cosmo.NFW_concentration(m, z, scatter=False)
     rhos, rs, _ = lens_cosmo.NFW_params_physical_fromM(m, z)
     halo_age_scaled = cosmo.halo_age(z)/10
     zeta = cross_section * halo_age_scaled
-    logrho0 = logrho(np.log10(m), z, zeta, vpower)
+    delta_c_dex = 0.
+    logrho0 = logrho(np.log10(m), z, zeta, vpower, delta_c_dex)
     rho0 = 10**logrho0
     return rho0, rhos/rho0, rs * rhos/rho0
 

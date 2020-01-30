@@ -24,9 +24,13 @@ class NFWLensing(object):
 
         return kwargs, None
 
-class TNFWLensing(NFWLensing):
+class TNFWLensing(object):
 
     lenstronomy_ID = 'TNFW'
+
+    def __init__(self, lens_cosmo):
+
+        self._lens_cosmo = lens_cosmo
 
     def params(self, x, y, mass, redshift, concentration, r_trunc_kpc):
 
