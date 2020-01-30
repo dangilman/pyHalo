@@ -6,6 +6,9 @@ from pyHalo.Scattering.vdis_nfw import _velocity_dispersion_NFW
 from copy import copy
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
+from pyHalo.Scattering.cross_sections import VelocityDependentCross
+
+cosmo = Cosmology()
 
 class ISONFW(object):
 
@@ -61,15 +64,7 @@ class ISONFW(object):
 
 def halo_age(z):
 
-    cosmo = Cosmology()
-
-    universe_age_today = cosmo.lookback_time(0)
-
-    universe_age_z = universe_age_today - cosmo.lookback_time(z)
-
-    formation_age = 10
-
-    return formation_age - universe_age_z
+    return cosmo.halo_age(z)
 
 def cored_profile(r, rhocore, rcore, k=5):
     x = r * rcore ** -1
@@ -226,17 +221,27 @@ def nfwprofile_mass(rhos, rs, rmax):
     x = rmax * rs ** -1
     return 4*np.pi*rhos*rs**3 * (np.log(1+x) - x * (1+x) ** -1)
 
-def compute_r1(rhos, rs, sigma_v, cross_section_class):
+def compute_r1(rhos, rs, v, cross_section_norm, v_power, t_halo):
 
-    tscale = 10 # Gyr
-    cross_section_times_v = cross_section_class(sigma_v)
-    k = 0.52 * (rhos * 10**-8) * cross_section_times_v * (tscale * 0.1)
+    """
+
+    :param rhos: units solar mass / kpc^3
+    :param rs: kpc
+    :param sigma_v: km/sec
+    :param cross_section_class: class cm^2/gram
+    :param halo_age: units Gyr
+    :return:
+    """
+
+    cross_class = VelocityDependentCross(cross_section_norm, v_pow=v_power)
+    cross_section_times_v = cross_class.cross_v(v)
+    k = 0.024 * (rhos * 10**-8) * cross_section_times_v * t_halo
     roots = np.roots([1, 2, 1, -k])
     lam = np.real(np.max(roots[np.where(np.isreal(roots))]))
 
     return lam * rs
 
-def solve(rhonfw, rsnfw, cross_section_class,
+def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
           rho_start, rho_end, s0_start, s0_end, N, plot=False, do_E=False, do_v=False):
 
     s0nfw = velocity_dispersion_NFW(rsnfw, rhonfw, rsnfw)
@@ -262,7 +267,7 @@ def solve(rhonfw, rsnfw, cross_section_class,
             print(str(100 * percent[pcount] / N ** 2) + '% .... ')
             pcount += 1
 
-        r1 = compute_r1(rhonfw, rsnfw, coords[i, 1], cross_section_class)
+        r1 = compute_r1(rhonfw, rsnfw, coords[i, 1], cross_section_norm, v_power, t_halo)
         r_iso, rho_iso = integrate_profile(10 ** coords[i, 0], coords[i, 1], rsnfw, r1, rmax_fac=2)
 
         mass_nfw, mass_iso = nfwprofile_mass(rhonfw, rsnfw, r1), profile_mass(r_iso, rho_iso, r1)
@@ -319,12 +324,9 @@ def solve(rhonfw, rsnfw, cross_section_class,
         ax.annotate('core size (units rs):\n' + str(np.round(core_density_ratio, 2)),
                     xy=(0.6, 0.65), xycoords='axes fraction', fontsize=13)
 
-        if cross_section_class.has_v_dep:
-            text = r'$\sigma = $' + str(cross_section_class._cross) + ' cm^2 g^-1' + \
-                   '\n ' + r'$\sigma \propto v$' + '^' + str(-cross_section_class.v_pow)
-        else:
-            text = r'$\sigma = $' + str(cross_section_class._cross) + ' cm^2 g^-1\n' + \
-                   '(v-independent)'
+        text = r'$\sigma = $' + str(cross_section_norm) + ' cm^2 g^-1' + \
+                   '\n ' + r'$\sigma \propto v$' + '^' + str(-v_power)
+
         ax.annotate(text, xy=(0.6, 0.8), xycoords='axes fraction', fontsize=13)
         # plt.colorbar(label=r'$\log_{10}\left(\chi^2\right)$')
 
@@ -335,15 +337,15 @@ def solve(rhonfw, rsnfw, cross_section_class,
 
     return rho0, s0, core_density_ratio, fit_quality
 
-def solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.002):
+def solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo, N, plot=False, tol = 0.002):
 
-    rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_class,
+    rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
                                                                 N, plot=plot, tol=tol,
                                                                 s0min_scale=0.4, s0max_scale=1.6,
                                                                 rhomin_scale=0.25, rhomax_scale=3.6)
 
     if fit_quality > 0.1:
-        rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_class,
+        rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
                                                                     8, plot=plot, tol=tol,
                                                                     s0min_scale=0.2, s0max_scale=2.0,
                                                                     rhomin_scale=0.1, rhomax_scale=4.5)
@@ -352,7 +354,7 @@ def solve_iterative(rhonfw, rsnfw, cross_section_class, N, plot=False, tol = 0.0
 
     return rho0, s0, core_size_unitsrs, fit_quality
 
-def _solve_iterative(rhonfw, rsnfw, cross_section_class,
+def _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
                      N, plot=False, tol = 0.002, do_E = False,
                      s0min_scale=0.5, s0max_scale=1.5,
                      rhomin_scale=0.3, rhomax_scale=3.5):
@@ -384,7 +386,7 @@ def _solve_iterative(rhonfw, rsnfw, cross_section_class,
 
     while fit_quality > tol:
 
-        rho0, s0, core_size_unitsrs, fit_quality = solve(rhonfw, rsnfw, cross_section_class,
+        rho0, s0, core_size_unitsrs, fit_quality = solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
                          rhomin, rhomax, s0min, s0max, Nvalues[iter_count-1], plot=plot, do_E=do_E, do_v=False)
 
         core_size_unitsrs = np.round(core_size_unitsrs, 2)
@@ -419,48 +421,3 @@ def _solve_iterative(rhonfw, rsnfw, cross_section_class,
 
     return rho0, s0, core_size_unitsrs, fit_quality
 
-def solve_mass_range(masses, common_redshift, cross_class):
-
-    logrho0 = []
-    prof = LensCosmo(z_lens=0.5, z_source=3)
-    fitquality = []
-
-    for mi in masses:
-        rhos, rs, _ = prof.NFW_params_physical_fromM(mi, common_redshift)
-        rho0, _, _, fit_qual = solve_iterative(rhos, rs, cross_class, 5)
-        logrho0.append(np.log10(rho0))
-        fitquality.append(fit_qual)
-
-    cut = np.where(np.array(fitquality) < 0.05)[0]
-
-    return np.array(masses)[cut], np.array(logrho0)[cut], np.array(fitquality)[cut]
-
-def solve_z_range(mass, redshifts, cross_class):
-
-    logrho0 = []
-    prof = LensCosmo(z_lens=0.5, z_source=3)
-    fitquality = []
-
-    for zi in redshifts:
-        rhos, rs, _ = prof.NFW_params_physical_fromM(mass, zi)
-        rho0, _, _, fit_qual = solve_iterative(rhos, rs, cross_class, 5)
-        logrho0.append(np.log10(rho0))
-        fitquality.append(fit_qual)
-
-    cut = np.where(np.array(fitquality) < 0.05)
-
-    return np.array(logrho0)[cut], np.array(fitquality)[cut]
-
-def solve_cross_range(mass, z, cross_classes):
-    logrho0 = []
-    prof = LensCosmo(z_lens=0.5, z_source=3)
-    fitquality = []
-    for cross_class in cross_classes:
-        rhos, rs, _ = prof.NFW_params_physical_fromM(mass, z)
-        rho0, _, _, fit_qual = solve_iterative(rhos, rs, cross_class, 5)
-        logrho0.append(np.log10(rho0))
-        fitquality.append(fit_qual)
-
-    cut = np.where(np.array(fitquality) < 0.05)
-
-    return np.array(logrho0)[cut], np.array(fitquality)[cut]
