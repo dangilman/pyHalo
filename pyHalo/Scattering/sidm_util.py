@@ -9,19 +9,15 @@ from pyHalo.Scattering.cross_sections import VelocityDependentCross
 
 cosmo = Cosmology()
 lens_cosmo = LensCosmo(0.5, 1.5, cosmo)
-lens_cosmo.rhoc *= 0.7 ** 2
 
 def sidm_central_density_from_mass_exact(c_norm, vpower, m, z, N=5, plot=False):
 
-    halo_age_scaled = cosmo.halo_age(z) / 10
-    zeta = c_norm * halo_age_scaled
-    cross = VelocityDependentCross(zeta, v_pow=vpower)
-    # c = lens_cosmo.NFW_concentration(m, z, scatter=False)
-    # rhonfw, rs_nfw, _ = lens_cosmo.NFW_params_physical(m, c, z)
+    thalo = cosmo.halo_age(z)
+
     rhonfw, rs_nfw, _ = lens_cosmo.NFW_params_physical_fromM(m, z)
 
     rho0, s0, core_size_unitsrs, fit_quality = \
-        solve_iterative(rhonfw, rs_nfw, cross, N, plot)
+        solve_iterative(rhonfw, rs_nfw, c_norm, vpower, thalo, N, plot)
     return rho0, rhonfw/rho0, rs_nfw * rhonfw/rho0, s0
 
 def sidm_central_density_from_mass_interpolated(c_norm, vpower, m, z, c_scatter=False):
@@ -75,11 +71,12 @@ class Profile(object):
 
 class CompositeSIDMProfile(object):
 
-    def __init__(self, rho_s, r_s, cross_section, tau=10):
+    def __init__(self, rho_s, r_s, cross_section_norm, v_power, t_halo, tau=10):
 
-        rho0, vdis_isothermal, core_density_ratio, _ = solve_iterative(rho_s, r_s, cross_section, 6, plot=False,
+        rho0, vdis_isothermal, core_density_ratio, _ = solve_iterative(rho_s, r_s, cross_section_norm, v_power, t_halo,
+                                                                       6, plot=False,
                                                                        tol=0.01)
-        r_1 = compute_r1(rho_s, r_s, vdis_isothermal, cross_section)
+        r_1 = compute_r1(rho_s, r_s, vdis_isothermal, cross_section_norm, v_power, t_halo,)
         domain_r, rhoiso = integrate_profile(rho0, vdis_isothermal, r_s, r_1)
         domain_x_inner = domain_r[0:-1] / r_s
 
