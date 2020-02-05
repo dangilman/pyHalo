@@ -221,6 +221,13 @@ def nfwprofile_mass(rhos, rs, rmax):
     x = rmax * rs ** -1
     return 4*np.pi*rhos*rs**3 * (np.log(1+x) - x * (1+x) ** -1)
 
+def compute_k(rhos, cm2_per_gram_times_sigmav, age):
+
+    # cm^2 * solar masses * km / (kpc^3 * gram * sec)
+    const = 2.14e-10
+
+    return const * rhos * cm2_per_gram_times_sigmav * age
+
 def compute_r1(rhos, rs, v, cross_section_norm, v_power, t_halo):
 
     """
@@ -234,8 +241,8 @@ def compute_r1(rhos, rs, v, cross_section_norm, v_power, t_halo):
     """
 
     cross_class = VelocityDependentCross(cross_section_norm, v_pow=v_power)
-    cross_section_times_v = cross_class.cross_v(v)
-    k = 0.024 * (rhos * 10**-8) * cross_section_times_v * t_halo
+    cross_section_times_v = cross_class(v)
+    k = compute_k(rhos, cross_section_times_v, t_halo)
     roots = np.roots([1, 2, 1, -k])
     lam = np.real(np.max(roots[np.where(np.isreal(roots))]))
 
@@ -283,22 +290,22 @@ def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
         denarr.append(den_pen)
         cfirstcross.append(first_crossing(r_iso, rho_iso, nfwprofile_density(r_iso, rhonfw, rsnfw)))
 
-        vpen = coords[i, 1] * velocity_dispersion_NFW(r1, rhonfw, rsnfw) ** -1
-        varr.append(np.absolute(vpen - 1))
+        #vpen = coords[i, 1] * velocity_dispersion_NFW(r1, rhonfw, rsnfw) ** -1
+        #varr.append(np.absolute(vpen - 1))
 
     denarr, marr = np.absolute(np.array(denarr).reshape(N, N)), \
                    np.absolute(np.array(marr).reshape(N, N))
 
 
-    if do_E:
-        earr = np.absolute(np.array(earr).reshape(N, N))
-        tot = marr + earr
-    elif do_v:
-        varr = np.absolute(np.array(varr).reshape(N, N))
-        tot = marr + varr
-    else:
+    # if do_E:
+    #     earr = np.absolute(np.array(earr).reshape(N, N))
+    #     tot = marr + earr
+    # elif do_v:
+    #     varr = np.absolute(np.array(varr).reshape(N, N))
+    #     tot = marr + varr
+    # else:
 
-        tot = marr + denarr
+    tot = marr + denarr
 
     minidx = np.argmin(tot.ravel())
     fit_quality = tot.ravel()[minidx]
@@ -355,7 +362,7 @@ def solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo, N, plot=
     return rho0, s0, core_size_unitsrs, fit_quality
 
 def _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
-                     N, plot=False, tol = 0.002, do_E = False,
+                     N, plot=False, tol = 0.004, do_E = False,
                      s0min_scale=0.5, s0max_scale=1.5,
                      rhomin_scale=0.3, rhomax_scale=3.5):
 

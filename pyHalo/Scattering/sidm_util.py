@@ -9,7 +9,6 @@ from pyHalo.Scattering.cross_sections import VelocityDependentCross
 
 cosmo = Cosmology()
 lens_cosmo = LensCosmo(0.5, 1.5, cosmo)
-lens_cosmo.rhoc *= 0.7 ** 2
 
 def sidm_central_density_from_mass_exact(c_norm, vpower, m, z, N=5, plot=False):
 
