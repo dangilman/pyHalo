@@ -98,21 +98,26 @@ class MainLensPowerLaw(object):
             except:
                 raise ValueError('must specify a value for ' + key)
 
-        if 'sigma_sub' in args.keys() and 'mass_in_subhalos' not in args.keys():
+        if 'sigma_sub' in args.keys():
 
             args_mfunc['normalization'] = norm_AO_from_sigmasub(args['sigma_sub'], args['parent_m200'],
                                                                 self._geometry._zlens,
                                                                 self._geometry._kpc_per_arcsec_zlens,
                                                                 args['cone_opening_angle'],
-                                                                args['power_law_index'], m_pivot=10**8)
+                                                                args['power_law_index'])
 
 
-        elif 'amp_at_8' in args.keys() and 'mass_in_subhalos' not in args.keys():
+        elif 'norm_kpc2' in args.keys():
 
-            args_mfunc['normalization'] = norm_A0_from_a0area(args['amp_at_8'],
+            args_mfunc['normalization'] = norm_A0_from_a0area(args['norm_kpc2'],
                                                               self._geometry._kpc_per_arcsec_zlens,
                                                               args['cone_opening_angle'],
-                                                              args_mfunc['power_law_index'], m_pivot=10 ** 8)
+                                                              args_mfunc['power_law_index'])
+
+        elif 'norm_arcsec2' in args.keys():
+
+            args_mfunc['normalization'] = norm_constant_per_squarearcsec(args['norm_arcsec2'], self._geometry._kpc_per_arcsec_zlens,
+                                                                         args['cone_opening_angle'], args_mfunc['power_law_index'])
 
         elif 'f_sub' in args.keys() or 'log_f_sub' in args.keys():
 
@@ -130,8 +135,14 @@ class MainLensPowerLaw(object):
 
 
         else:
+            routines = 'sigma_sub: amplitude of differential mass function at 10^8 solar masses (d^2N / dmdA) in units [kpc^-2 M_sun^-1];\n' \
+                       'automatically accounts for evolution of projected number density with halo mass and redshift (see Gilman et al. 2020)\n\n' \
+                       'norm_kpc2: same as sigma_sub, but does not automatically account for evolution with halo mass and redshift\n\n' \
+                       'norm_arcsec2: same as norm_kpc2, but in units (d^2N / dmdA) in units [arcsec^-2 M_sun^-1]\n\n' \
+                       'f_sub or log_f_sub: projected mass fraction in substructure within the radius 0.5*cone_opening_angle'
+
             raise Exception('Must specify normalization of the subhalo '
-                             'mass function in terms of sigma_sub or f_sub (fraction of total host mass).')
+                             'mass function. Recognized normalization routines are: \n'+routines)
 
 
         return args_mfunc
@@ -161,7 +172,7 @@ def norm_AO_from_sigmasub(sigma_sub, parent_m200, zlens, kpc_per_asec_zlens, con
     return norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens,
                                cone_opening_angle, plaw_index, m_pivot)
 
-def norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens, cone_opening_angle, plaw_index, m_pivot = 10**8):
+def norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens, cone_opening_angle, plaw_index, m_pivot=10**8):
 
     R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
 
@@ -186,4 +197,10 @@ def convert_fsub_to_norm(f_sub, m_host, zhost, rein_arcsec, cone_opening_angle, 
     sigma_sub = m_sub_scaled / integral / area
 
     return sigma_sub
+
+def norm_constant_per_squarearcsec(n_per_arcsecsquare, kpc_per_asec_zlens, cone_opening_angle, plaw_index):
+
+    a0_per_kpc2 = n_per_arcsecsquare * kpc_per_asec_zlens ** -2
+    return norm_A0_from_a0area(a0_per_kpc2, kpc_per_asec_zlens,
+                               cone_opening_angle, plaw_index)
 

@@ -123,7 +123,6 @@ class truncatedSIDMFieldHalo(FieldHaloBase):
     @property
     def core_radius(self):
 
-
         if 'core_ratio' in self._halo_class._args.keys():
             if 'SIDMcross' in self._halo_class._args.keys():
                 raise Exception('You have specified both core_ratio and SIDMcross arguments. '
