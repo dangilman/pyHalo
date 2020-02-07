@@ -557,7 +557,7 @@ class Realization(object):
                                          opening_angle, plaw_idx)
 
         elif 'norm_arcsec2' in self._prof_params.keys():
-            sigma_sub = self._prof_params['norm_arcsec'] * self.geometry._kpc_per_arcsec_zlens ** -2
+            sigma_sub = self._prof_params['norm_arcsec2'] * self.geometry._kpc_per_arcsec_zlens ** -2
             plaw_idx = self._prof_params['power_law_index']
             zlens = self.geometry._zlens
             kpc_per_asec_zlens = self.geometry._kpc_per_arcsec_zlens
