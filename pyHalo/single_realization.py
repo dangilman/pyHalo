@@ -545,6 +545,28 @@ class Realization(object):
                                          zlens, kpc_per_asec_zlens,
                                          opening_angle, plaw_idx)
 
+        elif 'norm_kpc2' in self._prof_params.keys():
+            sigma_sub = self._prof_params['norm_kpc2']
+            plaw_idx = self._prof_params['power_law_index']
+            zlens = self.geometry._zlens
+            kpc_per_asec_zlens = self.geometry._kpc_per_arcsec_zlens
+            opening_angle = self._prof_params['cone_opening_angle']
+
+            norm = norm_AO_from_sigmasub(sigma_sub, 10**13,
+                                         zlens, kpc_per_asec_zlens,
+                                         opening_angle, plaw_idx)
+
+        elif 'norm_arcsec2' in self._prof_params.keys():
+            sigma_sub = self._prof_params['norm_arcsec'] * self.geometry._kpc_per_arcsec_zlens ** -2
+            plaw_idx = self._prof_params['power_law_index']
+            zlens = self.geometry._zlens
+            kpc_per_asec_zlens = self.geometry._kpc_per_arcsec_zlens
+            opening_angle = self._prof_params['cone_opening_angle']
+
+            norm = norm_AO_from_sigmasub(sigma_sub, 10**13,
+                                         zlens, kpc_per_asec_zlens,
+                                         opening_angle, plaw_idx)
+
 
         else:
             raise Exception('cannot subtract subhalo '
