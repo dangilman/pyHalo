@@ -173,6 +173,7 @@ class LensingMassFunction(object):
         :return: the number of objects of mass M * Mpc^-3
         """
 
+        #a_z = 1/(1+z)
         dN_dV = component_fraction * self._cosmo.rho_dark_matter_crit(z)/M
 
         return dN_dV * self.geometry.volume_element_comoving(z, delta_z)

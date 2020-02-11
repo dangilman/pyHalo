@@ -223,7 +223,6 @@ class LOSPowerLaw(LOS):
 
         return masses, x, y, r2d, r3d, z, [False]*len(masses)
 
-
     def _mfunc(self,args):
 
         args_mfunc = {}
