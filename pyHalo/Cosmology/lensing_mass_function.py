@@ -174,7 +174,8 @@ class LensingMassFunction(object):
         """
 
         #a_z = 1/(1+z)
-        dN_dV = component_fraction * self._cosmo.rho_dark_matter_crit(z)/M
+        # in comoving units evaluate at z=0
+        dN_dV = component_fraction * self._cosmo.rho_dark_matter_crit(0)/M
 
         return dN_dV * self.geometry.volume_element_comoving(z, delta_z)
 
