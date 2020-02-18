@@ -167,6 +167,7 @@ def set_default_kwargs(profile_params):
         if print_defaults:
             print('c_power not specified, assuming -0.17 (only applies if log_m_break>0)')
         profile_params.update({'c_power': halo_default.c_power})
+
     if 'c_scale' in profile_params.keys():
         profile_params.update({'c_scale': profile_params['c_scale']})
     else:

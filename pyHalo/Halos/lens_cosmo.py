@@ -308,10 +308,3 @@ class LensCosmo(object):
     #     vmax = numpy.sqrt(self.G * M / r200)
     #
     #     return vmax * (0.216 * (numpy.log(1 + c) - c * (1+c) ** -1) * c ** -1) ** 0.5
-
-
-
-
-
-
-
