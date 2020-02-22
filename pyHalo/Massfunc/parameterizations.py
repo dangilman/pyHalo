@@ -145,7 +145,7 @@ class PowerLaw(object):
 
 class BrokenPowerLaw(object):
 
-    def __init__(self, power_law_index = None, log_mlow = None, log_mhigh = None, normalization = None,
+    def __init__(self, power_law_index=None, log_mlow = None, log_mhigh = None, normalization = None,
                  log_m_break = None, break_index = None, break_scale = None, draw_poisson = True, **kwargs):
 
         self._plaw = PowerLaw(power_law_index, log_mlow, log_mhigh, normalization)
