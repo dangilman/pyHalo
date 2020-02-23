@@ -105,7 +105,7 @@ class RealizationDefaults(object):
         self.m_parent = 10**13
 
         self.subtract_exact_mass_sheets = False
-        self.subhalo_mass_sheet_scale = 0.5
+        self.subhalo_mass_sheet_scale = 1.
         self.subtract_subhalo_mass_sheet = True
         self.draw_poission = True
 
