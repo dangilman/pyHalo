@@ -574,7 +574,7 @@ class Realization(object):
 
         def _integrand(m):
             return (norm * m ** (1+plaw_idx)) * \
-                   (1 + break_scale*m_break/m) ** break_index
+                   (1 + (m_break/m)**break_scale ) ** break_index
 
         m_theory = quad(_integrand, mlow, mhigh)[0]
 

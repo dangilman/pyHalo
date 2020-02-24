@@ -211,7 +211,7 @@ class LensingMassFunction(object):
 
         def _integrand(m, m_break, plaw_index, n):
 
-            return norm * m ** (n + plaw_index) * (1 + break_scale * m_break / m) ** break_index
+            return norm * m ** (n + plaw_index) * (1 + (m_break / m)**break_scale) ** break_index
 
         moment = quad(_integrand, m_low, m_high, args=(10**log_m_break, plaw_index, n))[0]
 

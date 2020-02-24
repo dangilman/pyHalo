@@ -171,7 +171,7 @@ class BrokenPowerLaw(object):
             return np.array([])
 
         mbreak = 10**self.log_m_break
-        ratio = self.break_scale * mbreak * self._unbroken_masses**-1
+        ratio = (mbreak * self._unbroken_masses**-1)**self.break_scale
         u = np.random.rand(int(len(self._unbroken_masses)))
 
         func = (1 + ratio) ** self.break_index

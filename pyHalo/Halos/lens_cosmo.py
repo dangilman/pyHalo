@@ -276,7 +276,6 @@ class LensCosmo(object):
         idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
         return idx
 
-
     # def SIDMrho(self, cross_section, sidm_func, halo_mass, halo_redshift, cscatter = True):
     #
     #     cmean = self.NFW_concentration(halo_mass, halo_redshift, scatter=False)
