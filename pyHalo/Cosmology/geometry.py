@@ -72,7 +72,7 @@ class Geometry(object):
 
         return comoving_x/Tz_current, comoving_y/Tz_current
 
-    def volume_element_comoving(self, z, delta_z):
+    def volume_element_comoving(self, z, delta_z, radius=None):
         """
 
         :param theta:
@@ -82,12 +82,14 @@ class Geometry(object):
         :return: volume element in comoving Mpc for small delta_z
         """
 
-        cone_radius = 0.5*self.cone_opening_angle
+        if radius is None:
+            radius = 0.5*self.cone_opening_angle
+
         if delta_z > self._delta_z_min:
             func = self._volume_integrand_comoving
-            volume_element = quad(func, z, z+delta_z, args=(cone_radius))[0]
+            volume_element = quad(func, z, z+delta_z, args=(radius))[0]
         else:
-            volume_element = self._volume_integrand_comoving(z, cone_radius) * delta_z
+            volume_element = self._volume_integrand_comoving(z, radius) * delta_z
 
         return volume_element
 

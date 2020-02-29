@@ -1,4 +1,4 @@
-from pyHalo.Massfunc.parameterizations import *
+from pyHalo.Rendering.parameterizations import *
 from pyHalo.Scattering.sidm_interp import logrho
 from pyHalo.Halos.HaloModels.collisionless_nfw import \
     TNFWFieldHalo, TNFWMainSubhalo, NFWFieldHalo, NFWMainSubhalo

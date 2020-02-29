@@ -5,7 +5,7 @@ from pyHalo.defaults import *
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
-from pyHalo.Massfunc.mainlens import norm_AO_from_sigmasub
+from pyHalo.Rendering.SHMF_normalizations import *
 from scipy.integrate import quad
 
 from copy import deepcopy
@@ -169,9 +169,6 @@ class Realization(object):
 
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self._mass_sheet_correction)
-        # return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-        #                    halos = halos, other_params= self._prof_params,
-        #                    mass_sheet_correction = self._mass_sheet_correction)
 
     def _reset(self):
 

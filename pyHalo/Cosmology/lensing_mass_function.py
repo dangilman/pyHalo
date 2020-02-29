@@ -76,16 +76,10 @@ class LensingMassFunction(object):
 
         return norm_dV * dV
 
-    def norm_at_z_biased(self, z, delta_z, M_halo, rmin = 0.5, rmax = 10):
+    def two_halo_boost(self, M_halo, z, rmin=0.5, rmax=10):
 
-        if self._two_halo_term:
-
-            # factor of 2 for symmetry
-            boost = 1+2*self.integrate_two_halo(M_halo, z, rmin = rmin, rmax = rmax) / (rmax - rmin)
-
-            return boost * self.norm_at_z(z, delta_z)
-        else:
-            return self.norm_at_z(z, delta_z)
+        boost = 1 + 2 * self.integrate_two_halo(M_halo, z, rmin=rmin, rmax=rmax) / (rmax - rmin)
+        return boost
 
     def integrate_two_halo(self, m200, z, rmin = 0.5, rmax = 10):
 

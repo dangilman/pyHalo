@@ -1,5 +1,5 @@
 import numpy.testing as npt
-from pyHalo.Massfunc.parameterizations import BrokenPowerLaw, PowerLaw
+from pyHalo.Rendering.parameterizations import BrokenPowerLaw, PowerLaw
 import pytest
 import numpy as np
 from scipy.integrate import quad
