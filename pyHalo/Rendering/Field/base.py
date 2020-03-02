@@ -1,3 +1,5 @@
+import numpy as np
+
 class LOSBase(object):
 
     def __init__(self, lensing_mass_func, rendering_args, spatial_parameterization):
@@ -10,12 +12,19 @@ class LOSBase(object):
 
         self._parameterization_args = rendering_args
 
-    def render_positions_at_z(self, z, nhalos):
+    def render_positions_at_z(self, z, nhalos, rescale):
 
-        x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z)
+        if rescale is None:
+            x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z)
+        else:
+            x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z, rescale=rescale)
 
-        kpc_per_asec = self._geometry.kpc_per_arcsec(z)
-        x_arcsec = x_kpc * kpc_per_asec ** -1
-        y_arcsec = y_kpc * kpc_per_asec ** -1
+        if len(x_kpc) > 0:
+            kpc_per_asec = self._geometry.kpc_per_arcsec(z)
 
-        return x_arcsec, y_arcsec, r2d_kpc, r3d_kpc
+            x_arcsec = x_kpc * kpc_per_asec ** -1
+            y_arcsec = y_kpc * kpc_per_asec ** -1
+            return x_arcsec, y_arcsec, r2d_kpc, r3d_kpc
+
+        else:
+            return np.array([]), np.array([]), np.array([]), np.array([])

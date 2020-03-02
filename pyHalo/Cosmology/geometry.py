@@ -107,7 +107,7 @@ class Geometry(object):
 
         return area_comoving * dR
 
-    def _delta_R_comoving(self, z, delta_z):
+    def delta_R_comoving(self, z, delta_z):
 
         d_h = self._cosmo.astropy.hubble_distance.value
         Ez_inv = self._cosmo.astropy.efunc(z)**-1

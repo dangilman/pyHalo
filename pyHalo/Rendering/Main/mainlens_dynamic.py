@@ -23,14 +23,18 @@ class MainLensPowerLawDynamic(object):
         NOTE: x and y are returned in arcsec, while r2d and r3d are expressed in kpc
         """
 
-        x_arcsec, y_arcsec, r2d_kpc, r3d_kpc, _ = self.main()
+        masses, x_arcsec, y_arcsec, r2d_kpc, r3d_kpc, redshifts = self.main()
 
-        dx = x_arcsec - self._center_x
-        dy = y_arcsec - self._center_y
-        dr = np.sqrt(dx ** 2 + dy ** 2)
-        inds = np.where(dr < self._rmax)
+        if len(masses) > 0:
+            dx = x_arcsec - self._center_x
+            dy = y_arcsec - self._center_y
+            dr = np.sqrt(dx ** 2 + dy ** 2)
+            inds = np.where(dr < self._rmax)
 
-        redshifts = [self.main._geometry._zlens] * len(dx[inds])
+            redshifts = [self.main._geometry._zlens] * len(dx[inds])
 
-        return x_arcsec[inds], y_arcsec[inds], r2d_kpc[inds], r3d_kpc[inds], redshifts
+            return masses[inds], x_arcsec[inds], y_arcsec[inds], r2d_kpc[inds], r3d_kpc[inds], redshifts
+
+        else:
+            return masses, x_arcsec, y_arcsec, r2d_kpc, r3d_kpc, redshifts
 

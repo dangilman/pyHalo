@@ -120,7 +120,7 @@ halo_default = DMHaloDefaults()
 realization_default = RealizationDefaults()
 print_defaults = False
 
-def set_default_kwargs(profile_params):
+def set_default_kwargs(profile_params, dynamic, zsource):
 
     if 'include_subhalos' in profile_params.keys():
         profile_params.update({'include_subhalos': profile_params['include_subhalos']})
@@ -215,24 +215,33 @@ def set_default_kwargs(profile_params):
     if 'LOS_truncation_factor' not in profile_params.keys():
         profile_params.update({'LOS_truncation_factor': truncation_default.LOS_truncation})
 
-    if 'cone_opening_angle' not in profile_params.keys():
+    if 'zmin' not in profile_params.keys():
+        profile_params.update({'zmin': lenscone_default.default_zstart})
+    if 'zmax' not in profile_params.keys():
+        profile_params.update({'zmax': zsource - lenscone_default.default_zstart})
 
-        if 'R_ein_main' not in profile_params.keys():
-            raise Exception('must either specify cone_opening_angle, or (R_ein_main, opening_angle_factor) '
-                            'in keyword arguments.')
-        if 'opening_angle_factor' in profile_params.keys():
-            factor = profile_params['opening_angle_factor']
-        else:
-            factor = realization_default.opening_angle_factor
+    if not dynamic:
+        if 'cone_opening_angle' not in profile_params.keys():
 
-        profile_params['cone_opening_angle'] = factor * profile_params['R_ein_main']
-        profile_params['opening_angle_factor'] = factor
+            if 'R_ein_main' not in profile_params.keys():
+                raise Exception('must either specify cone_opening_angle, or (R_ein_main, opening_angle_factor) '
+                                'in keyword arguments.')
+            if 'opening_angle_factor' in profile_params.keys():
+                factor = profile_params['opening_angle_factor']
+            else:
+                factor = realization_default.opening_angle_factor
 
-    if 'opening_angle_factor' not in profile_params.keys():
-        raise Exception('If you specify cone_opening_angle, you must also specify opening_angle_factor,'
+            profile_params['cone_opening_angle'] = factor * profile_params['R_ein_main']
+            profile_params['opening_angle_factor'] = factor
+
+        if 'opening_angle_factor' not in profile_params.keys():
+            raise Exception('If you specify cone_opening_angle, you must also specify opening_angle_factor,'
                             'where R_ein_main = cone_opening_angle / opening_angle_factor')
 
-    profile_params['R_ein_main'] = profile_params['cone_opening_angle'] * profile_params['opening_angle_factor'] ** -1
+        profile_params['R_ein_main'] = profile_params['cone_opening_angle'] * profile_params['opening_angle_factor'] ** -1
+
+    else:
+        profile_params['cone_opening_angle'] = 6.
 
     return profile_params
 

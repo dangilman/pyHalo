@@ -28,23 +28,15 @@ class pyHaloBase(object):
 
     def lens_plane_redshifts(self, kwargs_render=dict):
 
-        if 'zmin' not in kwargs_render.keys():
-            zmin = lenscone_default.default_zstart
-        else:
-            zmin = kwargs_render['zmin']
-
+        zmin = lenscone_default.default_zstart
         if 'zstep' not in kwargs_render.keys():
             zstep = lenscone_default.default_z_step
         else:
             zstep = kwargs_render['zstep']
-
-        if 'zmax' not in kwargs_render.keys():
-            zmax = self.zsource
-        else:
-            zmax = kwargs_render['zmax']
+        zmax = self.zsource - zstep
 
         front_z = np.arange(zmin, self.zlens, zstep)
-        back_z = np.arange(self.zlens+zstep, zmax, zstep)
+        back_z = np.arange(self.zlens, zmax, zstep)
         redshifts = np.append(front_z, back_z)
 
         delta_zs = []
@@ -100,9 +92,9 @@ class pyHaloBase(object):
 
         return self.halo_mass_function
 
-    def _add_profile_params(self, args):
+    def _add_profile_params(self, args, dynamic):
 
-        return set_default_kwargs(args)
+        return set_default_kwargs(args, dynamic, self.zsource)
 
 
 

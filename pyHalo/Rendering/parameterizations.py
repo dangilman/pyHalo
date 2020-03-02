@@ -134,11 +134,13 @@ class PowerLaw(object):
 
     def _moment(self, norm, m1, m2, n):
 
-        return norm * self._integral(n, m1, m2)
+        integral = self._integral(n, m1, m2)
+
+        return norm * integral
 
     def _integral(self, n, m1, m2):
 
-        if self._index == 1 and n == 0:
+        if self._index == -1 and n == 0:
             return np.log(m2 / m1)
         else:
             return (n + 1 + self._index) ** -1 * (m2 ** (n + 1 + self._index) - m1 ** (n + 1 + self._index))

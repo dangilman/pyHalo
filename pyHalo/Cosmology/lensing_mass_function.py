@@ -241,7 +241,7 @@ class LensingMassFunction(object):
 
         for zi in zsteps:
 
-            dr = self.geometry._delta_R_comoving(zi, dz)
+            dr = self.geometry.delta_R_comoving(zi, dz)
             cylinder_diameter_kpc = cylinder_diameter_arcsec*self.geometry._cosmo.kpc_per_asec(zi)
             radius = 0.5 * cylinder_diameter_kpc * 0.001
             dv_comoving = np.pi*radius**2 * dr
@@ -260,7 +260,7 @@ class LensingMassFunction(object):
 
         for zi in zsteps:
 
-            dr = self.geometry._delta_R_comoving(zi, dz)
+            dr = self.geometry.delta_R_comoving(zi, dz)
             dv_comoving = np.pi*radius**2 * dr
             nhalos += dv_comoving*self._mass_function_moment(M, self.dN_dMdV_comoving(M, zi), 0, m_min, m_max)[0]
 
@@ -274,7 +274,7 @@ class LensingMassFunction(object):
         volume = 0
         for zi in zsteps:
 
-            dr = self.geometry._delta_R_comoving(zi, dz)
+            dr = self.geometry.delta_R_comoving(zi, dz)
             radius = 0.5 * cylinder_diameter_kpc * 0.001
             dv_comoving = np.pi*radius**2 * dr
             volume += dv_comoving

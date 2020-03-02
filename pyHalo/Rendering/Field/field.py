@@ -44,7 +44,7 @@ class LOSPowerLaw(LOSBase):
             mfunc = BrokenPowerLaw(**pargs)
 
             m = mfunc.draw()
-            x, y, r2, r3 = self.render_positions_at_z(zi, len(m))
+            x, y, r2, r3 = self.render_positions_at_z(zi, len(m), None)
 
             redshifts += [zi] * len(x)
 

@@ -115,7 +115,7 @@ class TestGeometryCylinder(object):
         z, delta_z = 0.5, 1e-4
         area = self.geometry.angle_to_comoving_area(self.angle_radius, z)
         dV_pyhalo = self.geometry.volume_element_comoving(z, delta_z)
-        dR = self.geometry._delta_R_comoving(z, delta_z)
+        dR = self.geometry.delta_R_comoving(z, delta_z)
         dV_theory = area * dR
         npt.assert_almost_equal(dV_pyhalo, dV_theory)
 

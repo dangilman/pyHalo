@@ -33,12 +33,16 @@ class MainLensPowerLaw(object):
         """
         masses = self._mass_func_parameterization.draw()
 
-        # EVERYTHING EXPRESSED IN KPC
-        x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(len(masses))
+        if len(masses) > 0:
 
-        x_arcsec = x_kpc * self._geometry._kpc_per_arcsec_zlens ** -1 + self._center_x
-        y_arcsec = y_kpc * self._geometry._kpc_per_arcsec_zlens ** -1 + self._center_y
+            # EVERYTHING EXPRESSED IN KPC
+            x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(len(masses))
 
-        return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d_kpc), np.array(r3d_kpc), np.array(
-            [self._geometry._zlens] * len(masses))
+            x_arcsec = np.array(x_kpc) * self._geometry._kpc_per_arcsec_zlens ** -1 + self._center_x
+            y_arcsec = np.array(y_kpc) * self._geometry._kpc_per_arcsec_zlens ** -1 + self._center_y
+
+            return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d_kpc), np.array(r3d_kpc), np.array(
+                [self._geometry._zlens] * len(masses))
+        else:
+            return np.array(masses), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
 

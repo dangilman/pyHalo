@@ -10,6 +10,16 @@ from scipy.integrate import quad
 
 from copy import deepcopy
 
+def combine_realizations(realization_1, realization_2):
+
+    halos_1, halos_2 = realization_1.halos, realization_2.halos
+    halos = halos_1 + halos_2
+    halo_mass_function = realization_1.halo_mass_function
+    profile_params = realization_1._prof_params
+    msheet_correction = realization_1._mass_sheet_correction
+
+    return Realization.from_halos(halos, halo_mass_function, profile_params, msheet_correction)
+
 def realization_at_z(realization,z):
 
     halos = realization.halos_at_z(z)
@@ -20,7 +30,7 @@ def realization_at_z(realization,z):
 class Realization(object):
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
-                 halos=None, other_params = {}, mass_sheet_correction=True):
+                 halos=None, other_params = {}, mass_sheet_correction=True, dynamic=False):
 
         self._mass_sheet_correction = mass_sheet_correction
         self._subtract_theory_mass_sheets = True
@@ -34,7 +44,7 @@ class Realization(object):
         self.halos = []
         self._loaded_models = {}
 
-        self._prof_params = set_default_kwargs(other_params)
+        self._prof_params = set_default_kwargs(other_params, dynamic, self.geometry._zsource)
 
         self.m_break_scale = self._prof_params['log_m_break']
         self.break_index = self._prof_params['break_index']

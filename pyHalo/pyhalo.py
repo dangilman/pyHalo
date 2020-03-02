@@ -30,7 +30,7 @@ class pyHalo(pyHaloBase):
 
         for n in range(nrealizations):
 
-            args = self._add_profile_params(args)
+            args = self._add_profile_params(args, False)
 
             realizations.append(self._render_single(type, args, verbose))
 
