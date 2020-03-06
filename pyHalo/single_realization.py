@@ -27,6 +27,22 @@ def realization_at_z(realization,z):
     return Realization.from_halos(halos, realization.halo_mass_function,
                                   realization._prof_params, realization._mass_sheet_correction)
 
+class RealiztionFromFile(object):
+
+    def __init__(self, file_name):
+
+        self.zlens, self.zsource = np.loadtxt(file_name + '_zlenssrc.txt', unpack=True)
+
+        self.lens_model_list = [line.rstrip('\n') for line in open(file_name + '_lensmodellist.txt')]
+        self.lens_redshift_list = [line.rstrip('\n') for line in open(file_name + '_redshiftlist.txt')]
+        with open(file_name + '_kwargslist.txt', 'r') as f:
+            self.kwargs_lens = eval(f.read())
+
+    def lensing_quantities(self, *args, **kwargs):
+
+        return self.lens_model_list, self.lens_redshift_list, self.kwargs_lens, None
+
+
 class Realization(object):
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
@@ -79,6 +95,21 @@ class Realization(object):
                 self._add_halo(None, None, None, None, None, None, None, None, halo=halo)
 
         self._reset()
+
+    def save_to_file(self, file_name, log_mass_sheet):
+
+        lens_model_names, redshift_list, kwargs_lens, _ = self.lensing_quantities(log_mass_sheet, log_mass_sheet)
+        z = np.round([self.geometry._zlens, self.geometry._zsource], 2)
+        np.savetxt(file_name + '_zlenssrc.txt', X=z)
+
+        with open(file_name + '_lensmodellist.txt', 'w') as f:
+            for name in lens_model_names:
+                f.write(str(name) + '\n')
+        with open(file_name + '_redshiftlist.txt', 'w') as f:
+            for zi in np.round(redshift_list, 2):
+                f.write(str(zi) + '\n')
+        with open(file_name + '_kwargslist.txt', 'w') as f:
+            f.write(str(kwargs_lens))
 
     @classmethod
     def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction):
