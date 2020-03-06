@@ -35,6 +35,8 @@ class RealiztionFromFile(object):
 
         self.lens_model_list = [line.rstrip('\n') for line in open(file_name + '_lensmodellist.txt')]
         self.lens_redshift_list = [line.rstrip('\n') for line in open(file_name + '_redshiftlist.txt')]
+
+        self.lens_redshift_list = np.round(self.lens_redshift_list, 2)
         with open(file_name + '_kwargslist.txt', 'r') as f:
             self.kwargs_lens = eval(f.read())
 
