@@ -31,14 +31,48 @@ class RealiztionFromFile(object):
 
     def __init__(self, file_name):
 
+        self._has_been_shifted = False
+
         self.zlens, self.zsource = np.loadtxt(file_name + '_zlenssrc.txt', unpack=True)
 
         self.lens_model_list = [line.rstrip('\n') for line in open(file_name + '_lensmodellist.txt')]
-        self.lens_redshift_list = [line.rstrip('\n') for line in open(file_name + '_redshiftlist.txt')]
+        self.lens_redshift_list = np.loadtxt(file_name + '_redshiftlist.txt')
 
         self.lens_redshift_list = np.round(self.lens_redshift_list, 2)
         with open(file_name + '_kwargslist.txt', 'r') as f:
             self.kwargs_lens = eval(f.read())
+
+    def shift_background_to_source(self, ray_interp_x, ray_interp_y):
+
+        """
+
+        :param ray_interp_x: instance of scipy.interp1d, returns the angular position of a ray
+        fired through the lens center
+        :param ray_interp_y: same but for the y coordinate
+        :return:
+        """
+
+        if self._has_been_shifted:
+            return self
+
+        kwargs_lens = []
+
+        for (halo_redshift, kwargs_halo) in zip(self.lens_redshift_list, self.kwargs_lens):
+
+            new_kwargs = deepcopy(kwargs_halo)
+            if 'center_x' in new_kwargs.keys():
+                halo_x, halo_y = kwargs_halo['center_x'], kwargs_halo['center_y']
+                xshift, yshift = ray_interp_x(halo_redshift), ray_interp_y(halo_redshift)
+                print(xshift, yshift, halo_redshift)
+                new_x, new_y = halo_x + xshift, halo_y + yshift
+                new_kwargs['center_x'], new_kwargs['center_y'] = new_x, new_y
+            kwargs_lens.append(new_kwargs)
+
+        self.kwargs_lens = kwargs_lens
+
+        self._has_been_shifted = True
+
+        return self
 
     def lensing_quantities(self, *args, **kwargs):
 

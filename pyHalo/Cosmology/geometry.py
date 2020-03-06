@@ -246,16 +246,18 @@ class Cylinder(object):
         xi = self.d_c_lens/d_c
 
         return xi
-
-    def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
-
-        return theta_arcsec
+    #
+    # def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
+    #
+    #     return theta_arcsec
 
 class DoubleCone(object):
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle):
 
         self._cosmo = cosmology
+
+        self._angle_pad = 0.8
 
         d_c_lens = self._cosmo.D_C_transverse(z_lens)
         d_c_lens_source = self._cosmo.D_C_transverse(z_source) - d_c_lens
@@ -273,27 +275,27 @@ class DoubleCone(object):
     def rendering_scale(self, z):
 
         if z <= self._zlens:
-            return 1
+            return 1.
         else:
             D_dz = self._cosmo.D_A(self._zlens, z)
             D_z = self._cosmo.D_A_z(z)
             ratio = D_dz / D_z
 
-            return 1 - self._reduced_to_phys * ratio
+            return 1 - self._angle_pad * self._reduced_to_phys * ratio
 
-    def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
-
-        if z <= self._zlens:
-            return theta_arcsec
-        else:
-
-            D_dz = self._cosmo.D_A(self._zlens, z)
-            D_z = self._cosmo.D_A_z(z)
-
-            delta_theta = theta_arcsec - source_pos
-            subtract_angle = delta_theta * (D_dz / D_z) * self._reduced_to_phys
-
-            return theta_arcsec - subtract_angle
+    # def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
+    #
+    #     if z <= self._zlens:
+    #         return theta_arcsec
+    #     else:
+    #
+    #         D_dz = self._cosmo.D_A(self._zlens, z)
+    #         D_z = self._cosmo.D_A_z(z)
+    #
+    #         delta_theta = theta_arcsec - source_pos
+    #         subtract_angle = delta_theta * (D_dz / D_z) * self._reduced_to_phys
+    #
+    #         return theta_arcsec - subtract_angle
 
 class Cone(object):
 
@@ -315,6 +317,6 @@ class Cone(object):
 
         return 1
 
-    def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
-
-        return theta_arcsec
+    # def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
+    #
+    #     return theta_arcsec
