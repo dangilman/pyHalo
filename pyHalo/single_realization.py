@@ -63,7 +63,7 @@ class RealiztionFromFile(object):
             if 'center_x' in new_kwargs.keys():
                 halo_x, halo_y = kwargs_halo['center_x'], kwargs_halo['center_y']
                 xshift, yshift = ray_interp_x(halo_redshift), ray_interp_y(halo_redshift)
-                print(xshift, yshift, halo_redshift)
+
                 new_x, new_y = halo_x + xshift, halo_y + yshift
                 new_kwargs['center_x'], new_kwargs['center_y'] = new_x, new_y
             kwargs_lens.append(new_kwargs)

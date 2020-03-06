@@ -68,7 +68,7 @@ class pyHaloDynamic(pyHalo):
         args = self._add_profile_params(args, True)
 
         for j, (x_angle, y_angle) in enumerate(zip(x_angles, y_angles)):
-            realization = self._render_dynamic_single(type, args, x_angle, y_angle, rmax_2d,
+            realization = self._dynamic_aperture_render(type, args, x_angle, y_angle, rmax_2d,
                                               log_mlow, log_mhigh, macro_lens_model, kwargs_macro, realization_global, verbose)
 
             if realization is not None:
@@ -84,7 +84,7 @@ class pyHaloDynamic(pyHalo):
 
         return realization_global
 
-    def _render_dynamic_single(self, type, args, x_angle, y_angle, rmax_2d,
+    def _dynamic_aperture_render(self, type, args, x_angle, y_angle, rmax_2d,
                        log_mlow, log_mhigh, macro_lens_model, kwargs_macro, realization_global, verbose):
 
         lens_model_list_global, redshift_list_global, kwargs_lens_global, numerical_alpha_class = \
@@ -112,12 +112,21 @@ class pyHaloDynamic(pyHalo):
             realization = self._render_single_dynamic('dynamic_main', args, verbose, log_mlow, log_mhigh,
                                                        x_aperture_position, y_aperture_position, rmax_2d)
 
-        if type == 'composite_powerlaw' or type == 'line_of_sight':
+            if type == 'composite_powerlaw':
+
+                x_aperture, y_aperture = self._lens_cone_center(lens_model_list, redshift_list, kwargs_lens, x_angle,
+                                                                y_angle, numerical_alpha_class)
+                realization = self._render_single_dynamic('dynamic_LOS', args, verbose, log_mlow, log_mhigh,
+                                                           x_aperture, y_aperture, rmax_2d)
+
+        elif type == 'line_of_sight':
 
             x_aperture, y_aperture = self._lens_cone_center(lens_model_list, redshift_list, kwargs_lens, x_angle,
                                                             y_angle, numerical_alpha_class)
             realization = self._render_single_dynamic('dynamic_LOS', args, verbose, log_mlow, log_mhigh,
-                                                       x_aperture, y_aperture, rmax_2d)
+                                                      x_aperture, y_aperture, rmax_2d)
+
+
 
         return realization
 

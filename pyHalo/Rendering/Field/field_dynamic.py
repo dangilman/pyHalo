@@ -36,8 +36,11 @@ class LOSPowerLawDynamic(LOSBase):
 
     def _angle_scale(self, z, zref):
 
-        cosmo = self._geometry._cosmo
-        return cosmo.D_C(zref)/cosmo.D_C(z)
+        if z <= zref:
+            return 1.
+        else:
+            cosmo = self._geometry._cosmo
+            return cosmo.D_C(zref)/cosmo.D_C(z)
 
     def __call__(self):
 
