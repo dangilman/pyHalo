@@ -16,8 +16,8 @@ class NFWLensing(object):
 
         x, y = np.round(x, 4), np.round(y, 4)
 
-        Rs_angle = np.round(Rs_angle, 6)
-        theta_Rs = np.round(theta_Rs, 6)
+        Rs_angle = np.round(Rs_angle, 10)
+        theta_Rs = np.round(theta_Rs, 10)
 
         kwargs = {'alpha_Rs':theta_Rs, 'Rs': Rs_angle,
                   'center_x':x, 'center_y':y}
@@ -38,9 +38,9 @@ class TNFWLensing(object):
 
         x, y = np.round(x, 4), np.round(y, 4)
 
-        Rs_angle = np.round(Rs_angle, 4)
-        theta_Rs = np.round(theta_Rs, 6)
-        r_trunc = r_trunc_kpc * self._lens_cosmo.cosmo.kpc_per_asec(redshift) ** -1
+        Rs_angle = np.round(Rs_angle, 10)
+        theta_Rs = np.round(theta_Rs, 10)
+        r_trunc = np.round(r_trunc_kpc * self._lens_cosmo.cosmo.kpc_per_asec(redshift) ** -1, 10)
 
         kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
                   'center_x': x, 'center_y': y, 'r_trunc': r_trunc}
