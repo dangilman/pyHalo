@@ -66,6 +66,7 @@ class LensCosmo(object):
 
     def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=0,
                           scatter=True, c_scale=None, c_power=None, scatter_amplitude=0.13):
+
         return self._halo_structure._NFW_concentration(M, z, model, mdef, logmhm,
                           scatter, c_scale, c_power, scatter_amplitude)
 

@@ -180,6 +180,12 @@ class HaloStructure(object):
             c = numpy.array(con)
 
         if logmhm != 0:
+
+            if c_power > 0:
+                raise Exception('c_power parameters > 0 are unphysical')
+            if c_scale < 0:
+                raise Exception('c_scale parameters < 0 are unphysical')
+
             mhm = 10 ** logmhm
             concentration_factor = (1 + c_scale * mhm * M ** -1) ** c_power
             redshift_factor = (1 + z) ** zfunc(z)
@@ -191,7 +197,7 @@ class HaloStructure(object):
         if scatter:
 
             if isinstance(c, float) or isinstance(c, int):
-                c = numpy.random.lognormal(numpy.log(c), 0.13)
+                c = numpy.random.lognormal(numpy.log(c), scatter_amplitude)
             else:
                 con = []
                 for i, ci in enumerate(c):

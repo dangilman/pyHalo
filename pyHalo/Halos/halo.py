@@ -34,6 +34,7 @@ class Halo(object):
         self.z = z
         self._is_main_subhalo = sub_flag
         self._args = args
+
         self._unique_tag = np.random.rand()
 
         self.observed_convention_index = False
