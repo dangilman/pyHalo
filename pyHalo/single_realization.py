@@ -95,6 +95,7 @@ class Realization(object):
         self._lensing_functions = []
         self.halos = []
         self._loaded_models = {}
+        self._has_been_shifted = False
 
         self._prof_params = set_default_kwargs(other_params, dynamic, self.geometry._zsource)
 
@@ -292,6 +293,9 @@ class Realization(object):
         # add all halos in front of main deflector with positions unchanged
         halos = []
 
+        if self._has_been_shifted:
+            return self
+
         for halo in self.halos:
 
             if halo.has_been_shifted:
@@ -304,6 +308,8 @@ class Realization(object):
                             sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo,
                             args=self._prof_params, shifted=True)
                 halos.append(new_halo)
+
+        self._has_been_shifted = True
 
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self._mass_sheet_correction)
