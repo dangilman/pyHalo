@@ -2,13 +2,13 @@ from copy import deepcopy
 
 import numpy as np
 
-from pyHalo.Rendering.Field.base import LOSBase
+from pyHalo.Rendering.Field.dyanmic_base import DynamicBase
 from pyHalo.Rendering.parameterizations import BrokenPowerLaw
 from pyHalo.Rendering.keywords import LOS_powerlaw_mfunc
 
 from pyHalo.Spatial.uniform import Uniform
 
-class LOSPowerLawDynamic(LOSBase):
+class LOSPowerLawDynamic(DynamicBase):
 
     def __init__(self, args, lensing_mass_func, lens_plane_redshifts, delta_zs,
                  aperture_x, aperture_y, aperture_size):
@@ -50,7 +50,7 @@ class LOSPowerLawDynamic(LOSBase):
         assert len(self._lens_plane_redshifts) == len(self._delta_zs)
         assert len(self._aperture_x) == len(self._lens_plane_redshifts)
 
-        for i, (zi, delta_zi, x_c, y_c) in enumerate(zip(self._lens_plane_redshifts, self._delta_zs,
+        for i, (zi, delta_zi, x_shift, y_shift) in enumerate(zip(self._lens_plane_redshifts, self._delta_zs,
                                                          self._aperture_x, self._aperture_y)):
 
             if zi < self._rendering_args['zmin'] or zi > self._rendering_args['zmax']:
@@ -82,10 +82,8 @@ class LOSPowerLawDynamic(LOSBase):
                 mfunc = BrokenPowerLaw(**pargs)
 
                 m = mfunc.draw()
-                x, y, r2, r3 = self.render_positions_at_z(zi, len(m), rescale_angle)
+                x, y, r2, r3 = self.render_positions_at_z(zi, len(m), rescale_angle, x_shift, y_shift)
 
-                x += x_c
-                y += y_c
                 redshifts += [zi] * len(x)
 
             if i == 0:
