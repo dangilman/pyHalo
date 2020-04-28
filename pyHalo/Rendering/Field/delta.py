@@ -12,7 +12,7 @@ class LOSDelta(LOSBase):
     def __init__(self, args, lensing_mass_func, redshifts, delta_zs):
 
         rendering_args = LOS_delta_mfunc(args, lensing_mass_func)
-        spatial_args = LOS_spatial_global(args, lensing_mass_func)
+        spatial_args = LOS_spatial_global(args)
         spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'],
                                                    lensing_mass_func.geometry)
 
@@ -23,21 +23,24 @@ class LOSDelta(LOSBase):
     def __call__(self):
 
         redshifts = []
+
+        point_mass_value = 10**self._parameterization_args['logM_delta']
         for i, (zi, delta_zi) in enumerate(zip(self._redshifts, self._deltazs)):
 
             pargs = copy(self._parameterization_args)
 
-            nobjects = self._lensing_mass_func.\
-            dN_comoving_deltaFunc(10**pargs['logM_delta'], zi, delta_zi, pargs['mass_fraction'])
+            nobjects = self._lensing_mass_func.dN_comoving_deltaFunc(
+                point_mass_value, zi, delta_zi, pargs['mass_fraction']
+            )
             nobjects *= pargs['LOS_normalization']
             nobjects = np.random.poisson(nobjects)
 
-            mi = np.array([10 ** pargs['logM_delta']] * nobjects)
-            xi, yi, r2di, r3di = self.render_positions_at_z(zi, len(masses))
+            mi = np.array([point_mass_value] * nobjects)
+            xi, yi, r2di, r3di = self.render_positions_at_z(zi, nobjects, None)
             new_redshifts = [zi] * len(mi)
             if i == 0:
                 masses = mi
-                x, yi = xi, yi
+                x, y = xi, yi
                 r2d = r2di
                 r3d = r3di
                 redshifts = new_redshifts
