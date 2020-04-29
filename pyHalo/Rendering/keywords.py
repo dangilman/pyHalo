@@ -1,5 +1,5 @@
 from pyHalo.defaults import *
-from pyHalo.Rendering.SHMF_normalizations import *
+from pyHalo.Rendering.Main.SHMF_normalizations import *
 
 def LOS_powerlaw_mfunc(args, lens_mass_function):
 
@@ -68,7 +68,7 @@ def LOS_powerlaw_mfunc(args, lens_mass_function):
 def LOS_delta_mfunc(args, lensing_mass_func):
 
     args_mfunc = {}
-    required_keys = ['zmin', 'zmax', 'logM_delta', 'mass_fraction', 'LOS_normalization']
+    required_keys = ['zmin', 'zmax', 'logM_delta', 'mass_fraction', 'LOS_normalization', 'parent_m200']
 
     for key in required_keys:
 

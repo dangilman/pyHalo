@@ -1,11 +1,9 @@
-import numpy as np
-
 from pyHalo.Halos.halo import Halo
 from pyHalo.defaults import *
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
-from pyHalo.Rendering.SHMF_normalizations import *
+from pyHalo.Rendering.Main.SHMF_normalizations import *
 from scipy.integrate import quad
 
 from copy import deepcopy
@@ -298,16 +296,13 @@ class Realization(object):
 
         for halo in self.halos:
 
-            if halo.has_been_shifted:
-                halos.append(halo)
-            else:
+            xshift, yshift = ray_interp_x(halo.z), ray_interp_y(halo.z)
 
-                xshift, yshift = ray_interp_x(halo.z), ray_interp_y(halo.z)
-                new_x, new_y = halo.x + xshift, halo.y + yshift
-                new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
-                            sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo,
-                            args=self._prof_params, shifted=True)
-                halos.append(new_halo)
+            new_x, new_y = halo.x + xshift, halo.y + yshift
+            new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
+                        sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo,
+                        args=self._prof_params, shifted=True)
+            halos.append(new_halo)
 
         self._has_been_shifted = True
 

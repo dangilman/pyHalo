@@ -5,6 +5,7 @@ from pyHalo.Rendering.Field.field import LOSPowerLaw
 from pyHalo.Rendering.Field.delta import LOSDelta
 from pyHalo.Rendering.Main.mainlens import MainLensPowerLaw
 from copy import deepcopy
+from pyHalo.Rendering.render import render
 
 class pyHalo(pyHaloBase):
 
@@ -65,22 +66,27 @@ class pyHalo(pyHaloBase):
 
         if type == 'composite_powerlaw' or type == 'line_of_sight':
 
-            if 'mass_func_type' in args and args['mass_func_type'] == 'delta':
+            if args['mass_func_type'] == 'DELTA':
                 mass_sheet = False
-                rendering_class = LOSDelta(args, self.halo_mass_function, lens_plane_redshifts, delta_zs)
+                rendering_class = LOSDelta(args, self.halo_mass_function)
+            elif args['mass_func_type'] == 'POWER_LAW':
+                rendering_class = LOSPowerLaw(args, self.halo_mass_function)
             else:
-                rendering_class = LOSPowerLaw(args, self.halo_mass_function, lens_plane_redshifts, delta_zs)
+                raise Exception('Must specify mass_func_type.\nAllowed types: POWER_LAW, DELTA')
 
             mdef_los = args['mdef_los']
 
             if init:
-                masses, x, y, r2d, r3d, redshifts = rendering_class()
+                masses, x, y, r2d, r3d, redshifts \
+                    = render(rendering_class, lens_plane_redshifts, delta_zs)
                 flag += [False] * len(masses)
                 mdefs = [mdef_los] * len(masses)
 
             else:
 
-                field_halo_masses, field_xpos, field_ypos, field_r2d, field_r3d, field_z = rendering_class()
+                field_halo_masses, field_xpos, field_ypos, field_r2d, field_r3d, field_z \
+                    = render(rendering_class, lens_plane_redshifts, delta_zs)
+
                 masses = np.append(masses, field_halo_masses)
                 x = np.append(x, field_xpos)
                 y = np.append(y, field_ypos)

@@ -1,6 +1,6 @@
 import numpy as np
 
-class LOSBase(object):
+class LOSDynamicBase(object):
 
     def __init__(self, lensing_mass_func, rendering_args, spatial_parameterization):
 
@@ -12,15 +12,25 @@ class LOSBase(object):
 
         self._parameterization_args = rendering_args
 
-    def _volume_element_comoving(self, z, delta_z, radius_arcsec=None):
+    def _volume_element_comoving(self, z, delta_z, radius_arcsec):
 
-        return self._geometry.volume_element_comoving(z, delta_z)
+        cosmo = self._geometry._cosmo
+
+        dr_comoving = self._geometry.delta_R_comoving(z, delta_z)
+        radius_radian = radius_arcsec * cosmo.arcsec
+        radius_comoving = radius_radian * cosmo.D_C(z)
+
+        return np.pi * radius_comoving ** 2 * dr_comoving
 
     def rescale_angle(self, z, zref):
 
-        return None
+        if z <= zref:
+            return 1.
+        else:
+            cosmo = self._geometry._cosmo
+            return cosmo.D_C(zref)/cosmo.D_C(z)
 
-    def render_positions_at_z(self, z, nhalos, rescale, xshift_arcsec=0., yshift_arcsec=0.):
+    def render_positions_at_z(self, z, nhalos, rescale, xshift_arcsec, yshift_arcsec):
 
         if rescale is None:
             x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z)

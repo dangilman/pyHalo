@@ -1,7 +1,9 @@
 from pyHalo.Rendering.Field.field_dynamic import LOSPowerLawDynamic
+from pyHalo.Rendering.Field.delta_dynamic import LOSDeltaDynamic
 from pyHalo.Rendering.Main.mainlens_dynamic import MainLensPowerLawDynamic
 from pyHalo.pyhalo import pyHalo
-from pyHalo.single_realization import Realization, combine_realizations
+from pyHalo.single_realization import Realization
+from pyHalo.Rendering.render import render
 
 from pyHalo.defaults import *
 
@@ -68,7 +70,7 @@ class pyHaloDynamic(pyHalo):
         args = self._add_profile_params(args, True)
 
         for j, (x_angle, y_angle) in enumerate(zip(x_angles, y_angles)):
-            realization = self._dynamic_aperture_render(type, args, x_angle, y_angle, rmax_2d,
+            realization = self._render_in_aperture(type, args, x_angle, y_angle, rmax_2d,
                                               log_mlow, log_mhigh, macro_lens_model, kwargs_macro, realization_global, verbose)
 
             if realization is not None:
@@ -84,7 +86,7 @@ class pyHaloDynamic(pyHalo):
 
         return realization_global
 
-    def _dynamic_aperture_render(self, type, args, x_angle, y_angle, rmax_2d,
+    def _render_in_aperture(self, type, args, x_angle, y_angle, rmax_2d,
                        log_mlow, log_mhigh, macro_lens_model, kwargs_macro, realization_global, verbose):
 
         lens_model_list_global, redshift_list_global, kwargs_lens_global, numerical_alpha_class = \
@@ -126,8 +128,6 @@ class pyHaloDynamic(pyHalo):
             realization = self._render_single_dynamic('dynamic_LOS', args, verbose, log_mlow, log_mhigh,
                                                       x_aperture, y_aperture, rmax_2d)
 
-
-
         return realization
 
     def _render_single_dynamic(self, type, args, verbose, log_mlow, log_mhigh,
@@ -147,6 +147,8 @@ class pyHaloDynamic(pyHalo):
 
         mass_sheet = False
 
+        lens_plane_redshifts, delta_zs = list(np.round(self._lens_plane_redshifts, 2)), self._delta_zs,
+
         if type == 'dynamic_main':
 
             if self.zlens < args_render['zmin'] or self.zlens > args_render['zmax']:
@@ -155,21 +157,33 @@ class pyHaloDynamic(pyHalo):
             rendering_class = MainLensPowerLawDynamic(args_render, self._geometry, self._x_center_lens, self._y_center_lens,
                                                       x_aperture, y_aperture, aperture_size)
 
-            masses, x, y, r2d, r3d, redshifts = rendering_class()
-            mdef = args['mdef_main']
-            flag = [True] * len(masses)
-            mdefs += [mdef] * len(masses)
+            masses, x, y, r2d, r3d, redshifts = render(rendering_class)
+            is_subhalo = True
+            mdef = args_render['mdef_main']
 
-        elif type == 'dynamic_LOS':
+        elif type == 'dynamic_LOS_powerlaw':
 
-            rendering_class = LOSPowerLawDynamic(args_render, self.halo_mass_function, list(np.round(self._lens_plane_redshifts,2)),
-                                                 self._delta_zs,
+            rendering_class = LOSPowerLawDynamic(args_render, self.halo_mass_function,
                                                  x_aperture, y_aperture, aperture_size)
 
-            masses, x, y, r2d, r3d, redshifts = rendering_class()
+            masses, x, y, r2d, r3d, redshifts = render(rendering_class, lens_plane_redshifts, delta_zs)
+            is_subhalo = False
             mdef = args_render['mdef_los']
-            flag = [True] * len(masses)
-            mdefs += [mdef] * len(masses)
+
+        elif type == 'dynamic_LOS_delta':
+
+            rendering_class = LOSDeltaDynamic(args_render, self.halo_mass_function,
+                                                 x_aperture, y_aperture, aperture_size)
+
+            masses, x, y, r2d, r3d, redshifts = render(rendering_class, lens_plane_redshifts, delta_zs)
+            is_subhalo = False
+            mdef = args_render['mdef_los']
+
+        else:
+            raise Exception('realization type '+str(type)+ ' not recognized.')
+
+        flag = [is_subhalo] * len(masses)
+        mdefs += [mdef] * len(masses)
 
         realization = Realization(masses, x, y, r2d, r3d, mdefs, redshifts, flag, self.halo_mass_function,
                                   other_params=args_render, mass_sheet_correction=mass_sheet, dynamic=True)

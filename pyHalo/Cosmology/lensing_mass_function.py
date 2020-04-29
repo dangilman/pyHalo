@@ -158,7 +158,7 @@ class LensingMassFunction(object):
 
         return h ** 4 * massFunction(M_h, z, q_out='dndlnM') * M_h ** -1
 
-    def dN_comoving_deltaFunc(self, M, z, delta_z, component_fraction):
+    def dNdV_comoving_deltaFunc(self, M, component_fraction):
 
         """
 
@@ -171,7 +171,7 @@ class LensingMassFunction(object):
         # in comoving units evaluate at z=0
         dN_dV = component_fraction * self._cosmo.rho_dark_matter_crit(0)/M
 
-        return dN_dV * self.geometry.volume_element_comoving(z, delta_z)
+        return dN_dV
 
     def _fit_norm_index(self, M, dNdM, order=1):
         """
