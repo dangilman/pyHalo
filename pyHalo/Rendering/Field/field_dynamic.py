@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 
+
 from pyHalo.Rendering.Field.dynamic_base import LOSDynamicBase
 from pyHalo.Rendering.parameterizations import BrokenPowerLaw
 from pyHalo.Rendering.keywords import LOS_powerlaw_mfunc
