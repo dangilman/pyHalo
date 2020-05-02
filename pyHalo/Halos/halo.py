@@ -1,9 +1,8 @@
-from pyHalo.Rendering.parameterizations import *
-from pyHalo.Scattering.sidm_interp import logrho
 from pyHalo.Halos.HaloModels.collisionless_nfw import \
     TNFWFieldHalo, TNFWMainSubhalo, NFWFieldHalo, NFWMainSubhalo
 from pyHalo.Halos.HaloModels.SIDM_nfw import truncatedSIDMMainSubhalo, truncatedSIDMFieldHalo
 from pyHalo.Halos.HaloModels.base import PointMassBase
+import numpy as np
 
 class Halo(object):
 

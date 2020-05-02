@@ -58,7 +58,7 @@ class pyHaloBase(object):
     def astropy_cosmo(self):
         return self._cosmology.astropy
 
-    def _build_LOS_mass_function(self, args):
+    def build_LOS_mass_function(self, args):
 
         if self.halo_mass_function is None:
 

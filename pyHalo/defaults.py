@@ -134,9 +134,9 @@ def set_default_kwargs(profile_params, dynamic, zsource):
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
     if 'subtract_subhalo_mass_sheet' not in profile_params.keys():
         profile_params.update({'subtract_subhalo_mass_sheet': realization_default.subtract_subhalo_mass_sheet})
-        if profile_params['subtract_subhalo_mass_sheet']:
-            if 'subhalo_mass_sheet_scale' not in profile_params.keys():
-                profile_params.update({'subhalo_mass_sheet_scale': realization_default.subhalo_mass_sheet_scale})
+    if profile_params['subtract_subhalo_mass_sheet']:
+        if 'subhalo_mass_sheet_scale' not in profile_params.keys():
+            profile_params.update({'subhalo_mass_sheet_scale': realization_default.subhalo_mass_sheet_scale})
 
     if 'kappa_scale' not in profile_params.keys():
         profile_params.update({'kappa_scale': realization_default.kappa_scale})

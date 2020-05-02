@@ -23,11 +23,11 @@ def delta_function_normalization(z, delta_z, mass, mass_fraction, zlens, lensing
 
     boost = two_halo_boost(z, delta_z, rendering_args['parent_m200'], zlens, lensing_mass_function_class)
 
-    n_dV = lensing_mass_function_class.dNdV_comoving_deltaFunc(
-        mass, mass_fraction
+    rho_dV = lensing_mass_function_class.rho_dV(
+        mass_fraction
     )
 
-    n = n_dV * volume_element_comoving * boost * rendering_args['LOS_normalization']
+    n = rho_dV * volume_element_comoving * boost * rendering_args['LOS_normalization']/mass
     n = np.random.poisson(n)
 
     return n

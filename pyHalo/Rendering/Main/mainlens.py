@@ -1,5 +1,5 @@
 import numpy as np
-from pyHalo.Rendering.parameterizations import BrokenPowerLaw
+from pyHalo.Rendering.MassFunctions.broken_powerlaw import BrokenPowerLaw
 from pyHalo.Spatial.nfw import NFW3D
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Rendering.keywords import subhalo_mass_function
@@ -25,6 +25,8 @@ class MainLensPowerLaw(object):
 
         self._center_x, self._center_y = x_center_lens, y_center_lens
 
+        self._normalization = parameterization_args['normalization']
+
     def __call__(self):
         """
 
@@ -45,4 +47,3 @@ class MainLensPowerLaw(object):
                 [self._geometry._zlens] * len(masses))
         else:
             return np.array(masses), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
-

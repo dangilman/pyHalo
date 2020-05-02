@@ -1,40 +1,38 @@
 import numpy as np
-from pyHalo.Rendering.parameterizations import BrokenPowerLaw
-from pyHalo.Spatial.nfw import NFW3D
-from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Rendering.keywords import subhalo_mass_function
-from pyHalo.Spatial.keywords import subhalo_spatial_NFW
 from pyHalo.Rendering.Main.mainlens import MainLensPowerLaw
 
 class MainLensPowerLawDynamic(object):
 
-    def __init__(self, args, geometry, x_center_lens, y_center_lens,
-                 x_aperture, y_aperture, aperture_size):
+    def __init__(self, args, geometry, x_center_lens, y_center_lens):
 
         self.main = MainLensPowerLaw(args, geometry, x_center_lens, y_center_lens)
 
-        self._center_x, self._center_y = x_aperture, y_aperture
-        self._rmax = aperture_size
+        self._masses, self._x_arcsec, self._y_arcsec, self._r2d_kpc, self._r3d_kpc, _ = self.main()
 
-    def __call__(self):
+    def __call__(self, center_x, center_y, log_mlow, log_mhigh, aperture_radius):
         """
 
         :return: x coordinate, y coordinates, r3d, r3d
         NOTE: x and y are returned in arcsec, while r2d and r3d are expressed in kpc
         """
 
-        masses, x_arcsec, y_arcsec, r2d_kpc, r3d_kpc, redshifts = self.main()
-
-        if len(masses) > 0:
-            dx = x_arcsec - self._center_x
-            dy = y_arcsec - self._center_y
+        if len(self._masses) > 0:
+            dx = self._x_arcsec - center_x
+            dy = self._y_arcsec - center_y
             dr = np.sqrt(dx ** 2 + dy ** 2)
-            inds = np.where(dr < self._rmax)
+
+            mlow, mhigh = 10**log_mlow, 10**log_mhigh
+
+            cond1 = self._masses >= mlow
+            cond2 = self._masses < mhigh
+            cond3 = dr <= aperture_radius
+
+            inds = np.where(cond1 & cond2 & cond3)
 
             redshifts = [self.main._geometry._zlens] * len(dx[inds])
 
-            return masses[inds], x_arcsec[inds], y_arcsec[inds], r2d_kpc[inds], r3d_kpc[inds], redshifts
+            return self._masses[inds], self._x_arcsec[inds], self._y_arcsec[inds], self._r2d_kpc[inds], \
+                   self._r3d_kpc[inds], redshifts
 
         else:
-            return masses, x_arcsec, y_arcsec, r2d_kpc, r3d_kpc, redshifts
-
+            return np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])

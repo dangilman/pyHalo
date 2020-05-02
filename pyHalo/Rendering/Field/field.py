@@ -3,7 +3,7 @@ from copy import deepcopy
 import numpy as np
 
 from pyHalo.Rendering.Field.base import LOSBase
-from pyHalo.Rendering.parameterizations import BrokenPowerLaw
+from pyHalo.Rendering.MassFunctions.broken_powerlaw import BrokenPowerLaw
 from pyHalo.Rendering.keywords import LOS_powerlaw_mfunc
 from pyHalo.Spatial.keywords import LOS_spatial_global
 from pyHalo.Spatial.uniform import LensConeUniform

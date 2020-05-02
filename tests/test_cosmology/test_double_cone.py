@@ -30,7 +30,7 @@ class TestDoubleCone(object):
         pyhalo_instance = pyHalo(self.zlens, self.zsource, cosmology_kwargs=cosmo_params_instance,
                                  kwargs_halo_mass_function={'geometry_type': 'DOUBLE_CONE'})
         args = {'cone_opening_angle': self.angle_diameter}
-        mfunc = pyhalo_instance._build_LOS_mass_function(args)
+        mfunc = pyhalo_instance.build_LOS_mass_function(args)
         self.geometry_from_instance = mfunc.geometry
 
     def test_distances_lensing(self):

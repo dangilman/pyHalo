@@ -16,7 +16,7 @@ class LOSBase(object):
 
         return self._geometry.volume_element_comoving(z, delta_z)
 
-    def rescale_angle(self, z, zref):
+    def rescale_angle(self, z):
 
         return None
 

@@ -102,13 +102,14 @@ class Realization(object):
         self._LOS_norm = self._prof_params['LOS_normalization']
         self.break_scale = self._prof_params['break_scale']
 
-        if 'log_mlow' in self._prof_params.keys():
+        if 'logM_delta' in self._prof_params.keys():
+            self._logM_delta = self._prof_params['logM_delta']
+            convergence_sheet_type = 'fixed'
+        elif 'log_mlow' in self._prof_params.keys():
             self._logmlow = self._prof_params['log_mlow']
             self._logmhigh = self._prof_params['log_mhigh']
             convergence_sheet_type = 'integrated'
-        elif 'logM_delta' in self._prof_params.keys():
-            self._logM_delta = self._prof_params['logM_delta']
-            convergence_sheet_type = 'fixed'
+
         else:
             raise Exception('did not recognize required mass function parameter.')
 
@@ -554,10 +555,9 @@ class Realization(object):
 
                 z = unique_z[i]
                 delta_z = unique_z[i + 1] - z
-                N_theory = self.halo_mass_function.dN_comoving_deltaFunc(M, z,
-                                         delta_z, self._prof_params['mass_fraction'])/M
-                N = np.random.poisson(N_theory)
-                kappa = N * M/self._sigma_crit_mass(z) # to convergence units
+                rho_dV = self.halo_mass_function.rho_dV(self._prof_params['mass_fraction'])
+                N_theory = rho_dV * self.geometry.volume_element_comoving(z, delta_z) / M
+                kappa = N_theory * M/self._sigma_crit_mass(z) # to convergence units
                 kwargs.append({'kappa_ext': - self._prof_params['kappa_scale'] * kappa})
                 zsheet.append(z)
 
@@ -665,7 +665,7 @@ class Realization(object):
     def number_of_halos_before_redshift(self, z):
         n = 0
         for halo in self.halos:
-            if halo.z <= z:
+            if halo.z < z:
                 n += 1
         return n
 

@@ -22,6 +22,32 @@ class Geometry(object):
         self.cone_opening_angle = opening_angle
         self._arcsec = self._cosmo.arcsec
         self._kpc_per_arcsec_zlens = self._cosmo.kpc_per_asec(self._zlens)
+        self._reduced_to_phys = self._geometrytype._reduced_to_phys
+
+    def background_angle_rescale(self, z, zlens, angle_pad=0.8):
+
+        """
+
+        :param z: redshift
+        :param zlens: lens redshift
+        :param angle_pad: if set to 1, then the function returns 0 at z = z_source. For a value < 1, the angles
+        don't quite close at the source redshift. Values greater than one would be unphysical
+        :return: the factor by which to shrink an angle such that the comoving distance at redshift z spanned by the
+        angle is constant
+
+        Reutns 1 if z <= zlens
+        """
+
+        if z <= zlens:
+            return 1.
+
+        assert angle_pad <= 1
+
+        D_dz = self._cosmo.D_A(zlens, z)
+        D_z = self._cosmo.D_A_z(z)
+        ratio = D_dz / D_z
+
+        return 1 - angle_pad * self._reduced_to_phys * ratio
 
     def rendering_scale(self, z):
 
@@ -231,6 +257,8 @@ class Cylinder(object):
 
         self.d_c_lens = cosmology.D_C_transverse(z_lens)
 
+        self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
+
         self.comoving_radius_cylinder = 0.5 * self.opening_angle_radians * self.d_c_lens
 
         self._cosmo = cosmology
@@ -246,10 +274,6 @@ class Cylinder(object):
         xi = self.d_c_lens/d_c
 
         return xi
-    #
-    # def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
-    #
-    #     return theta_arcsec
 
 class DoubleCone(object):
 
@@ -282,20 +306,6 @@ class DoubleCone(object):
             ratio = D_dz / D_z
 
             return 1 - self._angle_pad * self._reduced_to_phys * ratio
-
-    # def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
-    #
-    #     if z <= self._zlens:
-    #         return theta_arcsec
-    #     else:
-    #
-    #         D_dz = self._cosmo.D_A(self._zlens, z)
-    #         D_z = self._cosmo.D_A_z(z)
-    #
-    #         delta_theta = theta_arcsec - source_pos
-    #         subtract_angle = delta_theta * (D_dz / D_z) * self._reduced_to_phys
-    #
-    #         return theta_arcsec - subtract_angle
 
 class Cone(object):
 
