@@ -1,16 +1,11 @@
-from pyHalo.Rendering.Field.field_dynamic import LOSPowerLawDynamic
-from pyHalo.Rendering.Field.delta_dynamic import LOSDeltaDynamic
+from pyHalo.Rendering.Field.PowerLaw.powerlaw_dynamic import LOSPowerLawDynamic
+from pyHalo.Rendering.Field.Delta.delta_dynamic import LOSDeltaDynamic
 from pyHalo.Rendering.Main.mainlens_dynamic import MainLensPowerLawDynamic
 from pyHalo.pyhalo_base import pyHaloBase
 from pyHalo.single_realization import Realization
 from pyHalo.Rendering.render import render_los_dynamic, render_main_dynamic
 
-from pyHalo.defaults import *
-
 from copy import deepcopy
-
-import numpy as np
-from lenstronomy.LensModel.lens_model import LensModel
 
 class pyHaloDynamic(pyHaloBase):
 
@@ -23,7 +18,6 @@ class pyHaloDynamic(pyHaloBase):
         It should only be used in conjuction with the DynamicOptimization class in LenstronomyWrapper.
 
         In fact, the only routine the user should call directly is 'init'
-
 
         :param zlens: lens redshift
         :param zsource: source redshift
@@ -51,14 +45,15 @@ class pyHaloDynamic(pyHaloBase):
         self.halo_mass_function = self.build_LOS_mass_function(args)
         self._geometry = self.halo_mass_function.geometry
 
-        args = self._add_profile_params(args, True)
+        kwargs_init = self._add_profile_params(args, True)
 
-        # args['log_mlow'] = log_mlow
-        # args['log_mhigh'] = log_mhigh
+        args = deepcopy(kwargs_init)
+
+        rendering_class_main, rendering_class_LOS = None, None
 
         for j, (x_position_interp, y_position_interp) in enumerate(zip(x_interp_list, y_interp_list)):
 
-            realization_new = self._render(type, args, aperture_radius,
+            realization_new, rendering_class_main, rendering_class_LOS = self._render(type, args, aperture_radius,
                                            lens_centroid_x, lens_centroid_y,
                                            x_position_interp, y_position_interp,
                                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction)
@@ -77,21 +72,32 @@ class pyHaloDynamic(pyHaloBase):
                 print('added ' + str(new_subhalos) + ' subhalos halos around coordinate ' + str(j + 1))
                 print('added ' + str(new_background) + ' background halos around coordinate '+str(j+1))
 
+        rendering_classes = []
+
+        if rendering_class_main is not None:
+            rendering_classes += [rendering_class_main]
+        if rendering_class_LOS is not None:
+            rendering_classes += [rendering_class_LOS]
+
+        realization_start.set_rendering_classes(rendering_classes)
+
         return realization_start
 
     def _render(self, type, args, aperture_radius, x_centroid_main, y_centroid_main,
                             x_position_interp, y_position_interp,
                             lens_plane_redshifts, delta_zs, include_mass_sheet_correction):
 
+        rendering_class_main, rendering_class_LOS = None, None
+
         if type == 'main_lens' or type == 'composite_powerlaw':
 
-            realization = self._render_dynamic_main(args, x_position_interp, y_position_interp,
+            realization, rendering_class_main = self._render_dynamic_main(args, x_position_interp, y_position_interp,
                                                     aperture_radius, x_centroid_main, y_centroid_main,
                                                     include_mass_sheet_correction)
 
             if type == 'composite_powerlaw':
 
-                realization_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
+                realization_LOS, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
                                                            aperture_radius, lens_plane_redshifts, delta_zs,
                                                            include_mass_sheet_correction)
 
@@ -102,14 +108,14 @@ class pyHaloDynamic(pyHaloBase):
 
         elif type == 'line_of_sight':
 
-            realization = self._render_dynamic_los(args, x_position_interp, y_position_interp,
+            realization, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
                                                        aperture_radius, lens_plane_redshifts, delta_zs,
                                                    include_mass_sheet_correction)
 
         else:
             raise Exception('rendering type '+str(type) + ' not recognized.')
 
-        return realization
+        return realization, rendering_class_main, rendering_class_LOS
 
     def _render_dynamic_main(self, args, x_aperture, y_aperture, aperture_radius,
                              x_centroid_main, y_centroid_main, include_mass_sheet_correction):
@@ -152,7 +158,7 @@ class pyHaloDynamic(pyHaloBase):
                                   other_params=args_render, mass_sheet_correction=include_mass_sheet_correction,
                                   dynamic=True)
 
-        return realization
+        return realization, self._rendering_class_main
 
     def _render_dynamic_los(self, args, x_position_interp, y_position_interp, aperture_radius,
                             lens_plane_redshifts, delta_zs, include_mass_sheet_correction):
@@ -161,7 +167,8 @@ class pyHaloDynamic(pyHaloBase):
 
         if args['mass_func_type'] == 'POWER_LAW':
 
-            rendering_class = LOSPowerLawDynamic(args_render, self.halo_mass_function, aperture_radius)
+            rendering_class = LOSPowerLawDynamic(args_render, self.halo_mass_function, aperture_radius,
+                                                 lens_plane_redshifts, delta_zs)
 
             masses, x, y, r2d, r3d, redshifts = render_los_dynamic(rendering_class, aperture_radius,
                                                                    lens_plane_redshifts, delta_zs,
@@ -173,7 +180,8 @@ class pyHaloDynamic(pyHaloBase):
         elif args['mass_func_type'] == 'DELTA':
 
             minimum_mass = args_render['log_mlow']
-            rendering_class = LOSDeltaDynamic(args_render, self.halo_mass_function, aperture_radius, minimum_mass)
+            rendering_class = LOSDeltaDynamic(args_render, self.halo_mass_function, aperture_radius, minimum_mass,
+                                                 lens_plane_redshifts, delta_zs)
 
             masses, x, y, r2d, r3d, redshifts = render_los_dynamic(rendering_class, aperture_radius,
                                                                    lens_plane_redshifts, delta_zs,
@@ -181,6 +189,9 @@ class pyHaloDynamic(pyHaloBase):
                                                                    args['zmin'], args['zmax'])
             is_subhalo = False
             mdef = args_render['mdef_los']
+
+        else:
+            raise Exception('mass function type '+str(args['mass_func_type']) + ' not recognized.')
 
         flag = [is_subhalo] * len(masses)
         mdefs = [mdef] * len(masses)
@@ -191,7 +202,7 @@ class pyHaloDynamic(pyHaloBase):
                                   other_params=args_render, mass_sheet_correction=include_mass_sheet_correction,
                                   dynamic=True)
 
-        return realization
+        return realization, rendering_class
 
 
 

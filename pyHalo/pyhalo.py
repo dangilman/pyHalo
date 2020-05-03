@@ -1,10 +1,9 @@
 from pyHalo.pyhalo_base import pyHaloBase
 import numpy as np
 from pyHalo.single_realization import Realization
-from pyHalo.Rendering.Field.field import LOSPowerLaw
-from pyHalo.Rendering.Field.delta import LOSDelta
+from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
+from pyHalo.Rendering.Field.Delta.delta import LOSDelta
 from pyHalo.Rendering.Main.mainlens import MainLensPowerLaw
-from copy import deepcopy
 from pyHalo.Rendering.render import render_los, render_main
 
 class pyHalo(pyHaloBase):
@@ -52,9 +51,12 @@ class pyHalo(pyHaloBase):
 
         lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args)
 
+        rendering_classes = []
+
         if type == 'main_lens' or type == 'composite_powerlaw':
 
             rendering_class = MainLensPowerLaw(args, self._geometry, x_center_lens, y_center_lens)
+            rendering_classes += [rendering_class]
             mdef = args['mdef_main']
 
             masses, x, y, r2d, r3d, redshifts = render_main(rendering_class)
@@ -66,24 +68,31 @@ class pyHalo(pyHaloBase):
 
             if args['mass_func_type'] == 'DELTA':
                 mass_sheet = False
-                rendering_class = LOSDelta(args, self.halo_mass_function, args['log_mlow'])
+                rendering_class = LOSDelta(args, self.halo_mass_function, args['log_mlow'],
+                                           lens_plane_redshifts, delta_zs)
+                rendering_classes += [rendering_class]
+
             elif args['mass_func_type'] == 'POWER_LAW':
-                rendering_class = LOSPowerLaw(args, self.halo_mass_function)
+                rendering_class = LOSPowerLaw(args, self.halo_mass_function, lens_plane_redshifts, delta_zs)
+                rendering_classes += [rendering_class]
+
             else:
                 raise Exception('Must specify mass_func_type.\nAllowed types: POWER_LAW, DELTA')
 
             mdef_los = args['mdef_los']
 
+            aperture_radius = args['cone_opening_angle'] * 0.5
+
             if init:
                 masses, x, y, r2d, r3d, redshifts \
-                    = render_los(rendering_class, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
+                    = render_los(rendering_class, aperture_radius, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
                 flag += [False] * len(masses)
                 mdefs = [mdef_los] * len(masses)
 
             else:
 
                 field_halo_masses, field_xpos, field_ypos, field_r2d, field_r3d, field_z \
-                    = render_los(rendering_class, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
+                    = render_los(rendering_class, aperture_radius, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
 
                 masses = np.append(masses, field_halo_masses)
                 x = np.append(x, field_xpos)
@@ -95,7 +104,8 @@ class pyHalo(pyHaloBase):
                 mdefs += [mdef_los] * len(field_halo_masses)
 
         realization = Realization(masses, x, y, r2d, r3d, mdefs, redshifts, flag, self.halo_mass_function,
-                                  other_params=args, mass_sheet_correction=mass_sheet)
+                                  other_params=args, mass_sheet_correction=mass_sheet,
+                                  rendering_classes=rendering_classes)
 
         return realization
 

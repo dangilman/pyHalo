@@ -11,7 +11,7 @@ def render_los(rendering_class, lens_plane_redshifts, delta_zs, zmin, zmax):
         if zi < zmin or zi > zmax:
             continue
 
-        m = rendering_class.render_masses(zi, delta_zi)
+        m = rendering_class.render_masses(zi, delta_zi, None)
 
         rescale_angle = rendering_class.rescale_angle(zi)
         x, y, r2, r3 = rendering_class.render_positions_at_z(zi, len(m), rescale_angle,
@@ -32,7 +32,8 @@ def render_los(rendering_class, lens_plane_redshifts, delta_zs, zmin, zmax):
 
     return masses, x_arcsec, y_arcsec, r2d, r3d, np.array(redshifts)
 
-def render_los_dynamic(rendering_class, aperture_radius, lens_plane_redshifts, delta_zs, x_interp, y_interp, zmin, zmax):
+def render_los_dynamic(rendering_class, aperture_radius, lens_plane_redshifts,
+                       delta_zs, x_interp, y_interp, zmin, zmax):
 
     redshifts = []
 

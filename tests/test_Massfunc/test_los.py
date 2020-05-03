@@ -2,7 +2,7 @@ import numpy.testing as npt
 from pyHalo.Rendering.parameterizations import BrokenPowerLaw, PowerLaw
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.Rendering.Field.field import LOSPowerLaw
+from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
 import numpy as np
 from copy import copy
 from scipy.integrate import quad

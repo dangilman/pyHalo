@@ -25,71 +25,19 @@ def realization_at_z(realization,z):
     return Realization.from_halos(halos, realization.halo_mass_function,
                                   realization._prof_params, realization._mass_sheet_correction)
 
-class RealiztionFromFile(object):
-
-    def __init__(self, file_name):
-
-        self._has_been_shifted = False
-
-        self.zlens, self.zsource = np.loadtxt(file_name + '_zlenssrc.txt', unpack=True)
-
-        self.lens_model_list = [line.rstrip('\n') for line in open(file_name + '_lensmodellist.txt')]
-        self.lens_redshift_list = np.loadtxt(file_name + '_redshiftlist.txt')
-
-        self.lens_redshift_list = np.round(self.lens_redshift_list, 2)
-        with open(file_name + '_kwargslist.txt', 'r') as f:
-            self.kwargs_lens = eval(f.read())
-
-    def shift_background_to_source(self, ray_interp_x, ray_interp_y):
-
-        """
-
-        :param ray_interp_x: instance of scipy.interp1d, returns the angular position of a ray
-        fired through the lens center
-        :param ray_interp_y: same but for the y coordinate
-        :return:
-        """
-
-        if self._has_been_shifted:
-            return self
-
-        kwargs_lens = []
-
-        for (halo_redshift, kwargs_halo) in zip(self.lens_redshift_list, self.kwargs_lens):
-
-            new_kwargs = deepcopy(kwargs_halo)
-            if 'center_x' in new_kwargs.keys():
-                halo_x, halo_y = kwargs_halo['center_x'], kwargs_halo['center_y']
-                xshift, yshift = ray_interp_x(halo_redshift), ray_interp_y(halo_redshift)
-
-                new_x, new_y = halo_x + xshift, halo_y + yshift
-                new_kwargs['center_x'], new_kwargs['center_y'] = new_x, new_y
-            kwargs_lens.append(new_kwargs)
-
-        self.kwargs_lens = kwargs_lens
-
-        self._has_been_shifted = True
-
-        return self
-
-    def lensing_quantities(self, *args, **kwargs):
-
-        return self.lens_model_list, self.lens_redshift_list, self.kwargs_lens, None
-
-
 class Realization(object):
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
-                 halos=None, other_params = {}, mass_sheet_correction=True, dynamic=False):
+                 halos=None, other_params={}, mass_sheet_correction=True, dynamic=False,
+                 rendering_classes=None):
 
         self._mass_sheet_correction = mass_sheet_correction
-        self._subtract_theory_mass_sheets = True
-        self._overwrite_mass_sheet = None
 
         self.halo_mass_function = halo_mass_function
         self.geometry = halo_mass_function.geometry
         self.lens_cosmo = LensCosmo(self.geometry._zlens, self.geometry._zsource,
                                     self.geometry._cosmo)
+
         self._lensing_functions = []
         self.halos = []
         self._loaded_models = {}
@@ -101,19 +49,6 @@ class Realization(object):
         self.break_index = self._prof_params['break_index']
         self._LOS_norm = self._prof_params['LOS_normalization']
         self.break_scale = self._prof_params['break_scale']
-
-        if 'logM_delta' in self._prof_params.keys():
-            self._logM_delta = self._prof_params['logM_delta']
-            convergence_sheet_type = 'fixed'
-        elif 'log_mlow' in self._prof_params.keys():
-            self._logmlow = self._prof_params['log_mlow']
-            self._logmhigh = self._prof_params['log_mhigh']
-            convergence_sheet_type = 'integrated'
-
-        else:
-            raise Exception('did not recognize required mass function parameter.')
-
-        self._convergence_sheet_type = convergence_sheet_type
 
         if halos is None:
 
@@ -132,92 +67,20 @@ class Realization(object):
 
         self._reset()
 
-    def save_to_file(self, file_name, log_mass_sheet):
+        self.set_rendering_classes(rendering_classes)
 
-        lens_model_names, redshift_list, kwargs_lens, _ = self.lensing_quantities(log_mass_sheet, log_mass_sheet)
-        z = np.round([self.geometry._zlens, self.geometry._zsource], 2)
-        np.savetxt(file_name + '_zlenssrc.txt', X=z)
+    def set_rendering_classes(self, rendering_classes):
 
-        with open(file_name + '_lensmodellist.txt', 'w') as f:
-            for name in lens_model_names:
-                f.write(str(name) + '\n')
-        with open(file_name + '_redshiftlist.txt', 'w') as f:
-            for zi in np.round(redshift_list, 2):
-                f.write(str(zi) + '\n')
-        with open(file_name + '_kwargslist.txt', 'w') as f:
-            f.write(str(kwargs_lens))
+        self.rendering_classes = rendering_classes
 
     @classmethod
-    def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction):
+    def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction, rendering_classes):
 
         realization = Realization(None, None, None, None, None, None, None, None, halo_mass_function,
-                           halos=halos, other_params=prof_params,
-                           mass_sheet_correction=msheet_correction)
+                                  halos=halos, other_params=prof_params,
+                                  mass_sheet_correction=msheet_correction, rendering_classes=rendering_classes)
+
         return realization
-
-    def halo_physical_coordinates(self, halos):
-
-        xcoords, ycoords, masses, redshifts = [], [], [], []
-
-        for halo in halos:
-            D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
-            x_arcsec, y_arcsec = halo.x, halo.y
-            x_comoving, y_comoving = D * x_arcsec, D * y_arcsec
-            xcoords.append(x_comoving)
-            ycoords.append(y_comoving)
-            masses.append(halo.mass)
-            redshifts.append(halo.z)
-        return np.array(xcoords), np.array(ycoords), np.log10(masses), np.array(redshifts)
-
-    def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
-
-        new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], [sub_flag], self.halo_mass_function,
-                               halos = None, other_params=self._prof_params,
-                               mass_sheet_correction=self._mass_sheet_correction)
-
-        realization = self.join(new_real)
-        return realization
-
-    def change_profile_params(self, new_args):
-
-        new_params = deepcopy(self._prof_params)
-        new_params.update(new_args)
-
-        return Realization(self.masses, self.x, self.y, self.r2d, self.r3d, self.mdefs,
-                           self.redshifts, self.subhalo_flags, self.halo_mass_function,
-                           other_params=new_params, mass_sheet_correction=self._mass_sheet_correction)
-
-    def change_mdef(self, new_mdef):
-
-        new_halos = []
-        for halo in self.halos:
-            duplicate = deepcopy(halo)
-            if duplicate.mdef == 'cNFWmod_trunc' and new_mdef == 'TNFW':
-
-                duplicate._mass_def_arg = duplicate.profile_args[0:-1]
-
-            else:
-                raise Exception('combination '+duplicate.mdef + ' and '+
-                                    new_mdef+' not recognized.')
-
-            duplicate.mdef = new_mdef
-            new_halos.append(duplicate)
-
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = new_halos, other_params= self._prof_params,
-                           mass_sheet_correction = self._mass_sheet_correction)
-
-    def _tags(self, halos=None):
-
-        if halos is None:
-            halos = self.halos
-        tags = []
-
-        for halo in halos:
-
-            tags.append(halo._unique_tag)
-
-        return tags
 
     def join(self, real):
         """
@@ -245,7 +108,19 @@ class Realization(object):
                 halos.append(halos_long[i])
 
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self._mass_sheet_correction)
+                                      self._mass_sheet_correction, self.rendering_classes)
+
+    def _tags(self, halos=None):
+
+        if halos is None:
+            halos = self.halos
+        tags = []
+
+        for halo in halos:
+
+            tags.append(halo._unique_tag)
+
+        return tags
 
     def _reset(self):
 
@@ -318,12 +193,7 @@ class Realization(object):
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
-    def lensing_quantities(self, mass_sheet_correction_front=7.7,
-                           mass_sheet_correction_back=8, return_kwargs=False):
-
-        if self._overwrite_mass_sheet is not None:
-            mass_sheet_correction_front = self._overwrite_mass_sheet
-            mass_sheet_correction_back = self._overwrite_mass_sheet
+    def lensing_quantities(self, return_kwargs=False):
 
         kwargs_lens = []
         lens_model_names = []
@@ -351,13 +221,11 @@ class Realization(object):
 
         if self._mass_sheet_correction:
 
-            assert isinstance(mass_sheet_correction_front, float) or isinstance(mass_sheet_correction_front, int)
-            assert mass_sheet_correction_front < 100, 'mass sheet correction should log(M)'
-            assert isinstance(mass_sheet_correction_back, float) or isinstance(mass_sheet_correction_back, int)
-            assert mass_sheet_correction_back < 100, 'mass sheet correction should log(M)'
+            if self.rendering_classes is None:
+                raise Exception('if applying a convergence sheet correction, must specify '
+                                'the rendering classes.')
 
-            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(mlow_front=10**mass_sheet_correction_front,
-                                                                      mlow_back=10**mass_sheet_correction_back)
+            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(self.rendering_classes)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
             redshift_list = np.append(redshift_list, z_sheets)
@@ -370,6 +238,31 @@ class Realization(object):
                     'multi_plane': True}, kwargs_lens
         else:
             return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
+
+    def mass_sheet_correction(self, rendering_classes):
+
+        kappa_sheets = []
+
+        redshifts = []
+
+        if self._prof_params['subtract_exact_mass_sheets']:
+
+            kappa_sheets = [self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, self.geometry)
+                                     for zi in self.unique_redshifts]
+
+            redshifts = self.unique_redshifts
+
+        else:
+
+            for rendering_class in rendering_classes:
+                negative_kappa_values, sheet_redshifts = \
+                    rendering_class.negative_kappa_sheets_theory()
+                kappa_sheets += negative_kappa_values
+                redshifts += sheet_redshifts
+
+        kwargs_mass_sheets = [{'kappa_ext': kappa} for kappa in kappa_sheets]
+
+        return kwargs_mass_sheets, redshifts
 
     def _lens(self, halo):
 
@@ -402,6 +295,58 @@ class Realization(object):
             raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
 
         return lens
+
+    def halo_physical_coordinates(self, halos):
+
+        xcoords, ycoords, masses, redshifts = [], [], [], []
+
+        for halo in halos:
+            D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
+            x_arcsec, y_arcsec = halo.x, halo.y
+            x_comoving, y_comoving = D * x_arcsec, D * y_arcsec
+            xcoords.append(x_comoving)
+            ycoords.append(y_comoving)
+            masses.append(halo.mass)
+            redshifts.append(halo.z)
+        return np.array(xcoords), np.array(ycoords), np.log10(masses), np.array(redshifts)
+
+    def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
+
+        new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], [sub_flag], self.halo_mass_function,
+                               halos = None, other_params=self._prof_params,
+                               mass_sheet_correction=self._mass_sheet_correction)
+
+        realization = self.join(new_real)
+        return realization
+
+    def change_profile_params(self, new_args):
+
+        new_params = deepcopy(self._prof_params)
+        new_params.update(new_args)
+
+        return Realization(self.masses, self.x, self.y, self.r2d, self.r3d, self.mdefs,
+                           self.redshifts, self.subhalo_flags, self.halo_mass_function,
+                           other_params=new_params, mass_sheet_correction=self._mass_sheet_correction)
+
+    def change_mdef(self, new_mdef):
+
+        new_halos = []
+        for halo in self.halos:
+            duplicate = deepcopy(halo)
+            if duplicate.mdef == 'cNFWmod_trunc' and new_mdef == 'TNFW':
+
+                duplicate._mass_def_arg = duplicate.profile_args[0:-1]
+
+            else:
+                raise Exception('combination '+duplicate.mdef + ' and '+
+                                    new_mdef+' not recognized.')
+
+            duplicate.mdef = new_mdef
+            new_halos.append(duplicate)
+
+        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
+                           halos = new_halos, other_params= self._prof_params,
+                           mass_sheet_correction=self._mass_sheet_correction)
 
     def split_at_z(self, z):
 
@@ -496,73 +441,6 @@ class Realization(object):
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self._mass_sheet_correction)
 
-    def mass_sheet_correction(self, mlow_front=10**7.5,mlow_back=10**8):
-
-        kwargs = []
-        zsheet = []
-        unique_z = np.unique(self.redshifts)
-
-        if self._convergence_sheet_type == 'integrated':
-
-            mhigh = 10**self._logmhigh
-
-            mlow_front = 10**max(np.log10(mlow_front), self._logmlow)
-            mlow_back = 10**max(np.log10(mlow_back), self._logmlow)
-
-            if len(unique_z) == 1 and unique_z[0] == self.geometry._zlens:
-                if self._prof_params['subtract_subhalo_mass_sheet']:
-                    kappa = self.convergence_at_z(self.geometry._zlens,
-                                                  mlow_front, mhigh,None,self.m_break_scale,
-                                                  self.break_index,self.break_scale)
-
-                    kwargs.append({'kappa_ext': - self._prof_params['subhalo_mass_sheet_scale'] * kappa})
-                    zsheet.append(unique_z[0])
-
-            else:
-
-                if self._prof_params['subtract_subhalo_mass_sheet']:
-
-                    kappa = self.convergence_at_z(self.geometry._zlens,
-                                                  mlow_front, mhigh, None, self.m_break_scale,
-                                                  self.break_index, self.break_scale)
-
-                    kwargs.append({'kappa_ext': - self._prof_params['subhalo_mass_sheet_scale'] * kappa})
-                    zsheet.append(self.geometry._zlens)
-
-                for i in range(0, len(unique_z)-1):
-
-                    z = unique_z[i]
-
-                    delta_z = unique_z[i+1] - z
-
-                    kappa = None
-                    if z < self.geometry._zlens:
-                        kappa = self.convergence_at_z(z, mlow_front, mhigh, delta_z,
-                                                             self.m_break_scale, self.break_index, self.break_scale)
-                    elif z > self.geometry._zlens:
-                        kappa = self.convergence_at_z(z, mlow_back, mhigh, delta_z,
-                                                            self.m_break_scale, self.break_index, self.break_scale)
-
-                    if kappa is not None:
-                        kwargs.append({'kappa_ext': - self._prof_params['kappa_scale']*kappa})
-                        zsheet.append(z)
-
-        elif self._convergence_sheet_type == 'fixed':
-
-            assert 'logM_delta' in self._prof_params.keys()
-            M = self._prof_params['logM_delta']
-            for i in range(0, len(unique_z) - 1):
-
-                z = unique_z[i]
-                delta_z = unique_z[i + 1] - z
-                rho_dV = self.halo_mass_function.rho_dV(self._prof_params['mass_fraction'])
-                N_theory = rho_dV * self.geometry.volume_element_comoving(z, delta_z) / M
-                kappa = N_theory * M/self._sigma_crit_mass(z) # to convergence units
-                kwargs.append({'kappa_ext': - self._prof_params['kappa_scale'] * kappa})
-                zsheet.append(z)
-
-        return kwargs, zsheet
-
     def halos_at_z(self,z):
         halos = []
         for halo in self.halos:
@@ -571,30 +449,6 @@ class Realization(object):
             halos.append(halo)
 
         return halos
-
-    def convergence_at_z(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
-
-        if self._prof_params['subtract_exact_mass_sheets']:
-            return self.convergence_at_z_exact(z)
-        else:
-            return self.convergence_at_z_theory(z, mlow, mhigh, delta_z, m_break, break_index, break_scale)
-
-    def _sigma_crit_mass(self, z):
-
-        area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
-        sigma_crit_mpc = self.lens_cosmo.get_epsiloncrit(z, self.geometry._zsource)
-
-        return area * sigma_crit_mpc
-
-    def convergence_at_z_theory(self, z, mlow, mhigh, delta_z, m_break, break_index, break_scale):
-
-        if z == self.geometry._zlens:
-            m_theory = self.mass_at_z_theory_lens(mlow, mhigh, m_break, break_index, break_scale)
-
-        else:
-            m_theory = self.mass_at_z_theory_LOS(z, delta_z, mlow, mhigh, m_break, break_index, break_scale)
-
-        return m_theory / self._sigma_crit_mass(z)
 
     def convergence_at_z_exact(self, z):
 
@@ -605,62 +459,6 @@ class Realization(object):
         inds = np.where(self.redshifts == z)
         m_exact = np.sum(self.masses[inds])
         return m_exact
-
-    def mass_at_z_theory_lens(self, mlow, mhigh, m_break, break_index, break_scale):
-
-        if 'sigma_sub' in self._prof_params.keys():
-            sigma_sub = self._prof_params['sigma_sub']
-            parent_m200 = self._prof_params['parent_m200']
-            plaw_idx = self._prof_params['power_law_index']
-            zlens = self.geometry._zlens
-            kpc_per_asec_zlens = self.geometry._kpc_per_arcsec_zlens
-            opening_angle = self._prof_params['cone_opening_angle']
-
-            norm = norm_AO_from_sigmasub(sigma_sub, parent_m200,
-                                         zlens, kpc_per_asec_zlens,
-                                         opening_angle, plaw_idx)
-
-        elif 'norm_kpc2' in self._prof_params.keys():
-            sigma_sub = self._prof_params['norm_kpc2']
-            plaw_idx = self._prof_params['power_law_index']
-            zlens = self.geometry._zlens
-            kpc_per_asec_zlens = self.geometry._kpc_per_arcsec_zlens
-            opening_angle = self._prof_params['cone_opening_angle']
-
-            norm = norm_AO_from_sigmasub(sigma_sub, 10**13,
-                                         zlens, kpc_per_asec_zlens,
-                                         opening_angle, plaw_idx)
-
-        elif 'norm_arcsec2' in self._prof_params.keys():
-            sigma_sub = self._prof_params['norm_arcsec2'] * self.geometry._kpc_per_arcsec_zlens ** -2
-            plaw_idx = self._prof_params['power_law_index']
-            zlens = self.geometry._zlens
-            kpc_per_asec_zlens = self.geometry._kpc_per_arcsec_zlens
-            opening_angle = self._prof_params['cone_opening_angle']
-
-            norm = norm_AO_from_sigmasub(sigma_sub, 10**13,
-                                         zlens, kpc_per_asec_zlens,
-                                         opening_angle, plaw_idx)
-
-
-        else:
-            raise Exception('cannot subtract subhalo '
-                            'mass sheets for this mass funciton.')
-
-        def _integrand(m):
-            return (norm * m ** (1+plaw_idx)) * \
-                   (1 + (m_break/m)**break_scale ) ** break_index
-
-        m_theory = quad(_integrand, mlow, mhigh)[0]
-
-        return m_theory
-
-    def mass_at_z_theory_LOS(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale):
-
-        mass = self.halo_mass_function.integrate_mass_function(z, delta_z, mlow, mhigh,
-                         log_m_break, break_index, break_scale, n=1, norm_scale=self._LOS_norm)
-
-        return mass
 
     def number_of_halos_before_redshift(self, z):
         n = 0

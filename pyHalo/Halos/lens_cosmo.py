@@ -31,6 +31,13 @@ class LensCosmo(object):
 
         self._halo_structure = HaloStructure(self)
 
+    def sigma_crit_mass(self, z, geometry):
+
+        area = geometry.angle_to_physical_area(0.5 * geometry.cone_opening_angle, z)
+        sigma_crit_mpc = self.get_epsiloncrit(z, geometry._zsource)
+
+        return area * sigma_crit_mpc
+
     @property
     def _subhalo_accretion_pdfs(self):
 

@@ -9,6 +9,15 @@ class MainLensPowerLawDynamic(object):
 
         self._masses, self._x_arcsec, self._y_arcsec, self._r2d_kpc, self._r3d_kpc, _ = self.main()
 
+    @property
+    def keys_convergence_sheets(self):
+
+        return self.main.keys_convergence_sheets
+
+    def negative_kappa_sheets_theory(self):
+
+        return self.main.negative_kappa_sheets_theory()
+
     def __call__(self, center_x, center_y, log_mlow, log_mhigh, aperture_radius):
         """
 
@@ -21,7 +30,7 @@ class MainLensPowerLawDynamic(object):
             dy = self._y_arcsec - center_y
             dr = np.sqrt(dx ** 2 + dy ** 2)
 
-            mlow, mhigh = 10**log_mlow, 10**log_mhigh
+            mlow, mhigh = 10 ** log_mlow, 10 ** log_mhigh
 
             cond1 = self._masses >= mlow
             cond2 = self._masses < mhigh
@@ -29,7 +38,7 @@ class MainLensPowerLawDynamic(object):
 
             inds = np.where(cond1 & cond2 & cond3)
 
-            redshifts = [self.main._geometry._zlens] * len(dx[inds])
+            redshifts = [self.main.geometry._zlens] * len(dx[inds])
 
             return self._masses[inds], self._x_arcsec[inds], self._y_arcsec[inds], self._r2d_kpc[inds], \
                    self._r3d_kpc[inds], redshifts
