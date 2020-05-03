@@ -183,7 +183,7 @@ class Realization(object):
         self._has_been_shifted = True
 
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self._mass_sheet_correction)
+                                      self._mass_sheet_correction, rendering_classes=self.rendering_classes)
 
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:
@@ -243,14 +243,14 @@ class Realization(object):
 
         kappa_sheets = []
 
-        redshifts = []
+        _redshifts = []
 
         if self._prof_params['subtract_exact_mass_sheets']:
 
             kappa_sheets = [self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, self.geometry)
                                      for zi in self.unique_redshifts]
 
-            redshifts = self.unique_redshifts
+            _redshifts = self.unique_redshifts
 
         else:
 
@@ -258,9 +258,15 @@ class Realization(object):
                 negative_kappa_values, sheet_redshifts = \
                     rendering_class.negative_kappa_sheets_theory()
                 kappa_sheets += negative_kappa_values
-                redshifts += sheet_redshifts
+                _redshifts += sheet_redshifts
 
-        kwargs_mass_sheets = [{'kappa_ext': kappa} for kappa in kappa_sheets]
+        kwargs_mass_sheets = []
+        redshifts = []
+
+        for kappa, zi in zip(kappa_sheets, _redshifts):
+            if abs(kappa) > 0:
+                kwargs_mass_sheets.append({'kappa_ext': kappa})
+                redshifts.append(zi)
 
         return kwargs_mass_sheets, redshifts
 
@@ -449,10 +455,6 @@ class Realization(object):
             halos.append(halo)
 
         return halos
-
-    def convergence_at_z_exact(self, z):
-
-        return self.mass_at_z_exact(z) / self._sigma_crit_mass(z)
 
     def mass_at_z_exact(self, z):
 
