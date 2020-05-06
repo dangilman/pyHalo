@@ -1,6 +1,6 @@
 from pyHalo.Rendering.Field.base import LOSBase
 from pyHalo.defaults import *
-from pyHalo.Rendering.MassFunctions.broken_powerlaw import BrokenPowerLaw
+from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, \
     integrate_power_law_analytic
@@ -96,35 +96,12 @@ class PowerLawBase(LOSBase):
     def keyword_parse(args, lens_mass_function):
 
         args_mfunc = {}
-        required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow_los',
-                         'log_mhigh_los', 'parent_m200', 'LOS_normalization',
-                         'draw_poission', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale']
+        required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow',
+                         'log_mhigh', 'parent_m200', 'LOS_normalization',
+                         'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
+                         'break_index', 'break_scale']
 
         for key in required_keys:
-
-            if key == 'LOS_normalization':
-
-                if key in args.keys():
-                    args_mfunc['LOS_normalization'] = args[key]
-                else:
-                    args_mfunc['LOS_normalization'] = 1
-                continue
-
-            if key == 'log_mlow_los':
-
-                if key in args.keys():
-                    args_mfunc['log_mlow'] = args[key]
-                else:
-                    args_mfunc['log_mlow'] = args['log_mlow']
-                continue
-
-            if key == 'log_mhigh_los':
-
-                if key in args.keys():
-                    args_mfunc['log_mhigh'] = args[key]
-                else:
-                    args_mfunc['log_mhigh'] = args['log_mhigh']
-                continue
 
             try:
 
@@ -143,18 +120,5 @@ class PowerLawBase(LOSBase):
             args_mfunc['c_scale'] = 0
             args_mfunc['c_power'] = 0
             args_mfunc['break_scale'] = 1
-
-        else:
-
-            try:
-                args_mfunc['break_index'] = args['break_index']
-                args_mfunc['c_scale'] = args['c_scale']
-                args_mfunc['c_power'] = args['c_power']
-                args_mfunc['break_scale'] = args['break_scale']
-
-            except:
-                raise ValueError('must specify a value for "break_index, c_scale, c_power" if log_m_break != 0 '
-                                 '(because you are specifying a WDM scenario in which the concentration and mass function'
-                                 'slope  of halos is affected')
 
         return args_mfunc

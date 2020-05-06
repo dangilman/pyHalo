@@ -107,7 +107,7 @@ class RealizationDefaults(object):
         self.subtract_exact_mass_sheets = False
         self.subhalo_mass_sheet_scale = 1.
         self.subtract_subhalo_mass_sheet = True
-        self.draw_poission = True
+        self.draw_poisson = True
 
         self.kappa_scale = 1
 
@@ -142,8 +142,8 @@ def set_default_kwargs(profile_params, dynamic, zsource):
     if 'kappa_scale' not in profile_params.keys():
         profile_params.update({'kappa_scale': realization_default.kappa_scale})
 
-    if 'draw_poission' not in profile_params.keys():
-        profile_params.update({'draw_poission': realization_default.draw_poission})
+    if 'draw_poisson' not in profile_params.keys():
+        profile_params.update({'draw_poisson': realization_default.draw_poisson})
 
     if 'log_m_break' in profile_params.keys():
         if 'break_index' not in profile_params.keys():
@@ -156,8 +156,6 @@ def set_default_kwargs(profile_params, dynamic, zsource):
                                'break_index': profile_params['break_index'],
                                'break_scale': profile_params['break_scale']})
     else:
-        if print_defaults:
-            print('log_m_break not specified, assuming '+str(realization_default.default_mhm))
         profile_params.update({'log_m_break': realization_default.default_mhm,
                                'break_index': realization_default.default_break_index,
                               'break_scale': realization_default.default_break_scale})

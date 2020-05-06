@@ -59,7 +59,8 @@ class DeltaBase(LOSBase):
 
         args_mfunc = {}
         required_keys = ['zmin', 'zmax', 'logM_delta', 'mass_fraction',
-                         'LOS_normalization', 'parent_m200', 'kappa_scale']
+                         'LOS_normalization', 'parent_m200', 'kappa_scale',
+                         'draw_poisson']
 
         for key in required_keys:
 

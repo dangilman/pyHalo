@@ -31,6 +31,30 @@ class Realization(object):
                  halos=None, other_params={}, mass_sheet_correction=True, dynamic=False,
                  rendering_classes=None):
 
+        """
+
+        This class is the main class that stores information regarding realizations of dark matter halos. It is not
+        intended to be created directly by the user. Instances of this class are created through the class
+        pyHalo/pyHalo_dynamic.
+
+        :param masses: an array of halo masses (units solar mass)
+        :param x: an array of halo x-coordinates (units arcsec)
+        :param y: an array of halo y-coordinates (units arcsec)
+        :param r2d: an array of halo 2-d distances from lens center (units kpc / (kpc/arsec), or arcsec,
+        at halo redshift)
+        :param r3d: an array of halo 2-d distances from lens center (units kpc / (kpc/arsec), or arcsec,
+        at halo redshift)
+        :param mdefs: mass definition of each halo
+        :param z: halo redshift
+        :param subhalo_flag: whether each halo is a subhalo or a regular halo
+        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.LensingMassFunction)
+        :param halos: a list of halo class instances
+        :param other_params: kwargs for the realiztion
+        :param mass_sheet_correction: whether to apply a mass sheet correction
+        :param dynamic: whether the realization is rendered with pyhalo_dynamic or not
+        :param rendering_classes: a list of rendering class instances
+        """
+
         self._mass_sheet_correction = mass_sheet_correction
 
         self.halo_mass_function = halo_mass_function
@@ -75,6 +99,16 @@ class Realization(object):
 
     @classmethod
     def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction, rendering_classes):
+
+        """
+
+        :param halos: a list of halo class instances
+        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.LensingMassFunction)
+        :param prof_params: keyword arguments for the realization
+        :param msheet_correction: whether or not to apply a mass sheet correction
+        :param rendering_classes: a list of rendering classes
+        :return: an instance of Realization created directly from the halo class instances
+        """
 
         realization = Realization(None, None, None, None, None, None, None, None, halo_mass_function,
                                   halos=halos, other_params=prof_params,
@@ -143,7 +177,7 @@ class Realization(object):
             self.r3d.append(halo.r3d)
             self.mdefs.append(halo.mdef)
             self._halo_tags.append(halo._unique_tag)
-            self.subhalo_flags.append(halo._is_main_subhalo)
+            self.subhalo_flags.append(halo.is_subhalo)
 
         self.masses = np.array(self.masses)
         self.x = np.array(self.x)
@@ -177,7 +211,7 @@ class Realization(object):
             new_x, new_y = halo.x + xshift, halo.y + yshift
             new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
                         sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo,
-                        args=self._prof_params, shifted=True)
+                        args=self._prof_params)
             halos.append(new_halo)
 
         self._has_been_shifted = True

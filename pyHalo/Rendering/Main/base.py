@@ -1,4 +1,4 @@
-from pyHalo.Rendering.MassFunctions.broken_powerlaw import BrokenPowerLaw
+from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 from pyHalo.Spatial.nfw import NFW3D
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Spatial.keywords import subhalo_spatial_NFW
@@ -99,7 +99,7 @@ class MainLensBase(RenderingBase):
 
         required_keys = ['power_law_index', 'log_mlow', 'log_mhigh', 'log_m_break',
                          'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
-                         'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale']
+                         'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson']
 
         for key in required_keys:
             try:
