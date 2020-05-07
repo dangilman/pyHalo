@@ -60,68 +60,6 @@ class Test_los(object):
         n_rendered = len(power_law.draw())
         npt.assert_(n_rendered/np.ceil(n_actual) == 1)
 
-        # to within 4% over the mass range
-
-    def test_draw(self):
-
-        z1_values = [0.21, 0.67]
-        z2_values = [0.23, 0.69]
-        LOS_norm = 1e+4
-
-        for log_m_break in [0, 8]:
-
-            for z1, z2 in zip(z1_values, z2_values):
-
-                los_mfunc = LOSPowerLaw(self.args, self.lensing_mass_function)
-
-                delta_z = z2 - z1
-
-                los_mfunc._redshift_range = np.array([z1, z2])
-                los_mfunc._parameterization_args.update({'draw_poisson':False})
-                los_mfunc._parameterization_args.update({'LOS_normalization':LOS_norm})
-                los_mfunc._parameterization_args.update({'log_m_break': log_m_break,
-                                                         'break_scale': 1.2})
-
-                plaw_indexes = [self.lensing_mass_function.plaw_index_z(z1),
-                                self.lensing_mass_function.plaw_index_z(z2)]
-                norms = [LOS_norm*self.lensing_mass_function.norm_at_z(z1, delta_z),
-                         LOS_norm*self.lensing_mass_function.norm_at_z(z2, delta_z)]
-
-                pargs = los_mfunc._parameterization_args
-                pargs_z1 = copy(los_mfunc._parameterization_args)
-                pargs_z2 = copy(los_mfunc._parameterization_args)
-
-                pargs_z1.update({'normalization': norms[0], 'power_law_index': plaw_indexes[0],
-                              'draw_poisson': False})
-                pargs_z2.update({'normalization': norms[1], 'power_law_index': plaw_indexes[1],
-                              'draw_poisson': False})
-
-                mfunc_z1 = BrokenPowerLaw(**pargs_z1)
-                mfunc_z2 = BrokenPowerLaw(**pargs_z2)
-
-                masses_explicit_z1 = mfunc_z1.draw()
-                masses_explicit_z2 = mfunc_z2.draw()
-
-                Nhalos_z1_explicit = len(masses_explicit_z1)
-                Nhalos_z2_explicit = len(masses_explicit_z2)
-
-                masses_z1 = los_mfunc._draw(norms[0], plaw_indexes[0], pargs, z1)[0]
-                masses_z2 = los_mfunc._draw(norms[1], plaw_indexes[1], pargs, z2)[0]
-                masses = los_mfunc()[0]
-
-                Nhalos_z1 = len(masses_z1)
-                Nhalos_z2 = len(masses_z2)
-
-                npt.assert_(Nhalos_z1 == Nhalos_z1_explicit)
-                npt.assert_(Nhalos_z2 == Nhalos_z2_explicit)
-
-                npt.assert_(len(masses) == Nhalos_z1 + Nhalos_z2)
-
-                theory_mass = self.lensing_mass_function.integrate_mass_function(z1, delta_z, self.mlow,
-                                              self.mhigh, 0, -1, 1, norm_scale=LOS_norm)
-
-                npt.assert_almost_equal(np.absolute(theory_mass / np.sum(masses_z1)), 1, decimal= 1)
-
 t = Test_los()
 t.setup()
 t.test_mfunc()

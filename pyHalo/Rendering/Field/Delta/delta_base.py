@@ -4,7 +4,7 @@ from pyHalo.defaults import *
 
 class DeltaBase(LOSBase):
 
-    def __init__(self, lensing_mass_func, rendering_args, spatial_parameterization, minimum_mass,
+    def __init__(self, lensing_mass_func, geometry_render, rendering_args, spatial_parameterization, minimum_mass,
                  lens_plane_redshifts, delta_zs):
 
         self._minimum_mass = minimum_mass
@@ -13,7 +13,7 @@ class DeltaBase(LOSBase):
 
         self.lens_plane_redshifts, self.delta_zs = lens_plane_redshifts, delta_zs
 
-        super(DeltaBase, self).__init__(lensing_mass_func, rendering_args, spatial_parameterization,
+        super(DeltaBase, self).__init__(lensing_mass_func, geometry_render, rendering_args, spatial_parameterization,
                                         lens_plane_redshifts, delta_zs)
 
     def negative_kappa_sheets_theory(self):

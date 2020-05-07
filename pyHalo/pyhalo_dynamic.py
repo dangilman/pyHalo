@@ -4,7 +4,7 @@ from pyHalo.Rendering.Main.mainlens_dynamic import MainLensPowerLawDynamic
 from pyHalo.pyhalo_base import pyHaloBase
 from pyHalo.single_realization import Realization
 from pyHalo.Rendering.render import render_los_dynamic, render_main_dynamic
-
+from pyHalo.Cosmology.geometry import Geometry
 from scipy.interpolate import interp1d
 
 from copy import deepcopy
@@ -39,48 +39,10 @@ class pyHaloDynamic(pyHaloBase):
         self._rendering_class_main = None
         self.reset_redshifts(zlens, zsource)
 
-    def render_dynamic_from_lensmodel(self, lensmodel_macro, kwargs_macro,
-                       type, args, realization_start, lens_centroid_x,
-                       lens_centroid_y, source_x, source_y, aperture_radius,
-                       verbose=False, include_mass_sheet_correction=False):
-
-        """
-
-        :param lensmodel_macro:
-        :param kwargs_macro:
-        :param type:
-        :param args:
-        :param realization_start:
-        :param lens_centroid_x:
-        :param lens_centroid_y:
-        :param source_x:
-        :param source_y:
-        :param aperture_radius:
-        :param verbose:
-        :param include_mass_sheet_correction:
-        :return:
-        """
-
-        lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args)
-
-        x_interp_list, y_interp_list = self.interpolated_ray_paths(lensmodel_macro, kwargs_macro,
-                    [lens_centroid_x], [lens_centroid_y], source_x, source_y, lens_plane_redshifts)
-
-        print(x_interp_list[0](lens_plane_redshifts))
-        print(y_interp_list[0](lens_plane_redshifts))
-        print(source_x, source_y)
-        a=input('continue')
-
-        realization_start = self.render_dynamic(type, args, realization_start, lens_centroid_x, lens_centroid_y,
-                                   x_interp_list, y_interp_list, aperture_radius, lens_plane_redshifts, delta_zs,
-                                   verbose, include_mass_sheet_correction)
-
-        return realization_start
-
     def render_dynamic(self, type, args, realization_start, lens_centroid_x, lens_centroid_y,
                        x_interp_list, y_interp_list, aperture_radius,
                        lens_plane_redshifts, delta_zs, verbose=False,
-                       include_mass_sheet_correction=False):
+                       include_mass_sheet_correction=False, global_render=False):
 
         """
 
@@ -96,11 +58,27 @@ class pyHaloDynamic(pyHaloBase):
         :param delta_zs:
         :param verbose:
         :param include_mass_sheet_correction:
+        :param global_render: if True, then the Geometry class is the one specified in kwargs_halo_mass function.
+        If False, then a DOUBLE_CONE geometry is used. This is important because it affects how halos are
+        rendered in apertures.
+
+        Recommended usage is an initial `global' rendering with global_render = True, followed by a local render around
+        each lensed image.
         :return:
         """
 
         self.halo_mass_function = self.build_LOS_mass_function(args)
-        self._geometry = self.halo_mass_function.geometry
+        self.geometry = self.halo_mass_function.geometry
+
+        if global_render is True:
+            geometry_render = self.geometry
+
+        else:
+            geometry_render = Geometry(self.cosmology, self.zlens, self.zsource,
+                                       self.geometry.cone_opening_angle, 'DOUBLE_CONE')
+            if include_mass_sheet_correction:
+                print('WARNING: You specified include_mass_sheet_corretion = True for a local rendering of halos,'
+                      'you should probably only do this for a global rendering of halos throughout the entire volume.')
 
         kwargs_init = self._add_profile_params(args, True)
 
@@ -113,7 +91,7 @@ class pyHaloDynamic(pyHaloBase):
             realization_new, rendering_class_main, rendering_class_LOS = self._render(type, args, aperture_radius,
                                            lens_centroid_x, lens_centroid_y,
                                            x_position_interp, y_position_interp,
-                                           lens_plane_redshifts, delta_zs, include_mass_sheet_correction)
+                                           lens_plane_redshifts, delta_zs, include_mass_sheet_correction, geometry_render)
 
             if realization_start is None:
                 realization_start = realization_new
@@ -142,7 +120,7 @@ class pyHaloDynamic(pyHaloBase):
 
     def _render(self, type, args, aperture_radius, x_centroid_main, y_centroid_main,
                             x_position_interp, y_position_interp,
-                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction):
+                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction, geometry_render):
 
         rendering_class_main, rendering_class_LOS = None, None
 
@@ -150,13 +128,13 @@ class pyHaloDynamic(pyHaloBase):
 
             realization, rendering_class_main = self._render_dynamic_main(args, x_position_interp, y_position_interp,
                                                     aperture_radius, x_centroid_main, y_centroid_main,
-                                                    include_mass_sheet_correction)
+                                                    include_mass_sheet_correction, geometry_render)
 
             if type == 'composite_powerlaw':
 
                 realization_LOS, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
                                                            aperture_radius, lens_plane_redshifts, delta_zs,
-                                                           include_mass_sheet_correction)
+                                                           include_mass_sheet_correction, geometry_render)
 
                 if realization is None:
                     realization = realization_LOS
@@ -167,7 +145,7 @@ class pyHaloDynamic(pyHaloBase):
 
             realization, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
                                                        aperture_radius, lens_plane_redshifts, delta_zs,
-                                                   include_mass_sheet_correction)
+                                                   include_mass_sheet_correction, geometry_render)
 
         else:
             raise Exception('rendering type '+str(type) + ' not recognized.')
@@ -175,7 +153,7 @@ class pyHaloDynamic(pyHaloBase):
         return realization, rendering_class_main, rendering_class_LOS
 
     def _render_dynamic_main(self, args, x_aperture, y_aperture, aperture_radius,
-                             x_centroid_main, y_centroid_main, include_mass_sheet_correction):
+                             x_centroid_main, y_centroid_main, include_mass_sheet_correction, geometry_render):
 
         args_render = deepcopy(args)
 
@@ -194,7 +172,7 @@ class pyHaloDynamic(pyHaloBase):
             args_render['log_mlow'] = args_render['log_mlow_subs']
             args_render['log_mhigh'] = args_render['log_mhigh_subs']
 
-            self._rendering_class_main = MainLensPowerLawDynamic(args_render, self._geometry,
+            self._rendering_class_main = MainLensPowerLawDynamic(args_render, geometry_render,
                                                                  x_centroid_main, y_centroid_main)
 
             #print('nhalos: ',len(self._rendering_class_main._masses))
@@ -218,32 +196,36 @@ class pyHaloDynamic(pyHaloBase):
         return realization, self._rendering_class_main
 
     def _render_dynamic_los(self, args, x_position_interp, y_position_interp, aperture_radius,
-                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction):
+                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction, geometry_render):
 
         args_render = deepcopy(args)
 
         if args['mass_func_type'] == 'POWER_LAW':
 
-            rendering_class = LOSPowerLawDynamic(args_render, self.halo_mass_function, aperture_radius,
+            rendering_class = LOSPowerLawDynamic(args_render, self.halo_mass_function, geometry_render,
+                                                 aperture_radius,
                                                  lens_plane_redshifts, delta_zs)
 
             masses, x, y, r2d, r3d, redshifts = render_los_dynamic(rendering_class, aperture_radius,
                                                                    lens_plane_redshifts, delta_zs,
                                                                    x_position_interp, y_position_interp,
-                                                                   args['zmin'], args['zmax'])
+                                                                   args['zmin'], args['zmax'],
+                                                                   self.geometry._cosmo.D_C_z)
             is_subhalo = False
             mdef = args_render['mdef_los']
 
         elif args['mass_func_type'] == 'DELTA':
 
             minimum_mass = args_render['log_mlow']
-            rendering_class = LOSDeltaDynamic(args_render, self.halo_mass_function, aperture_radius, minimum_mass,
+            rendering_class = LOSDeltaDynamic(args_render, self.halo_mass_function, geometry_render,
+                                              aperture_radius, minimum_mass,
                                                  lens_plane_redshifts, delta_zs)
 
             masses, x, y, r2d, r3d, redshifts = render_los_dynamic(rendering_class, aperture_radius,
                                                                    lens_plane_redshifts, delta_zs,
                                                                    x_position_interp, y_position_interp,
-                                                                   args['zmin'], args['zmax'])
+                                                                   args['zmin'], args['zmax'],
+                                                                   self.geometry._cosmo.D_C_z)
             is_subhalo = False
             mdef = args_render['mdef_los']
 

@@ -4,7 +4,7 @@ from pyHalo.Spatial.uniform import LensConeUniform
 
 class LOSPowerLaw(PowerLawBase):
 
-    def __init__(self, args, lensing_mass_func, lens_plane_redshifts, delta_zs):
+    def __init__(self, args, lensing_mass_func, geometry_render, lens_plane_redshifts, delta_zs):
 
         rendering_args = self.keyword_parse(args, lensing_mass_func)
 
@@ -12,8 +12,7 @@ class LOSPowerLaw(PowerLawBase):
 
         spatial_args = LOS_spatial_global(args)
 
-        spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'], lensing_mass_func.geometry)
+        spatial_parameterization = LensConeUniform(spatial_args['cone_opening_angle'], geometry_render)
 
-        super(LOSPowerLaw, self).__init__(lensing_mass_func, rendering_args,
+        super(LOSPowerLaw, self).__init__(lensing_mass_func, geometry_render, rendering_args,
                                                  spatial_parameterization, lens_plane_redshifts, delta_zs)
-

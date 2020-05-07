@@ -31,6 +31,8 @@ class Cosmology(object):
 
         self._DA_interp = self._interp_angular_diamter_distance()
 
+        self._DC_interp = self._interp_comoving_distance()
+
         self._kpc_per_asec_interp = self._interp_kpc_per_asec()
 
     def D_A_z(self, z):
@@ -39,6 +41,13 @@ class Cosmology(object):
             return self._DA_interp(z)
         except:
             return self.D_A(0, z)
+
+    def D_C_z(self, z):
+
+        try:
+            return self._DC_interp(z)
+        except:
+            return self.D_C(z)
 
     def kpc_per_asec(self, z):
 
@@ -63,6 +72,17 @@ class Cosmology(object):
             da.append(self.D_A(0, zi))
         da = np.array(da)
         return interp1d(z, da)
+
+    def _interp_comoving_distance(self):
+
+        zmax = 4
+        zstep = lenscone_default.default_z_step
+        z = np.arange(zstep, zmax + zstep, zstep)
+        dc = []
+        for zi in z:
+            dc.append(self.D_C_transverse(zi))
+        dc = np.array(dc)
+        return interp1d(z, dc)
 
     def _setup_astropy_cosmology(self, astropy_instance, cosmo_kwargs):
 

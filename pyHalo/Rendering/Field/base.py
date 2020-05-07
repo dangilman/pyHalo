@@ -4,7 +4,7 @@ from pyHalo.Rendering.render_base import RenderingBase
 
 class LOSBase(RenderingBase):
 
-    def __init__(self, lensing_mass_func, rendering_args, spatial_parameterization, lens_plane_redshifts, delta_zs):
+    def __init__(self, lensing_mass_func, geometry_render, rendering_args, spatial_parameterization, lens_plane_redshifts, delta_zs):
 
         self.halo_mass_function = lensing_mass_func
 
@@ -14,7 +14,7 @@ class LOSBase(RenderingBase):
 
         self.lens_plane_redshifts, self.delta_zs = lens_plane_redshifts, delta_zs
 
-        super(LOSBase, self).__init__(self.halo_mass_function.geometry)
+        super(LOSBase, self).__init__(geometry_render)
 
     @staticmethod
     def two_halo_boost(z, delta_z, host_m200, zlens, lensing_mass_function_class):
@@ -30,12 +30,9 @@ class LOSBase(RenderingBase):
 
         return self.geometry.background_angle_rescale(z, self._zlens, angle_pad)
 
-    def render_positions_at_z(self, z, nhalos, rescale, xshift_arcsec, yshift_arcsec):
+    def render_positions_at_z(self, z, nhalos, xshift_arcsec, yshift_arcsec):
 
-        if rescale is None:
-            x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z)
-        else:
-            x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z, rescale=rescale)
+        x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z)
 
         if len(x_kpc) > 0:
             kpc_per_asec = self.geometry.kpc_per_arcsec(z)

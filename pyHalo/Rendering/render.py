@@ -13,8 +13,7 @@ def render_los(rendering_class, lens_plane_redshifts, delta_zs, zmin, zmax):
 
         m = rendering_class.render_masses(zi, delta_zi, None)
 
-        rescale_angle = rendering_class.rescale_angle(zi)
-        x, y, r2, r3 = rendering_class.render_positions_at_z(zi, len(m), rescale_angle,
+        x, y, r2, r3 = rendering_class.render_positions_at_z(zi, len(m),
                                                              0., 0.)
 
         redshifts += [zi] * len(x)
@@ -33,7 +32,7 @@ def render_los(rendering_class, lens_plane_redshifts, delta_zs, zmin, zmax):
     return masses, x_arcsec, y_arcsec, r2d, r3d, np.array(redshifts)
 
 def render_los_dynamic(rendering_class, aperture_radius, lens_plane_redshifts,
-                       delta_zs, x_interp, y_interp, zmin, zmax):
+                       delta_zs, x_interp, y_interp, zmin, zmax, comvoing_distance_interp):
 
     redshifts = []
 
@@ -44,13 +43,12 @@ def render_los_dynamic(rendering_class, aperture_radius, lens_plane_redshifts,
         if zi < zmin or zi > zmax:
             continue
 
-        rescale_angle = rendering_class.rescale_angle(zi)
-
         # the rendering volume is automatically rescaled, pass in the baseline radius
         m = rendering_class.render_masses(zi, delta_zi, aperture_radius)
-        x_shift, y_shift = x_interp(zi), y_interp(zi)
+        comoving_distance = comvoing_distance_interp(zi)
+        x_shift, y_shift = x_interp(comoving_distance), y_interp(comoving_distance)
 
-        x, y, r2, r3 = rendering_class.render_positions_at_z(zi, len(m), rescale_angle,
+        x, y, r2, r3 = rendering_class.render_positions_at_z(zi, len(m),
                                                              x_shift, y_shift)
 
         redshifts += [zi] * len(x)

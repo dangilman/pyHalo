@@ -10,10 +10,13 @@ class Geometry(object):
 
         if geometry_type == 'DOUBLE_CONE':
             self._geometrytype = DoubleCone(cosmology, z_lens, z_source, opening_angle)
+            self.volume_type = 'DOUBLE_CONE'
         elif geometry_type == 'CONE':
             self._geometrytype = Cone(cosmology, z_lens, z_source, opening_angle)
+            self.volume_type = 'CONE'
         elif geometry_type == 'CYLINDER':
             self._geometrytype = Cylinder(cosmology, z_lens, z_source, opening_angle)
+            self.volume_type = 'CYLINDER'
         else:
             raise Exception('geometry type '+str(geometry_type) + ' not recognized.')
 
@@ -181,73 +184,6 @@ class Geometry(object):
         asec_per_kpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value
 
         return r_co_kpc * asec_per_kpc
-
-    def ray_position_z(self, thetax, thetay, zi, source_x, source_y):
-
-        ray_angle_atz_x, ray_angle_atz_y = [], []
-
-        assert isinstance(thetay, type(thetax))
-
-        if isinstance(thetax, np.ndarray) or isinstance(thetax, list):
-
-            for tx, ty in zip(thetax, thetay):
-
-                if zi > self._zlens:
-                    angle_x_atz = self.ray_angle_atz(tx, zi, source_x)
-                    angle_y_atz = self.ray_angle_atz(ty, zi, source_y)
-                else:
-                    angle_x_atz = self.ray_angle_atz(tx, zi)
-                    angle_y_atz = self.ray_angle_atz(ty, zi)
-
-                ray_angle_atz_x.append(angle_x_atz)
-                ray_angle_atz_y.append(angle_y_atz)
-
-        else:
-
-            if zi > self._zlens:
-                ray_angle_atz_x = self.ray_angle_atz(thetax, zi, source_x)
-                ray_angle_atz_y = self.ray_angle_atz(thetay, zi, source_y)
-            else:
-                ray_angle_atz_x = self.ray_angle_atz(thetax, zi)
-                ray_angle_atz_y = self.ray_angle_atz(thetay, zi)
-
-        return ray_angle_atz_x, ray_angle_atz_y
-
-    def interpolate_ray_angle_z(self, ray_comoving_x, ray_comoving_y,
-                                redshifts, zi, Tzlist, Tz_current):
-
-        redshifts = np.array(redshifts)
-
-        if zi in redshifts:
-
-            idx = np.where(redshifts == zi)[0][0].astype(int)
-
-            angle_x = ray_comoving_x[idx] / Tzlist[idx]
-            angle_y = ray_comoving_y[idx] / Tzlist[idx]
-
-        else:
-
-            delta_z = redshifts - zi
-
-            # find first positive value:
-            count = 0
-            for delta_z_i in delta_z:
-                if delta_z_i>0:
-                    z1, z2 = redshifts[count-1], redshifts[count]
-                    Tzlow, Tzhigh = Tzlist[count-1], Tzlist[count]
-                    xlow, ylow = ray_comoving_x[count-1], ray_comoving_x[count-1]
-                    xhigh, yhigh = ray_comoving_x[count], ray_comoving_x[count]
-                    break
-                else:
-                    count += 1
-                    continue
-            else:
-                raise Exception('redshift range: '+str(redshifts)+ ' does not '
-                                              'include '+str(zi))
-
-            angle_x, angle_y = self.interp_ray_angle(xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current)
-
-        return angle_x, angle_y
 
 class Cylinder(object):
 

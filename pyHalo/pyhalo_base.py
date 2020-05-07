@@ -50,13 +50,13 @@ class pyHaloBase(object):
 
         self.zlens = zlens
         self.zsource = zsource
-        self._cosmology = Cosmology(**self._cosmology_kwargs)
+        self.cosmology = Cosmology(**self._cosmology_kwargs)
         self.halo_mass_function = None
-        self._geometry = None
+        self.geometry = None
 
     @property
     def astropy_cosmo(self):
-        return self._cosmology.astropy
+        return self.cosmology.astropy
 
     def build_LOS_mass_function(self, args):
 
@@ -86,7 +86,7 @@ class pyHaloBase(object):
             if 'mass_function_model' not in self._halo_mass_function_args.keys():
                 self._halo_mass_function_args.update({'mass_function_model': cosmo_default.default_mass_function})
 
-            self.halo_mass_function = LensingMassFunction(self._cosmology, 10 ** logLOS_mlow, 10 ** logLOS_mhigh, self.zlens, self.zsource,
+            self.halo_mass_function = LensingMassFunction(self.cosmology, 10 ** logLOS_mlow, 10 ** logLOS_mhigh, self.zlens, self.zsource,
                                                           cone_opening_angle=args['cone_opening_angle'],
                                                           **self._halo_mass_function_args)
 

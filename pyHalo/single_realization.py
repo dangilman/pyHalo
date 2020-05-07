@@ -8,16 +8,6 @@ from scipy.integrate import quad
 
 from copy import deepcopy
 
-def combine_realizations(realization_1, realization_2):
-
-    halos_1, halos_2 = realization_1.halos, realization_2.halos
-    halos = halos_1 + halos_2
-    halo_mass_function = realization_1.halo_mass_function
-    profile_params = realization_1._prof_params
-    msheet_correction = realization_1._mass_sheet_correction
-
-    return Realization.from_halos(halos, halo_mass_function, profile_params, msheet_correction)
-
 def realization_at_z(realization,z):
 
     halos = realization.halos_at_z(z)
@@ -193,7 +183,7 @@ class Realization(object):
         """
 
         :param ray_interp_x: instance of scipy.interp1d, returns the angular position of a ray
-        fired through the lens center
+        fired through the lens center given a comoving distance
         :param ray_interp_y: same but for the y coordinate
         :return:
         """
@@ -206,7 +196,9 @@ class Realization(object):
 
         for halo in self.halos:
 
-            xshift, yshift = ray_interp_x(halo.z), ray_interp_y(halo.z)
+            comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(halo.z)
+
+            xshift, yshift = ray_interp_x(comoving_distance_z), ray_interp_y(comoving_distance_z)
 
             new_x, new_y = halo.x + xshift, halo.y + yshift
             new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
@@ -289,10 +281,12 @@ class Realization(object):
         else:
 
             for rendering_class in rendering_classes:
+
                 negative_kappa_values, sheet_redshifts = \
                     rendering_class.negative_kappa_sheets_theory()
-                kappa_sheets += negative_kappa_values
-                _redshifts += sheet_redshifts
+
+                kappa_sheets += list(negative_kappa_values)
+                _redshifts += list(sheet_redshifts)
 
         kwargs_mass_sheets = []
         redshifts = []
@@ -398,9 +392,9 @@ class Realization(object):
                 halos_2.append(halo)
 
         realization_1 = Realization.from_halos(halos_1, self.halo_mass_function,
-                                               self._prof_params, self._mass_sheet_correction)
+                                               self._prof_params, self._mass_sheet_correction, self.rendering_classes)
         realization_2 = Realization.from_halos(halos_2, self.halo_mass_function,
-                                               self._prof_params, self._mass_sheet_correction)
+                                               self._prof_params, self._mass_sheet_correction, self.rendering_classes)
 
         return realization_1, realization_2
 
@@ -412,7 +406,7 @@ class Realization(object):
                 halos.append(halo)
 
         return Realization.from_halos(halos, self.halo_mass_function,
-                                      self._prof_params, self._mass_sheet_correction)
+                                      self._prof_params, self._mass_sheet_correction, self.rendering_classes)
 
     def filter(self, aperture_radius_front,
                    aperture_radius_back,
@@ -443,6 +437,8 @@ class Realization(object):
             if zi > zmax:
                 continue
 
+            comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(zi)
+
             if zi <= self.geometry._zlens:
 
                 minimum_mass_everywhere = deepcopy(mass_allowed_global_front)
@@ -463,8 +459,8 @@ class Realization(object):
             for idx in inds_m_low:
                 for k, (interp_x, interp_y) in enumerate(zip(interpolated_x_angle, interpolated_y_angle)):
 
-                    dx = x_at_z[idx] - interp_x(zi)
-                    dy = y_at_z[idx] - interp_y(zi)
+                    dx = x_at_z[idx] - interp_x(comoving_distance_z)
+                    dy = y_at_z[idx] - interp_y(comoving_distance_z)
                     dr = np.sqrt(dx ** 2 + dy ** 2)
                     if dr <= position_cut_in_window:
                         keep_inds_dr.append(idx)
@@ -479,7 +475,7 @@ class Realization(object):
                 halos.append(plane_halos[halo_index])
 
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self._mass_sheet_correction)
+                                      self._mass_sheet_correction, self.rendering_classes)
 
     def halos_at_z(self,z):
         halos = []
