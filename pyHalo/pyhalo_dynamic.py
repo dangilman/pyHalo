@@ -5,6 +5,8 @@ from pyHalo.pyhalo_base import pyHaloBase
 from pyHalo.single_realization import Realization
 from pyHalo.Rendering.render import render_los_dynamic, render_main_dynamic
 
+from scipy.interpolate import interp1d
+
 from copy import deepcopy
 
 class pyHaloDynamic(pyHaloBase):
@@ -37,10 +39,65 @@ class pyHaloDynamic(pyHaloBase):
         self._rendering_class_main = None
         self.reset_redshifts(zlens, zsource)
 
+    def render_dynamic_from_lensmodel(self, lensmodel_macro, kwargs_macro,
+                       type, args, realization_start, lens_centroid_x,
+                       lens_centroid_y, source_x, source_y, aperture_radius,
+                       verbose=False, include_mass_sheet_correction=False):
+
+        """
+
+        :param lensmodel_macro:
+        :param kwargs_macro:
+        :param type:
+        :param args:
+        :param realization_start:
+        :param lens_centroid_x:
+        :param lens_centroid_y:
+        :param source_x:
+        :param source_y:
+        :param aperture_radius:
+        :param verbose:
+        :param include_mass_sheet_correction:
+        :return:
+        """
+
+        lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args)
+
+        x_interp_list, y_interp_list = self.interpolated_ray_paths(lensmodel_macro, kwargs_macro,
+                    [lens_centroid_x], [lens_centroid_y], source_x, source_y, lens_plane_redshifts)
+
+        print(x_interp_list[0](lens_plane_redshifts))
+        print(y_interp_list[0](lens_plane_redshifts))
+        print(source_x, source_y)
+        a=input('continue')
+
+        realization_start = self.render_dynamic(type, args, realization_start, lens_centroid_x, lens_centroid_y,
+                                   x_interp_list, y_interp_list, aperture_radius, lens_plane_redshifts, delta_zs,
+                                   verbose, include_mass_sheet_correction)
+
+        return realization_start
+
     def render_dynamic(self, type, args, realization_start, lens_centroid_x, lens_centroid_y,
                        x_interp_list, y_interp_list, aperture_radius,
                        lens_plane_redshifts, delta_zs, verbose=False,
                        include_mass_sheet_correction=False):
+
+        """
+
+        :param type:
+        :param args:
+        :param realization_start:
+        :param lens_centroid_x:
+        :param lens_centroid_y:
+        :param x_interp_list:
+        :param y_interp_list:
+        :param aperture_radius:
+        :param lens_plane_redshifts:
+        :param delta_zs:
+        :param verbose:
+        :param include_mass_sheet_correction:
+        :return:
+        """
 
         self.halo_mass_function = self.build_LOS_mass_function(args)
         self._geometry = self.halo_mass_function.geometry
@@ -203,6 +260,70 @@ class pyHaloDynamic(pyHaloBase):
                                   dynamic=True)
 
         return realization, rendering_class
+
+    def interpolated_ray_paths(self, lens_model, kwargs, x_coords, y_coords,
+                    source_x, source_y, lens_plane_redshifts):
+
+        from lenstronomy.LensModel.lens_model import LensModel
+
+        lens_model_list_empty = []
+        zlist_empty = []
+        kwargs_empty = []
+        for i, zi in enumerate(lens_plane_redshifts):
+            lens_model_list_empty.append('CONVERGENCE')
+            zlist_empty.append(zi)
+            kwargs_empty.append({'kappa_ext': 0.})
+
+        lens_model_list, redshift_list, convention_index = \
+            self._lenstronomy_args_from_lensmodel(lens_model)
+
+        lens_model_list += lens_model_list_empty
+        redshift_list += zlist_empty
+        kwargs += kwargs_empty
+
+        lensmodel_new = LensModel(lens_model_list, z_lens=self.zlens,
+                                  z_source=self.zsource, lens_redshift_list=redshift_list,
+                                  cosmo=lens_model.cosmo, multi_plane=True,
+                                  numerical_alpha_class=None)
+
+        x_interp, y_interp = self._interpolate_ray_paths(x_coords, y_coords,
+                              lensmodel_new, kwargs, self.zsource, terminate_at_source=True,
+                                                   source_x=source_x, source_y=source_y)
+
+        return x_interp, y_interp
+
+    @staticmethod
+    def _lenstronomy_args_from_lensmodel(lensmodel):
+
+        lens_model_list = lensmodel.lens_model_list
+        redshift_list = lensmodel.redshift_list
+        convention_index = lensmodel.lens_model._observed_convention_index
+        return lens_model_list, redshift_list, convention_index
+
+    @staticmethod
+    def _interpolate_ray_paths(x_image, y_image, lens_model, kwargs_lens, zsource,
+                              terminate_at_source=False, source_x=None, source_y=None):
+
+        ray_angles_x = []
+        ray_angles_y = []
+
+        for (xi, yi) in zip(x_image, y_image):
+            x, y, redshifts, tz = lens_model.lens_model.ray_shooting_partial_steps(0., 0., xi, yi, 0, zsource,
+                                                                                   kwargs_lens)
+
+            angle_x = [xi] + [x_comoving / tzi for x_comoving, tzi in zip(x[1:], tz[1:])]
+            angle_y = [yi] + [y_comoving / tzi for y_comoving, tzi in zip(y[1:], tz[1:])]
+
+            if terminate_at_source:
+                assert source_x is not None
+                assert source_y is not None
+                angle_x[-1] = source_x
+                angle_y[-1] = source_y
+
+            ray_angles_x.append(interp1d(redshifts, angle_x))
+            ray_angles_y.append(interp1d(redshifts, angle_y))
+
+        return ray_angles_x, ray_angles_y
 
 
 
