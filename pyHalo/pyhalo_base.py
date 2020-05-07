@@ -44,7 +44,7 @@ class pyHaloBase(object):
             delta_zs.append(redshifts[i + 1] - redshifts[i])
         delta_zs.append(self.zsource - redshifts[-1])
 
-        return redshifts, np.round(delta_zs, 2)
+        return list(np.round(redshifts, 2)), np.round(delta_zs, 2)
 
     def reset_redshifts(self, zlens, zsource):
 

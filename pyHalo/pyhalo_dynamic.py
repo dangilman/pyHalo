@@ -39,10 +39,77 @@ class pyHaloDynamic(pyHaloBase):
         self._rendering_class_main = None
         self.reset_redshifts(zlens, zsource)
 
+    @staticmethod
+    def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
+                              terminate_at_source=False, source_x=None, source_y=None):
+
+        """
+        :param x_coordinates: x coordinates to interpolate (arcsec)
+        :param y_coordinates: y coordinates to interpolate (arcsec)
+        :param lens_model: instance of LensModel
+        :param kwargs_lens: keyword arguments for lens model
+        :param zsource: source redshift
+        :param terminate_at_source: fix the final angular coordinate to the source coordinate
+        :param source_x: source x coordinate (arcsec)
+        :param source_y: source y coordinate (arcsec)
+        :return: Instances of interp1d (scipy) that return the angular coordinate of a ray given a
+        comoving distance
+        """
+        ray_angles_x = []
+        ray_angles_y = []
+
+        for (xi, yi) in zip(x_coordinates, y_coordinates):
+            x, y, redshifts, tz = lens_model.lens_model.ray_shooting_partial_steps(0., 0., xi, yi, 0, zsource,
+                                                                                   kwargs_lens)
+
+            angle_x = [xi] + [x_comoving / tzi for x_comoving, tzi in zip(x[1:], tz[1:])]
+            angle_y = [yi] + [y_comoving / tzi for y_comoving, tzi in zip(y[1:], tz[1:])]
+
+            if terminate_at_source:
+                angle_x[-1] = source_x
+                angle_y[-1] = source_y
+
+            ray_angles_x.append(interp1d(tz, angle_x))
+            ray_angles_y.append(interp1d(tz, angle_y))
+
+        return ray_angles_x, ray_angles_y
+
+    def render_dynamic_with_macromodel(self, type, args, realization_start,
+                     lens_centroid_x, lens_centroid_y,
+                     macromodel_lensModel, kwargs_macromodel,
+                     source_x, source_y, aperture_radius, verbose=False,
+                       include_mass_sheet_correction=True):
+
+        """
+
+        :param type:
+        :param args:
+        :param realization_start:
+        :param lens_centroid_x:
+        :param lens_centroid_y:
+        :param macromodel_lensModel:
+        :param kwargs_macromodel:
+        :param source_x:
+        :param source_y:
+        :param aperture_radius:
+        :param verbose:
+        :param include_mass_sheet_correction:
+        :param global_render:
+        :return:
+        """
+
+        x_interp_list, y_interp_list = self.interpolate_ray_paths([lens_centroid_x], [lens_centroid_y],
+                                                                  macromodel_lensModel, kwargs_macromodel, self.zsource,
+                                                                  terminate_at_source=True, source_x=source_x,
+                                                                  source_y=source_y)
+
+        return self.render_dynamic(type, args, realization_start, lens_centroid_x, lens_centroid_y, x_interp_list,
+                                   y_interp_list, aperture_radius, verbose, include_mass_sheet_correction,
+                                   global_render=True)
+
     def render_dynamic(self, type, args, realization_start, lens_centroid_x, lens_centroid_y,
                        x_interp_list, y_interp_list, aperture_radius,
-                       lens_plane_redshifts, delta_zs, verbose=False,
-                       include_mass_sheet_correction=False, global_render=False):
+                       verbose=False, include_mass_sheet_correction=False, global_render=False):
 
         """
 
@@ -66,6 +133,8 @@ class pyHaloDynamic(pyHaloBase):
         each lensed image.
         :return:
         """
+
+        lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args)
 
         self.halo_mass_function = self.build_LOS_mass_function(args)
         self.geometry = self.halo_mass_function.geometry
