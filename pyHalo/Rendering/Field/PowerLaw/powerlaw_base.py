@@ -51,6 +51,11 @@ class PowerLawBase(LOSBase):
 
         for z, delta_z in zip(self.lens_plane_redshifts, self.delta_zs):
 
+            if z < kwargs_mass_sheets['zmin']:
+                continue
+            if z > kwargs_mass_sheets['zmax']:
+                continue
+
             volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z, None)
             norm = self.normalization(z, delta_z, self.geometry._zlens, self.halo_mass_function,
                                       self.rendering_args, volume_element_comoving)
@@ -80,7 +85,7 @@ class PowerLawBase(LOSBase):
     def keys_convergence_sheets(self):
 
         args_convergence_sheets = {}
-        required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale']
+        required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale', 'zmin', 'zmax']
 
         for key in required_keys:
             if key not in self.rendering_args.keys():

@@ -76,6 +76,7 @@ class pyHaloDynamic(pyHaloBase):
         else:
             geometry_render = Geometry(self.cosmology, self.zlens, self.zsource,
                                        self.geometry.cone_opening_angle, 'DOUBLE_CONE')
+
             if include_mass_sheet_correction:
                 print('WARNING: You specified include_mass_sheet_corretion = True for a local rendering of halos,'
                       'you should probably only do this for a global rendering of halos throughout the entire volume.')
@@ -158,7 +159,7 @@ class pyHaloDynamic(pyHaloBase):
         args_render = deepcopy(args)
 
         if self.zlens < args_render['zmin'] or self.zlens > args_render['zmax']:
-            return None
+            return None, None
 
         x_window_location, y_window_location = x_aperture(self.zlens), y_aperture(self.zlens)
 

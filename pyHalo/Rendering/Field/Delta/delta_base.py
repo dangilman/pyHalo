@@ -29,6 +29,11 @@ class DeltaBase(LOSBase):
 
         for z, delta_z in zip(self.lens_plane_redshifts, self.delta_zs):
 
+            if z < kwargs_mass_sheets['zmin']:
+                continue
+            if z > kwargs_mass_sheets['zmax']:
+                continue
+
             n_objects = self.normalization(z, delta_z, M, mass_fraction, self.geometry._zlens,
                                       self.halo_mass_function, self.rendering_args,
                                      None)
@@ -43,7 +48,7 @@ class DeltaBase(LOSBase):
     def keys_convergence_sheets(self):
 
         args_convergence_sheets = {}
-        required_keys = ['logM_delta', 'mass_fraction', 'kappa_scale']
+        required_keys = ['logM_delta', 'mass_fraction', 'kappa_scale', 'zmin', 'zmax']
 
         for key in required_keys:
             if key not in self.rendering_args.keys():
