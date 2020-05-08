@@ -8,12 +8,13 @@ from scipy.integrate import quad
 
 from copy import deepcopy
 
-def realization_at_z(realization,z):
+def realization_at_z(realization, z):
 
     halos = realization.halos_at_z(z)
 
     return Realization.from_halos(halos, realization.halo_mass_function,
-                                  realization._prof_params, realization._mass_sheet_correction)
+                                  realization._prof_params, realization._mass_sheet_correction,
+                                  realization.rendering_classes)
 
 class Realization(object):
 

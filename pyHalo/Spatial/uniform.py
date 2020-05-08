@@ -31,6 +31,7 @@ class Uniform(object):
 
         if N == 0:
             return [], [], [], []
+
         angle = np.random.uniform(0, 2 * np.pi, int(N))
 
         rmax = self.rmax2d_arcsec * rescale

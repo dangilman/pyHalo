@@ -26,10 +26,6 @@ class LOSBase(RenderingBase):
 
         return boost
 
-    def rescale_angle(self, z, angle_pad=0.8):
-
-        return self.geometry.background_angle_rescale(z, self._zlens, angle_pad)
-
     def render_positions_at_z(self, z, nhalos, xshift_arcsec, yshift_arcsec):
 
         x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._spatial_parameterization.draw(nhalos, z)
