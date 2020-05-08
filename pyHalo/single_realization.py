@@ -207,10 +207,12 @@ class Realization(object):
                         args=self._prof_params)
             halos.append(new_halo)
 
-        self._has_been_shifted = True
-
-        return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
+        new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self._mass_sheet_correction, rendering_classes=self.rendering_classes)
+
+        new_realization._has_been_shifted = True
+
+        return new_realization
 
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:
