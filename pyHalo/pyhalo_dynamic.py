@@ -141,7 +141,7 @@ class pyHaloDynamic(pyHaloBase):
 
         if global_render is True:
             geometry_render = self.geometry
-
+            assert 'cone_opening_angle' in args.keys(), 'Must specify cone_opening_angle in keyword arguments'
         else:
             geometry_render = Geometry(self.cosmology, self.zlens, self.zsource,
                                        self.geometry.cone_opening_angle, 'DOUBLE_CONE')

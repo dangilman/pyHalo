@@ -221,23 +221,7 @@ def set_default_kwargs(profile_params, dynamic, zsource):
 
     if not dynamic:
         if 'cone_opening_angle' not in profile_params.keys():
-
-            if 'R_ein_main' not in profile_params.keys():
-                raise Exception('must either specify cone_opening_angle, or (R_ein_main, opening_angle_factor) '
-                                'in keyword arguments.')
-            if 'opening_angle_factor' in profile_params.keys():
-                factor = profile_params['opening_angle_factor']
-            else:
-                factor = realization_default.opening_angle_factor
-
-            profile_params['cone_opening_angle'] = factor * profile_params['R_ein_main']
-            profile_params['opening_angle_factor'] = factor
-
-        if 'opening_angle_factor' not in profile_params.keys():
-            raise Exception('If you specify cone_opening_angle, you must also specify opening_angle_factor,'
-                            'where R_ein_main = cone_opening_angle / opening_angle_factor')
-
-        profile_params['R_ein_main'] = profile_params['cone_opening_angle'] * profile_params['opening_angle_factor'] ** -1
+            raise Exception('must specify cone_opening_angle in keyword arguments.')
 
     else:
         profile_params['cone_opening_angle'] = 6.

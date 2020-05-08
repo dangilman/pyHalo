@@ -27,7 +27,10 @@ class DeltaBase(LOSBase):
 
         M = 10**logM
 
-        for z, delta_z in zip(self.lens_plane_redshifts, self.delta_zs):
+        lens_plane_redshifts_half = self.lens_plane_redshifts[0::2]
+        delta_zs_double = 2 * self.delta_zs[0::2]
+
+        for z, delta_z in zip(lens_plane_redshifts_half, delta_zs_double):
 
             if z < kwargs_mass_sheets['zmin']:
                 continue
