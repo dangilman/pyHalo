@@ -44,7 +44,7 @@ class PowerLawBase(LOSBase):
 
         moment = 1
 
-        if log_m_break == 0 or log_m_break / log_mass_sheet_correction_min < 0.01:
+        if log_m_break == 0 or log_m_break / log_mass_sheet_correction_min < 0.001:
             use_analytic = True
         else:
             use_analytic = False
@@ -74,7 +74,7 @@ class PowerLawBase(LOSBase):
 
             kappa_sheets.append(negative_kappa)
 
-        return kappa_sheets, self.lens_plane_redshifts
+        return kappa_sheets, lens_plane_redshifts_half
 
     def normalization(self, z, delta_z, zlens, lensing_mass_function_class, rendering_args, volume_element_comoving):
 

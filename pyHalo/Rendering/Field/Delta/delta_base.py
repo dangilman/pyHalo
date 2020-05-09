@@ -45,7 +45,7 @@ class DeltaBase(LOSBase):
 
             kappa_sheets.append(-kappa_theory)
 
-        return kappa_sheets, self.lens_plane_redshifts
+        return kappa_sheets, lens_plane_redshifts_half
 
     @property
     def keys_convergence_sheets(self):
