@@ -2,6 +2,7 @@ import numpy
 from scipy.interpolate import interp1d
 from scipy.special import erfc
 from pyHalo.Halos.structural_parameters import HaloStructure
+from pyHalo.Scattering.sidm_interp import logrho as logrho_sidm
 
 class LensCosmo(object):
 
@@ -191,6 +192,15 @@ class LensCosmo(object):
 
         return 4 * numpy.pi * (vdis * (0.001 * self.cosmo.c * self.cosmo.Mpc) ** -1) ** 2 * \
                self.cosmo.D_A(zd, zsrc) * self.cosmo.D_A_z(zsrc) ** -1 * self.cosmo.arcsec ** -1
+
+    def sidm_rc_over_rs(self, M, z, cross_norm, v_power):
+
+        logM = numpy.log10(M)
+        rhos, rs, _ = self.NFW_params_physical_fromM(M, z)
+        log_rho_sidm = logrho_sidm(logM, z, cross_norm, v_power, 0.)
+        rho_sidm = 10**log_rho_sidm
+
+        return rhos/rho_sidm
 
     @property
     def point_mass_factor(self):

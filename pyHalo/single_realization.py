@@ -516,41 +516,16 @@ class Realization(object):
                 n += 1
         return n
 
-class RealizationFast(Realization):
+class SingleHalo(Realization):
 
     """
     A quick and dirty class useful for generating a realization with a few
     user-specified halos.
     """
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, zlens, zsource,
-                 cone_opening_angle, log_mlow=6, log_mhigh=10, mass_sheet_correction=False, kwargs_halo={}):
+    def __init__(self, halo_mass, x, y, r3d, mdef, z, zlens, zsource, subhalo_flag=True,
+                 cone_opening_angle=6, log_mlow=6, log_mhigh=10, mass_sheet_correction=False, kwargs_halo={}):
 
+        r2d = np.sqrt(x ** 2 + y ** 2)
 
-        mfunc = LensingMassFunction(Cosmology(), 10**6, 10**10, zlens,
-                                    zsource, cone_opening_angle)
-
-        tup = (masses, x, y, r2d, r3d, mdefs, z, subhalo_flag)
-
-        _aslist = False
-        for element in tup:
-            if isinstance(element, list) or isinstance(element, np.ndarray):
-                _aslist = True
-                break
-
-        if _aslist:
-            for element in tup:
-                assert isinstance(element, list) or isinstance(element, np.ndarray), \
-                    'All arguments must be either lists or floats.'
-
-        else:
-            tup = ([masses], [x], [y], [r2d], [r3d], [mdefs], [z], [subhalo_flag])
-
-        default_params = {'cone_opening_angle': cone_opening_angle, 'opening_angle_factor': 6,
-                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh}
-        default_params.update(kwargs_halo)
-
-        Realization.__init__(self, *tup, halo_mass_function=mfunc,
-                 halos = None, other_params = default_params,
-                             mass_sheet_correction = mass_sheet_correction)
-
+        super(SingleHalo, self).__init__([halo_mass], [x], )
