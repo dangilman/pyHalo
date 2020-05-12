@@ -63,18 +63,26 @@ def ode_system(x, f):
     z2 = -2 * x ** -1 * f[1] - np.exp(f[0])
     return [z1, z2]
 
-def integrate_profile(rho0, s0, r_s, r_1, rmax_fac=1.2, rmin_fac=0.01):
+def integrate_profile(rho0, s0, r_s, r_1, rmax_fac=1.2, rmin_fac=0.01,
+                      r_min=None, r_max=None):
 
     G = 4.3e-6  # units kpc and solar mass
     length_scale = np.sqrt(s0 ** 2 * (4 * np.pi * G * rho0) ** -1)
 
-    x_max = rmax_fac * r_1 * length_scale ** -1
+    if r_max is None:
+        x_max = rmax_fac * r_1 / length_scale
+    else:
+        x_max = r_max/length_scale
+
+    if r_min is None:
+        x_min = r_s * rmin_fac / length_scale
+    else:
+        x_min = r_min/length_scale
 
     # solve the ODE with initial conditions
     phi_0, phi_prime_0 = 0, 0
     N = 600
 
-    x_min = r_s * rmin_fac * length_scale ** -1
     xvalues = np.linspace(x_min, x_max, N)
 
     res = solve_ivp(ode_system, (x_min, x_max),

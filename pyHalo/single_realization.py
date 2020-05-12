@@ -524,8 +524,18 @@ class SingleHalo(Realization):
     """
 
     def __init__(self, halo_mass, x, y, r3d, mdef, z, zlens, zsource, subhalo_flag=True,
-                 cone_opening_angle=6, log_mlow=6, log_mhigh=10, mass_sheet_correction=False, kwargs_halo={}):
+                 cone_opening_angle=6, log_mlow=6, log_mhigh=10,
+                 kwargs_halo={}, cosmo=None):
 
         r2d = np.sqrt(x ** 2 + y ** 2)
 
-        super(SingleHalo, self).__init__([halo_mass], [x], )
+        if cosmo is None:
+            cosmo = Cosmology()
+        halo_mass_function = LensingMassFunction(cosmo, 10**log_mlow, 10**log_mhigh,
+                                                 zlens, zsource, cone_opening_angle, use_lookup_table=True)
+
+        kwargs_halo.update({'cone_opening_angle': cone_opening_angle})
+        super(SingleHalo, self).__init__([halo_mass], [x], [y], [r2d],
+                                         [r3d], [mdef], [z], [subhalo_flag], halo_mass_function,
+                                         other_params=kwargs_halo, mass_sheet_correction=False)
+

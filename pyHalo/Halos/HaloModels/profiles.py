@@ -3,6 +3,7 @@ from pyHalo.Scattering.isothermal_jeans import compute_r1, integrate_profile, so
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.interpolate import interp1d
+from scipy.ndimage.filters import gaussian_filter
 
 cosmo = Cosmology()
 lens_cosmo = LensCosmo(0.5, 1.5, cosmo)
@@ -25,7 +26,7 @@ def SIDMprofileApprox(r, rhos, rs, rt, rc, a=10):
 class CompositeSIDMProfile(object):
 
     def __init__(self, M, z, cross_section_norm, v_power, N_solve=5, plot=False,
-                 rmax_fac=10, rmin_fac=0.001):
+                 rmax_fac=10, rmin_fac=0.001, x_min=None, x_max=None):
 
         thalo = cosmo.halo_age(z)
 
@@ -39,7 +40,15 @@ class CompositeSIDMProfile(object):
 
         r_1 = compute_r1(rhonfw, rs_nfw, s0, cross_section_norm, v_power, thalo)
 
-        r, rho_isothermal = integrate_profile(rho0, s0, rs_nfw, r_1, rmax_fac, rmin_fac)
+        if x_max is None or x_max is None:
+            r, rho_isothermal = integrate_profile(rho0, s0, rs_nfw, r_1,
+                                              rmin_fac=rmin_fac, rmax_fac=rmax_fac)
+        else:
+
+            r_min, r_max = x_min * rs_nfw, x_max * rs_nfw
+
+            r, rho_isothermal = integrate_profile(rho0, s0, rs_nfw, r_1,
+                                              r_min=r_min, r_max=r_max)
 
         self.keywords_profile = keywords
 
@@ -52,7 +61,10 @@ class CompositeSIDMProfile(object):
         self.r_iso = r
         self.rho_isothermal = rho_isothermal
         self.rmax = r[-1]
+        self.rmin = r[0]
         self._rmatch = core_size_unitsrs * rs_nfw
+
+        assert self.rmin < self._rmatch
 
         if self.rmax <= self.r_1:
             print(self.rmax)
@@ -63,14 +75,31 @@ class CompositeSIDMProfile(object):
 
         self.rhos, self.rs = rhonfw, rs_nfw
 
-    def __call__(self, r, rt=100000):
+    def __call__(self, r, rt=100000, smooth=False, smooth_scale=0.01):
 
-        out = np.empty_like(r)
 
-        inds_iso = np.where(r <= self._rmatch)
-        inds_nfw = np.where(r > self._rmatch)
+        if isinstance(r, np.ndarray) or isinstance(r, list):
+            out = np.empty_like(r)
 
-        out[inds_iso] = self.rho_iso_interp(r[inds_iso])
-        out[inds_nfw] = TNFWprofile(r[inds_nfw], self.rhos, self.rs, rt)
+            inds_0 = np.where(r <= self.rmin)
+            inds_iso = np.where((r > self.rmin) & (r <= self._rmatch))
+            inds_nfw = np.where(r > self._rmatch)
 
-        return out
+            out[inds_0] = 0.
+            out[inds_iso] = self.rho_iso_interp(r[inds_iso])
+            out[inds_nfw] = TNFWprofile(r[inds_nfw], self.rhos, self.rs, rt)
+
+            if smooth:
+                out = gaussian_filter(out, sigma=smooth_scale*self.rs)
+            return out
+
+        else:
+
+            if r <= self.rmin:
+                return 0.
+            elif r <= self._rmatch:
+                return self.rho_iso_interp(r)
+            else:
+                return TNFWprofile(r, self.rhos, self.rs, rt)
+
+
