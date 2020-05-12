@@ -10,118 +10,9 @@ from pyHalo.Scattering.cross_sections import VelocityDependentCross
 
 cosmo = Cosmology()
 
-class ISONFW(object):
-
-    def __init__(self, riso, rhoiso, rhos_nfw, rs_nfw, rmatch):
-
-        self._iso_rmin = riso[0]
-        self._iso_rmax = riso[-1]
-        self._rho0 = rhoiso[0]
-
-        self._rhos = rhos_nfw
-        self._rs = rs_nfw
-
-        self._rinterpmin = riso[0]
-
-        if rmatch > riso[-1]:
-            print('Warning, you are trying to match profiles outside interpolation range. Setting rmatch = riso[-1].')
-            rmatch = riso[-1]
-
-        self._rinterpmax = rmatch
-
-        self._rho_inner_interp = interp1d(riso, rhoiso)
-
-    def _eval(self, r):
-
-        if r > self._rinterpmax:
-            return self._rhonfw(r)
-        elif r<self._rinterpmin:
-            return self._rho0
-        else:
-            return self._rho_inner_interp(r)
-
-    def __call__(self, r):
-
-        if isinstance(r, float) or isinstance(r, int):
-            return self._eval(r)
-        else:
-            out = [self._eval(ri) for ri in r]
-            return np.array(out)
-
-    def _rhonfw(self, r):
-
-        x= r * self._rs ** -1
-
-        return self._rhos*(x * (1+x)**2)**-1
-
-    def join_profiles(self, rvals, rho1, rho2, r_join):
-        idx = np.argsort(np.absolute(rvals - r_join))[0]
-        rho_past1 = rho1[idx:]
-        rho_past2 = rho2[idx:]
-        idx = np.argsort(np.absolute(rho_past1 - rho_past2))[0]
-        return np.append(rho1[0:idx], rho2[idx:])
-
-
 def halo_age(z):
 
     return cosmo.halo_age(z)
-
-def cored_profile(r, rhocore, rcore, k=5):
-    x = r * rcore ** -1
-    return rhocore * (1 + x ** k)
-
-def _interpolating_function(r, r_core, rs):
-    arg = (r - r_core) / (rs - r_core)
-    if isinstance(r, np.ndarray):
-
-        out = 0.5 * (1 + np.cos(np.pi * arg))
-        out[np.where(r < r_core)] = 1
-        out[np.where(r > rs)] = 0
-        return out
-    else:
-        if r < r_core:
-            return 0
-        elif r > r_core:
-            return 1
-        else:
-            return 0.5 * (1 + np.cos(np.pi * arg))
-
-
-def _hybrid_analytic_point(r, rhocore, rcore, rhos, rmatch):
-    f = _interpolating_function(r, rcore, rmatch)
-    return (1 - f) * cored_profile(r, rhocore, rcore) + nfwprofile_density(r, rhos, rs) * f
-
-
-def hybrid_analytic(r, rhocore, rcore, rhos, rmatch):
-    f = _interpolating_function(r, rcore, rmatch)
-
-    return f * cored_profile(r, rhocore, rcore) + (1 - f) * nfwprofile_density(r, rhos, rs)
-
-def first_crossing(rvalues, rho_iso, rho_nfw):
-
-    assert len(rvalues) == len(rho_iso)
-    assert len(rvalues) == len(rho_nfw)
-    diff = rho_iso - rho_nfw
-    try:
-        diff =np.where(np.sign(diff[:-1]) != np.sign(diff[1:]))[0] + 1
-        return rvalues[diff[0]]
-    except:
-        idx = np.argsort(np.absolute(diff))
-        return rvalues[idx]
-
-def modified_nfwprofile_density(r, rhos, rs, rc, a = 10):
-
-    x = r * rs ** -1
-    beta = rc * rs ** -1
-    a_inv = a ** -1
-    return rhos / (((beta ** a + x ** a) ** a_inv) * (1+x)**2)
-
-def modified_burkert_density(rho0, rs, rc, r):
-
-    x = r * rs ** -1
-    beta = rc * rs ** -1
-
-    return rho0 * ((beta + x)*(1 + x**2)) ** -1
 
 def nfwprofile_density(r, rhos, rs):
     x = r * rs ** -1
@@ -211,11 +102,7 @@ def profile_density(r, r_iso, rho_iso):
 
     interp = interp1d(r_iso, rho_iso)
 
-    try:
-        return interp(r)
-    except:
-        index = np.where(r_iso>r)[0]
-        return rho_iso[index]
+    return interp(r)
 
 def nfwprofile_mass(rhos, rs, rmax):
     x = rmax * rs ** -1
@@ -248,7 +135,7 @@ def compute_r1(rhos, rs, v, cross_section_norm, v_power, t_halo):
 
     return lam * rs
 
-def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
+def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo, rmin_fac, rmax_fac,
           rho_start, rho_end, s0_start, s0_end, N, plot=False, do_E=False, do_v=False):
 
     s0nfw = velocity_dispersion_NFW(rsnfw, rhonfw, rsnfw)
@@ -264,10 +151,7 @@ def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
     coords = np.vstack([logrhoarr.ravel(), s0arr.ravel()]).T
     denarr = []
     marr = []
-    earr = []
-    varr = []
     pcount = 0
-    cfirstcross = []
 
     for i in range(0, int(coords.shape[0])):
         if i in percent and plot:
@@ -275,7 +159,9 @@ def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
             pcount += 1
 
         r1 = compute_r1(rhonfw, rsnfw, coords[i, 1], cross_section_norm, v_power, t_halo)
-        r_iso, rho_iso = integrate_profile(10 ** coords[i, 0], coords[i, 1], rsnfw, r1, rmax_fac=2)
+        r_iso, rho_iso = integrate_profile(10 ** coords[i, 0],
+                                           coords[i, 1], rsnfw, r1, rmin_fac=rmin_fac,
+                                           rmax_fac=rmax_fac)
 
         mass_nfw, mass_iso = nfwprofile_mass(rhonfw, rsnfw, r1), profile_mass(r_iso, rho_iso, r1)
         nfw_den, sidm_den = nfwprofile_density(r1, rhonfw, rsnfw), profile_density(r1, r_iso, rho_iso)
@@ -288,22 +174,9 @@ def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
 
         marr.append(mass_pen)
         denarr.append(den_pen)
-        cfirstcross.append(first_crossing(r_iso, rho_iso, nfwprofile_density(r_iso, rhonfw, rsnfw)))
-
-        #vpen = coords[i, 1] * velocity_dispersion_NFW(r1, rhonfw, rsnfw) ** -1
-        #varr.append(np.absolute(vpen - 1))
 
     denarr, marr = np.absolute(np.array(denarr).reshape(N, N)), \
                    np.absolute(np.array(marr).reshape(N, N))
-
-
-    # if do_E:
-    #     earr = np.absolute(np.array(earr).reshape(N, N))
-    #     tot = marr + earr
-    # elif do_v:
-    #     varr = np.absolute(np.array(varr).reshape(N, N))
-    #     tot = marr + varr
-    # else:
 
     tot = marr + denarr
 
@@ -312,7 +185,6 @@ def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
     if plot: print('fit: ', tot.ravel()[minidx])
     rho0, s0 = 10 ** coords[minidx, 0], coords[minidx, 1]
 
-    #core_first_crossing = cfirstcross[minidx]
     core_density_ratio = rhonfw / rho0
 
     rhocenter.append(rho0)
@@ -342,26 +214,40 @@ def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
         plt.show()
         a=input('continue')
 
-    return rho0, s0, core_density_ratio, fit_quality
+    keywords = {'r1': r1, 'r_iso': r_iso, 'rho_iso': rho_iso,
+                'rhonfw': rhonfw, 'rsnfw': rsnfw}
 
-def solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo, N, plot=False, tol = 0.002):
+    return rho0, s0, core_density_ratio, fit_quality, keywords
 
-    rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
+def solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
+                    N, plot=False, rmin_fac=0.01, rmax_fac=1.2, tol = 0.002):
+
+    rho0, s0, core_size_unitsrs, fit_quality, keywords = _solve_iterative(
+        rhonfw, rsnfw, cross_section_norm, v_power, t_halo, rmin_fac, rmax_fac,
                                                                 N, plot=plot, tol=tol,
                                                                 s0min_scale=0.4, s0max_scale=1.6,
-                                                                rhomin_scale=0.25, rhomax_scale=3.6)
+                                                                rhomin_scale=0.25, rhomax_scale=3.6,
+                                                                          )
+
+    # r_iso, rho_iso = keywords['r_iso'], keywords['rho_iso']
+    # import matplotlib.pyplot as plt
+    # plt.loglog(r_iso, nfwprofile_density(r_iso, rhonfw, rsnfw), color='k')
+    # plt.loglog(r_iso, rho_iso, color='r')
+    # plt.show()
 
     if fit_quality > 0.1:
-        rho0, s0, core_size_unitsrs, fit_quality = _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
+        rho0, s0, core_size_unitsrs, fit_quality, keywords = _solve_iterative(
+            rhonfw, rsnfw, cross_section_norm, v_power, t_halo, rmin_fac, rmax_fac,
                                                                     8, plot=plot, tol=tol,
                                                                     s0min_scale=0.2, s0max_scale=2.0,
                                                                     rhomin_scale=0.1, rhomax_scale=4.5)
     if fit_quality > 0.1:
         rho0, s0, core_size_unitsrs, fit_quality = np.nan, np.nan, np.nan, np.nan
 
-    return rho0, s0, core_size_unitsrs, fit_quality
+    return rho0, s0, core_size_unitsrs, fit_quality, keywords
 
 def _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
+                     rmin_fac, rmax_fac,
                      N, plot=False, tol = 0.004, do_E = False,
                      s0min_scale=0.5, s0max_scale=1.5,
                      rhomin_scale=0.3, rhomax_scale=3.5):
@@ -393,7 +279,8 @@ def _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
 
     while fit_quality > tol:
 
-        rho0, s0, core_size_unitsrs, fit_quality = solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
+        rho0, s0, core_size_unitsrs, fit_quality, keywords = solve(rhonfw, rsnfw, cross_section_norm, v_power,
+                                                                   t_halo, rmin_fac, rmax_fac,
                          rhomin, rhomax, s0min, s0max, Nvalues[iter_count-1], plot=plot, do_E=do_E, do_v=False)
 
         core_size_unitsrs = np.round(core_size_unitsrs, 2)
@@ -426,5 +313,5 @@ def _solve_iterative(rhonfw, rsnfw, cross_section_norm, v_power, t_halo,
         s0 = np.nan
         core_size_unitsrs = np.nan
 
-    return rho0, s0, core_size_unitsrs, fit_quality
+    return rho0, s0, core_size_unitsrs, fit_quality, keywords
 

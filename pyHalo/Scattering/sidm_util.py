@@ -16,8 +16,9 @@ def sidm_central_density_from_mass_exact(c_norm, vpower, m, z, N=5, plot=False):
 
     rhonfw, rs_nfw, _ = lens_cosmo.NFW_params_physical_fromM(m, z)
 
-    rho0, s0, core_size_unitsrs, fit_quality = \
+    rho0, s0, core_size_unitsrs, fit_quality, _ = \
         solve_iterative(rhonfw, rs_nfw, c_norm, vpower, thalo, N, plot)
+
     return rho0, rhonfw/rho0, rs_nfw * rhonfw/rho0, s0
 
 def sidm_central_density_from_mass_interpolated(c_norm, vpower, m, z, c_scatter=False):
@@ -76,7 +77,7 @@ class CompositeSIDMProfile(object):
         rho0, vdis_isothermal, core_density_ratio, _ = solve_iterative(rho_s, r_s, cross_section_norm, v_power, t_halo,
                                                                        6, plot=False,
                                                                        tol=0.01)
-        r_1 = compute_r1(rho_s, r_s, vdis_isothermal, cross_section_norm, v_power, t_halo,)
+        r_1 = compute_r1(rho_s, r_s, vdis_isothermal, cross_section_norm, v_power, t_halo)
         domain_r, rhoiso = integrate_profile(rho0, vdis_isothermal, r_s, r_1)
         domain_x_inner = domain_r[0:-1] / r_s
 
