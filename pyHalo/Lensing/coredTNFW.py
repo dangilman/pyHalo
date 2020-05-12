@@ -1,4 +1,5 @@
-from pyHalo.Lensing.numerical_alphas.coreNFWmodifiedtrunc import InterpCNFWmodtrunc
+from pyHalo.Lensing.numerical_alphas.coreNFWmodifiedtrunc \
+    import InterpCNFWmodtrunc, InterpCNFWmodtruncOld
 import numpy as np
 
 class coreTNFW(object):
@@ -10,7 +11,7 @@ class coreTNFW(object):
     def __init__(self, lens_cosmo):
 
         self.lens_cosmo = lens_cosmo
-        self.numerical_class = InterpCNFWmodtrunc()
+        self.numerical_class = InterpCNFWmodtruncOld()
 
     def params(self, x, y, mass, redshift, concentration, r_trunc_kpc, b):
 
