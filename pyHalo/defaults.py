@@ -109,6 +109,8 @@ class RealizationDefaults(object):
         self.subtract_subhalo_mass_sheet = True
         self.draw_poisson = True
 
+        self.subhalo_spatial_distribution = 'HOST_NFW'
+
         self.kappa_scale = 1
 
 ####################################################################################
@@ -176,10 +178,17 @@ def set_default_kwargs(profile_params, dynamic, zsource):
 
     if 'parent_m200' in profile_params.keys():
         profile_params.update({'parent_m200': profile_params['parent_m200']})
+    elif 'log_m_host' in profile_params.keys():
+        profile_params.update({'parent_m200': 10**profile_params['log_m_host']})
     else:
         if print_defaults:
             print('Warning: halo mass not specified, assuming a parent halo mass of 10^13.')
         profile_params.update({'parent_m200': realization_default.m_parent})
+
+    if 'subhalo_spatial_distribution' not in profile_params.keys():
+        profile_params.update({'subhalo_spatial_distribution':
+                               realization_default.subhalo_spatial_distribution})
+
     if 'r_tidal' not in profile_params.keys():
         profile_params.update({'r_tidal': realization_default.default_r_tidal})
     if 'LOS_normalization' in profile_params.keys():

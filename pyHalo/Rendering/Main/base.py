@@ -1,7 +1,8 @@
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 from pyHalo.Spatial.nfw import NFW3D
+from pyHalo.Spatial.uniform import Uniform
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Spatial.keywords import subhalo_spatial_NFW
+from pyHalo.Spatial.keywords import subhalo_spatial_NFW, subhalo_spatial_uniform
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, \
     integrate_power_law_analytic
 from pyHalo.Rendering.Main.SHMF_normalizations import *
@@ -20,11 +21,26 @@ class MainLensBase(RenderingBase):
 
         self.rendering_args = self.keyword_parse(args, kpc_per_arcsec_zlens, zlens)
 
-        spatial_args = subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo)
+        if 'subhalo_spatial_distribution' not in args.keys():
+            raise Exception('must specify a value for the subhalo_spatial_distribution keyword.'
+                            ' Possibilities are UNIFORM OR HOST_NFW.')
+
+        if args['subhalo_spatial_distribution'] == 'UNIFORM':
+            spatial_args = subhalo_spatial_uniform(args)
+            spatial_args['geometry'] = geometry
+            spatial_class = Uniform
+
+        elif args['subhalo_spatial_distribution'] == 'HOST_NFW':
+            spatial_args = subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo)
+            spatial_class = NFW3D
+
+        else:
+            raise Exception('subhalo_spatial_distribution '+str(args['subhalo_spatial_distribution'])+
+                            ' not recognized. Possibilities are UNIFORM OR HOST_NFW.')
 
         self._mass_func_parameterization = BrokenPowerLaw(**self.rendering_args)
 
-        self.spatial_parameterization = NFW3D(**spatial_args)
+        self.spatial_parameterization = spatial_class(**spatial_args)
 
         self._center_x, self._center_y = x_center_lens, y_center_lens
 

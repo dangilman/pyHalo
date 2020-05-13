@@ -27,7 +27,7 @@ class Uniform(object):
         self.rmax2d_arcsec = rmax2d_arcsec
         self._geo = geometry
 
-    def draw(self, N, z_plane, rescale=1.0, center_x = 0, center_y = 0):
+    def draw(self, N, z_plane, rescale=1.0, center_x=0, center_y=0):
 
         if N == 0:
             return [], [], [], []

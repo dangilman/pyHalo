@@ -68,7 +68,7 @@ class NFW3D(object):
             if prob >= u:
                 return xprop, yprop, r2dprop, r3dprop
 
-    def draw(self, N):
+    def draw(self, N, zlens):
 
         x_kpc, y_kpc, r2d_kpc, r3d_kpc = [], [], [], []
 
@@ -157,7 +157,7 @@ class NFW3DFast(object):
         cdf_array, _, self._cdf_inv_func = approx_cdf_1d(x, pdf)
         self._umin, self._umax = cdf_array[0], cdf_array[-1]
 
-    def draw(self, N):
+    def draw(self, N, zlens):
 
         r3d, x, y, r2d, z = [], [], [], [], []
 

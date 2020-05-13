@@ -6,6 +6,12 @@ def LOS_spatial_global(args):
     args_spatial['cone_opening_angle'] = args['cone_opening_angle']
     return args_spatial
 
+def subhalo_spatial_uniform(args):
+
+    args_spatial = {}
+    args_spatial['rmax2d_arcsec'] = 0.5 * args['cone_opening_angle']
+    return args_spatial
+
 def subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo):
     args_spatial = {}
 
