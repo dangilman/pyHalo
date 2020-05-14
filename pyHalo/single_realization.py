@@ -276,7 +276,7 @@ class Realization(object):
 
         if self._prof_params['subtract_exact_mass_sheets']:
 
-            kappa_sheets = [self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, self.geometry)
+            kappa_sheets = [-self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, self.geometry)
                                      for zi in self.unique_redshifts]
 
             _redshifts = self.unique_redshifts
