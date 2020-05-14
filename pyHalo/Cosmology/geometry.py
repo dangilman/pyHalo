@@ -159,6 +159,8 @@ class Geometry(object):
 class Cylinder(object):
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle):
+        
+        self._cosmo = cosmology
 
         self.opening_angle_radians = opening_angle * cosmology.arcsec
 
@@ -167,8 +169,6 @@ class Cylinder(object):
         self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
 
         self.comoving_radius_cylinder = 0.5 * self.opening_angle_radians * self.d_c_lens
-
-        self._cosmo = cosmology
 
         self._zlens, self._zsource = z_lens, z_source
 
