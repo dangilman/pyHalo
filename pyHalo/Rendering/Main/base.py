@@ -26,6 +26,7 @@ class MainLensBase(RenderingBase):
                             ' Possibilities are UNIFORM OR HOST_NFW.')
 
         if args['subhalo_spatial_distribution'] == 'UNIFORM':
+            raise Exception('UNIFORM subhalo distribution not yet implemented.')
             spatial_args = subhalo_spatial_uniform(args)
             spatial_args['geometry'] = geometry
             spatial_class = Uniform

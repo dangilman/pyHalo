@@ -159,7 +159,7 @@ class Geometry(object):
 class Cylinder(object):
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle):
-        
+
         self._cosmo = cosmology
 
         self.opening_angle_radians = opening_angle * cosmology.arcsec

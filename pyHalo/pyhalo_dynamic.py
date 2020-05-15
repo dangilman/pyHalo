@@ -39,41 +39,6 @@ class pyHaloDynamic(pyHaloBase):
         self._rendering_class_main = None
         self.reset_redshifts(zlens, zsource)
 
-    @staticmethod
-    def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
-                              terminate_at_source=False, source_x=None, source_y=None):
-
-        """
-        :param x_coordinates: x coordinates to interpolate (arcsec)
-        :param y_coordinates: y coordinates to interpolate (arcsec)
-        :param lens_model: instance of LensModel
-        :param kwargs_lens: keyword arguments for lens model
-        :param zsource: source redshift
-        :param terminate_at_source: fix the final angular coordinate to the source coordinate
-        :param source_x: source x coordinate (arcsec)
-        :param source_y: source y coordinate (arcsec)
-        :return: Instances of interp1d (scipy) that return the angular coordinate of a ray given a
-        comoving distance
-        """
-        ray_angles_x = []
-        ray_angles_y = []
-
-        for (xi, yi) in zip(x_coordinates, y_coordinates):
-            x, y, redshifts, tz = lens_model.lens_model.ray_shooting_partial_steps(0., 0., xi, yi, 0, zsource,
-                                                                                   kwargs_lens)
-
-            angle_x = [xi] + [x_comoving / tzi for x_comoving, tzi in zip(x[1:], tz[1:])]
-            angle_y = [yi] + [y_comoving / tzi for y_comoving, tzi in zip(y[1:], tz[1:])]
-
-            if terminate_at_source:
-                angle_x[-1] = source_x
-                angle_y[-1] = source_y
-
-            ray_angles_x.append(interp1d(tz, angle_x))
-            ray_angles_y.append(interp1d(tz, angle_y))
-
-        return ray_angles_x, ray_angles_y
-
     def render_dynamic_with_macromodel(self, type, args, realization_start,
                      lens_centroid_x, lens_centroid_y,
                      macromodel_lensModel, kwargs_macromodel,
@@ -82,20 +47,25 @@ class pyHaloDynamic(pyHaloBase):
 
         """
 
-        :param type:
-        :param args:
-        :param realization_start:
-        :param lens_centroid_x:
-        :param lens_centroid_y:
-        :param macromodel_lensModel:
-        :param kwargs_macromodel:
-        :param source_x:
-        :param source_y:
-        :param aperture_radius:
-        :param verbose:
-        :param include_mass_sheet_correction:
-        :param global_render:
-        :return:
+        :param type: the kind of realization to generate. options are:
+         'line_of_sight' -> LOS halos only
+         'main_lens' -> subhalos only
+         'composite_powerlaw' -> both LOS and subhalos
+        :param args: the keyword arguments for the realization (e.g. normalization of subhalo mass func., etc.)
+        :param realization_start: a realization onto which you append a new realization. Can be None if you want to create a
+        realization from scratch
+        :param lens_centroid_x: the x-coordinate of the lens centroid in arcsec
+        :param lens_centroid_y: the y-coordinate of the lens centroid in arcsec
+        For both of the above, (0, 0) is usually a good enough starting point
+        :param macromodel_lensModel: and instance of LensModel (lenstronomy) with only the main deflector and
+        any line of sight or satellite galaxies included. These large deflectors determine the path of the light.
+        :param kwargs_macromodel: keyword arguments for macromodel_lensModel
+        :param source_x: the source position (arcsec)
+        :param source_y: the source position (arcsec)
+        :param aperture_radius: the size of the rendering area. This is also = 0.5*cone_opening_angle
+        :param verbose: whether to print stuff
+        :param include_mass_sheet_correction: whether to apply negative convergence sheet corrections after adding halos
+        :return: instance of SingleRealization automatically shifted to lie along the path traversed by the light
         """
 
         x_interp_list, y_interp_list = self.interpolate_ray_paths([lens_centroid_x], [lens_centroid_y],
@@ -109,29 +79,36 @@ class pyHaloDynamic(pyHaloBase):
 
     def render_dynamic(self, type, args, realization_start, lens_centroid_x, lens_centroid_y,
                        x_interp_list, y_interp_list, aperture_radius,
-                       verbose=False, include_mass_sheet_correction=False, global_render=False):
+                       verbose=False, include_mass_sheet_correction=False, global_render=True):
 
         """
 
-        :param type:
-        :param args:
-        :param realization_start:
-        :param lens_centroid_x:
-        :param lens_centroid_y:
-        :param x_interp_list:
-        :param y_interp_list:
-        :param aperture_radius:
-        :param lens_plane_redshifts:
-        :param delta_zs:
-        :param verbose:
-        :param include_mass_sheet_correction:
-        :param global_render: if True, then the Geometry class is the one specified in kwargs_halo_mass function.
-        If False, then a DOUBLE_CONE geometry is used. This is important because it affects how halos are
-        rendered in apertures.
+        :param type: the kind of realization to generate. options are:
+         'line_of_sight' -> LOS halos only
+         'main_lens' -> subhalos only
+         'composite_powerlaw' -> both LOS and subhalos
+        :param args: the keyword arguments for the realization (e.g. normalization of subhalo mass func., etc.)
+        :param realization_start: a realization onto which you append a new realization. Can be None if you want to create a
+        realization from scratch
+        :param lens_centroid_x: the x-coordinate of the lens centroid in arcsec
+        :param lens_centroid_y: the y-coordinate of the lens centroid in arcsec
+        For both of the above, (0, 0) is usually a good enough starting point
+        :param macromodel_lensModel: and instance of LensModel (lenstronomy) with only the main deflector and
+        any line of sight or satellite galaxies included. These large deflectors determine the path of the light.
+        :param x_interp_list: a list of scipy interp1d functions that return the angular position of a lensed light ray
+        given a co-moving distance. See interpolate_ray_paths function
+        :param y_interp_list: ^
+        :param aperture_radius: the size of the rendering area. This is also = 0.5*cone_opening_angle
+        :param verbose: whether to print stuff
+        :param include_mass_sheet_correction: whether to apply negative convergence sheet corrections after adding halos
+        :param global render: flag to specify whether this is the global realization, or halos rendered around each image
+        leave this =TRUE for most applications
+        :return: instance of SingleRealization automatically shifted to lie along the path traversed by the light
+        specified by x_interp_list, y_interp_list
 
-        Recommended usage is an initial `global' rendering with global_render = True, followed by a local render around
-        each lensed image.
-        :return:
+        You can use this to creat a full realization that follows the path of the light through the entire lesing volume
+        by using the interpolate_ray_paths function to interpolate the path of a ray fired through the lens centroid with
+        termminate_at_source=True.  
         """
 
         lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args)
