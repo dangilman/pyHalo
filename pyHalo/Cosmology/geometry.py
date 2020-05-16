@@ -188,7 +188,7 @@ class DoubleCone(object):
 
         self._cosmo = cosmology
 
-        self._angle_pad = 0.9
+        self._angle_pad = 0.8
 
         d_c_lens = self._cosmo.D_C_transverse(z_lens)
         d_c_lens_source = self._cosmo.D_C_transverse(z_source) - d_c_lens
