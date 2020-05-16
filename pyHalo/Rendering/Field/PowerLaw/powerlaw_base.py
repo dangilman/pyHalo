@@ -49,10 +49,10 @@ class PowerLawBase(LOSBase):
         else:
             use_analytic = False
 
-        lens_plane_redshifts_half = self.lens_plane_redshifts[0::2]
-        delta_zs_double = 2*self.delta_zs[0::2]
+        lens_plane_redshifts = self.lens_plane_redshifts[0::2]
+        delta_zs = 2*self.delta_zs[0::2]
 
-        for z, delta_z in zip(lens_plane_redshifts_half, delta_zs_double):
+        for z, delta_z in zip(lens_plane_redshifts, delta_zs):
 
             if z < kwargs_mass_sheets['zmin']:
                 continue
@@ -60,6 +60,7 @@ class PowerLawBase(LOSBase):
                 continue
 
             volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z, None)
+
             norm = self.normalization(z, delta_z, self.geometry._zlens, self.halo_mass_function,
                                       self.rendering_args, volume_element_comoving)
             plaw_index = self.halo_mass_function.plaw_index_z(z)
@@ -74,7 +75,7 @@ class PowerLawBase(LOSBase):
 
             kappa_sheets.append(negative_kappa)
 
-        return kappa_sheets, lens_plane_redshifts_half
+        return kappa_sheets, lens_plane_redshifts
 
     def normalization(self, z, delta_z, zlens, lensing_mass_function_class, rendering_args, volume_element_comoving):
 

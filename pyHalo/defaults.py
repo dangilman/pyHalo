@@ -232,9 +232,6 @@ def set_default_kwargs(profile_params, dynamic, zsource):
         if 'cone_opening_angle' not in profile_params.keys():
             raise Exception('must specify cone_opening_angle in keyword arguments.')
 
-    else:
-        profile_params['cone_opening_angle'] = 6.
-
     return profile_params
 
 

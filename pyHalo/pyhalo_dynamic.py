@@ -108,7 +108,7 @@ class pyHaloDynamic(pyHaloBase):
 
         You can use this to creat a full realization that follows the path of the light through the entire lesing volume
         by using the interpolate_ray_paths function to interpolate the path of a ray fired through the lens centroid with
-        termminate_at_source=True.  
+        termminate_at_source=True.
         """
 
         lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args)
@@ -127,6 +127,7 @@ class pyHaloDynamic(pyHaloBase):
                 print('WARNING: You specified include_mass_sheet_corretion = True for a local rendering of halos,'
                       'you should probably only do this for a global rendering of halos throughout the entire volume.')
 
+
         kwargs_init = self._add_profile_params(args, True)
 
         args = deepcopy(kwargs_init)
@@ -138,7 +139,8 @@ class pyHaloDynamic(pyHaloBase):
             realization_new, rendering_class_main, rendering_class_LOS = self._render(type, args, aperture_radius,
                                            lens_centroid_x, lens_centroid_y,
                                            x_position_interp, y_position_interp,
-                                           lens_plane_redshifts, delta_zs, include_mass_sheet_correction, geometry_render)
+                                           lens_plane_redshifts, delta_zs, include_mass_sheet_correction,
+                                            geometry_render, global_render)
 
             if realization_start is None:
                 realization_start = realization_new
@@ -150,9 +152,9 @@ class pyHaloDynamic(pyHaloBase):
                 new_foreground = realization_new.number_of_halos_before_redshift(self.zlens)
                 new_background = realization_new.number_of_halos_after_redshift(self.zlens)
                 new_subhalos = realization_new.number_of_halos_at_redshift(self.zlens)
-                print('added ' + str(new_foreground) + ' foreground halos around coordinate '+str(j+1))
-                print('added ' + str(new_subhalos) + ' subhalos halos around coordinate ' + str(j + 1))
-                print('added ' + str(new_background) + ' background halos around coordinate '+str(j+1))
+                print('added ' + str(new_foreground) + ' halos before the lens redshift around coordinate '+str(j+1))
+                print('added ' + str(new_subhalos) + ' halos at the lens redshift ' + str(j + 1))
+                print('added ' + str(new_background) + ' halos after the lens redshift around coordinate '+str(j+1))
 
         rendering_classes = []
 
@@ -167,7 +169,8 @@ class pyHaloDynamic(pyHaloBase):
 
     def _render(self, type, args, aperture_radius, x_centroid_main, y_centroid_main,
                             x_position_interp, y_position_interp,
-                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction, geometry_render):
+                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction,
+                            geometry_render, global_render):
 
         rendering_class_main, rendering_class_LOS = None, None
 
@@ -181,7 +184,8 @@ class pyHaloDynamic(pyHaloBase):
 
                 realization_LOS, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
                                                            aperture_radius, lens_plane_redshifts, delta_zs,
-                                                           include_mass_sheet_correction, geometry_render)
+                                                           include_mass_sheet_correction, geometry_render,
+                                                                                global_render)
 
                 if realization is None:
                     realization = realization_LOS
@@ -192,7 +196,8 @@ class pyHaloDynamic(pyHaloBase):
 
             realization, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
                                                        aperture_radius, lens_plane_redshifts, delta_zs,
-                                                   include_mass_sheet_correction, geometry_render)
+                                                   include_mass_sheet_correction, geometry_render,
+                                                                        global_render)
 
         else:
             raise Exception('rendering type '+str(type) + ' not recognized.')
@@ -243,14 +248,15 @@ class pyHaloDynamic(pyHaloBase):
         return realization, self._rendering_class_main
 
     def _render_dynamic_los(self, args, x_position_interp, y_position_interp, aperture_radius,
-                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction, geometry_render):
+                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction, geometry_render,
+                            global_render):
 
         args_render = deepcopy(args)
 
         if args['mass_func_type'] == 'POWER_LAW':
 
             rendering_class = LOSPowerLawDynamic(args_render, self.halo_mass_function, geometry_render,
-                                                 aperture_radius,
+                                                 aperture_radius, global_render,
                                                  lens_plane_redshifts, delta_zs)
 
             masses, x, y, r2d, r3d, redshifts = render_los_dynamic(rendering_class, aperture_radius,
@@ -265,8 +271,8 @@ class pyHaloDynamic(pyHaloBase):
 
             minimum_mass = args_render['log_mlow']
             rendering_class = LOSDeltaDynamic(args_render, self.halo_mass_function, geometry_render,
-                                              aperture_radius, minimum_mass,
-                                                 lens_plane_redshifts, delta_zs)
+                                              aperture_radius, global_render,
+                                              minimum_mass, lens_plane_redshifts, delta_zs)
 
             masses, x, y, r2d, r3d, redshifts = render_los_dynamic(rendering_class, aperture_radius,
                                                                    lens_plane_redshifts, delta_zs,
