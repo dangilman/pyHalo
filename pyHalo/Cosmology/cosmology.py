@@ -149,9 +149,9 @@ class Cosmology(object):
 
         return self.astropy.comoving_transverse_distance(z).value
 
-    def D_C_transversez1z2(self, z1, z2):
+    def D_C_z12(self, z1, z2):
 
-        return self.D_C_transverse(z2) - self.D_C_transverse(z1)
+        return self.D_C_z(z2) - self.D_C_z(z1)
 
     def E_z(self,z):
 
@@ -160,14 +160,6 @@ class Cosmology(object):
     def _kpc_per_asec(self,z):
 
         return self.astropy.arcsec_per_kpc_proper(z).value ** -1
-
-    def T_xy(self, z_observer, z_source):
-        """
-        transverse comoving distance in units of Mpc
-        """
-        T_xy = self.D_C(z_source) - self.D_C(z_observer)
-
-        return T_xy
 
     def rho_crit(self,z):
         """

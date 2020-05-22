@@ -34,12 +34,18 @@ class TestCosmology(object):
         npt.assert_almost_equal(da_true/da_interp, 1, 5)
 
         dc_true = self.cosmo.D_C(1.4)
-        dc_interp = self.cosmo.astropy.comoving_distance(1.4).value
+        dc_interp = self.cosmo.D_C_z((1.4))
+        dc_astropy = self.cosmo.astropy.comoving_distance(1.4).value
         npt.assert_almost_equal(dc_true/dc_interp, 1)
+        npt.assert_almost_equal(dc_astropy/dc_true, 1)
 
         dc_transverse = self.cosmo.D_C_transverse(0.8)
         dc = self.cosmo.D_C(0.8)
         npt.assert_almost_equal(dc/dc_transverse, 1)
+
+        dc_12_true = self.cosmo.D_C_transverse(1.) - self.cosmo.D_C_transverse(0.5)
+        dc_12_interp = self.cosmo.D_C_z12(0.5, 1)
+        npt.assert_almost_equal(dc_12_interp, dc_12_true)
 
         ez = self.cosmo.E_z(0.8)
         ez_astropy = self.cosmo.astropy.efunc(0.8)
@@ -47,12 +53,6 @@ class TestCosmology(object):
 
         kpc_per_asec = self.cosmo.kpc_per_asec(0.5)
         npt.assert_almost_equal(kpc_per_asec, 6.147, 3)
-
-        txy_1 = self.cosmo.D_C(0.8)
-        npt.assert_almost_equal(txy_1, self.cosmo.T_xy(0, 0.8))
-
-        txy_2 = self.cosmo.D_C(1)
-        npt.assert_almost_equal(txy_2-txy_1, self.cosmo.T_xy(0.8, 1))
 
         rho_crit_0 = self.cosmo.rho_crit(0)
         rho_pc = un.Quantity(self.cosmo.astropy.critical_density(0), unit=un.Msun / un.pc ** 3)
@@ -71,11 +71,6 @@ class TestCosmology(object):
         npt.assert_almost_equal(rho_dark_matter, rho_matter * (self._dm / (self._dm + self._bar)))
         npt.assert_almost_equal(rho_dark_matter, self.cosmo.rho_dark_matter_crit(0.4))
 
-        dTz = self.cosmo.D_C_transversez1z2(0.5, 1.5)
-        dTz2 = self.cosmo.D_C_transverse(1.5) - self.cosmo.D_C_transverse(0.5)
-        dTz3 = self.cosmo.D_C_transversez1z2(0., 1.5) - self.cosmo.D_C_transversez1z2(0., 0.5)
-        npt.assert_almost_equal(dTz, dTz2)
-        npt.assert_almost_equal(dTz, dTz3)
 
 if __name__ == '__main__':
      pytest.main()

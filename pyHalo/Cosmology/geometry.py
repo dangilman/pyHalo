@@ -6,10 +6,11 @@ class Geometry(object):
 
     _delta_z_min = 1e-4
 
-    def __init__(self, cosmology, z_lens, z_source, opening_angle, geometry_type):
+    def __init__(self, cosmology, z_lens, z_source, opening_angle, geometry_type,
+                 angle_pad=0.8):
 
         if geometry_type == 'DOUBLE_CONE':
-            self._geometrytype = DoubleCone(cosmology, z_lens, z_source, opening_angle)
+            self._geometrytype = DoubleCone(cosmology, z_lens, z_source, opening_angle, angle_pad)
             self.volume_type = 'DOUBLE_CONE'
         elif geometry_type == 'CONE':
             self._geometrytype = Cone(cosmology, z_lens, z_source, opening_angle)
@@ -184,11 +185,11 @@ class Cylinder(object):
 
 class DoubleCone(object):
 
-    def __init__(self, cosmology, z_lens, z_source, opening_angle):
+    def __init__(self, cosmology, z_lens, z_source, opening_angle, angle_pad):
 
         self._cosmo = cosmology
 
-        self._angle_pad = 0.8
+        self._angle_pad = angle_pad
 
         d_c_lens = self._cosmo.D_C_transverse(z_lens)
         d_c_lens_source = self._cosmo.D_C_transverse(z_source) - d_c_lens
@@ -232,7 +233,7 @@ class Cone(object):
 
     def rendering_scale(self, z):
 
-        return 1
+        return 1.
 
     # def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
     #

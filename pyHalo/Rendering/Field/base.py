@@ -21,7 +21,7 @@ class LOSBase(RenderingBase):
 
         boost = 1.
         if lensing_mass_function_class._two_halo_term and z == zlens:
-            rmax = lensing_mass_function_class._cosmo.T_xy(zlens - delta_z, zlens)
+            rmax = lensing_mass_function_class._cosmo.D_C_z12(zlens - delta_z, zlens)
             boost = lensing_mass_function_class.two_halo_boost(host_m200, z, rmax=rmax)
 
         return boost

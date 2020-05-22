@@ -1,5 +1,21 @@
 import numpy as np
 
+def stellar_surface_mass_density(lens_cosmo, area_arcsec, log_mlow, log_mhigh, f_stellar):
+
+    # units solar masses per kpc^2
+    sigma_crit = lens_cosmo.get_epsiloncrit_kpc(lens_cosmo.z_lens, lens_cosmo.z_source)
+    convergence = 0.5 #near the Einstein radius
+    kappa = convergence * sigma_crit
+    area_kpc = area_arcsec * lens_cosmo._kpc_per_arcsec_zlens ** -2
+    mass_in_stars = f_stellar * kappa * area_kpc
+
+    shalpeter_exponent = 2.35
+
+    expon = 2 - shalpeter_exponent
+    mass_integral = (log_mhigh ** expon - log_mlow ** log_mlow)/(expon)
+    a0 = mass_in_stars/mass_integral
+    return a0
+
 def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7, k3 = -2):
 
     # interpolated from galacticus
