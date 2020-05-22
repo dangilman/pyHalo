@@ -254,9 +254,9 @@ class Realization(object):
                 raise Exception('if applying a convergence sheet correction, must specify '
                                 'the rendering classes.')
 
-            kwargs_mass_sheets, z_sheets = self.mass_sheet_correction(self.rendering_classes)
+            kwargs_mass_sheets, profile_list, z_sheets = self.mass_sheet_correction(self.rendering_classes)
             kwargs_lens += kwargs_mass_sheets
-            lens_model_names += ['CONVERGENCE'] * len(kwargs_mass_sheets)
+            lens_model_names += profile_list
             redshift_list = np.append(redshift_list, z_sheets)
 
         if return_kwargs:
@@ -270,36 +270,41 @@ class Realization(object):
 
     def mass_sheet_correction(self, rendering_classes):
 
-        kappa_sheets = []
+        kwargs_mass_sheets = []
 
-        _redshifts = []
+        redshifts = []
+
+        profiles = []
 
         if self._prof_params['subtract_exact_mass_sheets']:
 
-            kappa_sheets = [-self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, self.geometry)
+            kwargs_mass_sheets = [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, self.geometry)}
                                      for zi in self.unique_redshifts]
 
-            _redshifts = self.unique_redshifts
+            redshifts = self.unique_redshifts
+
+            profiles = ['CONVERGENCE'] * len(kwargs_mass_sheets)
 
         else:
 
             for rendering_class in rendering_classes:
 
-                negative_kappa_values, sheet_redshifts = \
+                kwargs_new, profiles_new, redshifts_new = \
                     rendering_class.negative_kappa_sheets_theory()
 
-                kappa_sheets += list(negative_kappa_values)
-                _redshifts += list(sheet_redshifts)
+                kwargs_mass_sheets += kwargs_new
+                redshifts += redshifts_new
+                profiles += profiles_new
 
-        kwargs_mass_sheets = []
-        redshifts = []
+        #         kwargs_mass_sheets = []
+        # redshifts = []
+        #
+        # for kappa, zi in zip(kappa_sheets, _redshifts):
+        #     if abs(kappa) > 0:
+        #         kwargs_mass_sheets.append({'kappa_ext': kappa})
+        #         redshifts.append(zi)
 
-        for kappa, zi in zip(kappa_sheets, _redshifts):
-            if abs(kappa) > 0:
-                kwargs_mass_sheets.append({'kappa_ext': kappa})
-                redshifts.append(zi)
-
-        return kwargs_mass_sheets, redshifts
+        return kwargs_mass_sheets, profiles, redshifts
 
     def _lens(self, halo):
 

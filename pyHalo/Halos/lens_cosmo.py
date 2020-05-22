@@ -130,6 +130,17 @@ class LensCosmo(object):
 
         return self.get_epsiloncrit(zlens,zsrc)*(0.001)**2*self.cosmo.kpc_per_asec(zlens)**2
 
+    def nfw_physical2angle_fromM(self, M, z, mc_kwargs={}):
+        """
+        converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
+        (with no scatter in MC relation)
+        :param M: mass enclosed 200 \rho_crit
+        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
+        """
+
+        c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
+        return self.nfw_physical2angle(M, c, z)
+
     def nfw_physical2angle(self, M, c, z):
         """
         converts the physical mass and concentration parameter of an NFW profile into the lensing quantities

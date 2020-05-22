@@ -23,7 +23,9 @@ class DeltaBase(LOSBase):
 
         kappa_scale = kwargs_mass_sheets['kappa_scale']
 
-        kappa_sheets = []
+        kwargs_out = []
+        redshifts = []
+        profile_names_out = []
 
         M = 10**logM
 
@@ -43,9 +45,12 @@ class DeltaBase(LOSBase):
 
             kappa_theory = kappa_scale * n_objects * M / self.lens_cosmo.sigma_crit_mass(z, self.geometry)
 
-            kappa_sheets.append(-kappa_theory)
+            if kappa_theory > 0:
+                kwargs_out.append({'kappa_ext': -kappa_theory})
+                redshifts.append(z)
+                profile_names_out += ['CONVERGENCE']
 
-        return kappa_sheets, lens_plane_redshifts_half
+        return kwargs_out, profile_names_out, lens_plane_redshifts_half
 
     @property
     def keys_convergence_sheets(self):

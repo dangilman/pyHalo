@@ -49,12 +49,15 @@ class MainLensBase(RenderingBase):
 
     def negative_kappa_sheets_theory(self):
 
-        kappa_sheets = []
-
         kwargs_mass_sheets = self.keys_convergence_sheets
 
         if kwargs_mass_sheets['subtract_subhalo_mass_sheet'] is False:
             return [], []
+
+        else:
+            return self._negative_kappa_sheets_theory(kwargs_mass_sheets)
+
+    def _negative_kappa_sheets_theory(self, kwargs_mass_sheets):
 
         log_mass_sheet_correction_min, log_mass_sheet_correction_max = \
             kwargs_mass_sheets['log_mass_sheet_min'], kwargs_mass_sheets['log_mass_sheet_max']
@@ -78,25 +81,50 @@ class MainLensBase(RenderingBase):
         plaw_index = self.rendering_args['power_law_index']
 
         if use_analytic:
-            mass = integrate_power_law_analytic(norm, m_low, m_high, moment, plaw_index)
+            mass_in_subhalos = integrate_power_law_analytic(norm, m_low, m_high, moment, plaw_index)
         else:
-            mass = integrate_power_law_quad(norm, m_low, m_high, log_m_break, moment,
+            mass_in_subhalos = integrate_power_law_quad(norm, m_low, m_high, log_m_break, moment,
                                             plaw_index, break_index, break_scale)
 
-        kappa = mass / self.lens_cosmo.sigma_crit_mass(self.geometry._zlens, self.geometry)
+        if kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 
-        negative_kappa = -1 * kappa_scale * kappa
+            kappa = mass_in_subhalos / self.lens_cosmo.sigma_crit_mass(self.geometry._zlens, self.geometry)
 
-        kappa_sheets.append(negative_kappa)
+            negative_kappa = -1 * kappa_scale * kappa
 
-        return kappa_sheets, [self.geometry._zlens]
+            kwargs_out = [{'kappa_ext': negative_kappa}]
+            profile_name_out = ['CONVERGENCE']
+            redshifts_out = [self.geometry._zlens]
+
+        elif kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'NFW':
+
+            if 'parent_m200' not in self.rendering_args.keys():
+                raise Exception('must specify host halo mass when using NFW convergence sheet correction for subhalos')
+
+            host_m200 = self.rendering_args['parent_m200']
+
+            rho_scale = mass_in_subhalos/host_m200
+
+            Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromM(host_m200, self.lens_cosmo.z_lens)
+
+            kwargs_out = [{'alpha_Rs': - kappa_scale * theta_Rs * rho_scale, 'Rs': Rs_angle,
+                           'center_x': 0., 'center_y': 0.}]
+
+            profile_name_out = ['NFW']
+            redshifts_out = [self.geometry._zlens]
+
+        else:
+            raise Exception('mass sheet correction type '+
+                            str(kwargs_mass_sheets['mass_sheet_correction_type']) + ' not recognized.')
+
+        return kwargs_out, profile_name_out, redshifts_out
 
     @property
     def keys_convergence_sheets(self):
 
         args_convergence_sheets = {}
         required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'subhalo_mass_sheet_scale',
-                         'subtract_subhalo_mass_sheet']
+                         'subtract_subhalo_mass_sheet', 'subhalo_convergence_correction_profile']
 
         for key in required_keys:
             if key not in self.rendering_args.keys():
@@ -116,7 +144,8 @@ class MainLensBase(RenderingBase):
 
         required_keys = ['power_law_index', 'log_mlow', 'log_mhigh', 'log_m_break',
                          'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
-                         'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson']
+                         'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson',
+                         'subhalo_convergence_correction_profile', 'parent_m200']
 
         for key in required_keys:
             try:

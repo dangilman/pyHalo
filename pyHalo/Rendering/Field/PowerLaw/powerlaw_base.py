@@ -34,8 +34,6 @@ class PowerLawBase(LOSBase):
 
         kappa_scale = kwargs_mass_sheets['kappa_scale']
 
-        kappa_sheets = []
-
         m_low, m_high = 10 ** log_mass_sheet_correction_min, 10 ** log_mass_sheet_correction_max
 
         log_m_break = self.rendering_args['log_m_break']
@@ -51,6 +49,10 @@ class PowerLawBase(LOSBase):
 
         lens_plane_redshifts = self.lens_plane_redshifts[0::2]
         delta_zs = 2*self.delta_zs[0::2]
+
+        kwargs_out = []
+        profile_names_out = []
+        redshifts = []
 
         for z, delta_z in zip(lens_plane_redshifts, delta_zs):
 
@@ -71,11 +73,14 @@ class PowerLawBase(LOSBase):
                 mass = integrate_power_law_quad(norm, m_low, m_high, log_m_break, moment,
                                                 plaw_index, break_index, break_scale)
 
-            negative_kappa = -1 * kappa_scale * mass / self.lens_cosmo.sigma_crit_mass(z, self.geometry)
+            if mass > 0:
+                negative_kappa = -1 * kappa_scale * mass / self.lens_cosmo.sigma_crit_mass(z, self.geometry)
 
-            kappa_sheets.append(negative_kappa)
+                kwargs_out.append({'kappa_ext': negative_kappa})
+                profile_names_out += ['CONVERGENCE']
+                redshifts.append(z)
 
-        return kappa_sheets, lens_plane_redshifts
+        return kwargs_out, profile_names_out, redshifts
 
     def normalization(self, z, delta_z, zlens, lensing_mass_function_class, rendering_args, volume_element_comoving):
 
