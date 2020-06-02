@@ -50,7 +50,7 @@ class DeltaBase(LOSBase):
                 redshifts.append(z)
                 profile_names_out += ['CONVERGENCE']
 
-        return kwargs_out, profile_names_out, lens_plane_redshifts_half
+        return kwargs_out, profile_names_out, redshifts
 
     @property
     def keys_convergence_sheets(self):

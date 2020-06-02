@@ -52,7 +52,7 @@ class MainLensBase(RenderingBase):
         kwargs_mass_sheets = self.keys_convergence_sheets
 
         if kwargs_mass_sheets['subtract_subhalo_mass_sheet'] is False:
-            return [], []
+            return [], [], []
 
         else:
             return self._negative_kappa_sheets_theory(kwargs_mass_sheets)
@@ -108,9 +108,9 @@ class MainLensBase(RenderingBase):
             Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromM(host_m200, self.lens_cosmo.z_lens)
 
             kwargs_out = [{'alpha_Rs': - kappa_scale * theta_Rs * rho_scale, 'Rs': Rs_angle,
-                           'center_x': 0., 'center_y': 0.}]
+                           'center_x': 0., 'center_y': 0., 'r_core': 0.5 * Rs_angle}]
 
-            profile_name_out = ['NFW']
+            profile_name_out = ['CNFW']
             redshifts_out = [self.geometry._zlens]
 
         else:
