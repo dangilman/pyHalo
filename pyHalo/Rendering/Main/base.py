@@ -103,12 +103,28 @@ class MainLensBase(RenderingBase):
 
             host_m200 = self.rendering_args['parent_m200']
 
-            rho_scale = mass_in_subhalos/host_m200
+            Rs_angle, _ = self.lens_cosmo.nfw_physical2angle_fromM(host_m200,
+                                                                          self.geometry._zlens)
 
-            Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromM(host_m200, self.lens_cosmo.z_lens)
+            c = self.lens_cosmo.NFW_concentration(host_m200, self.lens_cosmo.z_lens)
+            _, rs_mpc, _ = self.lens_cosmo._nfwParam_physical_Mpc(host_m200, c, self.lens_cosmo.z_lens)
 
-            kwargs_out = [{'alpha_Rs': - kappa_scale * theta_Rs * rho_scale, 'Rs': Rs_angle,
-                           'center_x': 0., 'center_y': 0., 'r_core': 0.5 * Rs_angle}]
+            x = self.geometry.cone_opening_angle / Rs_angle / 2
+
+            eps_crit = self.lens_cosmo.epsilon_crit
+            D_d = self.lens_cosmo.cosmo.D_A_z(self.geometry._zlens)
+            denom = 4 * np.pi * rs_mpc ** 3 * (np.log(x/2) + self._nfw_F(x))
+            rho0 = mass_in_subhalos/denom # solar mass per Mpc^3
+
+            if isinstance(kwargs_mass_sheets['r_tidal'], str):
+                r_core = Rs_angle * float(kwargs_mass_sheets['r_tidal'][0:-2])
+            else:
+                r_core = Rs_angle * kwargs_mass_sheets['r_tidal']
+
+            theta_Rs = rho0 * (4 * rs_mpc ** 2 * (1 + np.log(1. / 2.)))
+            theta_Rs *= 1 / (D_d * eps_crit * self.lens_cosmo.cosmo.arcsec)
+            kwargs_out = [{'alpha_Rs': - kappa_scale * theta_Rs, 'Rs': Rs_angle,
+                           'center_x': 0., 'center_y': 0., 'r_core': r_core}]
 
             profile_name_out = ['CNFW']
             redshifts_out = [self.geometry._zlens]
@@ -119,12 +135,24 @@ class MainLensBase(RenderingBase):
 
         return kwargs_out, profile_name_out, redshifts_out
 
+    def _nfw_F(self, x):
+
+        if x == 1:
+            return 1
+        elif x < 1:
+            f = np.sqrt(1 - x ** 2)
+            return np.arctanh(f)/f
+        else:
+            f = np.sqrt(x ** 2 - 1)
+            return np.arctan(f)/f
+
     @property
     def keys_convergence_sheets(self):
 
         args_convergence_sheets = {}
         required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'subhalo_mass_sheet_scale',
-                         'subtract_subhalo_mass_sheet', 'subhalo_convergence_correction_profile']
+                         'subtract_subhalo_mass_sheet', 'subhalo_convergence_correction_profile',
+                         'r_tidal']
 
         for key in required_keys:
             if key not in self.rendering_args.keys():
@@ -145,7 +173,7 @@ class MainLensBase(RenderingBase):
         required_keys = ['power_law_index', 'log_mlow', 'log_mhigh', 'log_m_break',
                          'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
                          'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson',
-                         'subhalo_convergence_correction_profile', 'parent_m200']
+                         'subhalo_convergence_correction_profile', 'parent_m200', 'r_tidal']
 
         for key in required_keys:
             try:
