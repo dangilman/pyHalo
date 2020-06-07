@@ -86,6 +86,8 @@ class MainLensBase(RenderingBase):
             mass_in_subhalos = integrate_power_law_quad(norm, m_low, m_high, log_m_break, moment,
                                             plaw_index, break_index, break_scale)
 
+        print(kwargs_mass_sheets['subhalo_convergence_correction_profile'])
+        a=input('continue')
         if kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 
             kappa = mass_in_subhalos / self.lens_cosmo.sigma_crit_mass(self.geometry._zlens, self.geometry)
@@ -97,7 +99,8 @@ class MainLensBase(RenderingBase):
             redshifts_out = [self.geometry._zlens]
 
         elif kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'NFW':
-
+            print('USING NFW SHEET')
+            a=input('continue')
             if 'parent_m200' not in self.rendering_args.keys():
                 raise Exception('must specify host halo mass when using NFW convergence sheet correction for subhalos')
 
