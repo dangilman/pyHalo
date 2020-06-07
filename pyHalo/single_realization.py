@@ -296,14 +296,6 @@ class Realization(object):
                 redshifts += redshifts_new
                 profiles += profiles_new
 
-        #         kwargs_mass_sheets = []
-        # redshifts = []
-        #
-        # for kappa, zi in zip(kappa_sheets, _redshifts):
-        #     if abs(kappa) > 0:
-        #         kwargs_mass_sheets.append({'kappa_ext': kappa})
-        #         redshifts.append(zi)
-
         return kwargs_mass_sheets, profiles, redshifts
 
     def _lens(self, halo):
