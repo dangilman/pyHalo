@@ -86,7 +86,7 @@ class MainLensBase(RenderingBase):
             mass_in_subhalos = integrate_power_law_quad(norm, m_low, m_high, log_m_break, moment,
                                             plaw_index, break_index, break_scale)
 
-        
+
         if kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 
             kappa = mass_in_subhalos / self.lens_cosmo.sigma_crit_mass(self.geometry._zlens, self.geometry)
