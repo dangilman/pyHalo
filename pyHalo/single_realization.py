@@ -103,7 +103,8 @@ class Realization(object):
 
         realization = Realization(None, None, None, None, None, None, None, None, halo_mass_function,
                                   halos=halos, other_params=prof_params,
-                                  mass_sheet_correction=msheet_correction, rendering_classes=rendering_classes)
+                                  mass_sheet_correction=msheet_correction,
+                                  rendering_classes=rendering_classes)
 
         return realization
 
@@ -207,8 +208,17 @@ class Realization(object):
                         args=self._prof_params)
             halos.append(new_halo)
 
+        dzlens = self.lens_cosmo.cosmo.D_C_z(self.geometry._zlens)
+        x_centroid, y_centroid = ray_interp_x(dzlens), ray_interp_y(dzlens)
+
+        for rendering_class in self.rendering_classes:
+            if rendering_class.type == 'main_lens_plane':
+                rendering_class.convergence_correction_centroid_x = float(x_centroid)
+                rendering_class.convergence_correction_centroid_y = float(y_centroid)
+
         new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self._mass_sheet_correction, rendering_classes=self.rendering_classes)
+                                      self._mass_sheet_correction,
+                                      rendering_classes=self.rendering_classes)
 
         new_realization._has_been_shifted = True
 

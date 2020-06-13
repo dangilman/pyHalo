@@ -4,6 +4,8 @@ from pyHalo.Rendering.render_base import RenderingBase
 
 class LOSBase(RenderingBase):
 
+    type = 'LOS'
+
     def __init__(self, lensing_mass_func, geometry_render, rendering_args, spatial_parameterization, lens_plane_redshifts, delta_zs):
 
         self.halo_mass_function = lensing_mass_func

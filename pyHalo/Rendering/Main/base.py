@@ -11,6 +11,8 @@ from pyHalo.Rendering.render_base import RenderingBase
 
 class MainLensBase(RenderingBase):
 
+    type = 'main_lens_plane'
+
     def __init__(self, args, geometry, x_center_lens, y_center_lens):
 
         zlens, zsource = geometry._zlens, geometry._zsource
@@ -44,6 +46,9 @@ class MainLensBase(RenderingBase):
         self.spatial_parameterization = spatial_class(**spatial_args)
 
         self._center_x, self._center_y = x_center_lens, y_center_lens
+
+        self.convergence_correction_centroid_x = 0.
+        self.convergence_correction_centroid_y = 0.
 
         super(MainLensBase, self).__init__(geometry)
 
@@ -125,7 +130,8 @@ class MainLensBase(RenderingBase):
             theta_Rs = rho0 * (4 * rs_mpc ** 2 * (1 + np.log(1. / 2.)))
             theta_Rs *= 1 / (D_d * eps_crit * self.lens_cosmo.cosmo.arcsec)
             kwargs_out = [{'alpha_Rs': - kappa_scale * theta_Rs, 'Rs': Rs_angle,
-                           'center_x': 0., 'center_y': 0., 'r_core': r_core}]
+                           'center_x': self.convergence_correction_centroid_x,
+                           'center_y': self.convergence_correction_centroid_y, 'r_core': r_core}]
 
             profile_name_out = ['CNFW']
             redshifts_out = [self.geometry._zlens]
