@@ -21,8 +21,6 @@ class MainLensBase(RenderingBase):
 
         lenscosmo = LensCosmo(zlens, zsource, geometry._cosmo)
 
-        self.rendering_args = self.keyword_parse(args, kpc_per_arcsec_zlens, zlens)
-
         if 'subhalo_spatial_distribution' not in args.keys():
             raise Exception('must specify a value for the subhalo_spatial_distribution keyword.'
                             ' Possibilities are UNIFORM OR HOST_NFW.')
@@ -40,6 +38,10 @@ class MainLensBase(RenderingBase):
         else:
             raise Exception('subhalo_spatial_distribution '+str(args['subhalo_spatial_distribution'])+
                             ' not recognized. Possibilities are UNIFORM OR HOST_NFW.')
+
+        self.rendering_args = self.keyword_parse(args, kpc_per_arcsec_zlens, zlens)
+
+        self._spatial_args = spatial_args
 
         self._mass_func_parameterization = BrokenPowerLaw(**self.rendering_args)
 
@@ -107,13 +109,16 @@ class MainLensBase(RenderingBase):
             if 'parent_m200' not in self.rendering_args.keys():
                 raise Exception('must specify host halo mass when using NFW convergence sheet correction for subhalos')
 
-            host_m200 = self.rendering_args['parent_m200']
+            #host_m200 = self.rendering_args['parent_m200']
 
-            Rs_angle, _ = self.lens_cosmo.nfw_physical2angle_fromM(host_m200,
-                                                                          self.geometry._zlens)
+            Rs_host_kpc = self._spatial_args['Rs']
+            rs_mpc = Rs_host_kpc / 1000
+            r_tidal_host_kpc = self._spatial_args['r_core_parent']
 
-            c = self.lens_cosmo.NFW_concentration(host_m200, self.lens_cosmo.z_lens)
-            _, rs_mpc, _ = self.lens_cosmo._nfwParam_physical_Mpc(host_m200, c, self.lens_cosmo.z_lens)
+            Rs_angle = Rs_host_kpc / self.geometry._kpc_per_arcsec_zlens
+            r_core_angle = r_tidal_host_kpc / self.geometry._kpc_per_arcsec_zlens
+
+            # _, rs_mpc, _ = self.lens_cosmo._nfwParam_physical_Mpc(host_m200, c, self.lens_cosmo.z_lens)
 
             x = self.geometry.cone_opening_angle / Rs_angle / 2
 
@@ -122,16 +127,17 @@ class MainLensBase(RenderingBase):
             denom = 4 * np.pi * rs_mpc ** 3 * (np.log(x/2) + self._nfw_F(x))
             rho0 = mass_in_subhalos/denom # solar mass per Mpc^3
 
-            if isinstance(kwargs_mass_sheets['r_tidal'], str):
-                r_core = Rs_angle * float(kwargs_mass_sheets['r_tidal'][0:-2])
-            else:
-                r_core = Rs_angle * kwargs_mass_sheets['r_tidal']
+            # if isinstance(kwargs_mass_sheets['r_tidal'], str):
+            #     r_core = Rs_angle * float(kwargs_mass_sheets['r_tidal'][0:-2])
+            # else:
+            #     r_core = Rs_angle * kwargs_mass_sheets['r_tidal']
 
             theta_Rs = rho0 * (4 * rs_mpc ** 2 * (1 + np.log(1. / 2.)))
             theta_Rs *= 1 / (D_d * eps_crit * self.lens_cosmo.cosmo.arcsec)
+
             kwargs_out = [{'alpha_Rs': - kappa_scale * theta_Rs, 'Rs': Rs_angle,
                            'center_x': self.convergence_correction_centroid_x,
-                           'center_y': self.convergence_correction_centroid_y, 'r_core': r_core}]
+                           'center_y': self.convergence_correction_centroid_y, 'r_core': r_core_angle}]
 
             profile_name_out = ['CNFW']
             redshifts_out = [self.geometry._zlens]
