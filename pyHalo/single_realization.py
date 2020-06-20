@@ -211,10 +211,11 @@ class Realization(object):
         dzlens = self.lens_cosmo.cosmo.D_C_z(self.geometry._zlens)
         x_centroid, y_centroid = ray_interp_x(dzlens), ray_interp_y(dzlens)
 
-        for rendering_class in self.rendering_classes:
-            if rendering_class.type == 'main_lens_plane':
-                rendering_class.convergence_correction_centroid_x = float(x_centroid)
-                rendering_class.convergence_correction_centroid_y = float(y_centroid)
+        # for rendering_class in self.rendering_classes:
+        #     if rendering_class.type == 'main_lens_plane':
+        #
+        #         rendering_class.convergence_correction_centroid_x = float(x_centroid)
+        #         rendering_class.convergence_correction_centroid_y = float(y_centroid)
 
         new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self._mass_sheet_correction,
