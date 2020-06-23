@@ -49,26 +49,34 @@ class TNFWFieldHalo(FieldHaloBase):
         bound_mass = tnfw_bound_mass_from_rhors(self._rho_sub, self._rs_sub, self.concentration,
                                                 self.truncation_radius/self._rs_sub)
 
-        return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration, 
+        return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration,
                 'rt': self.truncation_radius, 'bound_mass': bound_mass}
 
 class TNFWMainSubhalo(MainSubhaloBase):
-    
+
     @property
-    def physical_args(self):
-        
+    def rho_rs_sub(self):
+
         if not hasattr(self, '_rho_sub') or not hasattr(self, '_rs_sub'):
             self._rho_sub, self._rs_sub, _ = self._halo_class.cosmo_prof.NFW_params_physical(self._halo_class.mass,
                                                                                  self.concentration,
                                                                                  self.halo_redshift_eval)
-        bound_mass = tnfw_bound_mass_from_rhors(self._rho_sub, self._rs_sub, self.concentration,
+
+        return self._rho_sub, self._rs_sub
+
+    @property
+    def physical_args(self):
+
+        rho_sub, rs_sub = self.rho_rs_sub
+
+        bound_mass = tnfw_bound_mass_from_rhors(rho_sub, rs_sub, self.concentration,
                                                 self.truncation_radius/self._rs_sub)
 
         return {'rho_s': self._rho_sub, 'rs': self._rs_sub, 'c': self.concentration,
                     'rt': self.truncation_radius,
                 'bound_mass': bound_mass}
 
-        
+
     @property
     def halo_parameters(self):
         return [self.concentration, self.truncation_radius]
@@ -112,6 +120,16 @@ class TNFWMainSubhalo(MainSubhaloBase):
                                                  self.halo_redshift_eval, self._halo_class.cosmo_prof.z_lens,
                                                     r_ein_kpc, sigmacrit_kpc, subhalo_density_function,
                                                                  subhalo_args, initial_guess))
+
+        elif self._halo_class._args['truncation_routine'] == 'constant':
+
+            if 'truncation_factor' not in self._halo_class._args.keys():
+                raise Exception('must specify truncation_factor keyword when using a constant truncation radius for subhalos. '
+                                'r_t = truncation_factor * r_s')
+            tau = self._halo_class._args['truncation_factor']
+            _, rs_sub = self.rho_rs_sub
+            r_t = tau * rs_sub
+
 
         else:
             r_t = self._halo_class.cosmo_prof.truncation_roche((self._halo_class.mass, self._halo_class.pericenter,

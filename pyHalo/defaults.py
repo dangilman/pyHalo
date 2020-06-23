@@ -55,7 +55,8 @@ class TruncationDefaults(object):
 
         trunc_routines = ['mean_ISOhost',
                           'mean_NFWhost',
-                          'simple']
+                          'simple',
+                          'constant']
 
         self.routine = trunc_routines[2]
         self.truncate_at_pericenter = False
@@ -142,6 +143,12 @@ def set_default_kwargs(profile_params, dynamic, zsource):
 
     if 'subhalo_convergence_correction_profile' not in profile_params.keys():
         profile_params.update({'subhalo_convergence_correction_profile': realization_default.subhalo_convergence_correction_profile})
+
+    if 'kwargs_MGE' not in profile_params.keys():
+        profile_params.update({'kwargs_MGE': None})
+
+    if 'nfw_kappa_centroid' not in profile_params.keys():
+        profile_params.update({'nfw_kappa_centroid': [0., 0.]})
 
     if 'subhalo_mass_sheet_scale' not in profile_params.keys():
         profile_params.update({'subhalo_mass_sheet_scale': realization_default.subhalo_mass_sheet_scale})

@@ -107,6 +107,14 @@ class MainLensBase(RenderingBase):
             profile_name_out = ['CONVERGENCE']
             redshifts_out = [self.geometry._zlens]
 
+        elif kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'MGE':
+
+            if kwargs_mass_sheets['kwargs_MGE'] is None:
+                raise Exception('when using an MGE for the subhalo convergence correction, must specify kwargs_MGE')
+            kwargs_out = kwargs_mass_sheets['kwargs_MGE']
+            profile_name_out = ['MULTI_GAUSSIAN_KAPPA']
+            redshifts_out = [self.geometry._zlens]
+
         elif kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'NFW':
 
             if 'parent_m200' not in self.rendering_args.keys():
@@ -121,8 +129,6 @@ class MainLensBase(RenderingBase):
             Rs_angle = Rs_host_kpc / self.geometry._kpc_per_arcsec_zlens
             r_core_angle = r_tidal_host_kpc / self.geometry._kpc_per_arcsec_zlens
 
-            # _, rs_mpc, _ = self.lens_cosmo._nfwParam_physical_Mpc(host_m200, c, self.lens_cosmo.z_lens)
-
             x = self.geometry.cone_opening_angle / Rs_angle / 2
 
             eps_crit = self.lens_cosmo.epsilon_crit
@@ -130,17 +136,12 @@ class MainLensBase(RenderingBase):
             denom = 4 * np.pi * rs_mpc ** 3 * (np.log(x/2) + self._nfw_F(x))
             rho0 = mass_in_subhalos/denom # solar mass per Mpc^3
 
-            # if isinstance(kwargs_mass_sheets['r_tidal'], str):
-            #     r_core = Rs_angle * float(kwargs_mass_sheets['r_tidal'][0:-2])
-            # else:
-            #     r_core = Rs_angle * kwargs_mass_sheets['r_tidal']
-
             theta_Rs = rho0 * (4 * rs_mpc ** 2 * (1 + np.log(1. / 2.)))
             theta_Rs *= 1 / (D_d * eps_crit * self.lens_cosmo.cosmo.arcsec)
 
             kwargs_out = [{'alpha_Rs': - kappa_scale * theta_Rs, 'Rs': Rs_angle,
-                           'center_x': self.convergence_correction_centroid_x,
-                           'center_y': self.convergence_correction_centroid_y, 'r_core': r_core_angle}]
+                           'center_x': kwargs_mass_sheets['nfw_kappa_centroid'][0],
+                           'center_y': kwargs_mass_sheets['nfw_kappa_centroid'][1], 'r_core': r_core_angle}]
 
             profile_name_out = ['CNFW']
             redshifts_out = [self.geometry._zlens]
@@ -168,7 +169,7 @@ class MainLensBase(RenderingBase):
         args_convergence_sheets = {}
         required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'subhalo_mass_sheet_scale',
                          'subtract_subhalo_mass_sheet', 'subhalo_convergence_correction_profile',
-                         'r_tidal']
+                         'r_tidal', 'nfw_kappa_centroid', 'kwargs_MGE']
 
         for key in required_keys:
             if key not in self.rendering_args.keys():
@@ -189,7 +190,8 @@ class MainLensBase(RenderingBase):
         required_keys = ['power_law_index', 'log_mlow', 'log_mhigh', 'log_m_break',
                          'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
                          'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson',
-                         'subhalo_convergence_correction_profile', 'parent_m200', 'r_tidal']
+                         'subhalo_convergence_correction_profile', 'parent_m200', 'r_tidal',
+                         'nfw_kappa_centroid', 'kwargs_MGE']
 
         for key in required_keys:
             try:

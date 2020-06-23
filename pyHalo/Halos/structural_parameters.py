@@ -69,12 +69,24 @@ class HaloStructure(object):
 
         return opt['x'][0]
 
+    def truncation_constant(self, rs_sub, tau):
+
+        """
+
+        :param rs_sub: NFW scale radius (kpc)
+        :param tau: tau * rs_sub = truncation_radius
+        :return: truncation radius in angular units (kpc)
+        """
+
+        r_t = rs_sub * tau
+        return r_t
+
     def truncation_roche(self, M, r3d, z, k, nu):
 
         """
         :param M: m200
         :param r3d: 3d radial position in the halo (kpc)
-        :return: Equation 2 in Gilman et al 2019 (expressed in arcsec)
+        :return: Equation 2 in Gilman et al 2019
         (k tuned to match output of truncation roche exact)
         """
 
