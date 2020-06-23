@@ -111,7 +111,7 @@ class MainLensBase(RenderingBase):
 
             if kwargs_mass_sheets['kwargs_MGE'] is None:
                 raise Exception('when using an MGE for the subhalo convergence correction, must specify kwargs_MGE')
-            kwargs_out = kwargs_mass_sheets['kwargs_MGE']
+            kwargs_out = [kwargs_mass_sheets['kwargs_MGE']]
             profile_name_out = ['MULTI_GAUSSIAN_KAPPA']
             redshifts_out = [self.geometry._zlens]
 
