@@ -112,7 +112,7 @@ class RealizationDefaults(object):
 
         self.subhalo_spatial_distribution = 'HOST_NFW'
 
-        self.subhalo_convergence_correction_profile = 'UNIFORM'
+        self.subhalo_convergence_correction_profile = 'NFW'
 
         self.kappa_scale = 1
 
