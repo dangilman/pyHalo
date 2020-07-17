@@ -209,6 +209,11 @@ def set_default_kwargs(profile_params, dynamic, zsource):
         profile_params.update({'LOS_normalization':
                                    realization_default.default_LOS_normalization})
 
+    if 'LOS_normalization_mass_sheet' in profile_params.keys():
+        profile_params.update({'LOS_normalization_mass_sheet': profile_params['LOS_normalization_mass_sheet']})
+    else:
+        profile_params.update({'LOS_normalization_mass_sheet': profile_params['LOS_normalization']})
+
     if 'mc_model' not in profile_params.keys():
         profile_params.update({'mc_model': halo_default.mass_concentration_relation})
 

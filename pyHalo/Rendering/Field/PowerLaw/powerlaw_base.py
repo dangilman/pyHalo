@@ -12,7 +12,7 @@ class PowerLawBase(LOSBase):
         volume_element_comoving = self.geometry.volume_element_comoving(zi, delta_zi, aperture_radius)
 
         norm = self.normalization(zi, delta_zi, self._zlens, self.halo_mass_function, self.rendering_args,
-                                  volume_element_comoving)
+                                  volume_element_comoving, self.rendering_args['LOS_normalization'])
 
         args = deepcopy(self.rendering_args)
 
@@ -64,7 +64,9 @@ class PowerLawBase(LOSBase):
             volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z, None)
 
             norm = self.normalization(z, delta_z, self.geometry._zlens, self.halo_mass_function,
-                                      self.rendering_args, volume_element_comoving)
+                                      self.rendering_args, volume_element_comoving,
+                                      self.rendering_args['LOS_normalization_mass_sheet'])
+
             plaw_index = self.halo_mass_function.plaw_index_z(z)
 
             if use_analytic:
@@ -82,11 +84,12 @@ class PowerLawBase(LOSBase):
 
         return kwargs_out, profile_names_out, redshifts
 
-    def normalization(self, z, delta_z, zlens, lensing_mass_function_class, rendering_args, volume_element_comoving):
+    def normalization(self, z, delta_z, zlens, lensing_mass_function_class, rendering_args, volume_element_comoving,
+                      scale):
 
         boost = self.two_halo_boost(z, delta_z, rendering_args['parent_m200'], zlens, lensing_mass_function_class)
 
-        norm_dV = rendering_args['LOS_normalization'] * boost * lensing_mass_function_class.norm_at_z_density(z)
+        norm_dV = scale * boost * lensing_mass_function_class.norm_at_z_density(z)
 
         return norm_dV * volume_element_comoving
 
@@ -111,7 +114,7 @@ class PowerLawBase(LOSBase):
 
         args_mfunc = {}
         required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow',
-                         'log_mhigh', 'parent_m200', 'LOS_normalization',
+                         'log_mhigh', 'parent_m200', 'LOS_normalization', 'LOS_normalization_mass_sheet',
                          'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
                          'break_index', 'break_scale']
 
