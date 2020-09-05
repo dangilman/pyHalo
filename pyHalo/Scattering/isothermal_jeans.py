@@ -144,7 +144,7 @@ def compute_r1(rhos, rs, v, cross_section_norm, v_power, t_halo):
     return lam * rs
 
 def solve(rhonfw, rsnfw, cross_section_norm, v_power, t_halo, rmin_fac, rmax_fac,
-          rho_start, rho_end, s0_start, s0_end, N, plot=False, do_E=False, do_v=False):
+          rho_start, rho_end, s0_start, s0_end, N, plot=False):
 
     s0nfw = velocity_dispersion_NFW(rsnfw, rhonfw, rsnfw)
     rhocenter = [rhonfw]
