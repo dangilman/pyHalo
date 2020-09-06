@@ -1,7 +1,8 @@
 import numpy as np
 from pyHalo.Rendering.MassFunctions.PowerLaw.powerlaw_base import PowerLawBase
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic, integrate_power_law_quad
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import WDM_suppression
+from copy import deepcopy
 
 class BrokenPowerLaw(PowerLawBase):
 
@@ -23,7 +24,22 @@ class BrokenPowerLaw(PowerLawBase):
         self.Nhalos_mean = integrate_power_law_analytic(normalization, 10**log_mlow, 10**log_mhigh, 0,
                                                         power_law_index)
 
+        self._kwargs_integral = {'norm': normalization,
+                                 'n': 1, 'plaw_index': power_law_index,
+                                 'break_index': break_index,
+                                 'break_scale': break_scale,
+                                 'log_m_break': log_m_break}
+
         super(BrokenPowerLaw, self).__init__(log_mlow, log_mhigh, power_law_index, draw_poisson)
+
+    def theory_mass(self, mlow, mhigh):
+
+        kwargs = deepcopy(self._kwargs_integral)
+        kwargs['m_low'] = mlow
+        kwargs['m_high'] = mhigh
+
+        mass = integrate_power_law_quad(**kwargs)
+        return mass
 
     def draw(self):
 

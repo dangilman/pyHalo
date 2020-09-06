@@ -16,6 +16,11 @@ class PowerLawBase(LOSBase):
 
         args = deepcopy(self.rendering_args)
 
+        if isinstance(args['log_mlow'], list):
+            args['log_mlow'] = min(args['log_mlow'])
+        if isinstance(args['log_mhigh'], list):
+            args['log_mhigh'] = max(args['log_mhigh'])
+
         plaw_index = self.halo_mass_function.plaw_index_z(zi)
         args.update({'normalization': norm})
         args.update({'power_law_index': plaw_index})

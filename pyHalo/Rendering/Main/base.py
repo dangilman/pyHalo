@@ -1,4 +1,5 @@
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
+from pyHalo.Rendering.MassFunctions.PowerLaw.piecewise import PiecewisePowerLaw
 from pyHalo.Spatial.nfw import NFW3D
 from pyHalo.Spatial.uniform import Uniform
 from pyHalo.Halos.lens_cosmo import LensCosmo
@@ -6,6 +7,8 @@ from pyHalo.Spatial.keywords import subhalo_spatial_NFW, subhalo_spatial_uniform
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, \
     integrate_power_law_analytic
 from pyHalo.Rendering.Main.SHMF_normalizations import *
+
+from copy import deepcopy
 
 from pyHalo.Rendering.render_base import RenderingBase
 
@@ -42,11 +45,9 @@ class MainLensBase(RenderingBase):
             raise Exception('subhalo_spatial_distribution '+str(args['subhalo_spatial_distribution'])+
                             ' not recognized. Possibilities are UNIFORM OR HOST_NFW.')
 
-        self.rendering_args = self.keyword_parse(args, kpc_per_arcsec_zlens, zlens)
+        self._mass_func_parameterization, self.rendering_args = self.keyword_parse(args, kpc_per_arcsec_zlens, zlens)
 
         self._spatial_args = spatial_args
-
-        self._mass_func_parameterization = BrokenPowerLaw(**self.rendering_args)
 
         self.spatial_parameterization = spatial_class(**spatial_args)
 
@@ -76,26 +77,7 @@ class MainLensBase(RenderingBase):
 
         m_low, m_high = 10 ** log_mass_sheet_correction_min, 10 ** log_mass_sheet_correction_max
 
-        log_m_break = self.rendering_args['log_m_break']
-        break_index = self.rendering_args['break_index']
-        break_scale = self.rendering_args['break_scale']
-
-        moment = 1
-
-        if log_m_break == 0 or log_m_break / log_mass_sheet_correction_min < 0.01:
-            use_analytic = True
-        else:
-            use_analytic = False
-
-        norm = self.rendering_args['normalization']
-        plaw_index = self.rendering_args['power_law_index']
-
-        if use_analytic:
-            mass_in_subhalos = integrate_power_law_analytic(norm, m_low, m_high, moment, plaw_index)
-        else:
-            mass_in_subhalos = integrate_power_law_quad(norm, m_low, m_high, log_m_break, moment,
-                                            plaw_index, break_index, break_scale)
-
+        mass_in_subhalos = self._mass_func_parameterization.theory_mass(m_low, m_high)
 
         if kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 
@@ -105,14 +87,6 @@ class MainLensBase(RenderingBase):
 
             kwargs_out = [{'kappa_ext': negative_kappa}]
             profile_name_out = ['CONVERGENCE']
-            redshifts_out = [self.geometry._zlens]
-
-        elif kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'MGE':
-
-            if kwargs_mass_sheets['kwargs_MGE'] is None:
-                raise Exception('when using an MGE for the subhalo convergence correction, must specify kwargs_MGE')
-            kwargs_out = [kwargs_mass_sheets['kwargs_MGE']]
-            profile_name_out = ['MULTI_GAUSSIAN_KAPPA']
             redshifts_out = [self.geometry._zlens]
 
         elif kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'NFW':
@@ -169,7 +143,7 @@ class MainLensBase(RenderingBase):
         args_convergence_sheets = {}
         required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'subhalo_mass_sheet_scale',
                          'subtract_subhalo_mass_sheet', 'subhalo_convergence_correction_profile',
-                         'r_tidal', 'nfw_kappa_centroid', 'kwargs_MGE']
+                         'r_tidal', 'nfw_kappa_centroid']
 
         for key in required_keys:
             if key not in self.rendering_args.keys():
@@ -182,8 +156,66 @@ class MainLensBase(RenderingBase):
 
         return args_convergence_sheets
 
+    def keyword_parse(self, args, kpc_per_arcsec_zlens, zlens):
+
+        possible_normalization_kwargs = ['sigma_sub', 'norm_kpc2',
+                                         'norm_arcsec2', 'f_sub', 'log_f_sub', 'log_sigma_sub']
+        for kw in possible_normalization_kwargs:
+            if kw in args.keys():
+                break
+        else:
+            raise Exception('must specify SHMF normalization with one of: ', possible_normalization_kwargs)
+
+        # build rescale list if flag is provided
+        if 'build_SHMF_rescale_list' in args.keys() or 'SHMF_rescale_list' in args.keys():
+            assert isinstance(args['log_mlow'], list)
+            assert isinstance(args['log_mhigh'], list)
+            assert len(args['log_mlow']) == len(args['log_mhigh'])
+
+            if 'build_SHMF_rescale_list' in args.keys() and args['build_SHMF_rescale_list'] is True:
+                N = len(args['log_mlow'])
+                kw_base = 'rescale_'
+                SHMF_rescale_list = []
+                for k in range(0, N):
+                    pname = kw_base + str(int(k+1))
+                    assert pname in args.keys()
+                    SHMF_rescale_list.append(args[pname])
+                args['SHMF_rescale_list'] = SHMF_rescale_list
+
+            assert len(args['SHMF_rescale_list']) == len(args['log_mlow'])
+
+            func = []
+            args_mfunc_list = []
+
+            args_mfunc_return = deepcopy(args)
+
+            for i, rescale in enumerate(args['SHMF_rescale_list']):
+                assert args['log_mlow'][i] <= args['log_mhigh'][i]
+
+                args_copy = deepcopy(args)
+                args_copy['rescale_norm'] = rescale
+                args_copy['log_mlow'] = args['log_mlow'][i]
+                args_copy['log_mhigh'] = args['log_mhigh'][i]
+
+                if isinstance(args['power_law_index'], list):
+                    args_copy['power_law_index'] = args['power_law_index'][i]
+
+                args_mfunc = self._keyword_parse(args_copy, kpc_per_arcsec_zlens, zlens)
+                func.append(BrokenPowerLaw(**args_mfunc))
+                args_mfunc_list.append(args_mfunc)
+
+            parameterization = PiecewisePowerLaw(func)
+
+        else:
+
+            args['rescale_norm'] = 1.
+            args_mfunc_return = self._keyword_parse(args, kpc_per_arcsec_zlens, zlens)
+            parameterization = BrokenPowerLaw(**args_mfunc_return)
+
+        return parameterization, args_mfunc_return
+
     @staticmethod
-    def keyword_parse(args, kpc_per_arcsec_zlens, zlens):
+    def _keyword_parse(args, kpc_per_arcsec_zlens, zlens):
 
         args_mfunc = {}
 
@@ -191,7 +223,11 @@ class MainLensBase(RenderingBase):
                          'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
                          'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson',
                          'subhalo_convergence_correction_profile', 'parent_m200', 'r_tidal',
-                         'nfw_kappa_centroid', 'kwargs_MGE']
+                         'nfw_kappa_centroid']
+
+        assert not isinstance(args['log_mlow'], list)
+        assert not isinstance(args['log_mhigh'], list)
+        assert not isinstance(args['power_law_index'], list)
 
         for key in required_keys:
             try:
@@ -202,6 +238,15 @@ class MainLensBase(RenderingBase):
         if 'sigma_sub' in args.keys():
 
             args_mfunc['normalization'] = norm_AO_from_sigmasub(args['sigma_sub'], args['parent_m200'],
+                                                                zlens,
+                                                                kpc_per_arcsec_zlens,
+                                                                args['cone_opening_angle'],
+                                                                args['power_law_index'])
+
+        elif 'log_sigma_sub' in args.keys():
+
+            sigma_sub = 10 ** args['log_sigma_sub']
+            args_mfunc['normalization'] = norm_AO_from_sigmasub(sigma_sub, args['parent_m200'],
                                                                 zlens,
                                                                 kpc_per_arcsec_zlens,
                                                                 args['cone_opening_angle'],
@@ -238,8 +283,8 @@ class MainLensBase(RenderingBase):
                                                               args['cone_opening_angle'],
                                                               args_mfunc['power_law_index'], m_pivot=10 ** 8)
 
-
         else:
+
             routines = 'sigma_sub: amplitude of differential mass function at 10^8 solar masses (d^2N / dmdA) in units [kpc^-2 M_sun^-1];\n' \
                        'automatically accounts for evolution of projected number density with halo mass and redshift (see Gilman et al. 2020)\n\n' \
                        'norm_kpc2: same as sigma_sub, but does not automatically account for evolution with halo mass and redshift\n\n' \
@@ -248,6 +293,8 @@ class MainLensBase(RenderingBase):
 
             raise Exception('Must specify normalization of the subhalo '
                             'mass function. Recognized normalization routines are: \n' + routines)
+
+        args_mfunc['normalization'] *= args['rescale_norm']
 
         return args_mfunc
 

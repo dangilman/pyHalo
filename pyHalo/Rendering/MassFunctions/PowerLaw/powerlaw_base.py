@@ -21,8 +21,11 @@ class PowerLawBase(object):
             N = int(round(np.round(n_draw)))
 
         x = np.random.rand(N)
-
-        X = (x * (self._mH ** (1 + self._index) - self._mL ** (1 + self._index)) + self._mL ** (
+        if self._index == -1:
+            norm = np.log(self._mH/self._mL)
+            X = self._mL * np.exp(norm * x)
+        else:
+            X = (x * (self._mH ** (1 + self._index) - self._mL ** (1 + self._index)) + self._mL ** (
                 1 + self._index)) ** (
                 (1 + self._index) ** -1)
 

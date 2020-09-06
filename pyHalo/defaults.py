@@ -144,9 +144,6 @@ def set_default_kwargs(profile_params, dynamic, zsource):
     if 'subhalo_convergence_correction_profile' not in profile_params.keys():
         profile_params.update({'subhalo_convergence_correction_profile': realization_default.subhalo_convergence_correction_profile})
 
-    if 'kwargs_MGE' not in profile_params.keys():
-        profile_params.update({'kwargs_MGE': None})
-
     if 'nfw_kappa_centroid' not in profile_params.keys():
         profile_params.update({'nfw_kappa_centroid': [0., 0.]})
 
