@@ -1,6 +1,6 @@
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 from pyHalo.Rendering.MassFunctions.PowerLaw.piecewise import PiecewisePowerLaw
-from pyHalo.Spatial.nfw import NFW3D
+from pyHalo.Spatial.nfw_core import NFW3DCore
 from pyHalo.Spatial.uniform import Uniform
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Spatial.keywords import subhalo_spatial_NFW, subhalo_spatial_uniform
@@ -39,7 +39,7 @@ class MainLensBase(RenderingBase):
 
         elif args['subhalo_spatial_distribution'] == 'HOST_NFW':
             spatial_args = subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo)
-            spatial_class = NFW3D
+            spatial_class = NFW3DCore
 
         else:
             raise Exception('subhalo_spatial_distribution '+str(args['subhalo_spatial_distribution'])+
