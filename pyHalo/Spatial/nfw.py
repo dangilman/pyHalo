@@ -1,6 +1,10 @@
 import numpy as np
 from scipy.interpolate import interp1d
+import dill
+import inspect
+import os
 
+local_path = inspect.getfile(inspect.currentframe())[0:-6]
 
 class NFW3D(object):
 
@@ -38,8 +42,8 @@ class NFW3D(object):
         return x_kpc, y_kpc, z_kpc
 
     def _sample_z(self):
-
-        z = np.random.uniform(self._xmin * self._Rs, self._x3dmax * self._Rs)
+        
+        z = np.random.uniform(self._xmin, self._x3dmax * self._Rs)
         return z
 
     def _density(self, x):
@@ -121,82 +125,42 @@ def rhonfw_tidal(x, xtidal):
 
 class NFW3DFast(object):
 
-    def __init__(self, Rs, rmax2d, rmax3d, xoffset=0, yoffset=0, tidal_core=False, r_core_parent=None):
+    def __init__(self, Rs, rmax2d, rmax3d, r_core_parent=None):
 
-        """
-        all distances expressed in (physical) kpc
+        self._Rs = Rs
+        self._rmax2d = rmax2d
+        self._rmax3d = rmax3d
 
-        :param Rs: scale radius
-        :param rmax2d: maximum 2d radius
-        :param rmax3d: maximum 3d radius (basically sets the distribution of z coordinates)
-        :param xoffset: centroid of NFW
-        :param yoffset: centroid of NFW
-        :param tidal_core: flag to draw from a uniform denity inside r_core
-        :param r_core: format 'number * Rs' where number is a float.
-        specifies an inner radius where the distribution is uniform
-        see Figure 4 in Jiang+van den Bosch 2016
-        """
-
-        self.rmax3d = rmax3d
-        self.rmax2d = rmax2d
-        self.rs = Rs
-
-        self.xoffset = xoffset
-        self.yoffset = yoffset
-        xmin, xmax = 0.0001, rmax3d * Rs ** -1
-        x = np.arange(xmin, xmax, 0.01)
-
-        if tidal_core:
-            self._tidal_core = True
-            self._xtidal = r_core_parent * Rs ** -1
-            pdf = rhonfw_tidal(x, self._xtidal)
+        if r_core_parent is not None:
+            self._xc = r_core_parent / Rs
         else:
-            self._tidal_core = False
-            pdf = rhonfw_x(x)
+            self._xc = 0.001 * Rs
 
-        cdf_array, _, self._cdf_inv_func = approx_cdf_1d(x, pdf)
-        self._umin, self._umax = cdf_array[0], cdf_array[-1]
+        self._c = rmax3d/Rs
+
+        filename = local_path + 'NFWlookup'
+        file = open(filename, 'rb')
+        self.sampler = dill.load(file)
 
     def draw(self, N, zlens):
 
-        r3d, x, y, r2d, z = [], [], [], [], []
+        x_kpc, y_kpc, z_kpc, r2d_kpc = [], [], [], []
+        while len(x_kpc) < N:
+            _x, _y, _z = self.sampler.sample(self._xc, self._c, 1)
+            _x_kpc = _x * self._Rs
+            _y_kpc = _y * self._Rs
+            _z_kpc = _z * self._Rs
+            _r2d_kpc = np.sqrt(_x_kpc**2 + _y_kpc**2)
+            if _r2d_kpc <= self._rmax2d:
+                x_kpc.append(_x_kpc)
+                y_kpc.append(_y_kpc)
+                z_kpc.append(_z_kpc)
+                r2d_kpc.append(_r2d_kpc)
 
-        while len(r3d) < N:
+        x_kpc, y_kpc, z_kpc = np.array(x_kpc), np.array(y_kpc), np.array(z_kpc)
+        r2d_kpc = np.array(r2d_kpc)
+        r3d_kpc = np.sqrt(z_kpc**2 + r2d_kpc**2)
 
-            theta = np.random.uniform(0, 2 * np.pi)
-
-            r2 = np.random.uniform(0, self.rmax2d ** 2) ** 0.5
-
-            if r2 > self.rmax2d:
-                continue
-
-            x_value, y_value = r2 * np.cos(theta), r2 * np.sin(theta)
-            u = np.random.uniform(self._umin, self._umax)
-            z_value = self._cdf_inv_func(u) * self.rs
-
-            _r2d = (x_value ** 2 + y_value ** 2) ** 0.5
-            _r3d = np.sqrt(_r2d ** 2 + z_value ** 2)
-
-            X1 = _r3d / self.rs
-            X2 = z_value / self.rs
-
-            if self._tidal_core:
-                prob = rhonfw_tidal(X1, self._xtidal) * rhonfw_tidal(X2, self._xtidal) ** -1
-            else:
-                prob = rhonfw_x(X1) * rhonfw_x(X2) ** -1
-            accept = prob > np.random.rand()
-
-            if accept and _r3d <= self.rmax3d:
-                x.append(x_value)
-                y.append(y_value)
-                r2d.append(_r2d)
-                r3d.append(_r3d)
-
-        x = np.array(x)
-        y = np.array(y)
-        r2d = np.array(r2d)
-        r3d = np.array(r3d)
-
-        return x, y, r2d, r3d
+        return x_kpc, y_kpc, r2d_kpc, r3d_kpc
 
 
