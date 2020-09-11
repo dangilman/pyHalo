@@ -1,8 +1,6 @@
 import numpy as np
-from scipy.interpolate import interp1d
-import dill
+import dill as pickle
 import inspect
-import os
 
 local_path = inspect.getfile(inspect.currentframe())[0:-6]
 
@@ -100,7 +98,8 @@ class NFW3DFast(object):
 
         filename = local_path + 'NFWlookup'
         file = open(filename, 'rb')
-        self.sampler = dill.load(file)
+        self.sampler = pickle.load(file)
+        file.close()
 
     def _draw(self, N, zlens):
 
