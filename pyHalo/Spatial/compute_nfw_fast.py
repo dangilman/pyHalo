@@ -156,7 +156,7 @@ class LookupProjected(object):
 
         c_values = np.loadtxt(fpath + 'c_values_2D.txt')
         domains = np.loadtxt(fpath + 'domains_2D.txt')
-        cdfs = np.loadtxt(fpath + 'cdfs_2d.txt')
+        cdfs = np.loadtxt(fpath + 'cdfs_2D.txt')
 
         self.c_min = c_values[0]
         self.c_max = c_values[-1]
