@@ -1,8 +1,8 @@
 import numpy as np
-import dill as pickle
 import inspect
+from pyHalo.Spatial.compute_nfw_fast import FastNFW
 
-local_path = inspect.getfile(inspect.currentframe())[0:-6]
+local_path = inspect.getfile(inspect.currentframe())[0:-6] + 'nfw_tables/'
 
 class NFW3D(object):
 
@@ -96,10 +96,7 @@ class NFW3DFast(object):
 
         self._c = rmax3d/Rs
 
-        filename = local_path + 'NFWlookup'
-        file = open(filename, 'rb')
-        self.sampler = pickle.load(file)
-        file.close()
+        self.sampler = FastNFW(local_path)
 
     def _draw(self, N, zlens):
 
