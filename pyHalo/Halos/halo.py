@@ -9,7 +9,7 @@ class Halo(object):
     _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW', 'PT_MASS']
 
     def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None,
-                 sub_flag=None, cosmo_m_prof=None, args={}):
+                 sub_flag=None, cosmo_m_prof=None, args={}, field_sub_flag=False):
 
         self.cosmo_prof = cosmo_m_prof
 
@@ -34,6 +34,10 @@ class Halo(object):
         self.z = z
 
         self.is_subhalo = sub_flag
+
+        self.is_field_subhalo = field_sub_flag
+
+        self.has_associated_subhalos = False
 
         self._args = args
 

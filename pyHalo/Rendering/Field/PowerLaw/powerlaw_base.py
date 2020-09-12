@@ -121,7 +121,7 @@ class PowerLawBase(LOSBase):
         required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow',
                          'log_mhigh', 'parent_m200', 'LOS_normalization', 'LOS_normalization_mass_sheet',
                          'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
-                         'break_index', 'break_scale']
+                         'break_index', 'break_scale', 'subhalos_of_field_halos']
 
         for key in required_keys:
 

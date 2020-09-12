@@ -31,7 +31,7 @@ class pyHaloDynamic(pyHaloBase):
         keyword arguments
         """
 
-        self._rendering_class_main = None
+        self._rendering_class_main = [None, None]
         super(pyHaloDynamic, self).__init__(zlens, zsource, cosmology_kwargs, kwargs_halo_mass_function)
 
     def reset(self, zlens, zsource):
@@ -116,6 +116,9 @@ class pyHaloDynamic(pyHaloBase):
 
         if not isinstance(args, list):
             args = [args]
+        else:
+            if len(args) > 2:
+                raise Exception('only two types of realiztions can be combined.')
 
         lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args[0])
 
@@ -212,9 +215,6 @@ class pyHaloDynamic(pyHaloBase):
     def _render_dynamic_main(self, args, x_aperture, y_aperture, aperture_radius,
                              x_centroid_main, y_centroid_main, include_mass_sheet_correction, geometry_render):
 
-        if len(self._rendering_class_main) == 0:
-            self._rendering_class_main = [None] * len(args)
-
         assert len(args) > 0
 
         init = True
@@ -252,19 +252,16 @@ class pyHaloDynamic(pyHaloBase):
         log_mlow_cut = args_render['log_mlow']
         log_mhigh_cut = args_render['log_mhigh']
 
-        if self._rendering_class_main[render_index] is None and render_index == 0:
+        if self._rendering_class_main[render_index] is None:
 
-            # Render subhalos include all masses, make cuts on mass and position later
-            args_render['log_mlow'] = args_render['log_mlow_subs']
-            args_render['log_mhigh'] = args_render['log_mhigh_subs']
+            if render_index == 0:
+                # Render subhalos include all masses, make cuts on mass and position later
+                args_render['log_mlow'] = args_render['log_mlow_subs']
+                args_render['log_mhigh'] = args_render['log_mhigh_subs']
 
-            self._rendering_class_main.append(MainLensPowerLawDynamic(args_render, geometry_render,
-                                                                 x_centroid_main, y_centroid_main))
+            self._rendering_class_main[render_index] = MainLensPowerLawDynamic(args_render, geometry_render,
+                                                                               x_centroid_main, y_centroid_main)
 
-        elif self._rendering_class_main[render_index] is None:
-
-            self._rendering_class_main.append(MainLensPowerLawDynamic(args_render, geometry_render,
-                                                                      x_centroid_main, y_centroid_main))
 
         masses, x, y, r2d, r3d, redshifts = render_main_dynamic(self._rendering_class_main[render_index], aperture_radius,
                                                         x_window_location, y_window_location,

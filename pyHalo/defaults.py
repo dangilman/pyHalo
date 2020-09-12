@@ -96,7 +96,7 @@ class RealizationDefaults(object):
 
         self.default_mass_function = 'sheth99'
 
-        self.default_include_subhalos = False
+        self.default_subhalos_of_field_halos = False
         self.default_LOS_normalization = 1
 
         self.log_mlow = 6
@@ -219,10 +219,10 @@ def set_default_kwargs(profile_params, dynamic, zsource):
 
     if 'c_scatter' not in profile_params.keys():
         profile_params.update({'c_scatter': halo_default.scatter})
-    if 'include_subhalos' not in profile_params.keys():
-        profile_params.update({'include_subhalos':
-                                   realization_default.default_include_subhalos})
-        if realization_default.default_include_subhalos is True:
+    if 'subhalos_of_field_halos' not in profile_params.keys():
+        profile_params.update({'subhalos_of_field_halos':
+                                   realization_default.default_subhalos_of_field_halos})
+        if realization_default.default_subhalos_of_field_halos is True:
             raise Exception('not yet implemented.')
 
     if 'truncation_routine' not in profile_params.keys():

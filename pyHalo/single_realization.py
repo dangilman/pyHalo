@@ -20,7 +20,7 @@ class Realization(object):
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
                  halos=None, other_params={}, mass_sheet_correction=True, dynamic=False,
-                 rendering_classes=None):
+                 rendering_classes=None, field_subhalo_flag=False):
 
         """
 
@@ -84,9 +84,19 @@ class Realization(object):
 
         self.set_rendering_classes(rendering_classes)
 
-    def set_rendering_classes(self, rendering_classes):
+    @classmethod
+    def add_field_subhalos(cls, realization, kwargs_subhalos, rendering_class_subhalos):
 
-        self.rendering_classes = rendering_classes
+        halos = []
+
+        for halo in realization.halos:
+
+            new_halo, associated_subhalos = rendering_class_subhalos(halo, kwargs_subhalos)
+
+            halos += [new_halo] + associated_subhalos
+
+        return Realization.from_halos(halos, realization.halo_mass_function, realization._prof_params,
+                                      realization._mass_sheet_correction, realization.rendering_classes)
 
     @classmethod
     def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction, rendering_classes):
@@ -107,6 +117,10 @@ class Realization(object):
                                   rendering_classes=rendering_classes)
 
         return realization
+
+    def set_rendering_classes(self, rendering_classes):
+
+        self.rendering_classes = rendering_classes
 
     def join(self, real):
         """
