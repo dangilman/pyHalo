@@ -72,7 +72,7 @@ class Realization(object):
 
                 self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag)
 
-            if self._prof_params['include_subhalos']:
+            if self._prof_params['subhalos_of_field_halos']:
                 raise Exception('subhalos of halos not yet implemented.')
 
         else:
