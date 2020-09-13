@@ -127,14 +127,12 @@ print_defaults = False
 
 def set_default_kwargs(profile_params, dynamic, zsource):
 
-    if 'include_subhalos' in profile_params.keys():
-        profile_params.update({'include_subhalos': profile_params['include_subhalos']})
-        if profile_params['include_subhalos'] is True:
-            profile_params.update({'subhalo_args': profile_params['subhalo_args']})
-    else:
-        profile_params.update({'include_subhalos':
-                                   realization_default.default_include_subhalos})
-
+    if 'subhalos_of_field_halos' not in profile_params.keys():
+        profile_params.update({'subhalos_of_field_halos':
+                                   realization_default.default_subhalos_of_field_halos})
+        if realization_default.default_subhalos_of_field_halos is True:
+            raise Exception('not yet implemented.')
+    
     if 'subtract_exact_mass_sheets' not in profile_params.keys():
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
 
@@ -219,11 +217,6 @@ def set_default_kwargs(profile_params, dynamic, zsource):
 
     if 'c_scatter' not in profile_params.keys():
         profile_params.update({'c_scatter': halo_default.scatter})
-    if 'subhalos_of_field_halos' not in profile_params.keys():
-        profile_params.update({'subhalos_of_field_halos':
-                                   realization_default.default_subhalos_of_field_halos})
-        if realization_default.default_subhalos_of_field_halos is True:
-            raise Exception('not yet implemented.')
 
     if 'truncation_routine' not in profile_params.keys():
         profile_params.update({'truncation_routine': truncation_default.routine})
