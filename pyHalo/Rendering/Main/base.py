@@ -143,16 +143,23 @@ class MainLensBase(RenderingBase):
         args_convergence_sheets = {}
         required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'subhalo_mass_sheet_scale',
                          'subtract_subhalo_mass_sheet', 'subhalo_convergence_correction_profile',
-                         'r_tidal', 'nfw_kappa_centroid']
+                         'r_tidal', 'nfw_kappa_centroid', 'delta_power_law_index']
 
+        raise_error = False
         for key in required_keys:
+            missing_list = []
             if key not in self.rendering_args.keys():
-                raise Exception('When specifying mass function type POWER_LAW and rendering subhalos, must provide '
-                                'key word arguments log_mass_sheet_min, log_mass_sheet_max, subtract_subhalo_mass_sheet, '
-                                'and subhalo_mass_sheet_scale. These key words specify the halo mass '
-                                'range used to add the convergence correction.')
+                raise_error = True
+                missing_list.append(key)
+            else:
+                args_convergence_sheets[key] = self.rendering_args[key]
 
-            args_convergence_sheets[key] = self.rendering_args[key]
+        if raise_error:
+            text = 'When specifying mass function type POWER_LAW and rendering subhalos, must provide all ' \
+                   'required keyword arguments. The following need to be specified: '
+            for key in missing_list:
+                text += str(key) + '\n'
+            raise Exception(text)
 
         return args_convergence_sheets
 
@@ -198,7 +205,7 @@ class MainLensBase(RenderingBase):
                 args_copy['log_mhigh'] = args['log_mhigh'][i]
 
                 if isinstance(args['power_law_index'], list):
-                    args_copy['power_law_index'] = args['power_law_index'][i]
+                    args_copy['power_law_index'] = args['power_law_index'][i] + args['delta_power_law_index']
 
                 args_mfunc = self._keyword_parse(args_copy, kpc_per_arcsec_zlens, zlens)
                 func.append(BrokenPowerLaw(**args_mfunc))
@@ -223,7 +230,7 @@ class MainLensBase(RenderingBase):
                          'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
                          'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson',
                          'subhalo_convergence_correction_profile', 'parent_m200', 'r_tidal',
-                         'nfw_kappa_centroid']
+                         'nfw_kappa_centroid', 'delta_power_law_index']
 
         assert not isinstance(args['log_mlow'], list)
         assert not isinstance(args['log_mhigh'], list)
@@ -235,13 +242,15 @@ class MainLensBase(RenderingBase):
             except:
                 raise ValueError('must specify a value for ' + key)
 
+        args_mfunc['power_law_index'] += args_mfunc['delta_power_law_index']
+
         if 'sigma_sub' in args.keys():
 
             args_mfunc['normalization'] = norm_AO_from_sigmasub(args['sigma_sub'], args['parent_m200'],
                                                                 zlens,
                                                                 kpc_per_arcsec_zlens,
                                                                 args['cone_opening_angle'],
-                                                                args['power_law_index'])
+                                                                args_mfunc['power_law_index'])
 
         elif 'log_sigma_sub' in args.keys():
 
@@ -250,7 +259,7 @@ class MainLensBase(RenderingBase):
                                                                 zlens,
                                                                 kpc_per_arcsec_zlens,
                                                                 args['cone_opening_angle'],
-                                                                args['power_law_index'])
+                                                                args_mfunc['power_law_index'])
 
 
         elif 'norm_kpc2' in args.keys():
