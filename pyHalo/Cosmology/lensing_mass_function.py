@@ -25,12 +25,18 @@ class LensingMassFunction(object):
 
         self._norms_z_dV, self._plaw_indexes_z, self._log_mbin = [], [], []
 
+        self.log_m_pivot = 8
+
+        use_lookup_table = False
+
         if use_lookup_table:
 
             if self._mass_function_model == 'sheth99_old':
                 from pyHalo.Cosmology.lookup_tables import lookup_sheth99_simple as table
             elif self._mass_function_model == 'sheth99':
                 from pyHalo.Cosmology.lookup_tables import lookup_sheth99_updated as table
+            elif self._mass_function_model == 'sheth99_new':
+                from pyHalo.Cosmology.lookup_tables import lookup_sheth99_new as table
             else:
                 raise Exception('lookup table '+self._mass_function_model+' not found.')
 
@@ -108,12 +114,11 @@ class LensingMassFunction(object):
 
         M = np.logspace(np.log10(mlow), np.log10(mhigh), 20)
 
-        norm, index = [], []
+        norm, index, norm_scale = [], [], []
 
         for zi in z_range:
 
             _, normi, indexi = self._mass_function_params(M, mlow, mhigh, zi)
-
             norm.append(normi)
             index.append(indexi)
 
@@ -189,6 +194,7 @@ class LensingMassFunction(object):
             return 0, 2
 
         coeffs = np.polyfit(np.log10(M), np.log10(dNdM), order)
+
         plaw_index = coeffs[0]
         norm = 10 ** coeffs[1]
 
@@ -208,7 +214,7 @@ class LensingMassFunction(object):
 
         def _integrand(m, m_break, plaw_index, n):
 
-            return norm * m ** (n + plaw_index) * (1 + (m_break / m)**break_scale) ** break_index
+            return norm * (m/10**8) ** (n + plaw_index) * (1 + (m_break / m)**break_scale) ** break_index
 
         moment = quad(_integrand, m_low, m_high, args=(10**log_m_break, plaw_index, n))[0]
 
@@ -223,7 +229,7 @@ class LensingMassFunction(object):
         :return: Nth moment of the mass funciton
         """
 
-        norm,plaw_index = self._fit_norm_index(M, dNdM, order=order)
+        norm, plaw_index = self._fit_norm_index(M, dNdM, order=order)
 
         if plaw_index == 2 and n==1:
             moment = norm * np.log(m_high * m_low ** -1)
@@ -232,7 +238,7 @@ class LensingMassFunction(object):
 
             moment = self.integrate_power_law(norm, m_low, m_high, 0, n, plaw_index)
 
-        return moment,norm,plaw_index
+        return moment, norm, plaw_index
 
     def cylinder_volume(self, cylinder_diameter_kpc, z_max,
                            z_min=0):
@@ -281,3 +287,17 @@ def write_lookup_table():
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
 
+# from pyHalo.Cosmology.cosmology import Cosmology
+# # new interpolation is optimized to fit correctly over 4 decades in mass
+# l = LensingMassFunction(Cosmology(), 10**7.5, 10**8.7, 0.1, 4., 6., use_lookup_table=False)
+# #l_old = LensingMassFunction(Cosmology(), 10**7.5, 10**8.7, 0.1, 4., 6., mass_function_model='sheth99')
+#
+# plaw = l.plaw_index_z(0.5)
+# print(plaw)
+# plaw_new = -1.6416
+# norm = l.norm_at_z_density(0.5, plaw_new)
+#
+# print(l.norm_at_z_density(0.5, plaw_new))
+#
+# #print(l_old._norm_dV_interp(0.5))
+#

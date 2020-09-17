@@ -11,9 +11,12 @@ class PowerLawBase(LOSBase):
 
         volume_element_comoving = self.geometry.volume_element_comoving(zi, delta_zi, aperture_radius)
 
+        plaw_index_0 = self._power_law_index(zi)
+        plaw_index = plaw_index_0 + self.rendering_args['delta_power_law_index']
+        print(plaw_index)
         norm = self.normalization(zi, delta_zi, self._zlens, self.halo_mass_function, self.rendering_args,
-                                  volume_element_comoving, self.rendering_args['LOS_normalization'])
-
+                                  volume_element_comoving, self.rendering_args['LOS_normalization'], plaw_index)
+        print(norm)
         args = deepcopy(self.rendering_args)
 
         if isinstance(args['log_mlow'], list):
@@ -21,7 +24,6 @@ class PowerLawBase(LOSBase):
         if isinstance(args['log_mhigh'], list):
             args['log_mhigh'] = max(args['log_mhigh'])
 
-        plaw_index = self.halo_mass_function.plaw_index_z(zi)
         args.update({'normalization': norm})
         args.update({'power_law_index': plaw_index})
         mfunc = BrokenPowerLaw(**args)
@@ -68,11 +70,11 @@ class PowerLawBase(LOSBase):
 
             volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z, None)
 
+            plaw_index = self._power_law_index(z) + self.rendering_args['delta_power_law_index']
             norm = self.normalization(z, delta_z, self.geometry._zlens, self.halo_mass_function,
                                       self.rendering_args, volume_element_comoving,
-                                      self.rendering_args['LOS_normalization_mass_sheet'])
+                                      self.rendering_args['LOS_normalization_mass_sheet'], plaw_index)
 
-            plaw_index = self.halo_mass_function.plaw_index_z(z)
 
             if use_analytic:
                 mass = integrate_power_law_analytic(norm, m_low, m_high, moment, plaw_index)
@@ -89,12 +91,19 @@ class PowerLawBase(LOSBase):
 
         return kwargs_out, profile_names_out, redshifts
 
+    def _power_law_index(self, z):
+
+        return self.halo_mass_function.plaw_index_z(z) + self.rendering_args['delta_power_law_index']
+
     def normalization(self, z, delta_z, zlens, lensing_mass_function_class, rendering_args, volume_element_comoving,
-                      scale):
+                      scale, plaw_index):
 
         boost = self.two_halo_boost(z, delta_z, rendering_args['parent_m200'], zlens, lensing_mass_function_class)
 
         norm_dV = scale * boost * lensing_mass_function_class.norm_at_z_density(z)
+
+        m_pivot = 10 ** 8
+        norm_dV *= m_pivot ** (-plaw_index - 1)
 
         return norm_dV * volume_element_comoving
 
@@ -102,15 +111,24 @@ class PowerLawBase(LOSBase):
     def keys_convergence_sheets(self):
 
         args_convergence_sheets = {}
-        required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale', 'zmin', 'zmax']
+        required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale', 'zmin', 'zmax',
+                         'delta_power_law_index']
 
+        raise_error = False
+        missing_list = []
         for key in required_keys:
             if key not in self.rendering_args.keys():
-                raise Exception('When specifying mass function type POWER_LAW, must provide '
-                                'key word arguments log_mass_sheet_min, log_mass_sheet_max, and kappa_scale.'
-                                'These key words specify the halo mass range used to add the convergence correction.')
+                raise_error = True
+                missing_list.append(key)
+            else:
+                args_convergence_sheets[key] = self.rendering_args[key]
 
-            args_convergence_sheets[key] = self.rendering_args[key]
+        if raise_error:
+            text = 'When specifying mass function type POWER_LAW and rendering line of sight halos, must provide all ' \
+                   'required keyword arguments. The following need to be specified: '
+            for key in missing_list:
+                text += str(key) + '\n'
+            raise Exception(text)
 
         return args_convergence_sheets
 
@@ -121,7 +139,7 @@ class PowerLawBase(LOSBase):
         required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow',
                          'log_mhigh', 'parent_m200', 'LOS_normalization', 'LOS_normalization_mass_sheet',
                          'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
-                         'break_index', 'break_scale', 'subhalos_of_field_halos']
+                         'break_index', 'break_scale', 'subhalos_of_field_halos', 'delta_power_law_index']
 
         for key in required_keys:
 
