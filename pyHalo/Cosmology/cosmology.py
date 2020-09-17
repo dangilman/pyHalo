@@ -1,4 +1,5 @@
 from colossus.halo.concentration import *
+from colossus.lss.peaks import lagrangianR
 from colossus.cosmology import cosmology
 import astropy.cosmology as astropy_cosmo
 from scipy.interpolate import interp1d
@@ -34,6 +35,17 @@ class Cosmology(object):
         self._DC_interp = self._interp_comoving_distance()
 
         self._kpc_per_asec_interp = self._interp_kpc_per_asec()
+
+    def Pk(self, k, z, **kwargs):
+
+        return self._colossus_cosmo.matterPowerSpectrum(k, z, **kwargs)
+
+    def k_from_M(self, M):
+
+        M *= self.h
+
+        two_pi = 2 * 3.14159
+        return two_pi/lagrangianR(M)
 
     def D_A_z(self, z):
 
@@ -110,12 +122,15 @@ class Cosmology(object):
         if not hasattr(self,'colossus_cosmo'):
 
             colossus_kwargs = {}
-            keys = ['H0', 'Om0', 'Ob0', 'ns', 'sigma8']
+            keys = ['H0', 'Om0', 'Ob0', 'ns', 'sigma8', 'power_law']
             for key in keys:
                 if key not in cosmo_kwargs.keys():
                     colossus_kwargs.update({key: cosmo_defaults(key)})
                 else:
+
                     colossus_kwargs.update({key: cosmo_kwargs[key]})
+                    if key == 'power_law':
+                        colossus_kwargs.update({'power_law_n': cosmo_kwargs['power_law_n']})
 
             self._colossus_cosmo = cosmology.setCosmology('custom', colossus_kwargs)
 

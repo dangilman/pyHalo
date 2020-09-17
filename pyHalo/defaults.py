@@ -21,10 +21,11 @@ class CosmoDefaults(object):
         self.sigma8 = 0.82
         self.curvature = 'flat'
         self.ns = 0.9608
+        self.power_law = False
 
         self._cosmo_param_dictionary = {'H0': self.H0, 'Ob0': self.Ob0, 'Om0': self.Om0,
                                         'Odm0': self.omega_DM, 'sigma8': self.sigma8, 'flat': self.curvature,
-                                        'ns': self.ns}
+                                        'ns': self.ns, 'power_law': self.power_law}
 
     def __call__(self, key):
 
@@ -132,7 +133,7 @@ def set_default_kwargs(profile_params, dynamic, zsource):
                                    realization_default.default_subhalos_of_field_halos})
         if realization_default.default_subhalos_of_field_halos is True:
             raise Exception('not yet implemented.')
-    
+
     if 'subtract_exact_mass_sheets' not in profile_params.keys():
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
 

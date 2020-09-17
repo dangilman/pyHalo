@@ -143,7 +143,7 @@ class LensingMassFunction(object):
 
         return N_objects_dV, norm_dV, plaw_index_dV
 
-    def dN_dMdV_comoving(self, M, z):
+    def dN_dMdV_comoving(self, M, z, ps_args=None):
 
         """
         :param M: m (in physical units, no little h)
@@ -156,7 +156,10 @@ class LensingMassFunction(object):
 
         M_h = M*h
 
-        return h ** 4 * massFunction(M_h, z, q_out='dndlnM') * M_h ** -1
+        if ps_args is not None:
+            return h ** 4 * massFunction(M_h, z, q_out='dndlnM', ps_args=ps_args) * M_h ** -1
+        else:
+            return h ** 4 * massFunction(M_h, z, q_out='dndlnM') * M_h ** -1
 
     def rho_dV(self, component_fraction):
 

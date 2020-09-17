@@ -114,8 +114,7 @@ class HaloStructure(object):
         return rN_physical_kpc
 
     def _NFW_concentration(self, M, z, model, mdef, logmhm,
-                          scatter, c_scale, c_power, scatter_amplitude):
-
+                          scatter, c_scale, c_power, scatter_amplitude, ps_args):
 
         if isinstance(model, dict):
 
@@ -140,7 +139,7 @@ class HaloStructure(object):
             if isinstance(M, float) or isinstance(M, int):
 
                 c = self._NFW_concentration_colossus(M, z, model, mdef, logmhm, scatter, c_scale, c_power,
-                                                     scatter_amplitude)
+                                                     scatter_amplitude, ps_args)
                 return c
 
             else:
@@ -148,11 +147,11 @@ class HaloStructure(object):
                 if isinstance(z, numpy.ndarray) or isinstance(z, list):
                     assert len(z) == len(M)
                     c = [self._NFW_concentration_colossus(float(mi), z[i], model, mdef, logmhm, scatter, c_scale,
-                                                          c_power, scatter_amplitude)
+                                                          c_power, scatter_amplitude, ps_args)
                          for i, mi in enumerate(M)]
                 else:
                     c = [self._NFW_concentration_colossus(float(mi), z, model, mdef, logmhm, scatter, c_scale, c_power,
-                                                          scatter_amplitude)
+                                                          scatter_amplitude, ps_args)
                          for i, mi in enumerate(M)]
 
                 return numpy.array(c)
@@ -176,7 +175,7 @@ class HaloStructure(object):
         return c
 
     def _NFW_concentration_colossus(self, M, z, model, mdef, logmhm,
-                                    scatter, c_scale, c_power, scatter_amplitude):
+                                    scatter, c_scale, c_power, scatter_amplitude, ps_args):
 
         # WDM relation adopted from Ludlow et al
         # use diemer19?
@@ -184,11 +183,18 @@ class HaloStructure(object):
             return 0.026 * z_val - 0.04
 
         if isinstance(M, float) or isinstance(M, int):
-            c = concentration(M * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z)
+            if ps_args is None:
+                c = concentration(M * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z)
+            else:
+                c = concentration(M * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z, ps_args=ps_args)
         else:
             con = []
             for i, mi in enumerate(M):
-                con.append(concentration(mi * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z[i]))
+                if ps_args is None:
+                    con.append(concentration(mi * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z[i]))
+                else:
+                    con.append(concentration(mi * self._lens_cosmo.cosmo.h, mdef=mdef, model=model, z=z[i], ps_args=ps_args))
+
             c = numpy.array(con)
 
         if logmhm != 0:

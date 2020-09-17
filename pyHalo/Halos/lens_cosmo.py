@@ -73,10 +73,10 @@ class LensCosmo(object):
         return self._halo_structure.LOS_truncation(M, z, N)
 
     def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=0,
-                          scatter=True, c_scale=None, c_power=None, scatter_amplitude=0.13):
+                          scatter=True, c_scale=None, c_power=None, scatter_amplitude=0.13, ps_args=None):
 
         return self._halo_structure._NFW_concentration(M, z, model, mdef, logmhm,
-                          scatter, c_scale, c_power, scatter_amplitude)
+                          scatter, c_scale, c_power, scatter_amplitude, ps_args)
 
     ###############################################################
     """ROUTINES BASED ON CERTAIN COSMOLOGICAL MODELS (E.G. WDM)"""
