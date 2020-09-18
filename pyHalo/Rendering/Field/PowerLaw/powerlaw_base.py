@@ -13,10 +13,10 @@ class PowerLawBase(LOSBase):
 
         plaw_index_0 = self._power_law_index(zi)
         plaw_index = plaw_index_0 + self.rendering_args['delta_power_law_index']
-        print(plaw_index)
+
         norm = self.normalization(zi, delta_zi, self._zlens, self.halo_mass_function, self.rendering_args,
                                   volume_element_comoving, self.rendering_args['LOS_normalization'], plaw_index)
-        print(norm)
+
         args = deepcopy(self.rendering_args)
 
         if isinstance(args['log_mlow'], list):
@@ -75,7 +75,6 @@ class PowerLawBase(LOSBase):
                                       self.rendering_args, volume_element_comoving,
                                       self.rendering_args['LOS_normalization_mass_sheet'], plaw_index)
 
-
             if use_analytic:
                 mass = integrate_power_law_analytic(norm, m_low, m_high, moment, plaw_index)
             else:
@@ -100,10 +99,7 @@ class PowerLawBase(LOSBase):
 
         boost = self.two_halo_boost(z, delta_z, rendering_args['parent_m200'], zlens, lensing_mass_function_class)
 
-        norm_dV = scale * boost * lensing_mass_function_class.norm_at_z_density(z)
-
-        m_pivot = 10 ** 8
-        norm_dV *= m_pivot ** (-plaw_index - 1)
+        norm_dV = scale * boost * lensing_mass_function_class.norm_at_z_density(z, plaw_index)
 
         return norm_dV * volume_element_comoving
 

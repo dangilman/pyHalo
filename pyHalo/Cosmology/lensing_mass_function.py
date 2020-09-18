@@ -25,18 +25,12 @@ class LensingMassFunction(object):
 
         self._norms_z_dV, self._plaw_indexes_z, self._log_mbin = [], [], []
 
-        self.log_m_pivot = 8
-
-        use_lookup_table = False
+        self.m_pivot = 10**8
 
         if use_lookup_table:
 
-            if self._mass_function_model == 'sheth99_old':
-                from pyHalo.Cosmology.lookup_tables import lookup_sheth99_simple as table
-            elif self._mass_function_model == 'sheth99':
-                from pyHalo.Cosmology.lookup_tables import lookup_sheth99_updated as table
-            elif self._mass_function_model == 'sheth99_new':
-                from pyHalo.Cosmology.lookup_tables import lookup_sheth99_new as table
+            if self._mass_function_model == 'sheth99':
+                from pyHalo.Cosmology.lookup_tables import lookup_sheth99 as table
             else:
                 raise Exception('lookup table '+self._mass_function_model+' not found.')
 
@@ -62,11 +56,13 @@ class LensingMassFunction(object):
 
         self._z_range = z_range
 
-    def norm_at_z_density(self, z):
+    def norm_at_z_density(self, z, plaw_index):
 
         norm = self._norm_dV_interp(z)
 
-        return norm
+        factor = 1/(self.m_pivot**plaw_index)
+
+        return norm * factor
 
     def plaw_index_z(self, z):
 
@@ -74,9 +70,9 @@ class LensingMassFunction(object):
 
         return idx
 
-    def norm_at_z(self, z, delta_z):
+    def norm_at_z(self, z, plaw_index, delta_z):
 
-        norm_dV = self.norm_at_z_density(z)
+        norm_dV = self.norm_at_z_density(z, plaw_index)
 
         dV = self.geometry.volume_element_comoving(z, delta_z)
 
@@ -193,18 +189,18 @@ class LensingMassFunction(object):
         if np.all(dNdM==0):
             return 0, 2
 
-        coeffs = np.polyfit(np.log10(M), np.log10(dNdM), order)
+
+        coeffs = np.polyfit(np.log10(M/self.m_pivot), np.log10(dNdM), order)
 
         plaw_index = coeffs[0]
         norm = 10 ** coeffs[1]
 
-        return norm,plaw_index
+        return norm, plaw_index
 
-    def integrate_mass_function(self, z, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n=1,
+    def integrate_mass_function(self, z, plaw_index, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n=1,
                                 norm_scale = 1):
 
-        norm = self.norm_at_z(z, delta_z)
-        plaw_index = self.plaw_index_z(z)
+        norm = self.norm_at_z(z, plaw_index, delta_z)
         moment = self.integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
                                           break_index=break_index, break_scale=break_scale)
 
@@ -214,7 +210,7 @@ class LensingMassFunction(object):
 
         def _integrand(m, m_break, plaw_index, n):
 
-            return norm * (m/10**8) ** (n + plaw_index) * (1 + (m_break / m)**break_scale) ** break_index
+            return norm * m ** (n + plaw_index) * (1 + (m_break / m)**break_scale) ** break_index
 
         moment = quad(_integrand, m_low, m_high, args=(10**log_m_break, plaw_index, n))[0]
 
@@ -268,14 +264,14 @@ def write_lookup_table():
 
     from pyHalo.Cosmology.cosmology import Cosmology
     # new interpolation is optimized to fit correctly over 4 decades in mass
-    l = LensingMassFunction(Cosmology(), 10**7.5, 10**8.7, 0.1, 4., 6., use_lookup_table=False)
+    l = LensingMassFunction(Cosmology(), 10**7., 10**9, 0.1, 4., 6., use_lookup_table=False)
 
-    fname = './lookup_tables/lookup_sheth99_updated.py'
+    fname = './lookup_tables/lookup_sheth99.py'
 
     with open(fname, 'w') as f:
         f.write('import numpy as np\n')
 
-    write_to_file(fname, 'norm_z_dV', np.round(l._norm_z_dV, 2), 'a')
+    write_to_file(fname, 'norm_z_dV', np.round(l._norm_z_dV, 12), 'a')
     write_to_file(fname, 'plaw_index_z', np.round(l._plaw_index_z,2), 'a')
 
     with open(fname, 'a') as f:
@@ -287,16 +283,27 @@ def write_lookup_table():
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
 
+#write_lookup_table()
+#
 # from pyHalo.Cosmology.cosmology import Cosmology
-# # new interpolation is optimized to fit correctly over 4 decades in mass
-# l = LensingMassFunction(Cosmology(), 10**7.5, 10**8.7, 0.1, 4., 6., use_lookup_table=False)
-# #l_old = LensingMassFunction(Cosmology(), 10**7.5, 10**8.7, 0.1, 4., 6., mass_function_model='sheth99')
+# import matplotlib.pyplot as plt
+# # # new interpolation is optimized to fit correctly over 4 decades in mass
+# l = LensingMassFunction(Cosmology(), 10**7, 10**9., 0.1, 4., 6., use_lookup_table=False)
+# m = np.logspace(6, 10, 100)
 #
-# plaw = l.plaw_index_z(0.5)
-# print(plaw)
-# plaw_new = -1.6416
-# norm = l.norm_at_z_density(0.5, plaw_new)
+# plaw_predicted = l.plaw_index_z(1.4)
+# print(plaw_predicted)
 #
+# plaw = -2.1
+# norm = l.norm_at_z_density(0.5, plaw)
+# dndm = norm * m ** plaw
+# plt.loglog(m, dndm)
+#
+# plaw = -1.75
+# norm = l.norm_at_z_density(0.5, plaw)
+# dndm = norm * m ** plaw
+# plt.loglog(m, dndm, color='r'); plt.show()
+
 # print(l.norm_at_z_density(0.5, plaw_new))
 #
 # #print(l_old._norm_dV_interp(0.5))
