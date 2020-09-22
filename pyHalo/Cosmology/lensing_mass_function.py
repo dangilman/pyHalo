@@ -158,9 +158,11 @@ class LensingMassFunction(object):
         M_h = M*h
 
         if ps_args is not None:
-            return h ** 4 * massFunction(M_h, z, q_out='dndlnM', ps_args=ps_args) * M_h ** -1
+            return h ** 4 * massFunction(M_h, z, q_out='dndlnM',
+                                         ps_args=ps_args, model=self._mass_function_model) * M_h ** -1
         else:
-            return h ** 4 * massFunction(M_h, z, q_out='dndlnM') * M_h ** -1
+            return h ** 4 * massFunction(M_h, z, q_out='dndlnM',
+                                         model=self._mass_function_model) * M_h ** -1
 
     def rho_dV(self, component_fraction):
 
@@ -283,13 +285,49 @@ def write_lookup_table():
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
 
+
 #write_lookup_table()
-#
+
 # from pyHalo.Cosmology.cosmology import Cosmology
+# l = LensingMassFunction(Cosmology(), 10**7, 10**9., 0.1, 4., 6., use_lookup_table=True)
+# print(l.plaw_index_z(0.01))
+
+#
+# m = np.logspace(7, 9, 10)
+# logm = np.log10(m)
+# z1, z2 = 0., 3.5
+# logdndm_1 = np.log10(l.dN_dMdV_comoving(m, z1))
+# logdndm_2 = np.log10(l.dN_dMdV_comoving(m, z2))
 # import matplotlib.pyplot as plt
+# plt.loglog(m, 10**logdndm_1, color='k', label='z=0')
+# plt.loglog(m, 10**logdndm_2, color='r', label='z=2.5')
+# # plt.legend(fontsize=13)
+# # plt.savefig('redshift_evo.pdf')
+# plt.show()
+# coeffs1 = np.polyfit(logm, logdndm_1, 1)
+# coeffs2 = np.polyfit(logm, logdndm_2, 1)
+# print(coeffs1)
+# print(coeffs2)
+#
+
 # # # new interpolation is optimized to fit correctly over 4 decades in mass
-# l = LensingMassFunction(Cosmology(), 10**7, 10**9., 0.1, 4., 6., use_lookup_table=False)
-# m = np.logspace(6, 10, 100)
+# l = LensingMassFunction(Cosmology(), 10**7, 10**9., 0.1, 4., 6.)
+# m = np.logspace(7, 14, 100)
+# z = 0.
+# dndm0 = l.dN_dMdV_comoving(m, z)
+#
+# z = 0.5
+# dndm = l.dN_dMdV_comoving(m, z)
+# plt.loglog(m, dndm/dndm0)
+#
+# z = 1.
+# dndm = l.dN_dMdV_comoving(m, z)
+# plt.loglog(m, dndm/dndm0)
+#
+# z = 2.
+# dndm = l.dN_dMdV_comoving(m, z)
+# plt.loglog(m, dndm/dndm0); plt.show()
+# # m = np.logspace(6, 10, 100)
 #
 # plaw_predicted = l.plaw_index_z(1.4)
 # print(plaw_predicted)
