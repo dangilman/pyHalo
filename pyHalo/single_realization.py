@@ -217,19 +217,11 @@ class Realization(object):
             xshift, yshift = ray_interp_x(comoving_distance_z), ray_interp_y(comoving_distance_z)
 
             new_x, new_y = halo.x + xshift, halo.y + yshift
+
             new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
                         sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo,
                         args=self._prof_params)
             halos.append(new_halo)
-
-        dzlens = self.lens_cosmo.cosmo.D_C_z(self.geometry._zlens)
-        x_centroid, y_centroid = ray_interp_x(dzlens), ray_interp_y(dzlens)
-
-        # for rendering_class in self.rendering_classes:
-        #     if rendering_class.type == 'main_lens_plane':
-        #
-        #         rendering_class.convergence_correction_centroid_x = float(x_centroid)
-        #         rendering_class.convergence_correction_centroid_y = float(y_centroid)
 
         new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self._mass_sheet_correction,
