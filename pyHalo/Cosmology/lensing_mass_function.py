@@ -158,11 +158,17 @@ class LensingMassFunction(object):
         M_h = M*h
 
         if ps_args is not None:
-            return h ** 4 * massFunction(M_h, z, q_out='dndlnM',
-                                         ps_args=ps_args, model=self._mass_function_model) * M_h ** -1
+            dndlogM = massFunction(M_h, z, q_out='dndlnM',
+                                         ps_args=ps_args, model=self._mass_function_model)
+
         else:
-            return h ** 4 * massFunction(M_h, z, q_out='dndlnM',
-                                         model=self._mass_function_model) * M_h ** -1
+            dndlogM = massFunction(M_h, z, q_out='dndlnM', model=self._mass_function_model)
+
+        dndM_comoving_h = dndlogM / M_h
+
+        dndM_comoving = dndM_comoving_h * h
+
+        return dndM_comoving
 
     def rho_dV(self, component_fraction):
 
@@ -288,7 +294,6 @@ def write_lookup_table():
 
 #write_lookup_table()
 
-# from pyHalo.Cosmology.cosmology import Cosmology
 # l = LensingMassFunction(Cosmology(), 10**7, 10**9., 0.1, 4., 6., use_lookup_table=True)
 # print(l.plaw_index_z(0.01))
 

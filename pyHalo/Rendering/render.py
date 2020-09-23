@@ -38,8 +38,6 @@ def render_los_dynamic(rendering_class, aperture_radius, lens_plane_redshifts,
 
     init = True
 
-    comoving_distance = comvoing_distance_interp(2.)
-
     for i, (zi, delta_zi) in enumerate(zip(lens_plane_redshifts, delta_zs)):
 
         if zi < zmin or zi > zmax:
