@@ -149,12 +149,13 @@ class LensingMassFunction(object):
         """
         :param M: m (in physical units, no little h)
         :param z: redshift
-        :return: differential number per unit mass per cubic Mpc (physical)
+        :return: differential number per unit mass per cubic Mpc (comoving)
         [N * M_sun ^ -1 * Mpc ^ -3]
         """
 
         h = self._cosmo.h
 
+        # To M_sun / h units
         M_h = M*h
 
         if ps_args is not None:
@@ -166,7 +167,7 @@ class LensingMassFunction(object):
 
         dndM_comoving_h = dndlogM / M_h
 
-        dndM_comoving = dndM_comoving_h * h
+        dndM_comoving = dndM_comoving_h * h ** 4
 
         return dndM_comoving
 
@@ -291,11 +292,20 @@ def write_lookup_table():
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
 
-
-#write_lookup_table()
-
-# l = LensingMassFunction(Cosmology(), 10**7, 10**9., 0.1, 4., 6., use_lookup_table=True)
-# print(l.plaw_index_z(0.01))
+# import matplotlib.pyplot as plt
+# from pyHalo.Cosmology.cosmology import Cosmology
+# cosmo = Cosmology()
+# l = LensingMassFunction(cosmo, 10**7, 10**9., 0.1, 4., 6., use_lookup_table=False)
+# h = cosmo.astropy.h
+# galfit = np.loadtxt('HMF_slope.txt', skiprows=1)
+# z = galfit[:,0]
+# slope = galfit[:,1]
+# amp = galfit[:,3]
+# a_z = 1/(1 + z)
+# amp_colossus = l.dN_dMdV_comoving(10**8, z) * a_z ** 3
+# plt.plot(z, amp_colossus, color='r')
+# plt.plot(z, amp, color='k')
+# plt.show()
 
 #
 # m = np.logspace(7, 9, 10)

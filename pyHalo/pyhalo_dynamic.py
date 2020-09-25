@@ -36,7 +36,7 @@ class pyHaloDynamic(pyHaloBase):
 
     def reset(self, zlens, zsource):
 
-        self._rendering_class_main = None
+        self._rendering_class_main = [None, None]
         self.reset_redshifts(zlens, zsource)
 
     def render_dynamic_with_macromodel(self, type, args, realization_start,
