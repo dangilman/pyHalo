@@ -292,9 +292,10 @@ def write_lookup_table():
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
 
+#write_lookup_table()
 # import matplotlib.pyplot as plt
-# from pyHalo.Cosmology.cosmology import Cosmology
-# cosmo = Cosmology()
+#from pyHalo.Cosmology.cosmology import Cosmology
+#cosmo = Cosmology()
 # l = LensingMassFunction(cosmo, 10**7, 10**9., 0.1, 4., 6., use_lookup_table=False)
 # h = cosmo.astropy.h
 # galfit = np.loadtxt('HMF_slope.txt', skiprows=1)
