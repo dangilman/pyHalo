@@ -16,7 +16,13 @@ pyHalo
 
 
 
-A tool for rendering full mass distributions for gravitational lensing simulations
+A tool for rendering full mass distributions for gravitational lensing simulations. This package was used to generate subhalo and field halo populations for the following publications: 
+
+https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
+https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract
+https://ui.adsabs.harvard.edu/abs/2020arXiv200701308G/abstract
+
+If you would like to use this package, please write get in touch with me at gilman@astro.utoronto.ca.
 
 
 * Free software: MIT license
