@@ -7,7 +7,7 @@ from colossus.lss.bias import twoHaloTerm
 class LensingMassFunction(object):
 
     def __init__(self, cosmology, mlow, mhigh, zlens, zsource, cone_opening_angle,
-                 mass_function_model=None, use_lookup_table=True, two_halo_term=True,
+                 m_pivot=10**8, mass_function_model=None, use_lookup_table=True, two_halo_term=True,
                  geometry_type=None):
 
         self._cosmo = cosmology
@@ -25,9 +25,9 @@ class LensingMassFunction(object):
 
         self._norms_z_dV, self._plaw_indexes_z, self._log_mbin = [], [], []
 
-        self.m_pivot = 10**8
+        self.m_pivot = m_pivot
 
-        if use_lookup_table:
+        if use_lookup_table and m_pivot == 10**8:
 
             if self._mass_function_model == 'sheth99':
                 from pyHalo.Cosmology.lookup_tables import lookup_sheth99 as table
@@ -56,11 +56,12 @@ class LensingMassFunction(object):
 
         self._z_range = z_range
 
-    def norm_at_z_density(self, z, plaw_index):
+    def norm_at_z_density(self, z, plaw_index, m_pivot):
 
         norm = self._norm_dV_interp(z)
 
-        factor = 1/(self.m_pivot**plaw_index)
+        assert m_pivot == self.m_pivot
+        factor = 1/(m_pivot**plaw_index)
 
         return norm * factor
 
@@ -70,9 +71,9 @@ class LensingMassFunction(object):
 
         return idx
 
-    def norm_at_z(self, z, plaw_index, delta_z):
+    def norm_at_z(self, z, plaw_index, delta_z, m_pivot):
 
-        norm_dV = self.norm_at_z_density(z, plaw_index)
+        norm_dV = self.norm_at_z_density(z, plaw_index, m_pivot)
 
         dV = self.geometry.volume_element_comoving(z, delta_z)
 
@@ -209,7 +210,7 @@ class LensingMassFunction(object):
     def integrate_mass_function(self, z, plaw_index, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n=1,
                                 norm_scale = 1):
 
-        norm = self.norm_at_z(z, plaw_index, delta_z)
+        norm = self.norm_at_z(z, plaw_index, delta_z, self.m_pivot)
         moment = self.integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
                                           break_index=break_index, break_scale=break_scale)
 

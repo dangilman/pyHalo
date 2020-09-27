@@ -15,7 +15,8 @@ class PowerLawBase(LOSBase):
         plaw_index = plaw_index_0 + self.rendering_args['delta_power_law_index']
 
         norm = self.normalization(zi, delta_zi, self._zlens, self.halo_mass_function, self.rendering_args,
-                                  volume_element_comoving, self.rendering_args['LOS_normalization'], plaw_index)
+                                  volume_element_comoving, self.rendering_args['LOS_normalization'], plaw_index,
+                                  self.rendering_args['m_pivot'])
 
         args = deepcopy(self.rendering_args)
 
@@ -73,7 +74,8 @@ class PowerLawBase(LOSBase):
             plaw_index = self._power_law_index(z) + self.rendering_args['delta_power_law_index']
             norm = self.normalization(z, delta_z, self.geometry._zlens, self.halo_mass_function,
                                       self.rendering_args, volume_element_comoving,
-                                      self.rendering_args['LOS_normalization_mass_sheet'], plaw_index)
+                                      self.rendering_args['LOS_normalization_mass_sheet'], plaw_index,
+                                      self.rendering_args['m_pivot'])
 
             if use_analytic:
                 mass = integrate_power_law_analytic(norm, m_low, m_high, moment, plaw_index)
@@ -95,11 +97,11 @@ class PowerLawBase(LOSBase):
         return self.halo_mass_function.plaw_index_z(z) + self.rendering_args['delta_power_law_index']
 
     def normalization(self, z, delta_z, zlens, lensing_mass_function_class, rendering_args, volume_element_comoving,
-                      scale, plaw_index):
+                      scale, plaw_index, m_pivot):
 
         boost = self.two_halo_boost(z, delta_z, rendering_args['parent_m200'], zlens, lensing_mass_function_class)
 
-        norm_dV = scale * boost * lensing_mass_function_class.norm_at_z_density(z, plaw_index)
+        norm_dV = scale * boost * lensing_mass_function_class.norm_at_z_density(z, plaw_index, m_pivot)
 
         return norm_dV * volume_element_comoving
 
@@ -135,7 +137,8 @@ class PowerLawBase(LOSBase):
         required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow',
                          'log_mhigh', 'parent_m200', 'LOS_normalization', 'LOS_normalization_mass_sheet',
                          'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
-                         'break_index', 'break_scale', 'subhalos_of_field_halos', 'delta_power_law_index']
+                         'break_index', 'break_scale', 'subhalos_of_field_halos', 'delta_power_law_index',
+                         'm_pivot']
 
         for key in required_keys:
 

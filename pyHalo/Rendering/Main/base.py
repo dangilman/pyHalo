@@ -230,7 +230,7 @@ class MainLensBase(RenderingBase):
                          'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
                          'subtract_subhalo_mass_sheet', 'subhalo_mass_sheet_scale', 'draw_poisson',
                          'subhalo_convergence_correction_profile', 'parent_m200', 'r_tidal',
-                         'nfw_kappa_centroid', 'delta_power_law_index']
+                         'nfw_kappa_centroid', 'delta_power_law_index', 'm_pivot']
 
         assert not isinstance(args['log_mlow'], list)
         assert not isinstance(args['log_mhigh'], list)
@@ -250,7 +250,8 @@ class MainLensBase(RenderingBase):
                                                                 zlens,
                                                                 kpc_per_arcsec_zlens,
                                                                 args['cone_opening_angle'],
-                                                                args_mfunc['power_law_index'])
+                                                                args_mfunc['power_law_index'],
+                                                                args['m_pivot'])
 
         elif 'log_sigma_sub' in args.keys():
 
@@ -259,22 +260,24 @@ class MainLensBase(RenderingBase):
                                                                 zlens,
                                                                 kpc_per_arcsec_zlens,
                                                                 args['cone_opening_angle'],
-                                                                args_mfunc['power_law_index'])
-
+                                                                args_mfunc['power_law_index'],
+                                                                args['m_pivot'])
 
         elif 'norm_kpc2' in args.keys():
 
             args_mfunc['normalization'] = norm_A0_from_a0area(args['norm_kpc2'],
                                                               zlens,
                                                               args['cone_opening_angle'],
-                                                              args_mfunc['power_law_index'])
+                                                              args_mfunc['power_law_index'],
+                                                              args['m_pivot'])
 
         elif 'norm_arcsec2' in args.keys():
 
             args_mfunc['normalization'] = norm_constant_per_squarearcsec(args['norm_arcsec2'],
                                                                          kpc_per_arcsec_zlens,
                                                                          args['cone_opening_angle'],
-                                                                         args_mfunc['power_law_index'])
+                                                                         args_mfunc['power_law_index'],
+                                                                         args['m_pivot'])
 
         elif 'f_sub' in args.keys() or 'log_f_sub' in args.keys():
 
@@ -285,12 +288,12 @@ class MainLensBase(RenderingBase):
                 args['f_sub'], args['parent_m200'], zlens, args['R_ein_main'], args['cone_opening_angle'],
                 zlens,
                 args_mfunc['power_law_index'], 10 ** args_mfunc['log_mlow'],
-                                               10 ** args_mfunc['log_mhigh'], mpivot=10 ** 8)
+                                               10 ** args_mfunc['log_mhigh'], mpivot=args['m_pivot'])
 
             args_mfunc['normalization'] = norm_A0_from_a0area(a0_area_parent_halo,
                                                               kpc_per_arcsec_zlens,
                                                               args['cone_opening_angle'],
-                                                              args_mfunc['power_law_index'], m_pivot=10 ** 8)
+                                                              args_mfunc['power_law_index'], m_pivot=args['m_pivot'])
 
         else:
 

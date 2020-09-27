@@ -106,6 +106,8 @@ class RealizationDefaults(object):
 
         self.m_parent = 10**13
 
+        self.m_pivot = 10 ** 8
+
         self.delta_power_law_index = 0.
 
         self.subtract_exact_mass_sheets = False
@@ -129,6 +131,9 @@ realization_default = RealizationDefaults()
 print_defaults = False
 
 def set_default_kwargs(profile_params, dynamic, zsource):
+
+    if 'm_pivot' not in profile_params.keys():
+        profile_params.update({'m_pivot': realization_default.m_pivot})
 
     if 'subhalos_of_field_halos' not in profile_params.keys():
         profile_params.update({'subhalos_of_field_halos':

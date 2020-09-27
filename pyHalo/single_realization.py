@@ -4,17 +4,40 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 from pyHalo.Rendering.Main.SHMF_normalizations import *
-from scipy.integrate import quad
 
 from copy import deepcopy
 
-def realization_at_z(realization, z):
+def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordinate_y=None, max_range=None):
+    """
 
-    halos = realization.halos_at_z(z)
+    :param realization: an instance of Realization
+    :param z: the redshift where we want to extract halos
+    :param angular_coordinate_x: if max_range is specified, will only keep halos within
+    max_range of (angular_coordinate_x, angular_coordinate_y)
+    :param angular_coordinate_y:
+    :param max_range: radius in arcseconds where we want to keep halos. If None, will return a new realization class
+     that contains all halos at redshift z the input realization class
+    :return: a new instance of Realization
+    """
+
+    _halos, _indexes = realization.halos_at_z(z)
+    halos = []
+    indexes = []
+
+    if max_range is not None:
+        for i, halo in enumerate(_halos):
+            dx, dy = halo.x - angular_coordinate_x, halo.y - angular_coordinate_y
+            dr = (dx ** 2 + dy ** 2) ** 0.5
+            if dr < max_range:
+                halos.append(halo)
+                indexes.append(i)
+    else:
+        halos = _halos
+        indexes = _indexes
 
     return Realization.from_halos(halos, realization.halo_mass_function,
                                   realization._prof_params, realization._mass_sheet_correction,
-                                  realization.rendering_classes)
+                                  realization.rendering_classes), indexes
 
 class Realization(object):
 
@@ -239,7 +262,7 @@ class Realization(object):
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
-    def lensing_quantities(self, return_kwargs=False):
+    def lensing_quantities(self, return_kwargs=False, add_mass_sheet_correction=True):
 
         kwargs_lens = []
         lens_model_names = []
@@ -265,7 +288,7 @@ class Realization(object):
                 if model_args is not None and not (type(model_args) is type(kwargs_lensmodel)):
                     raise Exception('Currently only one numerical lens class at once is supported.')
 
-        if self._mass_sheet_correction:
+        if self._mass_sheet_correction and add_mass_sheet_correction:
 
             if self.rendering_classes is None:
                 raise Exception('if applying a convergence sheet correction, must specify '
@@ -443,7 +466,7 @@ class Realization(object):
 
         for plane_index, zi in enumerate(self.unique_redshifts):
 
-            plane_halos = self.halos_at_z(zi)
+            plane_halos, _ = self.halos_at_z(zi)
             inds_at_z = np.where(self.redshifts == zi)[0]
             x_at_z = self.x[inds_at_z]
             y_at_z = self.y[inds_at_z]
@@ -495,13 +518,16 @@ class Realization(object):
                                       self._mass_sheet_correction, self.rendering_classes)
 
     def halos_at_z(self,z):
+
         halos = []
-        for halo in self.halos:
+        index = []
+        for i, halo in enumerate(self.halos):
             if halo.z != z:
                 continue
             halos.append(halo)
+            index.append(i)
 
-        return halos
+        return halos, index
 
     def mass_at_z_exact(self, z):
 
