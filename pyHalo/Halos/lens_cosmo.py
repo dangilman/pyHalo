@@ -51,7 +51,7 @@ class LensCosmo(object):
 
     @property
     def colossus(self):
-        return self.lens_cosmo.colossus
+        return self.cosmo.colossus
 
     ######################################################
     """ACCESS ROUTINES IN STRUCTURAL PARAMETERS CLASS"""
