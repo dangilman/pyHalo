@@ -199,5 +199,3 @@ class Cosmology(object):
         """
 
         return self.rho_crit(z)*self.astropy.Odm(z)
-
-

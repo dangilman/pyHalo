@@ -43,7 +43,7 @@ class Realization(object):
 
     def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
                  halos=None, other_params={}, mass_sheet_correction=True, dynamic=False,
-                 rendering_classes=None, field_subhalo_flag=False):
+                 rendering_classes=None):
 
         """
 
@@ -83,11 +83,6 @@ class Realization(object):
 
         self._prof_params = set_default_kwargs(other_params, dynamic, self.geometry._zsource)
 
-        self.m_break_scale = self._prof_params['log_m_break']
-        self.break_index = self._prof_params['break_index']
-        self._LOS_norm = self._prof_params['LOS_normalization']
-        self.break_scale = self._prof_params['break_scale']
-
         if halos is None:
 
             for mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r2d, r3d,
@@ -106,20 +101,6 @@ class Realization(object):
         self._reset()
 
         self.set_rendering_classes(rendering_classes)
-
-    @classmethod
-    def add_field_subhalos(cls, realization, kwargs_subhalos, rendering_class_subhalos):
-
-        halos = []
-
-        for halo in realization.halos:
-
-            new_halo, associated_subhalos = rendering_class_subhalos(halo, kwargs_subhalos)
-
-            halos += [new_halo] + associated_subhalos
-
-        return Realization.from_halos(halos, realization.halo_mass_function, realization._prof_params,
-                                      realization._mass_sheet_correction, realization.rendering_classes)
 
     @classmethod
     def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction, rendering_classes):
