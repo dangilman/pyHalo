@@ -11,8 +11,7 @@ class PowerLawBase(LOSBase):
 
         volume_element_comoving = self.geometry.volume_element_comoving(zi, delta_zi, aperture_radius)
 
-        plaw_index_0 = self._power_law_index(zi)
-        plaw_index = plaw_index_0 + self.rendering_args['delta_power_law_index']
+        plaw_index = self._power_law_index(zi)
 
         norm = self.normalization(zi, delta_zi, self._zlens, self.halo_mass_function, self.rendering_args,
                                   volume_element_comoving, self.rendering_args['LOS_normalization'], plaw_index,
@@ -71,7 +70,7 @@ class PowerLawBase(LOSBase):
 
             volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z, None)
 
-            plaw_index = self._power_law_index(z) + self.rendering_args['delta_power_law_index']
+            plaw_index = self._power_law_index(z)
             norm = self.normalization(z, delta_z, self.geometry._zlens, self.halo_mass_function,
                                       self.rendering_args, volume_element_comoving,
                                       self.rendering_args['LOS_normalization_mass_sheet'], plaw_index,

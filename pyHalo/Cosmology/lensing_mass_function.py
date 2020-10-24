@@ -199,7 +199,6 @@ class LensingMassFunction(object):
         if np.all(dNdM==0):
             return 0, 2
 
-
         coeffs = np.polyfit(np.log10(M/self.m_pivot), np.log10(dNdM), order)
 
         plaw_index = coeffs[0]
@@ -292,6 +291,26 @@ def write_lookup_table():
 
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
+
+# import matplotlib.pyplot as plt
+# from pyHalo.Cosmology.cosmology import Cosmology
+# cosmo = Cosmology()
+# m_pivot = 10**9
+# l = LensingMassFunction(cosmo, 10**7, 10**9., 0.1, 4., 6., use_lookup_table=False,
+#                         m_pivot=m_pivot)
+#
+# z = 0.4
+# delta_plaw_index = -0.2
+# plaw_index = l.plaw_index_z(z) + delta_plaw_index
+#
+# m = np.logspace(6, 10, 50)
+# dndm_colossus = l.dN_dMdV_comoving(m, z) * (m/m_pivot) ** delta_plaw_index
+# norm = l.norm_at_z_density(z, plaw_index, m_pivot)
+# dndm = norm * m ** plaw_index
+# plt.loglog(m, dndm)
+# plt.loglog(m, dndm_colossus)
+#
+# plt.show()
 
 #write_lookup_table()
 # import matplotlib.pyplot as plt
