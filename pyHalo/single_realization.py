@@ -374,6 +374,19 @@ class Realization(object):
         realization = self.join(new_real)
         return realization
 
+    def add_halos(self, masses, x, y, r2d, r3d, mdefs, z, sub_flags):
+
+        """
+        Added this routine to maintin backwards compatability
+
+        """
+        new_real = Realization(masses, x, y, r2d, r3d, mdefs, z, sub_flags, self.halo_mass_function,
+                               halos=None, other_params=self._prof_params,
+                               mass_sheet_correction=self._mass_sheet_correction)
+
+        realization = self.join(new_real)
+        return realization
+
     def change_profile_params(self, new_args):
 
         new_params = deepcopy(self._prof_params)

@@ -76,10 +76,9 @@ class Geometry(object):
     def volume_element_comoving(self, z, delta_z, radius=None):
         """
 
-        :param theta:
-        :param z_lens:e
-        :param z:
-        :param delta_z:
+        :param z: redshift
+        :param delta_z: thickness of the redshift pancake
+        :param radius: angular radius of the rendering area in arcseconds
         :return: volume element in comoving Mpc for small delta_z
         """
 
