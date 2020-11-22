@@ -91,7 +91,7 @@ class RealizationDefaults(object):
         self.default_mhm = 0
         self.default_break_scale = 1
         self.default_break_index = -1.3
-        self.default_r_tidal = 0.5 # r_tidal = 'default_r_ridal * Rs'
+        self.default_r_tidal = '0.5Rs' # r_tidal = 'default_r_ridal * Rs'
 
         self.default_type = 'composite_powerlaw'
 

@@ -12,7 +12,7 @@ class LensCosmo(object):
 
         self.cosmo = cosmology
         self.z_lens, self.z_source = z_lens, z_source
-        # critical density of the universe in M_sun Mpc^-3
+        # critical density of the universe in M_sun h^2 Mpc^-3
         self.rhoc = self.cosmo.astropy.critical_density0.value * \
                     self.cosmo.density_to_MsunperMpc / self.cosmo.h ** 2
 
@@ -110,11 +110,18 @@ class LensCosmo(object):
 
     def get_epsiloncrit(self,z1,z2):
 
+        """
+        Returns the critical density for lensing in units of M_sun / Mpc ^ 2
+        """
+
         D_ds = self.cosmo.D_A(z1, z2)
         D_d = self.cosmo.D_A_z(z1)
         D_s = self.cosmo.D_A_z(z2)
 
-        epsilon_crit = (self.cosmo.c**2*(4*numpy.pi*self.cosmo.G)**-1)*(D_s*D_ds**-1*D_d**-1)
+        d_inv = D_s*D_ds**-1*D_d**-1
+
+        # (Mpc ^2 / sec^2) * (Mpc^-3 M_sun^1 sec ^ 2) * Mpc ^-1 = M_sun / Mpc ^2
+        epsilon_crit = (self.cosmo.c**2*(4*numpy.pi*self.cosmo.G)**-1)*d_inv
 
         return epsilon_crit
 
@@ -155,6 +162,21 @@ class LensCosmo(object):
         theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
         eps_crit = self.get_epsiloncrit(z, self.z_source)
         return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
+
+    def nfw_angle2mass(self, rs_angle, theta_rs, z):
+
+        D_d = self.cosmo.D_A_z(z)
+        eps_crit = self.get_epsiloncrit(z, self.z_source)
+
+        rs_mpc = rs_angle * D_d * self.cosmo.arcsec
+
+        # to units M / Mpc
+        theta_rs = theta_rs * eps_crit * D_d * self.cosmo.arcsec
+
+        # units M/Mpc^3
+        rho0 = theta_rs / (4 * rs_mpc ** 2 * (1 + numpy.log(1./2)))
+
+        return 4 * numpy.pi * rs_mpc ** 3 * rho0
 
     def rho0_c_NFW(self, c):
         """
