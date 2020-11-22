@@ -63,7 +63,7 @@ class NFW3DCore(object):
         self._xcore = r_core_parent / Rs
 
         self.nfw = NFW3DFast(Rs, rmax2d, rmax3d)
-
+       
         self._xmin = self.nfw._xmin
 
         self._norm = ((self._xmin + self._xcore) * (1 + self._xmin) ** 2) ** -1
