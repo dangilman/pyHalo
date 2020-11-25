@@ -40,9 +40,8 @@ class MainLensBase(RenderingBase):
         elif args['subhalo_spatial_distribution'] == 'HOST_NFW':
             spatial_args = subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo)
             rtidal_over_rs = np.round(spatial_args['r_core_parent']/spatial_args['Rs'], 2)
-            print(rtidal_over_rs)
+
             if abs(rtidal_over_rs - 0.25) < 0.01:
-                print('working')
                 spatial_class = CoreNFW3DFast
             else:
                 spatial_class = NFW3DCoreRejectionSampling
