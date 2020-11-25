@@ -3,6 +3,7 @@ from pyHalo.Spatial.compute_nfw_fast import FastNFW
 import inspect
 
 local_path = inspect.getfile(inspect.currentframe())[0:-11] + 'nfw_tables/'
+local_path_cored = inspect.getfile(inspect.currentframe())[0:-11] + 'core_nfw_tables/'
 
 class NFW3DFast(object):
 
@@ -50,9 +51,59 @@ class NFW3DFast(object):
 
         return x_kpc, y_kpc, r2_kpc, r3_kpc
 
+class CoreNFW3DFast(object):
 
-class NFW3DCore(object):
+    """
+    Same as NFW3DFast, but uses pre-computed CDFs to do the sampling of a cored profile
+    much faster than rejection sampling
+    """
 
+    def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
+
+        assert r_core_parent == 0.25 * Rs
+        self._Rs = Rs
+        self._rmax2d = rmax2d
+        self._rmax3d = rmax3d
+
+        self._xc = 0.001 * Rs
+
+        self._xmin = 0.01 * rmax2d / self._Rs
+
+        self._c = rmax3d / Rs
+
+        self.sampler = FastNFW(local_path_cored)
+
+    def _draw(self, N, zlens):
+
+        x, y, z = self.sampler.sample(self._c, N)
+        r2 = np.sqrt(x ** 2 + y ** 2)
+        keep = np.where(r2 <= self._rmax2d / self._Rs)[0]
+
+        return x[keep], y[keep], z[keep]
+
+    def draw(self, N, zlens):
+        x, y, z = self._draw(N, zlens)
+
+        while len(x) < N:
+            _x, _y, _z = self._draw(N, zlens)
+            x = np.append(x, _x)
+            y = np.append(y, _y)
+            z = np.append(z, _z)
+
+        x_kpc = x[0:N] * self._Rs
+        y_kpc = y[0:N] * self._Rs
+        z_kpc = z[0:N] * self._Rs
+        r2_kpc = np.sqrt(x_kpc ** 2 + y_kpc ** 2)
+        r3_kpc = np.sqrt(r2_kpc ** 2 + z_kpc ** 2)
+
+        return x_kpc, y_kpc, r2_kpc, r3_kpc
+
+class NFW3DCoreRejectionSampling(object):
+
+    """
+    Samples from a cored NFW profile with any core radius (within reason) using rejection sampling,
+    can be slow.
+    """
     def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
 
         self._Rs = Rs
