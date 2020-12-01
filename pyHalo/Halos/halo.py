@@ -1,15 +1,15 @@
 from pyHalo.Halos.HaloModels.collisionless_nfw import \
     TNFWFieldHalo, TNFWMainSubhalo, NFWFieldHalo, NFWMainSubhalo
-from pyHalo.Halos.HaloModels.SIDM_nfw import truncatedSIDMMainSubhalo, truncatedSIDMFieldHalo
-from pyHalo.Halos.HaloModels.base import PointMassBase
+from pyHalo.Halos.HaloModels.SIDM_nfw import truncatedSIDMMainSubhalo, truncatedSIDMFieldHalo, CoreCollapsedNFW
+from pyHalo.Halos.HaloModels.base import PointMassBase, SISBase
 import numpy as np
 
 class Halo(object):
 
-    _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW', 'PT_MASS']
+    _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW', 'PT_MASS', 'SIS', 'PJAFFE']
 
     def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None,
-                 sub_flag=None, cosmo_m_prof=None, args={}, field_sub_flag=False):
+                 sub_flag=None, cosmo_m_prof=None, args={}, field_sub_flag=False, unique_tag=None):
 
         self.cosmo_prof = cosmo_m_prof
 
@@ -41,11 +41,32 @@ class Halo(object):
 
         self._args = args
 
-        self._unique_tag = np.random.rand()
+        if unique_tag is None:
+            self._unique_tag = np.random.rand()
+        else:
+            self._unique_tag = unique_tag
 
         self.observed_convention_index = False
 
         assert mdef in self._recognized_mass_definitions, 'mass definition '+str(mdef)+' not recognized.'
+
+    @classmethod
+    def change_profile_definition(cls, halo, new_mdef):
+
+        mass = halo.mass
+        x = halo.x
+        y = halo.y
+        r2d = halo.r2d
+        r3d = halo.r3d
+        z = halo.z
+        sub_flag = halo.is_subhalo
+        field_sub_flag = halo.is_field_subhalo
+        args = halo._args
+        cosmo_m_prof = halo.cosmo_prof
+        unique_tag = halo._unique_tag
+
+        return Halo(mass, x, y, r2d, r3d, new_mdef, z,
+                 sub_flag, cosmo_m_prof, args, field_sub_flag, unique_tag)
 
     @property
     def has_been_shifted(self):
@@ -105,6 +126,14 @@ class Halo(object):
 
                     halo_type = PointMassBase()
 
+                elif self.mdef == 'SIS':
+
+                    halo_type = SISBase()
+
+                elif self.mdef == 'PJAFFE':
+
+                    halo_type = CoreCollapsedNFW(self)
+
             else:
 
                 if self.mdef == 'NFW':
@@ -122,6 +151,14 @@ class Halo(object):
                 elif self.mdef == 'PT_MASS':
 
                     halo_type = PointMassBase()
+
+                elif self.mdef == 'SIS':
+
+                    halo_type = SISBase()
+
+                elif self.mdef == 'PJAFFE':
+
+                    halo_type = CoreCollapsedNFW(self)
 
             self._halo_profile_instance = halo_type
 

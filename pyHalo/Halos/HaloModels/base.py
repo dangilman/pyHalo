@@ -4,6 +4,12 @@ class PointMassBase(object):
     def halo_parameters(self):
         return []
 
+class SISBase(object):
+
+    @property
+    def halo_parameters(self):
+        return []
+
 class MainSubhaloBase(object):
 
     def __init__(self, halo_class):

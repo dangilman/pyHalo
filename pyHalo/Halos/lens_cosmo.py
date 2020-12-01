@@ -242,6 +242,18 @@ class LensCosmo(object):
                  self.D_ds * (self.D_d * self.D_s) ** -1
         return factor ** 0.5 / self.cosmo.arcsec
 
+    def point_mass_factor_z(self, z):
+
+        factor = 4 * self.cosmo.G * self.cosmo.c ** -2
+
+        dds = self.cosmo.D_A(z, self.z_source)
+        dd = self.cosmo.D_A(0, z)
+        ds = self.D_s
+
+        factor *= dds / dd / ds
+
+        return factor ** 0.5 / self.cosmo.arcsec
+
     ##################################################################################
     """ACCRETION REDSHIFT PDF FROM GALACTICUS"""
     ##################################################################################

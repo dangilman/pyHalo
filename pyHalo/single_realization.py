@@ -346,6 +346,15 @@ class Realization(object):
             from pyHalo.Lensing.PTmass import PTmassLensing
             lens = PTmassLensing(self.lens_cosmo)
 
+        elif halo.mdef == 'SIS':
+            from pyHalo.Lensing.sis import SISLensing
+            lens = SISLensing(self.lens_cosmo)
+
+        elif halo.mdef == 'PJAFFE':
+
+            from pyHalo.Lensing.pjaffe import PJaffeLensing
+            lens = PJaffeLensing(self.lens_cosmo)
+
         else:
             raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
 
@@ -572,4 +581,25 @@ class SingleHalo(Realization):
         super(SingleHalo, self).__init__([halo_mass], [x], [y], [r2d],
                                          [r3d], [mdef], [z], [subhalo_flag], halo_mass_function,
                                          other_params=kwargs_halo, mass_sheet_correction=False)
+
+def add_core_collapsed_subhalos(f_collapsed, realization):
+
+    halos = realization.halos
+
+    for index, halo in enumerate(halos):
+        if halo.is_subhalo:
+            u = np.random.rand()
+            if u < f_collapsed:
+                # change mass definition
+                new_halo = Halo.change_profile_definition(halo, 'PJAFFE')
+                halos[index] = new_halo
+
+    halo_mass_function = realization.halo_mass_function
+    prof_params = realization._prof_params
+    msheet_correction = realization._mass_sheet_correction
+    rendering_classes = realization.rendering_classes
+
+    return Realization.from_halos(halos, halo_mass_function, prof_params,
+                                  msheet_correction, rendering_classes)
+
 

@@ -2,6 +2,7 @@ from pyHalo.Halos.HaloModels.base import MainSubhaloBase, FieldHaloBase
 from pyHalo.Scattering.sidm_interp import logrho
 from pyHalo.Halos.halo_util import *
 
+
 class truncatedSIDMMainSubhalo(MainSubhaloBase):
 
     @property
@@ -101,6 +102,12 @@ class truncatedSIDMMainSubhalo(MainSubhaloBase):
             core_ratio = rho_mean * rho_sidm ** -1
 
         return core_ratio
+
+class CoreCollapsedNFW(truncatedSIDMMainSubhalo):
+
+    @property
+    def halo_parameters(self):
+        return [self.concentration, self.truncation_radius]
 
 class truncatedSIDMFieldHalo(FieldHaloBase):
 
