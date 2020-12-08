@@ -12,9 +12,6 @@ class Geometry(object):
         if geometry_type == 'DOUBLE_CONE':
             self._geometrytype = DoubleCone(cosmology, z_lens, z_source, opening_angle, angle_pad)
             self.volume_type = 'DOUBLE_CONE'
-        elif geometry_type == 'CONE':
-            self._geometrytype = Cone(cosmology, z_lens, z_source, opening_angle)
-            self.volume_type = 'CONE'
         elif geometry_type == 'CYLINDER':
             self._geometrytype = Cylinder(cosmology, z_lens, z_source, opening_angle)
             self.volume_type = 'CYLINDER'
@@ -50,28 +47,6 @@ class Geometry(object):
         """
         a_z = self._cosmo.scale_factor(z)
         return self.angle_to_physicalradius(radius_arcsec, z) / a_z
-
-    def interp_ray_angle(self, xlow, xhigh, ylow, yhigh, Tzlow, Tzhigh, Tz_current):
-
-        """
-
-        :param xlow: starting transverse comoving distance in x direction [all in Mpc]
-        :param xhigh: ending transverse comoving distance in x direction
-        :param ylow: " in y direction
-        :param yhigh: " in ydirection
-        :param Tzlow: comoving distance to xlow lens plane
-        :param Tzhigh: comoving distance to xhigh lens plane
-        :param Tz_current: comoving distance to where the interpolated path is needed
-        :return:
-        """
-        delta = Tz_current - Tzlow
-        rise_x, rise_y = xhigh - xlow, yhigh - ylow
-        run = Tzhigh - Tzlow
-        slope_x, slope_y = rise_x / run, rise_y / run
-
-        comoving_x, comoving_y = delta*slope_x + xlow, delta*slope_y + ylow
-
-        return comoving_x/Tz_current, comoving_y/Tz_current
 
     def volume_element_comoving(self, z, delta_z, radius=None):
         """
@@ -213,27 +188,3 @@ class DoubleCone(object):
             ratio = D_dz / D_z
 
             return 1 - self._angle_pad * self._reduced_to_phys * ratio
-
-class Cone(object):
-
-    def __init__(self, cosmology, z_lens, z_source, opening_angle):
-
-        self._cosmo = cosmology
-
-        self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
-
-        self._zlens, self._zsource = z_lens, z_source
-
-        d_c_source = self._cosmo.D_C_transverse(z_source)
-
-        comoving_radius_zsource = 0.5 * opening_angle * self._cosmo.arcsec * d_c_source
-
-        self._total_volume = (np.pi/3) * comoving_radius_zsource ** 2 * d_c_source
-
-    def rendering_scale(self, z):
-
-        return 1.
-
-    # def ray_angle_atz(self, theta_arcsec, z, source_pos=0):
-    #
-    #     return theta_arcsec

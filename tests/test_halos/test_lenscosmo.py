@@ -3,39 +3,38 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
 import pytest
+from scipy.integrate import quad
 
 class TestLensCosmo(object):
 
     def setup(self):
 
-        H0 = 70
-        omega_baryon = 0.03
-        omega_DM = 0.25
-        sigma8 = 0.82
-        curvature = 'flat'
-        ns = 0.9608
-        cosmo_params = {'H0': H0, 'Om0': omega_baryon + omega_DM, 'Ob0': omega_baryon,
-                      'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
-        self._dm, self._bar = omega_DM, omega_baryon
-        self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-
+        self.cosmo = Cosmology()
         zlens, zsource = 0.5, 1.5
         self.lens_cosmo = LensCosmo(zlens, zsource, self.cosmo)
 
-    def test_routines(self):
+    def test_nfw_params(self):
 
-        m_thermal = 3.3
-        mhm = self.lens_cosmo.mthermal_to_halfmode(m_thermal)
-        m_thermal_2 = self.lens_cosmo.halfmode_to_thermal(mhm)
+        for z in [0., 0.74]:
 
-        npt.assert_almost_equal(mhm/10**8.478, 1, 3)
-        npt.assert_almost_equal(m_thermal/m_thermal_2, 1, 3)
+            M, c = 10**8, 17.5
+            a_z = (1 + z) ** -1
+            rho_crit_0 = self.cosmo.rho_crit(0.)
 
-        eps_crit = self.lens_cosmo.get_epsiloncrit(0.5, 1.5)
-        npt.assert_almost_equal(eps_crit/10**15.3611, 1, 4)
-        eps_crit_asec = self.lens_cosmo.get_sigmacrit_z1z2(0.5, 1.5)
-        eps_crit_kpc = eps_crit_asec * self.cosmo.kpc_per_asec(0.5) ** -2
-        npt.assert_almost_equal(eps_crit_kpc / 10 ** 15.3611, 0.001**2, 4)
+            rhos, rs, r200 = self.lens_cosmo._nfwParam_physical_Mpc(M, c, z)
+
+            def _profile(x):
+                fac = x * (1 + x) ** 2
+                return 1. / fac
+            def _integrand(x):
+                return 4 * np.pi * x ** 2 * _profile(x)
+
+            volume = 4*np.pi/3 * r200 ** 3
+            mean_density_physical = rhos * rs ** 3 * quad(_integrand, 0, r200/rs)[0] / volume
+            mean_density_comoving = mean_density_physical * a_z ** 3
+            ratio = mean_density_comoving/rho_crit_0
+
+            npt.assert_almost_equal(ratio, 200)
 
 if __name__ == '__main__':
     pytest.main()

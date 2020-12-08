@@ -90,8 +90,8 @@ class LensCosmo(object):
         :return: half mode mass in solar masses
         """
         # scaling of 3.3 keV from Viel et al
-
-        return 10**9 * (m_thermal / 2.3) ** (-3.33)
+        omega_matter = self.cosmo.astropy.Om0
+        return 10**9 * ((omega_matter/0.25)**-0.4 * (self.cosmo.h/0.7)**-0.8 *m_thermal / 2.32) ** (-3.33)
 
     def halfmode_to_thermal(self, m_half_mode):
 
@@ -102,7 +102,39 @@ class LensCosmo(object):
         :return: thermal relic particle mass in keV
         """
 
-        return 2.3 * (m_half_mode / 10**9) ** (-0.3)
+        #return 2.3 * (m_half_mode / 10**9) ** (-0.3)
+        omega_matter = self.cosmo.astropy.Om0
+        return 2.32 * (omega_matter / 0.25)**0.4 * (self.cosmo.h/0.7)**0.8 * \
+               (m_half_mode / 10 ** 9) ** (-0.3)
+
+    def mfs_to_halfmode(self, m_fs):
+
+        return 2.7 * 10 ** 3 * m_fs
+
+    def halfmode_to_mfs(self, m_hm):
+
+        return m_hm / (2.7 * 10 ** 3)
+
+    def mthermal_to_mhm_schneider(self, m_thermal):
+
+        rhoc = self.rhoc * self.cosmo.h ** 2
+
+        alpha = 0.049 * m_thermal ** -1.11 / self.cosmo.h
+        l_hm = 13.93 * alpha
+
+        return 4 * numpy.pi * rhoc * (l_hm/2) ** 3 / 3
+
+    def mhm_to_mthermal_schnieder(self, m_hm):
+
+        rhoc = self.rhoc * self.cosmo.h ** 2
+
+        l_hm = 2 * (3 * m_hm / (4 * numpy.pi * rhoc)) ** (1./3)
+
+        alpha = l_hm / 13.93
+
+        m_thermal = (self.cosmo.h * alpha / 0.049) ** (-1 / 1.11)
+
+        return m_thermal
 
     ##################################################################################
     """LENSING ROUTINES"""
@@ -189,7 +221,7 @@ class LensCosmo(object):
     def rN_M_nfw_comoving(self, M, N):
         """
         computes the radius R_N of a halo of mass M in comoving distances
-        :param M: halo mass in M_sun
+        :param M: halo mass in M_sun/h
         :type M: float or numpy array
         :return: radius R_200 in comoving Mpc/h
         """
@@ -370,3 +402,8 @@ class LensCosmo(object):
     #     vmax = numpy.sqrt(self.G * M / r200)
     #
     #     return vmax * (0.216 * (numpy.log(1 + c) - c * (1+c) ** -1) * c ** -1) ** 0.5
+# from pyHalo.Cosmology.cosmology import Cosmology
+# cosmo = Cosmology()
+# l = LensCosmo(0.5, 1.5, cosmo)
+# print(l.halfmode_to_thermal(10**7.8))
+# print(numpy.log10(l.mthermal_to_halfmode(5.55)))

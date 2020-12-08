@@ -99,9 +99,9 @@ class LensingMassFunction(object):
         M_h = M * h
         r_h = r * h
 
-        rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) * self._cosmo._colossus_cosmo.rho_m(z) ** -1
+        rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self._cosmo._colossus_cosmo.rho_m(z)
 
-        return rho_2h * h ** -2
+        return rho_2h * h ** 2
 
     def _build(self, mlow, mhigh, zsource):
 
@@ -167,6 +167,8 @@ class LensingMassFunction(object):
             dndlogM = massFunction(M_h, z, q_out='dndlnM', model=self._mass_function_model)
 
         dndM_comoving_h = dndlogM / M_h
+        # now we have an h^3 from the rho / M term in the mass function,
+        # and a 1/(h^-1) = h from M_h, so four factors of h
 
         dndM_comoving = dndM_comoving_h * h ** 4
 

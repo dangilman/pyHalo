@@ -42,7 +42,7 @@ class UniformNFW(object):
         # cinv / xc = np.tan(xc * x / norm)
         # cinv = xc * np.tan(xc * x / norm)
         # cinv = xc * np.tan(x * np.arctan(xmax / xc))
-        print(self.xtidal, self.zmax_units_rs)
+
         arg = u * np.arctan(self.zmax_units_rs/self.xtidal)
         return self.xtidal * np.tan(arg)
 

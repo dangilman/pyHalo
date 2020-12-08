@@ -73,13 +73,30 @@ class TestCone(object):
         astropy = geo._cosmo.astropy
 
         delta_z = 1e-3
-        steradian = (radius * self.arcsec) ** 2
+
         dV_pyhalo = geo.volume_element_comoving(0.6, delta_z)
         dV = astropy.differential_comoving_volume(0.6).value
 
-        # astropy steradian 'area' is d^2, whereas I define area as pi*d^2
-        dV_persteradian = dV * delta_z
-        npt.assert_almost_equal(dV_persteradian * np.pi * steradian, dV_pyhalo, 5)
+        dV_astropy = dV * delta_z
+        steradian = np.pi * (radius * self.arcsec) ** 2
+        npt.assert_almost_equal(dV_astropy * steradian, dV_pyhalo, 5)
+
+    def test_total_volume(self):
+
+        cone_arcsec = 3
+        radius_radians = cone_arcsec * 0.5 * self.cosmo.arcsec
+        geo = Geometry(self.cosmo, 0.5, 1.5, cone_arcsec, 'DOUBLE_CONE', angle_pad=1.)
+        volume_pyhalo = 0
+        z = np.linspace(0.01, 1.5, 100)
+        for i in range(0, len(z)-1):
+            delta_z = z[i+1] - z[i]
+            volume_pyhalo += geo.volume_element_comoving(z[i], delta_z)
+
+        ds = self.cosmo.D_C(1.5)
+        dz = self.cosmo.D_C(0.5)
+        volume_true = 1./3 * np.pi * radius_radians ** 2 * dz ** 2 * ds
+        npt.assert_almost_equal(volume_true, volume_pyhalo, 2)
+
 
 if __name__ == '__main__':
-     pytest.main()
+      pytest.main()
