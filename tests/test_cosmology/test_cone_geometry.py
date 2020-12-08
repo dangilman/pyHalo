@@ -24,7 +24,6 @@ class TestCone(object):
                       'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
 
-        self.geometry_cone = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'CONE')
         self._angle_pad = 0.75
         self.geometry_double_cone = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter,
                                              'DOUBLE_CONE', self._angle_pad)
@@ -37,19 +36,19 @@ class TestCone(object):
 
         ratio_double_cone = reduced_to_phys * \
                             self.cosmo.D_A(self.zlens, self.zsource)/self.cosmo.D_A_z(self.zsource)
-        angle_scale_zsource = [1., ratio, 1 - self._angle_pad*ratio_double_cone]
+        angle_scale_zsource = [ratio, 1 - self._angle_pad*ratio_double_cone]
 
-        for i, geometry in enumerate([self.geometry_cone, self.geometry_cylinder, self.geometry_double_cone]):
+        for i, geometry in enumerate([self.geometry_cylinder, self.geometry_double_cone]):
             npt.assert_almost_equal(geometry.rendering_scale(self.zlens), 1.)
             npt.assert_almost_equal(geometry.rendering_scale(self.zsource), angle_scale_zsource[i])
 
-        for i, geometry in enumerate([self.geometry_cone, self.geometry_cylinder, self.geometry_double_cone]):
+        for i, geometry in enumerate([self.geometry_cylinder, self.geometry_double_cone]):
 
             npt.assert_almost_equal(geometry.rendering_scale(self.zlens), 1)
 
     def test_distances_lensing(self):
 
-        for geometry in [self.geometry_cone, self.geometry_double_cone]:
+        for geometry in [self.geometry_double_cone]:
             z = 0.3
 
             radius_physical = geometry.angle_to_physicalradius(self.angle_radius, z)
