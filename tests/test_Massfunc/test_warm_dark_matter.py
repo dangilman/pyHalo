@@ -21,8 +21,8 @@ class TestWDM(object):
         power_law_index = -1.9
         delta_power_law_index = 0.
         sigma_sub = 0.1
-        self._LOS_norm = 10.
-        self._logmhm = 7.5
+        self._LOS_norm = 5.
+        self._logmhm = 7.8
         self._break_index = -1.4
         self._break_scale = 0.8
 
@@ -87,10 +87,10 @@ class TestWDM(object):
 
         suppression_factor = (1 + m_ratio ** self._break_scale) ** self._break_index
 
-        plt.plot(logM, np.log10(h_1))
-        plt.plot(logM, np.log10(h_2))
-        plt.scatter(logM, np.log10(h_2 * suppression_factor))
-        plt.show()
+        # plt.plot(logM, np.log10(h_1))
+        # plt.plot(logM, np.log10(h_2))
+        # plt.scatter(logM, np.log10(h_2 * suppression_factor))
+        # plt.show()
         diff = h_2 * suppression_factor / h_1
         npt.assert_almost_equal(np.mean(diff), 1, 1)
 
