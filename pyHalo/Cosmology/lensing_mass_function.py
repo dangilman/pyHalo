@@ -84,7 +84,7 @@ class LensingMassFunction(object):
         boost = 1 + 2 * self.integrate_two_halo(M_halo, z, rmin=rmin, rmax=rmax) / (rmax - rmin)
         return boost
 
-    def integrate_two_halo(self, m200, z, rmin = 0.5, rmax = 10):
+    def integrate_two_halo(self, m200, z, rmin=0.5, rmax=10):
 
         def _integrand(x):
             return self.twohaloterm(x, m200, z)
@@ -101,7 +101,7 @@ class LensingMassFunction(object):
 
         rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self._cosmo._colossus_cosmo.rho_m(z)
 
-        return rho_2h * h ** 2
+        return rho_2h
 
     def _build(self, mlow, mhigh, zsource):
 

@@ -1,3 +1,7 @@
+"""
+default parameters used to create realizations. This should be good for most applications
+"""
+
 class CosmoDefaults(object):
 
     def __init__(self):

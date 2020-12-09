@@ -12,6 +12,9 @@ class pyHalo(pyHaloBase):
                  kwargs_halo_mass_function={}):
 
         """
+        This class manages the creation of dark matter substructure realizations, coordinating the
+        rendering of line-of-sight and subhalos in the lensing volume. For usage examples see
+        the example notebooks in pyhalo/example_notebooks
 
         :param zlens: lens redshift
         :param zsource: source redshift

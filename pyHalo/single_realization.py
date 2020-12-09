@@ -16,7 +16,7 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
     max_range of (angular_coordinate_x, angular_coordinate_y)
     :param angular_coordinate_y:
     :param max_range: radius in arcseconds where we want to keep halos. If None, will return a new realization class
-     that contains all halos at redshift z the input realization class
+     that contains all halos at redshift z contained in the input realization class
     :return: a new instance of Realization
     """
 
@@ -49,7 +49,7 @@ class Realization(object):
 
         This class is the main class that stores information regarding realizations of dark matter halos. It is not
         intended to be created directly by the user. Instances of this class are created through the class
-        pyHalo/pyHalo_dynamic.
+        pyHalo or pyHalo_dynamic.
 
         :param masses: an array of halo masses (units solar mass)
         :param x: an array of halo x-coordinates (units arcsec)
@@ -562,7 +562,7 @@ class Realization(object):
 class SingleHalo(Realization):
 
     """
-    A quick and dirty class useful for generating a realization with a few
+    Useful for generating a realization with a single or a few
     user-specified halos.
     """
 
@@ -584,6 +584,16 @@ class SingleHalo(Realization):
 
 def add_core_collapsed_subhalos(f_collapsed, realization):
 
+    """
+
+    :param f_collapsed: fraction of subhalos that become isothermal profiles
+    :param realization: an instance of Realization
+    :return: A new instance of Realization where a fraction f_collapsed of the subhalos
+    in the original realization have their mass definitions changed to Jaffe profiles
+    with isothermal density profiles same total mass as the original NFW profile.
+
+    Note: this functionality is new and not very well tested
+    """
     halos = realization.halos
 
     for index, halo in enumerate(halos):
