@@ -24,7 +24,9 @@ https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract
 
 https://ui.adsabs.harvard.edu/abs/2020arXiv200701308G/abstract
 
-If you would like to use this package, please write get in touch with me at gilman@astro.utoronto.ca.
+I have put a simple example notebook in the example_notebook directory that shows a simple usage example for a population of CDM halos. I will add other example notebooks in the coming weeks that demonstrate how to render halos from other dark matter models.
+
+If you would like to use this package, please write get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
 
 
 * Free software: MIT license
