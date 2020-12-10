@@ -1,7 +1,7 @@
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 from pyHalo.Rendering.MassFunctions.PowerLaw.piecewise import PiecewisePowerLaw
-from pyHalo.Spatial.nfw_core import NFW3DCoreRejectionSampling, CoreNFW3DFast
-from pyHalo.Spatial.uniform import Uniform, UniformNFW
+from pyHalo.Spatial.nfw_core import NFW3DCoreRejectionSampling, CoreNFW3DFast, UniformNFW
+from pyHalo.Spatial.uniform import Uniform
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Spatial.keywords import subhalo_spatial_NFW, subhalo_spatial_uniform
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, \
@@ -37,19 +37,9 @@ class MainLensBase(RenderingBase):
             spatial_args['geometry'] = geometry
             spatial_class = Uniform
 
-        elif args['subhalo_spatial_distribution'] == 'UNIFORM_NFW':
-
-            spatial_args = subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo)
-            spatial_class = UniformNFW
-
         elif args['subhalo_spatial_distribution'] == 'HOST_NFW':
             spatial_args = subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo)
-            rtidal_over_rs = np.round(spatial_args['r_core_parent']/spatial_args['Rs'], 2)
-
-            if abs(rtidal_over_rs - 0.25) < 0.01:
-                spatial_class = CoreNFW3DFast
-            else:
-                spatial_class = NFW3DCoreRejectionSampling
+            spatial_class = UniformNFW
 
         else:
             raise Exception('subhalo_spatial_distribution '+str(args['subhalo_spatial_distribution'])+

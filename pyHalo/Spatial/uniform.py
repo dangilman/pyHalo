@@ -1,6 +1,5 @@
 import numpy as np
-from scipy.integrate import quad
-from scipy.interpolate import interp1d
+
 
 class LensConeUniform(object):
 
@@ -22,66 +21,13 @@ class LensConeUniform(object):
 
         return x_kpc, y_kpc, r2d_kpc, r3d_kpc
 
-class UniformNFW(object):
-
-    def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
-
-        self.rmax2d_kpc = rmax2d
-        self._rs_kpc = Rs
-
-        self._xmin = 1e-4
-        self.xmax_2d = rmax2d/Rs
-
-        self.xtidal = r_core_parent/Rs
-        self.zmax_units_rs = rmax3d/Rs
-
-    def cdf(self, u):
-
-        # c(x) = norm * np.arctan(x / xc) / xc
-        # c(cinv(x)) = x = norm * np.arctan(cinv / xc) / xc
-        # cinv / xc = np.tan(xc * x / norm)
-        # cinv = xc * np.tan(xc * x / norm)
-        # cinv = xc * np.tan(x * np.arctan(xmax / xc))
-
-        arg = u * np.arctan(self.zmax_units_rs/self.xtidal)
-        return self.xtidal * np.tan(arg)
-
-    def draw(self, N, z_plane, rescale=1.0, center_x=0, center_y=0):
-
-        if N == 0:
-            return [], [], [], []
-
-        angle = np.random.uniform(0, 2 * np.pi, int(N))
-
-        rmax = self.xmax_2d * rescale
-
-        r = np.random.uniform(0, rmax ** 2, int(N))
-
-        x_arcsec = r ** .5 * np.cos(angle)
-        y_arcsec = r ** .5 * np.sin(angle)
-
-        x_arcsec += center_x
-        y_arcsec += center_y
-
-        x_kpc, y_kpc = x_arcsec * self._rs_kpc, y_arcsec * self._rs_kpc
-        u = np.random.uniform(self._xmin, 0.999999, len(x_kpc))
-        z_units_rs = self.cdf(u)
-        z_kpc = z_units_rs * self._rs_kpc
-
-        return np.array(x_kpc), np.array(y_kpc), np.hypot(x_kpc, y_kpc), \
-               np.sqrt(x_kpc ** 2 + y_kpc**2 + z_kpc ** 2)
-
-
-
 class Uniform(object):
 
     def __init__(self, rmax2d_arcsec, geometry):
-
         self.rmax2d_arcsec = rmax2d_arcsec
         self._geo = geometry
 
     def draw(self, N, z_plane, rescale=1.0, center_x=0, center_y=0):
-
         if N == 0:
             return [], [], [], []
 

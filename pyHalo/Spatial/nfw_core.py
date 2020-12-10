@@ -1,4 +1,6 @@
 import numpy as np
+from lenstronomy.LensModel.Profiles.cnfw import CNFW
+
 from pyHalo.Spatial.compute_nfw_fast import FastNFW
 import inspect
 
@@ -8,7 +10,7 @@ local_path_cored = inspect.getfile(inspect.currentframe())[0:-11] + 'core_nfw_ta
 class NFW3DFast(object):
 
     """
-    Same as NFW3D, but uses pre-computed CDFs to do the sampling much faster
+    Same as NFW3D, but uses pre-computed CDFs to do the sampling much faster, but still slower than UniformNFW
     """
     def __init__(self, Rs, rmax2d, rmax3d):
 
@@ -55,7 +57,7 @@ class CoreNFW3DFast(object):
 
     """
     Same as NFW3DFast, but uses pre-computed CDFs to do the sampling of a cored profile
-    much faster than rejection sampling
+    much faster than rejection sampling. Fasting than rejection sampling, but still somewhat slow
     """
 
     def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
@@ -163,3 +165,102 @@ class NFW3DCoreRejectionSampling(object):
         return x[0:N], y[0:N], r2[0:N], r3[0:N]
 
 
+class UniformNFW(object):
+
+    """
+    This class approximates sampling from a full 3D NFW profile by
+    sampling the projected mass of a cored NFW profile in 2D, and then sampling
+    the z coordinate from a cored isothermal profile. This is MUCH faster than sampling from the
+    3D NFW profile, and is accurate to within a few percent.
+    """
+
+    def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
+
+        self._cnfw_profile = CNFW()
+
+        self.rmax2d_kpc = rmax2d
+        self._rs_kpc = Rs
+
+        self._xmin = 1e-4
+        self.xmax_2d = rmax2d / Rs
+
+        self.xtidal = r_core_parent / Rs
+        self.zmax_units_rs = rmax3d / Rs
+
+        self._xmin = rmax2d/30/self._rs_kpc
+        self._norm = self._cnfw_profile._F(self._xmin, self.xtidal)
+
+    def cdf(self, u):
+
+        arg = u * np.arctan(self.zmax_units_rs/self.xtidal)
+        return self.xtidal * np.tan(arg)
+
+    def _projected_pdf(self, r2d_kpc):
+
+        x = r2d_kpc / self._rs_kpc
+
+        if isinstance(x, float) or isinstance(x, int):
+            x = max(x, self._xmin)
+        else:
+            x[np.where(x < self._xmin)] = self._xmin
+
+        p = self._cnfw_profile._F(x, self.xtidal) / self._norm
+
+        return p
+
+    def draw(self, N, zplane, rescale=1.0, center_x=0., center_y=0.):
+
+        if N == 0:
+            return [], [], [], []
+        n = 0
+
+        while True:
+
+            _x_kpc, _y_kpc, _r2d, _r3d = self._draw_uniform(N, rescale, center_x, center_y)
+
+            prob = self._projected_pdf(_r2d)
+            u = np.random.uniform(size=len(prob))
+            keep = np.where(u < prob)[0]
+
+            if n == 0:
+                x_kpc = _x_kpc[keep]
+                y_kpc = _y_kpc[keep]
+                r2d = _r2d[keep]
+                r3d = _r3d[keep]
+            else:
+                x_kpc = np.append(x_kpc, _x_kpc[keep])
+                y_kpc = np.append(y_kpc, _y_kpc[keep])
+                r2d = np.append(r2d, _r2d[keep])
+                r3d = np.append(r3d, _r3d[keep])
+
+            n += len(keep)
+
+            if n >= N:
+                break
+
+        return x_kpc[0:N], y_kpc[0:N], r2d[0:N], r3d[0:N]
+
+    def _draw_uniform(self, N, rescale=1.0, center_x=0., center_y=0.):
+
+        if N == 0:
+            return [], [], [], []
+
+        angle = np.random.uniform(0, 2 * np.pi, int(N))
+
+        rmax = self.xmax_2d * rescale
+
+        r = np.random.uniform(0, rmax ** 2, int(N))
+
+        x_arcsec = r ** .5 * np.cos(angle)
+        y_arcsec = r ** .5 * np.sin(angle)
+
+        x_arcsec += center_x
+        y_arcsec += center_y
+
+        x_kpc, y_kpc = x_arcsec * self._rs_kpc, y_arcsec * self._rs_kpc
+        u = np.random.uniform(self._xmin, 0.999999, len(x_kpc))
+        z_units_rs = self.cdf(u)
+        z_kpc = z_units_rs * self._rs_kpc
+
+        return np.array(x_kpc), np.array(y_kpc), np.hypot(x_kpc, y_kpc), \
+               np.sqrt(x_kpc ** 2 + y_kpc**2 + z_kpc ** 2)

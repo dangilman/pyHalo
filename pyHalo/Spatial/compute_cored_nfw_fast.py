@@ -14,10 +14,8 @@ beta = 0.25
 def nfw_kappa_integrand(x):
     return 2 * np.pi * x * nfw_kappa(x)
 
-
 def nfw_kappa(x):
     return cnfw_profile._F(x, beta)
-
 
 def nfw_rho(x):
     core_term = (x + beta)
