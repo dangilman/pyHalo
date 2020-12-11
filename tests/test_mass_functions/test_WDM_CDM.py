@@ -11,7 +11,7 @@ class TestWDM(object):
     def setup(self):
 
         mass_definition = 'TNFW'
-        zlens, zsource = 0.6, 1.8
+        zlens, zsource = 0.6, 2.
         kwargs_halo_mass_function = {'geometry_type': 'DOUBLE_CONE'}
         pyhalo = pyHalo(zlens, zsource, kwargs_halo_mass_function=kwargs_halo_mass_function)
 
@@ -20,11 +20,11 @@ class TestWDM(object):
         log_mhigh = 9
         power_law_index = -1.9
         delta_power_law_index = 0.
-        sigma_sub = 0.1
-        self._LOS_norm = 5.
-        self._logmhm = 7.8
-        self._break_index = -1.4
-        self._break_scale = 0.8
+        sigma_sub = 0.9
+        self._LOS_norm = 10.
+        self._logmhm = 8.
+        self._break_index = -1.2
+        self._break_scale = 1.
 
         realization_kwargs = {'mass_func_type': 'POWER_LAW',
                               'log_mlow': log_mlow,
@@ -63,7 +63,7 @@ class TestWDM(object):
                               'delta_power_law_index': delta_power_law_index,
                               'LOS_normalization': self._LOS_norm, 'subhalo_convergence_correction_profile': 'UNIFORM',
                               'subtract_exact_mass_sheets': False}
-        self.realization_wdm_2 = pyhalo.render(realization_type, realization_kwargs, nrealizations=1)[0]
+        self.realization_cdm = pyhalo.render(realization_type, realization_kwargs, nrealizations=1)[0]
 
         self.lensing_mass_function = LensingMassFunction(self.realization_wdm_1.lens_cosmo.cosmo,
                   10**6, 10**10, zlens, zsource, cone_opening_angle,
@@ -79,7 +79,7 @@ class TestWDM(object):
         logM = logM[0:-1] + logmstep
 
         mass_bins = np.linspace(6, 9, 20)
-        halo_masses = [halo.mass for halo in self.realization_wdm_2.halos]
+        halo_masses = [halo.mass for halo in self.realization_cdm.halos]
         log_halo_mass = np.log10(halo_masses)
         h_2, _ = np.histogram(log_halo_mass, bins=mass_bins)
 
@@ -87,16 +87,33 @@ class TestWDM(object):
 
         suppression_factor = (1 + m_ratio ** self._break_scale) ** self._break_index
 
-        # plt.plot(logM, np.log10(h_1))
-        # plt.plot(logM, np.log10(h_2))
-        # plt.scatter(logM, np.log10(h_2 * suppression_factor))
-        # plt.show()
+        slope_modeled = np.polyfit(logM[0:4], np.log10(h_1)[0:4], 1)[0]
+        slope_predicted = -0.9 - self._break_index
+
+        diff_slope = np.absolute(slope_modeled - slope_predicted)
+
         diff = h_2 * suppression_factor / h_1
         npt.assert_almost_equal(np.mean(diff), 1, 1)
+        npt.assert_almost_equal(diff_slope, 0., 1)
 
-    def test_wdm_mass_concentration(self):
+        dndm = np.gradient(h_1[0:5], 10 ** logM[0:5])
+        logarithmic_slope_model = np.polyfit(logM[0:5], np.log10(dndm), 1)[0]
+        logarithmic_slope_predicted = -1.9 - self._break_index
+        npt.assert_almost_equal(logarithmic_slope_model, logarithmic_slope_predicted, 0.1)
 
-        pass
+    def test_cdm_mass_function(self):
+
+        mass_bins = np.linspace(6, 9, 20)
+        halo_masses = [halo.mass for halo in self.realization_cdm.halos]
+        log_halo_mass = np.log10(halo_masses)
+        h_1, logM = np.histogram(log_halo_mass, bins=mass_bins)
+        logmstep = (logM[1] - logM[0]) / 2
+        logM = logM[0:-1] + logmstep
+
+        dndm = np.gradient(h_1, 10**logM)
+        logarithmic_slope_model = np.polyfit(logM, np.log10(-dndm), 1)[0]
+        npt.assert_almost_equal(logarithmic_slope_model, -1.9, 1)
+
 
 if __name__ == '__main__':
     pytest.main()
