@@ -62,5 +62,7 @@ class TestStructuralParameters(object):
         npt.assert_almost_equal(rs/rs_2, 1, 3)
         npt.assert_almost_equal(alpha_rs / alpha_rs_2, 1, 2)
 
+
+
 if __name__ == '__main__':
      pytest.main()

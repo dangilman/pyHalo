@@ -102,48 +102,37 @@ class LensCosmo(object):
         :return: thermal relic particle mass in keV
         """
 
-        #return 2.3 * (m_half_mode / 10**9) ** (-0.3)
         omega_matter = self.cosmo.astropy.Om0
         return 2.32 * (omega_matter / 0.25)**0.4 * (self.cosmo.h/0.7)**0.8 * \
                (m_half_mode / 10 ** 9) ** (-0.3)
 
-    def mfs_to_halfmode(self, m_fs):
-
-        return 2.7 * 10 ** 3 * m_fs
-
-    def halfmode_to_mfs(self, m_hm):
-
-        return m_hm / (2.7 * 10 ** 3)
-
-    def mthermal_to_mhm_schneider(self, m_thermal):
+    def mhm_to_fsl(self, m_hm):
+        """
+        Converts half mode mass to free streaming length in Mpc
+        See Equations 5-8 in https://arxiv.org/pdf/1112.0330.pdf
+        :param m_hm: half-mode mass in units M_sun (no little h)
+        :return: free streaming length in units Mpc
+        """
 
         rhoc = self.rhoc * self.cosmo.h ** 2
 
-        alpha = 0.049 * m_thermal ** -1.11 / self.cosmo.h
-        l_hm = 13.93 * alpha
+        l_hm = 2 * (3 * m_hm / (4 * numpy.pi * rhoc)) ** (1. / 3)
 
-        return 4 * numpy.pi * rhoc * (l_hm/2) ** 3 / 3
+        l_fs = l_hm / 13.93
 
-    def mhm_to_mthermal_schnieder(self, m_hm):
-
-        rhoc = self.rhoc * self.cosmo.h ** 2
-
-        l_hm = 2 * (3 * m_hm / (4 * numpy.pi * rhoc)) ** (1./3)
-
-        alpha = l_hm / 13.93
-
-        m_thermal = (self.cosmo.h * alpha / 0.049) ** (-1 / 1.11)
-
-        return m_thermal
+        return l_fs
 
     ##################################################################################
-    """LENSING ROUTINES"""
+    """ROUTINES RELATED TO LENSING STUFF"""
     ##################################################################################
 
     def get_epsiloncrit(self,z1,z2):
 
         """
-        Returns the critical density for lensing in units of M_sun / Mpc ^ 2
+
+        :param z1: redshift lens
+        :param z2: redshift source
+        :return: critical density for lensing in units of M_sun / Mpc ^ 2
         """
 
         D_ds = self.cosmo.D_A(z1, z2)
@@ -159,15 +148,76 @@ class LensCosmo(object):
 
     def get_epsiloncrit_kpc(self, z1, z2):
 
+        """
+
+        :param z1: redshift lens
+        :param z2: redshift source
+        :return: critical density for lensing in units of M_sun / kpc ^ 2
+        """
+
         return self.get_epsiloncrit(z1, z2) * 0.001 ** 2
 
     def get_sigmacrit(self, z):
+
+        """
+
+        :param z1: redshift lens
+        :return: critical density for lensing in units of M_sun / arcsec ^ 2
+        """
 
         return self.get_epsiloncrit(z,self.z_source)*(0.001)**2*self.cosmo.kpc_per_asec(z)**2
 
     def get_sigmacrit_z1z2(self,zlens,zsrc):
 
+        """
+
+        :param zlens: redshift lens
+        :param zsrc: redshift source
+        :return: critical density for lensing in units of M_sun / arcsec ^ 2
+        """
+
         return self.get_epsiloncrit(zlens,zsrc)*(0.001)**2*self.cosmo.kpc_per_asec(zlens)**2
+
+    ##################################################################################
+    """Routines relevant for NFW profiles"""
+    ##################################################################################
+    def NFW_params_physical_colossus(self, M, c, z):
+        """
+        :param M: physical M200
+        :param c: concentration
+        :param z: halo redshift
+        :return: physical NFW parameters in kpc units
+        """
+        rho0, Rs, r200 = self._nfwParam_physical_Mpc_colossus(M, c, z)
+
+        return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
+
+    def nfw_physical2angle_colosuss(self, M, c, z):
+        """
+        converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
+        :param M: mass enclosed 200 \rho_crit
+        :param c: NFW concentration parameter (r200/r_s)
+        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
+        """
+        D_d = self.cosmo.D_A_z(z)
+        rho0, Rs, r200 = self._nfwParam_physical_Mpc_colossus(M, c, z)
+
+        Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
+        theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
+        eps_crit = self.get_epsiloncrit(z, self.z_source)
+
+        return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
+
+    def NFW_params_physical(self, M, c, z):
+        """
+        :param M: physical M200
+        :param c: concentration
+        :param z: halo redshift
+        :return: physical NFW parameters in kpc units
+        """
+        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
+
+        return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
     def nfw_physical2angle_fromM(self, M, z, mc_kwargs={}):
         """
@@ -195,30 +245,16 @@ class LensCosmo(object):
         eps_crit = self.get_epsiloncrit(z, self.z_source)
         return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
 
-    def nfw_angle2mass(self, rs_angle, theta_rs, z):
-
-        D_d = self.cosmo.D_A_z(z)
-        eps_crit = self.get_epsiloncrit(z, self.z_source)
-
-        rs_mpc = rs_angle * D_d * self.cosmo.arcsec
-
-        # to units M / Mpc
-        theta_rs = theta_rs * eps_crit * D_d * self.cosmo.arcsec
-
-        # units M/Mpc^3
-        rho0 = theta_rs / (4 * rs_mpc ** 2 * (1 + numpy.log(1./2)))
-
-        return 4 * numpy.pi * rs_mpc ** 3 * rho0
-
-    def rho0_c_NFW(self, c):
+    def rho0_c_NFW(self, c, z_eval_rho=0.):
         """
         computes density normalization as a function of concentration parameter
         :return: density normalization in h^2/Mpc^3 (comoving)
         """
 
-        return 200. / 3 * self.rhoc * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
+        rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
+        return 200. / 3 * rho_crit * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
 
-    def rN_M_nfw_comoving(self, M, N):
+    def rN_M_nfw_comoving(self, M, N, z_eval_rho=0.):
         """
         computes the radius R_N of a halo of mass M in comoving distances
         :param M: halo mass in M_sun/h
@@ -226,7 +262,32 @@ class LensCosmo(object):
         :return: radius R_200 in comoving Mpc/h
         """
 
-        return (3 * M / (4 * numpy.pi * self.rhoc * N)) ** (1. / 3.)
+        rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
+
+        return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
+
+    def _colossus_nfwProfile(self):
+
+        if not hasattr(self, '_colossus_nfw'):
+
+            from colossus.halo.profile_nfw import NFWProfile
+            self._colossus_nfw = NFWProfile
+
+        return self._colossus_nfw
+
+    def _nfwParam_physical_Mpc_colossus(self, M, c, z):
+
+        h = self.cosmo.h
+
+        profile = self._colossus_nfwProfile()
+
+        _rhos, _rs = profile.fundamentalParameters(M * h, c, z, '200c')
+        # output in units (M h^2 / kpc^2, kpc/h)
+        rhos = _rhos * h ** 2
+        rs = _rs / h
+        r200 = rs * c
+
+        return rhos * 1000**3, rs / 1000, r200 / 1000
 
     def _nfwParam_physical_Mpc(self, M, c, z):
 
@@ -235,23 +296,17 @@ class LensCosmo(object):
         r200 = self.rN_M_nfw_comoving(M * h, 200) / h * a_z  # physical radius r200
         rho0 = self.rho0_c_NFW(c) * h ** 2 / a_z ** 3  # physical density in M_sun/Mpc**3
         Rs = r200 / c
+
         return rho0, Rs, r200
-
-    def NFW_params_physical(self, M, c, z):
-        """
-        :param M: physical M200
-        :param c: concentration
-        :param z: halo redshift
-        :return: physical NFW parameters in kpc units
-        """
-        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
-
-        return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
     def NFW_params_physical_fromM(self, M, z, mc_kwargs={}):
 
         c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
         return self.NFW_params_physical(M, c, z)
+
+    ##################################################################################
+    """Routines relevant for other lensing by other mass profiles"""
+    ##################################################################################
 
     def vdis_to_Rein(self, zd, zsrc, vdis):
 

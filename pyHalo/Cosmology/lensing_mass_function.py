@@ -3,12 +3,30 @@ from pyHalo.Cosmology.geometry import *
 from scipy.interpolate import interp1d
 from pyHalo.defaults import *
 from colossus.lss.bias import twoHaloTerm
+from scipy.integrate import simps
 
 class LensingMassFunction(object):
 
     def __init__(self, cosmology, mlow, mhigh, zlens, zsource, cone_opening_angle,
                  m_pivot=10**8, mass_function_model=None, use_lookup_table=True, two_halo_term=True,
                  geometry_type=None):
+
+
+        """
+        This class handles computations of the halo mass function
+
+        :param cosmology: An instance of Cosmology (see cosmology.py)
+        :param mlow: low end of mass function
+        :param mhigh: high end of mass function
+        :param zlens: lens redshift
+        :param zsource: source redshift
+        :param cone_opening_angle: opening angle of lensing volume in arcseconds
+        :param m_pivot: pivot mass of the mass function in M_sun
+        :param mass_function_model (optional): the halo mass function model, default is Sheth-Tormen
+        :param use_lookup_table: Whether to use a precomputed lookup table for the normalization and slope of the mass function
+        :param two_halo_term: Whether to include the contribution from the two halo term of the main deflector
+        :param geometry_type: Type of lensing geometry (DOUBLE_CONE, CYLINDER)
+        """
 
         self._cosmo = cosmology
 
@@ -58,6 +76,15 @@ class LensingMassFunction(object):
 
     def norm_at_z_density(self, z, plaw_index, m_pivot):
 
+        """
+        Returns the normalization of the mass function in units  Mpc^-3 / M_sun^-1
+        :param z: redshift
+        :param plaw_index: logarithmic slope of mass function
+        :param m_pivot: pivot mass of mass function
+        :return: normalization such that
+        dN / dmdV = norm * m^plaw_index
+        """
+
         norm = self._norm_dV_interp(z)
 
         assert m_pivot == self.m_pivot
@@ -67,34 +94,68 @@ class LensingMassFunction(object):
 
     def plaw_index_z(self, z):
 
+        """
+
+        :param z: redshift
+        :return: the logarithmic slope of the halo mass function at redshift z
+        """
+
         idx = self._plaw_interp(z)
 
         return idx
 
     def norm_at_z(self, z, plaw_index, delta_z, m_pivot):
 
+        """
+
+        :param z: redshift
+        :param plaw_index: logarithmic slope of mass function
+        :param delta_z: thickness of redshift slice
+        :param m_pivot: pivot mass of mass function
+        :return: the normalization of the halo mass function in units Mpc^-1
+        such that
+
+        dN / dm = norm * m^plaw_index
+
+        """
         norm_dV = self.norm_at_z_density(z, plaw_index, m_pivot)
 
         dV = self.geometry.volume_element_comoving(z, delta_z)
 
         return norm_dV * dV
 
-    def two_halo_boost(self, M_halo, z, rmin=0.5, rmax=10):
+    def two_halo_boost(self, m200, z, rmin=0.5, rmax=10):
 
-        boost = 1 + 2 * self.integrate_two_halo(M_halo, z, rmin=rmin, rmax=rmax) / (rmax - rmin)
-        return boost
+        """
+        Computes the average contribution of the two halo term in a redshift slice adjacent
+        the main deflector. Returns a rescaling factor applied to the mass function normalization
 
-    def integrate_two_halo(self, m200, z, rmin=0.5, rmax=10):
-
+        :param m200: host halo mass
+        :param z: redshift
+        :param rmin: lower limit of the integral, something like the virial radius ~500 kpc
+        :param rmax: Upper limit of the integral, this is computed based on redshift spacing during
+        the rendering of halos
+        :return: scaling factor applied to the normalization of the LOS mass function
+        """
         def _integrand(x):
             return self.twohaloterm(x, m200, z)
 
-        boost = quad(_integrand, rmin, rmax)[0]
+        mean_boost = 2 * quad(_integrand, rmin, rmax)[0] / (rmax - rmin)
+        # factor of two for symmetry in front/behind host halo
 
-        return boost
+        return 1. + mean_boost
 
     def twohaloterm(self, r, M, z, mdef='200c'):
 
+        """
+        Computes the boost to the background density of the Universe
+        from correlated structure around a host of mass M
+        :param r:
+        :param M:
+        :param z:
+        :param mdef:
+        :return:
+        """
         h = self._cosmo.h
         M_h = M * h
         r_h = r * h
@@ -104,6 +165,16 @@ class LensingMassFunction(object):
         return rho_2h
 
     def _build(self, mlow, mhigh, zsource):
+
+        """
+        This routine is used to interpolate the normalization and slope of the
+         mass function as a function of redshift
+
+        :param mlow: low end of mass function
+        :param mhigh: high end of mass function
+        :param zsource: source redshift
+        :return: interpolation of halo mass function
+        """
 
         z_range = np.arange(lenscone_default.default_zstart, zsource + 0.02, 0.02)
 
@@ -211,6 +282,20 @@ class LensingMassFunction(object):
     def integrate_mass_function(self, z, plaw_index, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n=1,
                                 norm_scale = 1):
 
+        """
+        Integrates the halo mass function between m_low and m_high
+
+        :param norm: normalization prefactor
+        :param m_low: low bound of integral
+        :param m_high: high bound of integral
+        :param log_m_break: characteristic break mass (in log) of the power law
+        :param n: computes the nth moment
+        :param plaw_index: logarithmic slope of power law
+        :param break_index: see parameterization above
+        :param break_scale: see parameterization above
+        :return: the desired integral
+        """
+
         norm = self.norm_at_z(z, plaw_index, delta_z, self.m_pivot)
         moment = self.integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
                                           break_index=break_index, break_scale=break_scale)
@@ -219,6 +304,23 @@ class LensingMassFunction(object):
 
     def integrate_power_law(self, norm, m_low, m_high, log_m_break, n, plaw_index, break_index=0, break_scale=1):
 
+        """
+        Integrates a power law function of the form
+
+        f(x) = norm * x ^ (n + plaw_index) * (1 + (xc / x)^break_scale )^break_index
+
+        from x = m_low to x = m_high
+
+        :param norm: normalization prefactor
+        :param m_low: low bound of integral
+        :param m_high: high bound of integral
+        :param log_m_break: characteristic break mass (in log) of the power law
+        :param n: computes the nth moment
+        :param plaw_index: logarithmic slope of power law
+        :param break_index: see parameterization above
+        :param break_scale: see parameterization above
+        :return: the desired integral
+        """
         def _integrand(m, m_break, plaw_index, n):
 
             return norm * m ** (n + plaw_index) * (1 + (m_break / m)**break_scale) ** break_index
@@ -247,20 +349,25 @@ class LensingMassFunction(object):
 
         return moment, norm, plaw_index
 
-    def cylinder_volume(self, cylinder_diameter_kpc, z_max,
-                           z_min=0):
+    def mass_fraction_in_halos(self, z, mlow, mhigh, mlow_global=10**-6):
 
-        dz = 0.01
-        zsteps = np.arange(z_min+dz, z_max+dz, dz)
-        volume = 0
-        for zi in zsteps:
+        """
 
-            dr = self.geometry.delta_R_comoving(zi, dz)
-            radius = 0.5 * cylinder_diameter_kpc * 0.001
-            dv_comoving = np.pi*radius**2 * dr
-            volume += dv_comoving
+        :param z: redshift
+        :param mlow: the lowest halo mass rendered
+        :param mhigh: the largest halo mass rendered
+        :param mlow_global: the lowest mass halos that exist (in CDM this is ~1 Earth mass)
+        :return: the fraction of dark matter contained in halos between mlow_global and mhigh
+        """
+        m = np.logspace(np.log10(mlow_global), np.log10(mhigh), 100)
+        dndm_total = self.dN_dMdV_comoving(m, z)
+        total_mass_in_halos = simps(dndm_total * m, m)
 
-        return volume
+        m_rendered = np.logspace(np.log10(mlow), np.log10(mhigh), 100)
+        dndm_rendered = self.dN_dMdV_comoving(m_rendered, z)
+        mass_rendered = simps(dndm_rendered * m_rendered, m_rendered)
+
+        return mass_rendered/total_mass_in_halos
 
 def write_lookup_table():
 
