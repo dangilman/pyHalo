@@ -355,7 +355,7 @@ class Realization(object):
                     kwargs_mass_sheets_out.append(kwargs_mass_sheets[i])
                     profiles_out.append(profiles[i])
                     redshifts_out.append(redshifts[i])
-            
+
             return kwargs_mass_sheets_out, profiles_out, redshifts_out
 
     def _lens(self, halo):
