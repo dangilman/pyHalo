@@ -243,7 +243,18 @@ class Realization(object):
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
 
-    def lensing_quantities(self, return_kwargs=False, add_mass_sheet_correction=True):
+    def lensing_quantities(self, return_kwargs=False, add_mass_sheet_correction=True, z_mass_sheet_max=None):
+
+        """
+
+        :param return_kwargs: return the lens_model_list, kwrargs_list, etc. as keyword arguments in a dict
+        :param add_mass_sheet_correction: include sheets of negative convergence to correct for mass added subhalos/field halos
+        :param z_mass_sheet_max: don't include negative convergence sheets at z>z_mass_sheet_max (this does nothing
+        if the previous argument is False
+
+        :return: the lens_model_list, redshift_list, kwargs_lens, and numerical_alpha_class keywords that can be plugged
+        directly into a lenstronomy LensModel class
+        """
 
         kwargs_lens = []
         lens_model_names = []
@@ -275,7 +286,8 @@ class Realization(object):
                 raise Exception('if applying a convergence sheet correction, must specify '
                                 'the rendering classes.')
 
-            kwargs_mass_sheets, profile_list, z_sheets = self.mass_sheet_correction(self.rendering_classes)
+            kwargs_mass_sheets, profile_list, z_sheets = self.mass_sheet_correction(self.rendering_classes,
+                                                                                    z_mass_sheet_max)
             kwargs_lens += kwargs_mass_sheets
             lens_model_names += profile_list
             redshift_list = np.append(redshift_list, z_sheets)
@@ -289,7 +301,17 @@ class Realization(object):
         else:
             return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
 
-    def mass_sheet_correction(self, rendering_classes):
+    def mass_sheet_correction(self, rendering_classes, z_mass_sheet_max):
+
+        """
+        This routine adds the negative mass sheet corrections along the LOS and in the main lens plane.
+        The actual physics that determines the amount of negative convergence to add is encoded in the rendering_classes
+        (see for example Rendering.Field.PowerLaw.powerlaw_base.py)
+
+        :param rendering_classes: the rendering class associated with each realization
+        :param z_mass_sheet_max: don't include convergence sheets at redshift > z_mass_sheet_max
+        :return: the kwargs_lens, lens_model_list, and redshift_list of the mass sheets that can be plugged into lenstronomy
+        """
 
         kwargs_mass_sheets = []
 
@@ -317,7 +339,24 @@ class Realization(object):
                 redshifts += redshifts_new
                 profiles += profiles_new
 
-        return kwargs_mass_sheets, profiles, redshifts
+        if z_mass_sheet_max is None:
+            return kwargs_mass_sheets, profiles, redshifts
+
+        else:
+
+            kwargs_mass_sheets_out = []
+            profiles_out = []
+            redshifts_out = []
+
+            inds_keep = np.where(np.array(redshifts) <= z_mass_sheet_max)[0]
+
+            for i in range(0, len(kwargs_mass_sheets)):
+                if i in inds_keep:
+                    kwargs_mass_sheets_out.append(kwargs_mass_sheets[i])
+                    profiles_out.append(profiles[i])
+                    redshifts_out.append(redshifts[i])
+            
+            return kwargs_mass_sheets_out, profiles_out, redshifts_out
 
     def _lens(self, halo):
 
