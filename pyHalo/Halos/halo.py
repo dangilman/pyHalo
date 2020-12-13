@@ -1,12 +1,12 @@
 from pyHalo.Halos.HaloModels.collisionless_nfw import \
-    TNFWFieldHalo, TNFWMainSubhalo, NFWFieldHalo, NFWMainSubhalo
+    TNFWFieldHalo, TNFWMainSubhalo, NFWFieldHalo, NFWMainSubhalo, TNFWFieldHaloRhoCrit0, TNFWMainSubhaloRhoCrit0
 from pyHalo.Halos.HaloModels.SIDM_nfw import truncatedSIDMMainSubhalo, truncatedSIDMFieldHalo, CoreCollapsedNFW
 from pyHalo.Halos.HaloModels.base import PointMassBase, SISBase
 import numpy as np
 
 class Halo(object):
 
-    _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW', 'PT_MASS', 'SIS', 'PJAFFE']
+    _recognized_mass_definitions = ['NFW', 'TNFW', 'SIDM_TNFW', 'PT_MASS', 'SIS', 'PJAFFE', 'TNFW_rhocritz']
 
     def __init__(self, mass=None, x=None, y=None, r2d=None, r3d=None, mdef=None, z=None,
                  sub_flag=None, cosmo_m_prof=None, args={}, field_sub_flag=False, unique_tag=None):
@@ -118,6 +118,10 @@ class Halo(object):
 
                     halo_type = TNFWMainSubhalo(self)
 
+                elif self.mdef == 'TNFW_rhocritz':
+
+                    halo_type = TNFWMainSubhaloRhoCrit0(self)
+
                 elif self.mdef == 'SIDM_TNFW':
 
                     halo_type = truncatedSIDMMainSubhalo(self)
@@ -143,6 +147,10 @@ class Halo(object):
                 elif self.mdef == 'TNFW':
 
                     halo_type = TNFWFieldHalo(self)
+
+                elif self.mdef == 'TNFW_rhocritz':
+
+                    halo_type = TNFWFieldHaloRhoCrit0(self)
 
                 elif self.mdef == 'SIDM_TNFW':
 

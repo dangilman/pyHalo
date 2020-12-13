@@ -331,12 +331,16 @@ class Realization(object):
     def _load_model(self, halo):
 
         if halo.mdef == 'NFW':
-            from pyHalo.Lensing.NFW import NFWLensing
-            lens = NFWLensing(self.lens_cosmo)
+            from pyHalo.Lensing.NFW import NFWLensingRhoCrit0
+            lens = NFWLensingRhoCrit0(self.lens_cosmo)
 
         elif halo.mdef == 'TNFW':
-            from pyHalo.Lensing.NFW import TNFWLensing
-            lens = TNFWLensing(self.lens_cosmo)
+            from pyHalo.Lensing.NFW import TNFWLensingRhoCrit0
+            lens = TNFWLensingRhoCrit0(self.lens_cosmo)
+
+        elif halo.mdef == 'TNFW_rhocritz':
+            from pyHalo.Lensing.NFW import TNFWLensingRhoCritz
+            lens = TNFWLensingRhoCritz(self.lens_cosmo)
 
         elif halo.mdef == 'SIDM_TNFW':
             from pyHalo.Lensing.coredTNFW import coreTNFW
