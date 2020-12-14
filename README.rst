@@ -24,7 +24,7 @@ https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract
 
 https://ui.adsabs.harvard.edu/abs/2020arXiv200701308G/abstract
 
-Check out the example notebooks to see some demonstrates of how to use this software together with lenstronomy for substructure lensing. 
+Check out the example notebooks to see some demonstrations of how to use this software together with lenstronomy for substructure lensing. 
 
 If you would like to use this package and have questions, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
 
