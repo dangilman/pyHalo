@@ -24,9 +24,9 @@ https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract
 
 https://ui.adsabs.harvard.edu/abs/2020arXiv200701308G/abstract
 
-I have put a jupyter notebook in the example_notebook directory that shows a simple usage example, generating a population of CDM halos with a number of default settings. I will add other example notebooks soon that demonstrate how to render halos from other dark matter models.
+Check out the example notebooks to see some demonstrates of how to use this software together with lenstronomy for substructure lensing. 
 
-If you would like to use this package, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
+If you would like to use this package and have questions, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
 
 
 * Free software: MIT license
