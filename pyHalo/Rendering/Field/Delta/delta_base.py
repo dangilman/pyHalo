@@ -121,7 +121,7 @@ class DeltaBase(LOSBase):
 
         boost = self.two_halo_boost(z, delta_z, rendering_args['parent_m200'], zlens, lensing_mass_function_class)
 
-        rho_dV = lensing_mass_function_class.rho_dV(
+        rho_dV = lensing_mass_function_class.component_density(z,
             mass_fraction
         )
 

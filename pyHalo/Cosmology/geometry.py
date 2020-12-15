@@ -98,7 +98,7 @@ class Geometry(object):
     def angle_to_comoving_area(self, radius_arcsec, z):
         """
         computes the area corresponding to the angular radius of a plane at redshift z for a double cone with base at z_base
-        :param theta: lens cone opening angle in arcsec
+        :param radius_arcsec: lens cone opening angle in arcsec
         :param z: redshift of plane
         :param z_lens: redshift of main lens
         :return: comoving area

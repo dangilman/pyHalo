@@ -1,6 +1,7 @@
 from pyHalo.pyhalo import pyHalo
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
+import matplotlib.pyplot as plt
 import numpy.testing as npt
 import pytest
 
@@ -96,7 +97,7 @@ class TestRender(object):
             mass_at_redshift = self.realization_cdm.mass_at_z_exact(zi)
             volume_at_redshift = self.geometry.volume_element_comoving(zi, delta_z)
 
-            _, norm_dV, plaw_index = self.lensing_mass_function._mass_function_params(m, 10**6, 10**9, zi)
+            norm_dV, plaw_index = self.lensing_mass_function._mass_function_params(m, zi)
 
             m_pivot_scale = 1/(m_pivot**plaw_index)
             norm = self._LOS_norm * m_pivot_scale * norm_dV * volume_at_redshift
@@ -110,7 +111,7 @@ class TestRender(object):
             mass_at_redshift = self.realization_cdm_delta_plaw_index.mass_at_z_exact(zi)
             volume_at_redshift = self.geometry_delta_plaw_index.volume_element_comoving(zi, delta_z)
 
-            _, norm_dV, plaw_index = self.lensing_mass_function_delta_plaw_index._mass_function_params(m, 10 ** 6, 10 ** 9, zi)
+            norm_dV, plaw_index = self.lensing_mass_function_delta_plaw_index._mass_function_params(m, zi)
             plaw_index += self._delta_power_law_index
             m_pivot_scale = 1 / (m_pivot ** plaw_index)
             norm = self._LOS_norm * m_pivot_scale * norm_dV * volume_at_redshift

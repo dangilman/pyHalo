@@ -64,13 +64,6 @@ class TestCosmology(object):
         rho_Mpc = rho_pc.value * (1e+6) ** 3
         npt.assert_almost_equal(rho_crit / rho_Mpc, 1, 3)
 
-        rho_matter_crit = self.cosmo.rho_matter_crit(0.4)
-        rho_matter = self.cosmo.astropy.Om(0.4) * self.cosmo.rho_crit(0.4)
-        rho_dark_matter = self.cosmo.astropy.Odm(0.4) * self.cosmo.rho_crit(0.4)
-        npt.assert_almost_equal(rho_matter_crit, rho_matter)
-        npt.assert_almost_equal(rho_dark_matter, rho_matter * (self._dm / (self._dm + self._bar)))
-        npt.assert_almost_equal(rho_dark_matter, self.cosmo.rho_dark_matter_crit(0.4))
-
 
 if __name__ == '__main__':
      pytest.main()

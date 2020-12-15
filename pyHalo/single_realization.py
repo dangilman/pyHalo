@@ -596,11 +596,27 @@ class Realization(object):
         return n
 
     def number_of_halos_at_redshift(self, z):
+
         n = 0
         for halo in self.halos:
             if halo.z == z:
                 n += 1
         return n
+
+    def halo_comoving_coordinates(self):
+
+        x_comoving, y_comoving, distance, masses = [], [], [], []
+
+        for zi in self.unique_redshifts:
+            di = self.lens_cosmo.cosmo.D_C_transverse(zi)
+            for halo in self.halos_at_z(zi)[0]:
+                x_comoving.append(halo.x * di)
+                y_comoving.append(halo.y * di)
+                distance.append(di)
+                masses.append(halo.mass)
+
+        return np.array(x_comoving), np.array(y_comoving), np.array(distance), np.array(masses)
+
 
 class SingleHalo(Realization):
 

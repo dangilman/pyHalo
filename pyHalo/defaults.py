@@ -88,7 +88,6 @@ class RealizationDefaults(object):
 
     def __init__(self):
 
-
         # opening angle = opening_anlge_factor * Rein
         self.opening_angle_factor = 6
 

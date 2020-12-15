@@ -74,6 +74,43 @@ class LensingMassFunction(object):
 
         self._z_range = z_range
 
+    def dN_dMdV_comoving(self, M, z):
+
+        """
+        :param M: m (in physical units, no little h)
+        :param z: redshift
+        :return: differential number per unit mass per cubic Mpc (comoving)
+        [N * M_sun ^ -1 * Mpc ^ -3]
+        """
+
+        h = self._cosmo.h
+
+        # To M_sun / h units
+        M_h = M*h
+
+        dndlogM = massFunction(M_h, z, q_out='dndlnM', model=self._mass_function_model)
+
+        dndM_comoving_h = dndlogM / M_h
+        # now we have an h^3 from the rho / M term in the mass function,
+        # and a 1/(h^-1) = h from M_h, so four factors of h
+
+        dndM_comoving = dndM_comoving_h * h ** 4
+
+        return dndM_comoving
+
+    def component_density(self, z, component_fraction):
+
+        """
+
+        :param z: redshift
+        :param component_fraction: density parameter; fraction of the matter density (not fraction of critical density!)
+        :return: the number of objects of mass M * Mpc^-3
+        """
+
+        rho_dV = component_fraction * self._cosmo.rho_dark_matter_crit(z)
+
+        return rho_dV
+
     def norm_at_z_density(self, z, plaw_index, m_pivot):
 
         """
@@ -91,18 +128,6 @@ class LensingMassFunction(object):
         factor = 1/(m_pivot**plaw_index)
 
         return norm * factor
-
-    def plaw_index_z(self, z):
-
-        """
-
-        :param z: redshift
-        :return: the logarithmic slope of the halo mass function at redshift z
-        """
-
-        idx = self._plaw_interp(z)
-
-        return idx
 
     def norm_at_z(self, z, plaw_index, delta_z, m_pivot):
 
@@ -123,6 +148,18 @@ class LensingMassFunction(object):
         dV = self.geometry.volume_element_comoving(z, delta_z)
 
         return norm_dV * dV
+
+    def plaw_index_z(self, z):
+
+        """
+
+        :param z: redshift
+        :return: the logarithmic slope of the halo mass function at redshift z
+        """
+
+        idx = self._plaw_interp(z)
+
+        return idx
 
     def two_halo_boost(self, m200, z, rmin=0.5, rmax=10):
 
@@ -163,121 +200,6 @@ class LensingMassFunction(object):
         rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self._cosmo._colossus_cosmo.rho_m(z)
 
         return rho_2h
-
-    def _build(self, mlow, mhigh, zsource):
-
-        """
-        This routine is used to interpolate the normalization and slope of the
-         mass function as a function of redshift
-
-        :param mlow: low end of mass function
-        :param mhigh: high end of mass function
-        :param zsource: source redshift
-        :return: interpolation of halo mass function
-        """
-
-        z_range = np.arange(lenscone_default.default_zstart, zsource + 0.02, 0.02)
-
-        #z_range = np.linspace(default_zstart, zsource - default_zstart, nsteps)
-
-        M = np.logspace(np.log10(mlow), np.log10(mhigh), 20)
-
-        norm, index, norm_scale = [], [], []
-
-        for zi in z_range:
-
-            _, normi, indexi = self._mass_function_params(M, mlow, mhigh, zi)
-            norm.append(normi)
-            index.append(indexi)
-
-        return norm, index, z_range, z_range[1] - z_range[0]
-
-    def _mass_function_params(self, M, mlow, mhigh, zstart):
-
-        """
-        :param mlow: min mass in solar masses
-        :param mhigh: maximum mass in solar masses
-        :param zstart:
-        :param zend:
-        :param cone_opening_angle:
-        :param z_lens:
-        :param delta_theta_lens:
-        :return: number of halos between mlow and mhigh, normalization and power law index of the mass function
-        assumed parameterization is simple:
-
-        dN / dM = norm * (M / M_sun) ^ plaw_index
-
-        units of norm are therefore M_sun ^ -1
-        """
-
-        dN_dMdV = self.dN_dMdV_comoving(M, zstart)
-
-        N_objects_dV, norm_dV, plaw_index_dV = self._mass_function_moment(M, dN_dMdV, 0, mlow, mhigh)
-
-        return N_objects_dV, norm_dV, plaw_index_dV
-
-    def dN_dMdV_comoving(self, M, z, ps_args=None):
-
-        """
-        :param M: m (in physical units, no little h)
-        :param z: redshift
-        :return: differential number per unit mass per cubic Mpc (comoving)
-        [N * M_sun ^ -1 * Mpc ^ -3]
-        """
-
-        h = self._cosmo.h
-
-        # To M_sun / h units
-        M_h = M*h
-
-        if ps_args is not None:
-            dndlogM = massFunction(M_h, z, q_out='dndlnM',
-                                         ps_args=ps_args, model=self._mass_function_model)
-
-        else:
-            dndlogM = massFunction(M_h, z, q_out='dndlnM', model=self._mass_function_model)
-
-        dndM_comoving_h = dndlogM / M_h
-        # now we have an h^3 from the rho / M term in the mass function,
-        # and a 1/(h^-1) = h from M_h, so four factors of h
-
-        dndM_comoving = dndM_comoving_h * h ** 4
-
-        return dndM_comoving
-
-    def rho_dV(self, component_fraction):
-
-        """
-
-        :param z: redshift
-        :param component_fraction: density parameter; fraction of the matter density (not fraction of critical density!)
-        :return: the number of objects of mass M * Mpc^-3
-        """
-
-        #a_z = 1/(1+z)
-        # in comoving units evaluate at z=0
-        rho_dV = component_fraction * self._cosmo.rho_dark_matter_crit(0)
-
-        return rho_dV
-
-    def _fit_norm_index(self, M, dNdM, order=1):
-        """
-        Fits a line to a log(M) log(dNdM) relation
-        :param M: masses
-        :param dNdM: mass function
-        :param order: order of the polynomial
-        :return: normalization units [dNdM * dM ^ -1], power law exponent
-        """
-
-        if np.all(dNdM==0):
-            return 0, 2
-
-        coeffs = np.polyfit(np.log10(M/self.m_pivot), np.log10(dNdM), order)
-
-        plaw_index = coeffs[0]
-        norm = 10 ** coeffs[1]
-
-        return norm, plaw_index
 
     def integrate_mass_function(self, z, plaw_index, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n=1,
                                 norm_scale = 1):
@@ -329,26 +251,6 @@ class LensingMassFunction(object):
 
         return moment
 
-    def _mass_function_moment(self, M, dNdM, n, m_low, m_high, order=1):
-
-        """
-        :param normalization: dimensions M_sun^-1 Mpc^-3 or M_sun
-        :param plaw_index: power law index
-        :param N: for the Nth moment
-        :return: Nth moment of the mass funciton
-        """
-
-        norm, plaw_index = self._fit_norm_index(M, dNdM, order=order)
-
-        if plaw_index == 2 and n==1:
-            moment = norm * np.log(m_high * m_low ** -1)
-
-        else:
-
-            moment = self.integrate_power_law(norm, m_low, m_high, 0, n, plaw_index)
-
-        return moment, norm, plaw_index
-
     def mass_fraction_in_halos(self, z, mlow, mhigh, mlow_global=10**-6):
 
         """
@@ -369,19 +271,70 @@ class LensingMassFunction(object):
 
         return mass_rendered/total_mass_in_halos
 
+    def _build(self, mlow, mhigh, zsource):
+
+        """
+        This routine is used to interpolate the normalization and slope of the
+         mass function as a function of redshift
+
+        :param mlow: low end of mass function
+        :param mhigh: high end of mass function
+        :param zsource: source redshift
+        :return: interpolation of halo mass function
+        """
+
+        z_range = np.arange(lenscone_default.default_zstart, zsource + 0.02, 0.02)
+
+        M = np.logspace(np.log10(mlow), np.log10(mhigh), 20)
+
+        norm, index, norm_scale = [], [], []
+
+        for zi in z_range:
+
+            normi, indexi = self._mass_function_params(M, zi)
+            norm.append(normi)
+            index.append(indexi)
+
+        return norm, index, z_range, z_range[1] - z_range[0]
+
+    def _mass_function_params(self, M, zstart):
+
+        """
+        :param mlow: min mass in solar masses
+        :param mhigh: maximum mass in solar masses
+        :param zstart:
+        :param zend:
+        :param cone_opening_angle:
+        :param z_lens:
+        :param delta_theta_lens:
+        :return: number of halos between mlow and mhigh, normalization and power law index of the mass function
+        assumed parameterization is simple:
+
+        dN / dM = norm * (M / M_sun) ^ plaw_index
+
+        units of norm are therefore M_sun ^ -1
+        """
+
+        dN_dMdV = self.dN_dMdV_comoving(M, zstart)
+
+        coeffs = np.polyfit(np.log10(M / self.m_pivot), np.log10(dN_dMdV), 1)
+
+        plaw_index = coeffs[0]
+        norm_dV = 10 ** coeffs[1]
+
+        return norm_dV, plaw_index
+
 def write_lookup_table():
 
     def write_to_file(fname, pname, values, mode):
         with open(fname, mode) as f:
             f.write(pname + ' = [')
             for j, val in enumerate(values):
-                #if j % 13 == 0 and j >0:
-                #    f.write('\ \n   ')
+
                 f.write(str(val)+', ')
             f.write(']\n')
 
     from pyHalo.Cosmology.cosmology import Cosmology
-    # new interpolation is optimized to fit correctly over 4 decades in mass
     l = LensingMassFunction(Cosmology(), 10**7., 10**9, 0.1, 4., 6., use_lookup_table=False)
 
     fname = './lookup_tables/lookup_sheth99.py'
@@ -400,94 +353,3 @@ def write_lookup_table():
 
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
-
-# import matplotlib.pyplot as plt
-# from pyHalo.Cosmology.cosmology import Cosmology
-# cosmo = Cosmology()
-# m_pivot = 10**9
-# l = LensingMassFunction(cosmo, 10**7, 10**9., 0.1, 4., 6., use_lookup_table=False,
-#                         m_pivot=m_pivot)
-#
-# z = 0.4
-# delta_plaw_index = -0.2
-# plaw_index = l.plaw_index_z(z) + delta_plaw_index
-#
-# m = np.logspace(6, 10, 50)
-# dndm_colossus = l.dN_dMdV_comoving(m, z) * (m/m_pivot) ** delta_plaw_index
-# norm = l.norm_at_z_density(z, plaw_index, m_pivot)
-# dndm = norm * m ** plaw_index
-# plt.loglog(m, dndm)
-# plt.loglog(m, dndm_colossus)
-#
-# plt.show()
-
-#write_lookup_table()
-# import matplotlib.pyplot as plt
-#from pyHalo.Cosmology.cosmology import Cosmology
-#cosmo = Cosmology()
-# l = LensingMassFunction(cosmo, 10**7, 10**9., 0.1, 4., 6., use_lookup_table=False)
-# h = cosmo.astropy.h
-# galfit = np.loadtxt('HMF_slope.txt', skiprows=1)
-# z = galfit[:,0]
-# slope = galfit[:,1]
-# amp = galfit[:,3]
-# a_z = 1/(1 + z)
-# amp_colossus = l.dN_dMdV_comoving(10**8, z) * a_z ** 3
-# plt.plot(z, amp_colossus, color='r')
-# plt.plot(z, amp, color='k')
-# plt.show()
-
-#
-# m = np.logspace(7, 9, 10)
-# logm = np.log10(m)
-# z1, z2 = 0., 3.5
-# logdndm_1 = np.log10(l.dN_dMdV_comoving(m, z1))
-# logdndm_2 = np.log10(l.dN_dMdV_comoving(m, z2))
-# import matplotlib.pyplot as plt
-# plt.loglog(m, 10**logdndm_1, color='k', label='z=0')
-# plt.loglog(m, 10**logdndm_2, color='r', label='z=2.5')
-# # plt.legend(fontsize=13)
-# # plt.savefig('redshift_evo.pdf')
-# plt.show()
-# coeffs1 = np.polyfit(logm, logdndm_1, 1)
-# coeffs2 = np.polyfit(logm, logdndm_2, 1)
-# print(coeffs1)
-# print(coeffs2)
-#
-
-# # # new interpolation is optimized to fit correctly over 4 decades in mass
-# l = LensingMassFunction(Cosmology(), 10**7, 10**9., 0.1, 4., 6.)
-# m = np.logspace(7, 14, 100)
-# z = 0.
-# dndm0 = l.dN_dMdV_comoving(m, z)
-#
-# z = 0.5
-# dndm = l.dN_dMdV_comoving(m, z)
-# plt.loglog(m, dndm/dndm0)
-#
-# z = 1.
-# dndm = l.dN_dMdV_comoving(m, z)
-# plt.loglog(m, dndm/dndm0)
-#
-# z = 2.
-# dndm = l.dN_dMdV_comoving(m, z)
-# plt.loglog(m, dndm/dndm0); plt.show()
-# # m = np.logspace(6, 10, 100)
-#
-# plaw_predicted = l.plaw_index_z(1.4)
-# print(plaw_predicted)
-#
-# plaw = -2.1
-# norm = l.norm_at_z_density(0.5, plaw)
-# dndm = norm * m ** plaw
-# plt.loglog(m, dndm)
-#
-# plaw = -1.75
-# norm = l.norm_at_z_density(0.5, plaw)
-# dndm = norm * m ** plaw
-# plt.loglog(m, dndm, color='r'); plt.show()
-
-# print(l.norm_at_z_density(0.5, plaw_new))
-#
-# #print(l_old._norm_dV_interp(0.5))
-#

@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy.testing as npt
 import pytest
 
-
 class TestWDM(object):
 
     def setup(self):
