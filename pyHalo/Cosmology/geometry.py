@@ -22,7 +22,7 @@ class Geometry(object):
         self._zlens, self._zsource = z_lens, z_source
         self.cone_opening_angle = opening_angle
         self._arcsec = self._cosmo.arcsec
-        self._kpc_per_arcsec_zlens = self._cosmo.kpc_per_asec(self._zlens)
+        self._kpc_per_arcsec_zlens = self._cosmo.kpc_proper_per_asec(self._zlens)
         self._reduced_to_phys = self._geometrytype._reduced_to_phys
 
     def rendering_scale(self, z):
@@ -31,7 +31,7 @@ class Geometry(object):
 
     def kpc_per_arcsec(self, z):
 
-        return self._cosmo.kpc_per_asec(z)
+        return self._cosmo.kpc_proper_per_asec(z)
 
     def angle_to_physicalradius(self, radius_arcsec, z):
 

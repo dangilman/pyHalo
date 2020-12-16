@@ -4,7 +4,7 @@ from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
 import numpy as np
 
-class TestCone(object):
+class TestConeGeometry(object):
 
     def setup(self):
 
@@ -27,48 +27,61 @@ class TestCone(object):
         self._angle_pad = 0.75
         self.geometry_double_cone = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter,
                                              'DOUBLE_CONE', self._angle_pad)
-        self.geometry_cylinder = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter, 'CYLINDER')
 
     def test_angle_scale(self):
 
-        ratio = self.cosmo.D_C_z(self.zlens)/self.cosmo.D_C_z(self.zsource)
-        reduced_to_phys = self.geometry_double_cone._geometrytype._reduced_to_phys
+        reduced_to_phys = self.geometry_double_cone._cosmo.D_A(0, self.zsource) / \
+                          self.geometry_double_cone._cosmo.D_A(self.zlens, self.zsource)
 
         ratio_double_cone = reduced_to_phys * \
                             self.cosmo.D_A(self.zlens, self.zsource)/self.cosmo.D_A_z(self.zsource)
-        angle_scale_zsource = [ratio, 1 - self._angle_pad*ratio_double_cone]
+        angle_scale_zsource = 1 - self._angle_pad*ratio_double_cone
 
-        for i, geometry in enumerate([self.geometry_cylinder, self.geometry_double_cone]):
-            npt.assert_almost_equal(geometry.rendering_scale(self.zlens), 1.)
-            npt.assert_almost_equal(geometry.rendering_scale(self.zsource), angle_scale_zsource[i])
+        npt.assert_almost_equal(self.geometry_double_cone.rendering_scale(self.zlens), 1.)
+        npt.assert_almost_equal(self.geometry_double_cone.rendering_scale(self.zsource), angle_scale_zsource)
 
-        for i, geometry in enumerate([self.geometry_cylinder, self.geometry_double_cone]):
-
-            npt.assert_almost_equal(geometry.rendering_scale(self.zlens), 1)
+        npt.assert_almost_equal(self.geometry_double_cone.rendering_scale(self.zlens), 1)
 
     def test_distances_lensing(self):
 
-        for geometry in [self.geometry_double_cone]:
-            z = 0.3
+        z = 0.3
+        radius_physical = self.geometry_double_cone.angle_to_physicalradius(self.angle_radius, z)
+        radius = self.geometry_double_cone._cosmo.D_A(0., z) * self.angle_radius * self.arcsec
+        npt.assert_almost_equal(radius_physical, radius, 0)
 
-            radius_physical = geometry.angle_to_physicalradius(self.angle_radius, z)
-            npt.assert_almost_equal(radius_physical, 919, 0)
+        comoving_radius = self.geometry_double_cone.angle_to_comovingradius(self.angle_radius, z)
+        npt.assert_almost_equal(comoving_radius, radius_physical * (1 + z), 3)
 
-            comoving_radius = geometry.angle_to_comovingradius(self.angle_radius, z)
-            npt.assert_almost_equal(comoving_radius, radius_physical * (1 + z), 3)
+        z = 1
+        radius_physical = self.geometry_double_cone.angle_to_physicalradius(self.angle_radius, z)
+        radius = self.geometry_double_cone._cosmo.D_A(0., z) * self.angle_radius * self.arcsec
+        npt.assert_almost_equal(radius_physical, radius, 0)
 
-            z = 1
-            radius_physical = geometry.angle_to_physicalradius(self.angle_radius, z)
-            npt.assert_almost_equal(radius_physical, 1651, 0)
+        comoving_radius = self.geometry_double_cone.angle_to_comovingradius(self.angle_radius, z)
+        npt.assert_almost_equal(comoving_radius, radius_physical * (1+z), 3)
 
-            comoving_radius = geometry.angle_to_comovingradius(self.angle_radius, z)
-            npt.assert_almost_equal(comoving_radius, radius_physical * (1+z), 3)
+        z = 1.25
+        radius_physical = self.geometry_double_cone.angle_to_physicalradius(self.angle_radius, z)
+        D_dz = self.geometry_double_cone._cosmo.D_A(self.zlens, z)
+        D_s = self.geometry_double_cone._cosmo.D_A(0, self.zsource)
+        D_z = self.geometry_double_cone._cosmo.D_A(0, z)
+        D_ds = self.geometry_double_cone._cosmo.D_A(self.zlens, self.zsource)
+
+        rescale = 1 - self._angle_pad * D_dz * D_s / (D_z * D_ds)
+        radius = self.geometry_double_cone._cosmo.D_A(0., z) * self.angle_radius * self.arcsec * rescale
+
+        npt.assert_almost_equal(radius_physical, radius, 0)
+
+        comoving_radius = self.geometry_double_cone.angle_to_comovingradius(self.angle_radius, z)
+        npt.assert_almost_equal(comoving_radius, radius_physical * (1 + z), 3)
+
 
     def test_volume(self):
 
         cone_arcsec = 3
         radius = cone_arcsec*0.5
-        geo = Geometry(self.cosmo, 1, 1.5, cone_arcsec, 'DOUBLE_CONE')
+        angle_pad = 0.7
+        geo = Geometry(self.cosmo, 1, 1.5, cone_arcsec, 'DOUBLE_CONE', angle_pad=angle_pad)
         astropy = geo._cosmo.astropy
 
         delta_z = 1e-3
@@ -82,17 +95,17 @@ class TestCone(object):
 
     def test_total_volume(self):
 
-        cone_arcsec = 3
+        cone_arcsec = 4
         radius_radians = cone_arcsec * 0.5 * self.cosmo.arcsec
         geo = Geometry(self.cosmo, 0.5, 1.5, cone_arcsec, 'DOUBLE_CONE', angle_pad=1.)
         volume_pyhalo = 0
-        z = np.linspace(0.01, 1.5, 100)
+        z = np.linspace(0.0, 1.5, 200)
         for i in range(0, len(z)-1):
             delta_z = z[i+1] - z[i]
             volume_pyhalo += geo.volume_element_comoving(z[i], delta_z)
 
-        ds = self.cosmo.D_C(1.5)
-        dz = self.cosmo.D_C(0.5)
+        ds = self.cosmo.D_C_z(1.5)
+        dz = self.cosmo.D_C_z(0.5)
         volume_true = 1./3 * np.pi * radius_radians ** 2 * dz ** 2 * ds
         npt.assert_almost_equal(volume_true, volume_pyhalo, 2)
 

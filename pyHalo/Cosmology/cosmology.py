@@ -36,17 +36,6 @@ class Cosmology(object):
 
         self._kpc_per_asec_interp = self._interp_kpc_per_asec()
 
-    def Pk(self, k, z, **kwargs):
-
-        return self._colossus_cosmo.matterPowerSpectrum(k, z, **kwargs)
-
-    def k_from_M(self, M):
-
-        M *= self.h
-
-        two_pi = 2 * 3.14159
-        return two_pi/lagrangianR(M)
-
     def D_A_z(self, z):
 
         try:
@@ -59,17 +48,61 @@ class Cosmology(object):
         try:
             return self._DC_interp(z)
         except:
-            return self.D_C(z)
+            return self.D_A_z(z) / self.scale_factor(z)
 
-    def kpc_per_asec(self, z):
+    def kpc_proper_per_asec(self, z):
 
         return self._kpc_per_asec_interp(z)
+
+    @property
+    def colossus(self):
+        return self._colossus_cosmo
+
+    def halo_age(self, z, zform=10):
+
+        halo_form = self.astropy.age(zform).value
+        if z > zform:
+            return 0
+        else:
+            return self.astropy.age(z).value - halo_form
+
+    def scale_factor(self, z):
+
+        return (1 + z) ** -1
+
+    def D_A(self, z1, z2):
+
+        return self.astropy.angular_diameter_distance_z1z2(z1, z2).value
+
+    def D_C_transverse(self, z):
+
+        return self.astropy.comoving_transverse_distance(z).value
+
+    def E_z(self, z):
+
+        return self.astropy.efunc(z)
+
+    def rho_crit(self, z):
+        """
+        :param z: redshift
+        :return: critical density of the universe at redshift z in solar mass / Mpc^3
+        """
+
+        return self.astropy.critical_density(z).value * self.density_to_MsunperMpc
+
+    def rho_dark_matter_crit(self, z):
+        """
+        :param z: redshift
+        :return: dark matter density of the universe at redshift z in solar mass / Mpc^3
+        """
+
+        return self.astropy.Odm(z) * self.rho_crit(z)
 
     def _interp_kpc_per_asec(self):
 
         zmin, zmax = 0.001, 4
         z = np.arange(zmin, zmax + 0.025, 0.025)
-        kpc_per_asec = [self._kpc_per_asec(zi) for zi in z]
+        kpc_per_asec = [self.astropy.arcsec_per_kpc_proper(zi).value ** -1 for zi in z]
         kpc_per_asec = np.array(kpc_per_asec)
 
         return interp1d(z, kpc_per_asec)
@@ -135,59 +168,3 @@ class Cosmology(object):
             self._colossus_cosmo = cosmology.setCosmology('custom', colossus_kwargs)
 
         return self._colossus_cosmo
-
-    @property
-    def colossus(self):
-        return self._colossus_cosmo
-
-    def halo_age(self, z, zform=10):
-
-        halo_form = self.astropy.age(zform).value
-        if z > zform:
-            return 0
-        else:
-            return self.astropy.age(z).value - halo_form
-
-    def scale_factor(self,z):
-
-        return (1+z)**-1
-
-    def D_A(self,z1,z2):
-
-        return self.astropy.angular_diameter_distance_z1z2(z1, z2).value
-
-    def D_C(self,z):
-
-        return self.D_A_z(z) / self.scale_factor(z)
-
-    def D_C_transverse(self, z):
-
-        return self.astropy.comoving_transverse_distance(z).value
-
-    def D_C_z12(self, z1, z2):
-
-        return self.D_C_z(z2) - self.D_C_z(z1)
-
-    def E_z(self,z):
-
-        return self.astropy.efunc(z)
-
-    def _kpc_per_asec(self,z):
-
-        return self.astropy.arcsec_per_kpc_proper(z).value ** -1
-
-    def rho_crit(self,z):
-        """
-        :param z: redshift
-        :return: critical density of the universe at redshift z in solar mass / Mpc^3
-        """
-
-        return self.astropy.critical_density(z).value * self.density_to_MsunperMpc
-
-    def rho_dark_matter_crit(self,z):
-        """
-        :param z: redshift
-        :return: dark matter density of the universe at redshift z in solar mass / Mpc^3
-        """
-
-        return self.astropy.Odm(z) * self.rho_crit(0.)

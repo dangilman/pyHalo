@@ -21,14 +21,14 @@ class LensCosmo(object):
         # critical density for lensing in units M_sun * kpc ^ -2
         self.epsilon_crit_kpc = self.epsilon_crit * (0.001) ** 2
         # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
-        self.sigmacrit = self.epsilon_crit * (0.001) ** 2 * self.cosmo.kpc_per_asec(z_lens) ** 2
+        self.sigmacrit = self.epsilon_crit * (0.001) ** 2 * self.cosmo.kpc_proper_per_asec(z_lens) ** 2
         # lensing distances
         self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
             z_lens, z_source)
         # hubble distance in Mpc
         self._d_hubble = self.cosmo.c * self.cosmo.Mpc * 0.001 * (self.cosmo.h * 100)
 
-        self._kpc_per_arcsec_zlens = self.cosmo.kpc_per_asec(self.z_lens)
+        self._kpc_per_arcsec_zlens = self.cosmo.kpc_proper_per_asec(self.z_lens)
 
         self._halo_structure = HaloStructure(self)
 
@@ -165,7 +165,7 @@ class LensCosmo(object):
         :return: critical density for lensing in units of M_sun / arcsec ^ 2
         """
 
-        return self.get_epsiloncrit(z,self.z_source)*(0.001)**2*self.cosmo.kpc_per_asec(z)**2
+        return self.get_epsiloncrit(z,self.z_source) * (0.001) ** 2 * self.cosmo.kpc_proper_per_asec(z) ** 2
 
     def get_sigmacrit_z1z2(self,zlens,zsrc):
 
@@ -176,7 +176,7 @@ class LensCosmo(object):
         :return: critical density for lensing in units of M_sun / arcsec ^ 2
         """
 
-        return self.get_epsiloncrit(zlens,zsrc)*(0.001)**2*self.cosmo.kpc_per_asec(zlens)**2
+        return self.get_epsiloncrit(zlens,zsrc) * (0.001) ** 2 * self.cosmo.kpc_proper_per_asec(zlens) ** 2
 
     ##################################################################################
     """Routines relevant for NFW profiles"""
