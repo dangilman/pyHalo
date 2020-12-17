@@ -23,8 +23,8 @@ class LOSBase(RenderingBase):
 
         boost = 1.
         if lensing_mass_function_class._two_halo_term and z == zlens:
-            rmax = lensing_mass_function_class.geometry.cosmo.D_C_z(zlens) - \
-                   lensing_mass_function_class.geometry.cosmo.D_C_z(zlens - delta_z)
+            rmax = lensing_mass_function_class.geometry._cosmo.D_C_transverse(zlens) - \
+                   lensing_mass_function_class.geometry._cosmo.D_C_transverse(zlens - delta_z)
             boost = lensing_mass_function_class.two_halo_boost(host_m200, z, rmax=rmax)
 
         return boost

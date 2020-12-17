@@ -55,7 +55,7 @@ class TruncationDefaults(object):
     def __init__(self):
 
         self.RocheNorm = 1.4
-        self.RocheNu = 2
+        self.RocheNu = 2./3
         self.LOS_truncation = 50 # truncate at 'r50'
 
         trunc_routines = ['mean_ISOhost',

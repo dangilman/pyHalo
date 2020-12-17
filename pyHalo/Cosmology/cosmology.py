@@ -1,5 +1,4 @@
 from colossus.halo.concentration import *
-from colossus.lss.peaks import lagrangianR
 from colossus.cosmology import cosmology
 import astropy.cosmology as astropy_cosmo
 from scipy.interpolate import interp1d
@@ -9,7 +8,7 @@ cosmo_defaults = CosmoDefaults()
 
 class Cosmology(object):
 
-    M_sun = 1.9891 * 10 ** 30  # solar mass in [kg]
+    M_sun = 1.98847 * 10 ** 30  # solar mass in [kg]
 
     Mpc = 3.08567758 * 10 ** 22  # Mpc in [m]
 
@@ -24,6 +23,7 @@ class Cosmology(object):
     def __init__(self, astropy_instance=None, cosmo_kwargs={}):
 
         self.astropy = self._setup_astropy_cosmology(astropy_instance, cosmo_kwargs)
+
         self._colossus_cosmo = self._setup_colossus_cosmology(cosmo_kwargs)
 
         self.h = self.astropy.h

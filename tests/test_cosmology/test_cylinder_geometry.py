@@ -33,7 +33,7 @@ class TestConeGeometry(object):
         npt.assert_almost_equal(scale, 1.)
 
         scale = self.geometry_cylinder.rendering_scale(self.zlens + 0.35)
-        dratio = self.geometry_cylinder._cosmo.D_C_z(self.zlens)/self.geometry_cylinder._cosmo.D_C_z(self.zlens + 0.35)
+        dratio = self.geometry_cylinder._cosmo.D_C_z(self.zlens) / self.geometry_cylinder._cosmo.D_C_z(self.zlens + 0.35)
         val = 0.5 * self.geometry_cylinder.cone_opening_angle * self.arcsec * dratio
         npt.assert_almost_equal(scale, val, 3)
 

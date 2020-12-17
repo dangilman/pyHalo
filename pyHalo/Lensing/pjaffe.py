@@ -20,7 +20,7 @@ class PJaffeLensing(object):
         r_a_kpc = 0.005 * rs_kpc
         Sigma0 = mass/rs_kpc/(2*np.pi*r_a_kpc) # units M_sun / kpc^2
 
-        sigma_crit_kpc = self._lens_cosmo.get_epsiloncrit_kpc(redshift, self._lens_cosmo.z_source)
+        sigma_crit = self._lens_cosmo.get_sigma_crit_lensing_kpc(redshift, self._lens_cosmo.z_source)
         sigma_0 = Sigma0/sigma_crit_kpc
 
         kpc_to_arcsec = 1/self._lens_cosmo.cosmo.kpc_proper_per_asec(redshift)

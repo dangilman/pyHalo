@@ -83,7 +83,8 @@ class PowerLawBase(LOSBase):
                                                 plaw_index, break_index, break_scale)
 
             if mass > 0:
-                negative_kappa = -1 * kappa_scale * mass / self.lens_cosmo.sigma_crit_mass(z, self.geometry)
+                area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
+                negative_kappa = -1 * kappa_scale * mass / self.lens_cosmo.sigma_crit_mass(z, area)
 
                 kwargs_out.append({'kappa_ext': negative_kappa})
                 profile_names_out += ['CONVERGENCE']

@@ -21,7 +21,9 @@ def subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo):
     if 'parent_m200' in args.keys():
         # EVERYTHING EXPRESSED IN KPC
         if 'parent_c' not in args.keys():
-            args['parent_c'] = lenscosmo.NFW_concentration(args['parent_m200'], zlens)
+            args['parent_c'] = lenscosmo.NFW_concentration(args['parent_m200'], zlens,
+                  model='diemer19', mdef='200c', logmhm=0, scatter=True,
+                 c_scale=60., c_power=-0.17, scatter_amplitude=0.13)
 
         if 'parent_Rs' not in args.keys():
             parent_Rs = lenscosmo.NFW_params_physical(args['parent_m200'],

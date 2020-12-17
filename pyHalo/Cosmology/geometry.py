@@ -82,13 +82,6 @@ class Geometry(object):
 
         return area_comoving * dR
 
-    def delta_R_comoving(self, z, delta_z):
-
-        d_h = self._cosmo.astropy.hubble_distance.value
-        Ez_inv = self._cosmo.astropy.efunc(z)**-1
-
-        return d_h * Ez_inv * delta_z
-
     def _angle_to_arcsec_area(self, radius_arcsec, z):
 
         theta = self._angle_to_arcsec_radius(radius_arcsec, z)

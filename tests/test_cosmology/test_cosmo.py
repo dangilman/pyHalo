@@ -34,7 +34,7 @@ class TestCosmology(object):
         npt.assert_almost_equal(da_true/da_interp, 1, 5)
 
         dc_true = self.cosmo.astropy.comoving_transverse_distance(1.4).value
-        dc_interp = self.cosmo.D_C_z((1.4))
+        dc_interp = self.cosmo.D_C_z(1.4)
         dc_astropy = self.cosmo.astropy.comoving_distance(1.4).value
         npt.assert_almost_equal(dc_true/dc_interp, 1)
         npt.assert_almost_equal(dc_astropy/dc_true, 1)

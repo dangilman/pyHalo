@@ -42,8 +42,8 @@ class DeltaBase(LOSBase):
             n_objects = self.normalization(z, delta_z, M, mass_fraction, self.geometry._zlens,
                                       self.halo_mass_function, self.rendering_args,
                                      None)
-
-            kappa_theory = kappa_scale * n_objects * M / self.lens_cosmo.sigma_crit_mass(z, self.geometry)
+            area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
+            kappa_theory = kappa_scale * n_objects * M / self.lens_cosmo.sigma_crit_mass(z, area)
 
             if kappa_theory > 0:
                 kwargs_out.append({'kappa_ext': -kappa_theory})

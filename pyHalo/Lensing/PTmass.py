@@ -14,7 +14,7 @@ class PTmassLensing(object):
 
         center_x = x
         center_y = y
-        factor = self._lens_cosmo.point_mass_factor
+        factor = self._lens_cosmo.point_mass_factor(redshift)
 
         theta_E = factor * np.sqrt(mass)
 

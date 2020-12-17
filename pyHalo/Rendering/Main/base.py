@@ -81,7 +81,8 @@ class MainLensBase(RenderingBase):
 
         if kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 
-            kappa = mass_in_subhalos / self.lens_cosmo.sigma_crit_mass(self.geometry._zlens, self.geometry)
+            area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, self._zlens)
+            kappa = mass_in_subhalos / self.lens_cosmo.sigma_crit_mass(self._zlens, area)
 
             negative_kappa = -1 * kappa_scale * kappa
 

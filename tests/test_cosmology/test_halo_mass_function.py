@@ -49,7 +49,7 @@ class TestLensingMassFunction(object):
 
         radius_arcsec = self.cone_opening_angle * 0.5
         A = self.lmf_lookup_ShethTormen.geometry.angle_to_comoving_area(radius_arcsec, z)
-        dr = self.lmf_lookup_ShethTormen.geometry.delta_R_comoving(z, dz)
+        dr = self.cosmo.D_C_transverse(z + dz) - self.cosmo.D_C_transverse(z)
         dv = A * dr
         rho_2 = dv * rho_dv
         npt.assert_almost_equal(rho_2/rho, 1, 2)
@@ -69,7 +69,7 @@ class TestLensingMassFunction(object):
             return self.lmf_no_lookup_ShethTormen.twohaloterm(x, m_halo, z)
 
         dz = 0.01
-        dr = self.lmf_no_lookup_ShethTormen.geometry.delta_R_comoving(z, dz)
+        dr = self.cosmo.D_C_transverse(z + dz) - self.cosmo.D_C_transverse(z)
         integral_over_two_halo_term = quad(_integrand, 0.5, dr)[0]
         length = dr - 0.5
         average_value = integral_over_two_halo_term / length

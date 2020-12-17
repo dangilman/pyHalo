@@ -223,8 +223,8 @@ class Realization(object):
             new_x, new_y = halo.x + xshift, halo.y + yshift
 
             new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
-                        sub_flag=halo.is_subhalo, cosmo_m_prof=self.lens_cosmo,
-                        args=self._prof_params)
+                            sub_flag=halo.is_subhalo, lens_cosmo_instance=self.lens_cosmo,
+                            args=self._prof_params)
             halos.append(new_halo)
 
         new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
@@ -238,7 +238,7 @@ class Realization(object):
     def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
         if halo is None:
 
-            halo = Halo(mass=m, x=x, y=y, r2d=r2, r3d=r3, mdef=md, z=z, sub_flag=sub_flag, cosmo_m_prof=self.lens_cosmo,
+            halo = Halo(mass=m, x=x, y=y, r2d=r2, r3d=r3, mdef=md, z=z, sub_flag=sub_flag, lens_cosmo_instance=self.lens_cosmo,
                         args=self._prof_params)
         self._lensing_functions.append(self._lens(halo))
         self.halos.append(halo)
@@ -321,8 +321,9 @@ class Realization(object):
 
         if self._prof_params['subtract_exact_mass_sheets']:
 
-            kwargs_mass_sheets = [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, self.geometry)}
-                                     for zi in self.unique_redshifts]
+            for zi in self.unique_redshifts:
+                area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, zi)
+                kwargs_mass_sheets = [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)}]
 
             redshifts = self.unique_redshifts
 
@@ -369,29 +370,30 @@ class Realization(object):
 
     def _load_model(self, halo):
 
+        """
+        Loads the lensing properties of each halo model
+        :param halo: an instance of Halo
+        :return: the class
+        """
         if halo.mdef == 'NFW':
             from pyHalo.Lensing.NFW import NFWLensingRhoCrit0
             lens = NFWLensingRhoCrit0(self.lens_cosmo)
 
         elif halo.mdef == 'TNFW':
-            from pyHalo.Lensing.NFW import TNFWLensingRhoCrit0
-            lens = TNFWLensingRhoCrit0(self.lens_cosmo)
-
-        elif halo.mdef == 'TNFW_rhocritz':
-            from pyHalo.Lensing.NFW import TNFWLensingRhoCritz
-            lens = TNFWLensingRhoCritz(self.lens_cosmo)
-
-        elif halo.mdef == 'SIDM_TNFW':
-            from pyHalo.Lensing.coredTNFW import coreTNFW
-            lens = coreTNFW(self.lens_cosmo)
+            from pyHalo.Lensing.NFW import TNFWLensing
+            lens = TNFWLensing(self.lens_cosmo)
+        #
+        # elif halo.mdef == 'TNFW_rhocritz':
+        #     from pyHalo.Lensing.NFW import TNFWLensingRhoCritz
+        #     lens = TNFWLensingRhoCritz(self.lens_cosmo)
+        #
+        # elif halo.mdef == 'SIDM_TNFW':
+        #     from pyHalo.Lensing.coredTNFW import coreTNFW
+        #     lens = coreTNFW(self.lens_cosmo)
 
         elif halo.mdef == 'PT_MASS':
             from pyHalo.Lensing.PTmass import PTmassLensing
             lens = PTmassLensing(self.lens_cosmo)
-
-        elif halo.mdef == 'SIS':
-            from pyHalo.Lensing.sis import SISLensing
-            lens = SISLensing(self.lens_cosmo)
 
         elif halo.mdef == 'PJAFFE':
 
@@ -405,6 +407,10 @@ class Realization(object):
 
     def halo_physical_coordinates(self, halos):
 
+        """
+        :param halos: a list of halos
+        :return: the comoving (x, y) position, mass, and redshift of each halo in the realization
+        """
         xcoords, ycoords, masses, redshifts = [], [], [], []
 
         for halo in halos:
@@ -415,6 +421,7 @@ class Realization(object):
             ycoords.append(y_comoving)
             masses.append(halo.mass)
             redshifts.append(halo.z)
+
         return np.array(xcoords), np.array(ycoords), np.log10(masses), np.array(redshifts)
 
     def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
@@ -429,7 +436,7 @@ class Realization(object):
     def add_halos(self, masses, x, y, r2d, r3d, mdefs, z, sub_flags):
 
         """
-        Added this routine to maintin backwards compatability
+        Added this routine to maintain backwards compatability
 
         """
         new_real = Realization(masses, x, y, r2d, r3d, mdefs, z, sub_flags, self.halo_mass_function,
@@ -438,35 +445,6 @@ class Realization(object):
 
         realization = self.join(new_real)
         return realization
-
-    def change_profile_params(self, new_args):
-
-        new_params = deepcopy(self._prof_params)
-        new_params.update(new_args)
-
-        return Realization(self.masses, self.x, self.y, self.r2d, self.r3d, self.mdefs,
-                           self.redshifts, self.subhalo_flags, self.halo_mass_function,
-                           other_params=new_params, mass_sheet_correction=self._mass_sheet_correction)
-
-    def change_mdef(self, new_mdef):
-
-        new_halos = []
-        for halo in self.halos:
-            duplicate = deepcopy(halo)
-            if duplicate.mdef == 'cNFWmod_trunc' and new_mdef == 'TNFW':
-
-                duplicate._mass_def_arg = duplicate.profile_args[0:-1]
-
-            else:
-                raise Exception('combination '+duplicate.mdef + ' and '+
-                                    new_mdef+' not recognized.')
-
-            duplicate.mdef = new_mdef
-            new_halos.append(duplicate)
-
-        return Realization(None, None, None, None, None, None, None, None, self.halo_mass_function,
-                           halos = new_halos, other_params= self._prof_params,
-                           mass_sheet_correction=self._mass_sheet_correction)
 
     def split_at_z(self, z):
 
@@ -483,16 +461,6 @@ class Realization(object):
                                                self._prof_params, self._mass_sheet_correction, self.rendering_classes)
 
         return realization_1, realization_2
-
-    def filter_by_mass(self, mlow):
-
-        halos = []
-        for halo in self.halos:
-            if halo.mass >= mlow:
-                halos.append(halo)
-
-        return Realization.from_halos(halos, self.halo_mass_function,
-                                      self._prof_params, self._mass_sheet_correction, self.rendering_classes)
 
     def filter(self, aperture_radius_front,
                    aperture_radius_back,
@@ -653,6 +621,7 @@ def add_core_collapsed_subhalos(f_collapsed, realization):
 
     Note: this functionality is new and not very well tested
     """
+
     halos = realization.halos
 
     for index, halo in enumerate(halos):
