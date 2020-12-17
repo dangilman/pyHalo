@@ -106,8 +106,8 @@ class MainLensBase(RenderingBase):
 
             x = self.geometry.cone_opening_angle / Rs_angle / 2
 
-            eps_crit = self.lens_cosmo.epsilon_crit
-            D_d = self.lens_cosmo.cosmo.D_A_z(self.geometry._zlens)
+            eps_crit = self.lens_cosmo.get_sigma_crit_lensing(self._zlens, self._zsource)
+            D_d = self.lens_cosmo.cosmo.D_A_z(self._zlens)
             denom = 4 * np.pi * rs_mpc ** 3 * (np.log(x/2) + self._nfw_F(x))
             rho0 = mass_in_subhalos/denom # solar mass per Mpc^3
 
@@ -119,7 +119,7 @@ class MainLensBase(RenderingBase):
                            'center_y': kwargs_mass_sheets['nfw_kappa_centroid'][1], 'r_core': r_core_angle}]
 
             profile_name_out = ['CNFW']
-            redshifts_out = [self.geometry._zlens]
+            redshifts_out = [self._zlens]
 
         else:
             raise Exception('mass sheet correction type '+
