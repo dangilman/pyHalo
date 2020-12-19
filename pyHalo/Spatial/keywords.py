@@ -1,4 +1,3 @@
-from pyHalo.defaults import *
 
 def LOS_spatial_global(args):
 

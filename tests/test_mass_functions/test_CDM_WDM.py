@@ -1,7 +1,6 @@
 from pyHalo.pyhalo import pyHalo
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
-import matplotlib.pyplot as plt
 import numpy.testing as npt
 import pytest
 
