@@ -51,7 +51,7 @@ class NFW3DFast(object):
         r2_kpc = np.sqrt(x_kpc ** 2 + y_kpc**2)
         r3_kpc = np.sqrt(r2_kpc ** 2 + z_kpc**2)
 
-        return x_kpc, y_kpc, r2_kpc, r3_kpc
+        return x_kpc, y_kpc, r3_kpc
 
 class CoreNFW3DFast(object):
 
@@ -98,7 +98,7 @@ class CoreNFW3DFast(object):
         r2_kpc = np.sqrt(x_kpc ** 2 + y_kpc ** 2)
         r3_kpc = np.sqrt(r2_kpc ** 2 + z_kpc ** 2)
 
-        return x_kpc, y_kpc, r2_kpc, r3_kpc
+        return x_kpc, y_kpc, r3_kpc
 
 class NFW3DCoreRejectionSampling(object):
 
@@ -147,22 +147,21 @@ class NFW3DCoreRejectionSampling(object):
         u = np.random.rand(N)
         keep = np.where(u < prob)[0]
 
-        return x[keep], y[keep], r2[keep], r3[keep]
+        return x[keep], y[keep], r3[keep]
 
     def draw(self, N, zlens):
 
-        x, y, r2, r3 = self._draw(N, zlens)
+        x, y, r3 = self._draw(N, zlens)
 
         while len(x) < N:
-            _x, _y, _r2, _r3 = self._draw(N, zlens)
+            _x, _y, _r3 = self._draw(N, zlens)
             x = np.append(x, _x)
             y = np.append(y, _y)
-            r2 = np.append(r2, _r2)
             r3 = np.append(r3, _r3)
 
 
 
-        return x[0:N], y[0:N], r2[0:N], r3[0:N]
+        return x[0:N], y[0:N], r3[0:N]
 
 
 class UniformNFW(object):
@@ -225,12 +224,10 @@ class UniformNFW(object):
             if n == 0:
                 x_kpc = _x_kpc[keep]
                 y_kpc = _y_kpc[keep]
-                r2d = _r2d[keep]
                 r3d = _r3d[keep]
             else:
                 x_kpc = np.append(x_kpc, _x_kpc[keep])
                 y_kpc = np.append(y_kpc, _y_kpc[keep])
-                r2d = np.append(r2d, _r2d[keep])
                 r3d = np.append(r3d, _r3d[keep])
 
             n += len(keep)
@@ -238,7 +235,7 @@ class UniformNFW(object):
             if n >= N:
                 break
 
-        return x_kpc[0:N], y_kpc[0:N], r2d[0:N], r3d[0:N]
+        return x_kpc[0:N], y_kpc[0:N], r3d[0:N]
 
     def _draw_uniform(self, N, rescale=1.0, center_x=0., center_y=0.):
 

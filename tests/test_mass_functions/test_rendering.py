@@ -1,7 +1,7 @@
 from pyHalo.pyhalo import pyHalo
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 import numpy as np
-import matplotlib.pyplot as plt
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 import numpy.testing as npt
 import pytest
 
@@ -28,7 +28,7 @@ class TestRender(object):
                               'log_mhigh': log_mhigh,
                               'log_mass_sheet_min': log_mlow,
                               'log_mass_sheet_max': 10,
-                              'log_m_parent': 13.2,
+                              'log_m_host': 13.2,
                               'mdef_main': mass_definition,
                               'mdef_los': mass_definition, 'sigma_sub': sigma_sub,
                               'cone_opening_angle': cone_opening_angle, 'r_tidal': '0.25Rs',
@@ -66,7 +66,7 @@ class TestRender(object):
                               'log_mhigh': log_mhigh,
                               'log_mass_sheet_min': log_mlow,
                               'log_mass_sheet_max': 10,
-                              'log_m_parent': 13.2,
+                              'log_m_host': 13.2,
                               'mdef_main': mass_definition,
                               'mdef_los': mass_definition, 'sigma_sub': sigma_sub,
                               'cone_opening_angle': cone_opening_angle, 'r_tidal': '0.25Rs',
@@ -101,7 +101,7 @@ class TestRender(object):
 
             m_pivot_scale = 1/(m_pivot**plaw_index)
             norm = self._LOS_norm * m_pivot_scale * norm_dV * volume_at_redshift
-            mass_theory = self.lensing_mass_function.integrate_power_law(norm, 10**6, 10**9, 0., 1, plaw_index)
+            mass_theory = integrate_power_law_analytic(norm, 10**6, 10**9, 1., plaw_index)
             ratios.append(mass_theory/mass_at_redshift)
 
         npt.assert_almost_equal(np.median(ratios), 1, 1)
@@ -115,7 +115,7 @@ class TestRender(object):
             plaw_index += self._delta_power_law_index
             m_pivot_scale = 1 / (m_pivot ** plaw_index)
             norm = self._LOS_norm * m_pivot_scale * norm_dV * volume_at_redshift
-            mass_theory = self.lensing_mass_function_delta_plaw_index.integrate_power_law(norm, 10 ** 6, 10 ** 9, 0., 1, plaw_index)
+            mass_theory = integrate_power_law_analytic(norm, 10**6, 10**9, 1., plaw_index)
             ratios.append(mass_theory / mass_at_redshift)
 
         npt.assert_almost_equal(np.median(ratios), 1, 1)

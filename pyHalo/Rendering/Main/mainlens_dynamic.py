@@ -7,7 +7,7 @@ class MainLensPowerLawDynamic(object):
 
         self.main = MainLensPowerLaw(args, geometry, x_center_lens, y_center_lens)
 
-        self._masses, self._x_arcsec, self._y_arcsec, self._r2d_kpc, self._r3d_kpc, _ = self.main()
+        self._masses, self._x_arcsec, self._y_arcsec, self._r3d_kpc, _ = self.main()
 
     @property
     def keys_convergence_sheets(self):
@@ -40,8 +40,7 @@ class MainLensPowerLawDynamic(object):
 
             redshifts = [self.main.geometry._zlens] * len(dx[inds])
 
-            return self._masses[inds], self._x_arcsec[inds], self._y_arcsec[inds], self._r2d_kpc[inds], \
-                   self._r3d_kpc[inds], redshifts
+            return self._masses[inds], self._x_arcsec[inds], self._y_arcsec[inds], self._r3d_kpc[inds], redshifts
 
         else:
-            return np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+            return np.array([]), np.array([]), np.array([]), np.array([]), np.array([])

@@ -15,13 +15,13 @@ class MainLensPowerLaw(MainLensBase):
         if len(masses) > 0:
 
             # EVERYTHING EXPRESSED IN KPC
-            x_kpc, y_kpc, r2d_kpc, r3d_kpc = self.spatial_parameterization.draw(len(masses),
+            x_kpc, y_kpc, r3d_kpc = self.spatial_parameterization.draw(len(masses),
                                                                                 self.geometry._zlens)
 
-            x_arcsec = np.array(x_kpc) * self.geometry._kpc_per_arcsec_zlens ** -1 + self._center_x
-            y_arcsec = np.array(y_kpc) * self.geometry._kpc_per_arcsec_zlens ** -1 + self._center_y
+            x_arcsec = np.array(x_kpc) * self.geometry._kpc_per_arcsec_zlens ** -1
+            y_arcsec = np.array(y_kpc) * self.geometry._kpc_per_arcsec_zlens ** -1
 
-            return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r2d_kpc), np.array(r3d_kpc), np.array(
+            return np.array(masses), np.array(x_arcsec), np.array(y_arcsec), np.array(r3d_kpc), np.array(
                 [self.geometry._zlens] * len(masses))
         else:
-            return np.array(masses), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+            return np.array(masses), np.array([]), np.array([]), np.array([]), np.array([])

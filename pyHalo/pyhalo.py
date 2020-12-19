@@ -43,7 +43,7 @@ class pyHalo(pyHaloBase):
         return realizations
 
     def _render_single(self, type, args, verbose,
-                       add_mass_sheet=True, x_center_lens=0., y_center_lens=0.):
+                       add_mass_sheet=True):
 
         assert type in ['main_lens', 'composite_powerlaw', 'line_of_sight', 'dynamic_main', 'dynamic_LOS']
 
@@ -58,11 +58,11 @@ class pyHalo(pyHaloBase):
 
         if type == 'main_lens' or type == 'composite_powerlaw':
 
-            rendering_class = MainLensPowerLaw(args, self._geometry, x_center_lens, y_center_lens)
+            rendering_class = MainLensPowerLaw(args, self._geometry)
             rendering_classes += [rendering_class]
             mdef = args['mdef_main']
 
-            masses, x, y, r2d, r3d, redshifts = render_main(rendering_class)
+            masses, x, y, r3d, redshifts = render_main(rendering_class)
             flag += [True] * len(masses)
             init = False
             mdefs = [mdef] * len(masses)
@@ -85,27 +85,26 @@ class pyHalo(pyHaloBase):
             mdef_los = args['mdef_los']
 
             if init:
-                masses, x, y, r2d, r3d, redshifts \
+                masses, x, y, r3d, redshifts \
                     = render_los(rendering_class, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
                 flag += [False] * len(masses)
                 mdefs = [mdef_los] * len(masses)
 
             else:
 
-                field_halo_masses, field_xpos, field_ypos, field_r2d, field_r3d, field_z \
+                field_halo_masses, field_xpos, field_ypos, field_r3d, field_z \
                     = render_los(rendering_class, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
 
                 masses = np.append(masses, field_halo_masses)
                 x = np.append(x, field_xpos)
                 y = np.append(y, field_ypos)
-                r2d = np.append(r2d, field_r2d)
                 r3d = np.append(r3d, field_r3d)
                 redshifts = np.append(redshifts, field_z)
                 flag += [False] * len(field_halo_masses)
                 mdefs += [mdef_los] * len(field_halo_masses)
 
-        realization = Realization(masses, x, y, r2d, r3d, mdefs, redshifts, flag, self.halo_mass_function,
-                                  other_params=args, mass_sheet_correction=mass_sheet,
+        realization = Realization(masses, x, y, r3d, mdefs, redshifts, flag, self.halo_mass_function,
+                                  halo_profile_args=args, mass_sheet_correction=mass_sheet,
                                   rendering_classes=rendering_classes)
 
         return realization

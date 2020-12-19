@@ -146,42 +146,6 @@ class pyHaloBase(object):
 
         return np.array(x_list), np.array(y_list), np.array(distances)
 
-    # @staticmethod
-    # def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
-    #                           terminate_at_source=False, source_x=None, source_y=None):
-    #
-    #     """
-    #     :param x_coordinates: x coordinates to interpolate (arcsec) (list)
-    #     :param y_coordinates: y coordinates to interpolate (arcsec) (list)
-    #     Typically x_coordinates/y_coordinates would be four image positions, or the coordinate of the lens centroid
-    #     :param lens_model: instance of LensModel (lenstronomy)
-    #     :param kwargs_lens: keyword arguments for lens model
-    #     :param zsource: source redshift
-    #     :param terminate_at_source: fix the final angular coordinate to the source coordinate
-    #     :param source_x: source x coordinate (arcsec)
-    #     :param source_y: source y coordinate (arcsec)
-    #     :return: Instances of interp1d (scipy) that return the angular coordinate of a ray given a
-    #     comoving distance
-    #     """
-    #     ray_angles_x = []
-    #     ray_angles_y = []
-    #
-    #     for (xi, yi) in zip(x_coordinates, y_coordinates):
-    #         x, y, redshifts, tz = lens_model.lens_model.ray_shooting_partial_steps(0., 0., xi, yi, 0, zsource,
-    #                                                                                kwargs_lens)
-    #
-    #         angle_x = [xi] + [x_comoving / tzi for x_comoving, tzi in zip(x[1:], tz[1:])]
-    #         angle_y = [yi] + [y_comoving / tzi for y_comoving, tzi in zip(y[1:], tz[1:])]
-    #
-    #         if terminate_at_source:
-    #             angle_x[-1] = source_x
-    #             angle_y[-1] = source_y
-    #
-    #         ray_angles_x.append(interp1d(tz, angle_x))
-    #         ray_angles_y.append(interp1d(tz, angle_y))
-    #
-    #     return ray_angles_x, ray_angles_y
-
     def lens_plane_redshifts(self, kwargs_render=dict):
 
         zmin = lenscone_default.default_zstart
@@ -189,10 +153,9 @@ class pyHaloBase(object):
             zstep = lenscone_default.default_z_step
         else:
             zstep = kwargs_render['zstep']
-        zmax = self.zsource - zstep
 
         front_z = np.arange(zmin, self.zlens, zstep)
-        back_z = np.arange(self.zlens, zmax, zstep)
+        back_z = np.arange(self.zlens, self.zsource, zstep)
         redshifts = np.append(front_z, back_z)
 
         delta_zs = []

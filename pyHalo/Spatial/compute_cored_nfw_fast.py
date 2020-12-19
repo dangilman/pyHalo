@@ -10,7 +10,6 @@ from lenstronomy.LensModel.Profiles.cnfw import CNFW
 cnfw_profile = CNFW()
 beta = 0.25
 
-
 def nfw_kappa_integrand(x):
     return 2 * np.pi * x * nfw_kappa(x)
 

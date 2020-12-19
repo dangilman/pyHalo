@@ -7,7 +7,12 @@ from copy import deepcopy
 class BrokenPowerLaw(PowerLawBase):
 
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
-                 log_m_break, break_index, break_scale, **kwargs):
+                 log_m_break, break_index, break_scale):
+
+        if break_index is None:
+            break_index = 0.
+        if break_scale is None:
+            break_scale = 0.
 
         if normalization < 0:
             raise Exception('normalization cannot be < 0.')
@@ -45,11 +50,9 @@ class BrokenPowerLaw(PowerLawBase):
 
         m = self.sample_from_power_law(self.Nhalos_mean)
 
-        if self.log_m_break == 0 or len(m) == 0:
+        if self.log_m_break == 0 or len(m) == 0 or self.log_m_break is None:
             return m
 
         factor = WDM_suppression(m, 10**self.log_m_break, self.break_index, self.break_scale)
-
         u = np.random.rand(int(len(m)))
-
         return m[np.where(u < factor)]

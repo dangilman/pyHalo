@@ -95,12 +95,6 @@ class TestWDM(object):
         npt.assert_almost_equal(np.mean(diff), 1, 1)
         npt.assert_almost_equal(diff_slope, 0., 1)
 
-        dndm = np.gradient(h_1[0:5], 10 ** logM[0:5])
-
-        logarithmic_slope_model = np.polyfit(logM[0:5], np.log10(dndm), 1)[0]
-        logarithmic_slope_predicted = -1.9 - self._break_index
-        npt.assert_almost_equal(logarithmic_slope_model, logarithmic_slope_predicted, 0.1)
-
     def test_cdm_mass_function(self):
 
         mass_bins = np.linspace(6, 9, 20)

@@ -16,10 +16,10 @@ class LensConeUniform(object):
 
         rescale = self._cosmo_geometry.rendering_scale(z_plane)
 
-        x_kpc, y_kpc, r2d_kpc, r3d_kpc = self._uni.draw(N, z_plane, rescale=rescale,
+        x_kpc, y_kpc, r3d_kpc = self._uni.draw(N, z_plane, rescale=rescale,
                                         center_x=center_x, center_y=center_y)
 
-        return x_kpc, y_kpc, r2d_kpc, r3d_kpc
+        return x_kpc, y_kpc, r3d_kpc
 
 class Uniform(object):
 
@@ -50,4 +50,4 @@ class Uniform(object):
 
         zcoord = np.random.uniform(0, (rmax_kpc ** 2 - r2d_kpc ** 2) ** 0.5)
 
-        return np.array(x_kpc), np.array(y_kpc), np.array(r2d_kpc), np.sqrt(zcoord ** 2 + r2d_kpc ** 2)
+        return np.array(x_kpc), np.array(y_kpc), np.sqrt(zcoord ** 2 + r2d_kpc ** 2)

@@ -276,7 +276,7 @@ class pyHaloDynamic(pyHaloBase):
         # mass sheet correction is False because we don't want to override the main mass sheet funciton
         # in the realization created with the largest LOS halos
         realization = Realization(masses, x, y, r2d, r3d, mdefs, redshifts, flag, self.halo_mass_function,
-                                  other_params=args_render, mass_sheet_correction=include_mass_sheet_correction,
+                                  halo_profile_args=args_render, mass_sheet_correction=include_mass_sheet_correction,
                                   dynamic=True)
 
         return realization, self._rendering_class_main[render_index]
@@ -347,7 +347,7 @@ class pyHaloDynamic(pyHaloBase):
         # mass sheet correction is False because we don't want to override the main mass sheet funciton
         # in the realization created with the largest LOS halos
         realization = Realization(masses, x, y, r2d, r3d, mdefs, redshifts, flag, self.halo_mass_function,
-                                  other_params=args_render, mass_sheet_correction=include_mass_sheet_correction,
+                                  halo_profile_args=args_render, mass_sheet_correction=include_mass_sheet_correction,
                                   dynamic=True)
 
         return realization, rendering_class

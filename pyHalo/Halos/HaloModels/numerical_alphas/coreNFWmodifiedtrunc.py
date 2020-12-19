@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
-from pyHalo.Lensing.numerical_alphas import cnfwmodtrunc_deflections
+from pyHalo.Halos.HaloModels.numerical_alphas import cnfwmodtrunc_deflections
 from scipy.interpolate import RegularGridInterpolator
 #raise Exception('When using this class, must first unzip the file cnfwmodtrunc_deflections.py.zip to access the '
 #                    'numerical deflections stored there.')

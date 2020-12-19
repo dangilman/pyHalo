@@ -1,9 +1,13 @@
-from pyHalo.Halos.halo import Halo
+from pyHalo.Halos.halo_base import Halo
 from pyHalo.defaults import *
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 from pyHalo.Rendering.Main.SHMF_normalizations import *
+from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhhalo
+from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
+from pyHalo.Halos.HaloModels.PTMass import PTMass
 
 from copy import deepcopy
 
@@ -41,8 +45,8 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
 
 class Realization(object):
 
-    def __init__(self, masses, x, y, r2d, r3d, mdefs, z, subhalo_flag, halo_mass_function,
-                 halos=None, other_params={}, mass_sheet_correction=True, dynamic=False,
+    def __init__(self, masses, x, y, r3d, mdefs, z, subhalo_flag, halo_mass_function,
+                 halos=None, halo_profile_args={}, mass_sheet_correction=True, dynamic=False,
                  rendering_classes=None):
 
         """
@@ -63,40 +67,39 @@ class Realization(object):
         :param subhalo_flag: whether each halo is a subhalo or a regular halo
         :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.LensingMassFunction)
         :param halos: a list of halo class instances
-        :param other_params: kwargs for the realiztion
+        :param halo_profile_args: kwargs for the realiztion
         :param mass_sheet_correction: whether to apply a mass sheet correction
         :param dynamic: whether the realization is rendered with pyhalo_dynamic or not
         :param rendering_classes: a list of rendering class instances
         """
 
-        self._mass_sheet_correction = mass_sheet_correction
+        self.apply_mass_sheet_correction = mass_sheet_correction
 
         self.halo_mass_function = halo_mass_function
         self.geometry = halo_mass_function.geometry
         self.lens_cosmo = LensCosmo(self.geometry._zlens, self.geometry._zsource,
                                     self.geometry._cosmo)
 
-        self._lensing_functions = []
         self.halos = []
         self._loaded_models = {}
         self._has_been_shifted = False
 
-        self._prof_params = set_default_kwargs(other_params, dynamic, self.geometry._zsource)
+        self._prof_params = set_default_kwargs(halo_profile_args, dynamic, self.geometry._zsource)
 
         if halos is None:
 
-            for mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r2d, r3d,
+            for mi, xi, yi, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r3d,
                            mdefs, z, subhalo_flag):
 
-                self._add_halo(mi, xi, yi, r2di, r3di, mdefi, zi, sub_flag)
+                unique_tag = np.random.rand()
+                model = self._load_halo_model(mi, xi, yi, r3di, mdefi, zi, sub_flag, self.lens_cosmo,
+                                              self._prof_params, unique_tag)
+                self.halos.append(model)
 
-            if self._prof_params['subhalos_of_field_halos']:
-                raise Exception('subhalos of halos not yet implemented.')
 
         else:
 
-            for halo in halos:
-                self._add_halo(None, None, None, None, None, None, None, None, halo=halo)
+            self.halos = halos
 
         self._reset()
 
@@ -115,15 +118,108 @@ class Realization(object):
         :return: an instance of Realization created directly from the halo class instances
         """
 
-        realization = Realization(None, None, None, None, None, None, None, None, halo_mass_function,
-                                  halos=halos, other_params=prof_params,
+        realization = Realization(None, None, None, None, None, None, None, halo_mass_function,
+                                  halos=halos, halo_profile_args=prof_params,
                                   mass_sheet_correction=msheet_correction,
                                   rendering_classes=rendering_classes)
 
         return realization
 
+    def filter(self, aperture_radius_front,
+               aperture_radius_back,
+               log_mass_allowed_in_aperture_front,
+               log_mass_allowed_in_aperture_back,
+               log_mass_allowed_global_front,
+               log_mass_allowed_global_back,
+               interpolated_x_angle, interpolated_y_angle,
+               zmin=None, zmax=None):
+
+        """
+
+        :param aperture_radius_front: the radius of a circular window around each light ray where halos are halo kept
+        if they are more massive than log_mass_allowed_in_aperture_front (applied for z < z_lens)
+        :param aperture_radius_back: the radius of a circular window around each light ray where halos are halo kept
+        if they are more massive than log_mass_allowed_in_aperture_back (applied for z < z_lens)
+        :param log_mass_allowed_in_aperture_front: the minimum halo mass to be kept inside the tube around each light ray
+        in the foreground
+        :param log_mass_allowed_in_aperture_back: the minimum halo mass to be kept inside the tube around each light ray
+        in the background
+        :param log_mass_allowed_global_front: The minimum mass to be kept everywhere in the foreground (if this is smaller
+        than log_mass_allowed_in_aperture_front, then the argument aperture_radius_front will have no effect)
+        :param log_mass_allowed_global_back: The minimum mass to be kept everywhere in the background (if this is smaller
+        than log_mass_allowed_in_aperture_back, then the argument aperture_radius_back will have no effect)
+        :param interpolated_x_angle: a list of scipy.interp1d that retuns the x angular position of a ray in
+        arcsec given a comoving distance
+        :param interpolated_y_angle: a list of scipy.interp1d that retuns the y angular position of a ray in
+        arcsec given a comoving distance
+        :param zmin: only keep halos at z > zmin
+        :param zmax: only keep halos at z < zmax
+        :return: A new instance of Realization with the cuts on position and mass applied
+        """
+        halos = []
+
+        if zmax is None:
+            zmax = self.geometry._zsource
+        if zmin is None:
+            zmin = 0
+
+        for plane_index, zi in enumerate(self.unique_redshifts):
+
+            plane_halos, _ = self.halos_at_z(zi)
+            inds_at_z = np.where(self.redshifts == zi)[0]
+            x_at_z = self.x[inds_at_z]
+            y_at_z = self.y[inds_at_z]
+            masses_at_z = self.masses[inds_at_z]
+
+            if zi < zmin:
+                continue
+            if zi > zmax:
+                continue
+
+            comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(zi)
+
+            if zi <= self.geometry._zlens:
+
+                minimum_mass_everywhere = deepcopy(log_mass_allowed_global_front)
+                minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_front)
+                position_cut_in_window = deepcopy(aperture_radius_front)
+
+            else:
+
+                minimum_mass_everywhere = deepcopy(log_mass_allowed_global_back)
+                minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_back)
+                position_cut_in_window = deepcopy(aperture_radius_back)
+
+            keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
+
+            inds_m_low = np.where(masses_at_z < 10 ** minimum_mass_everywhere)[0]
+
+            keep_inds_dr = []
+            for idx in inds_m_low:
+                for k, (interp_x, interp_y) in enumerate(zip(interpolated_x_angle, interpolated_y_angle)):
+
+                    dx = x_at_z[idx] - interp_x(comoving_distance_z)
+                    dy = y_at_z[idx] - interp_y(comoving_distance_z)
+                    dr = np.sqrt(dx ** 2 + dy ** 2)
+                    if dr <= position_cut_in_window:
+                        keep_inds_dr.append(idx)
+                        break
+
+            keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
+
+            tempmasses = masses_at_z[keep_inds]
+            keep_inds = keep_inds[np.where(tempmasses >= 10 ** minimum_mass_in_window)[0]]
+
+            for halo_index in keep_inds:
+                halos.append(plane_halos[halo_index])
+
+        return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
+                                      self.apply_mass_sheet_correction, self.rendering_classes)
+
     def set_rendering_classes(self, rendering_classes):
 
+        if not isinstance(rendering_classes, list):
+            rendering_classes = [rendering_classes]
         self.rendering_classes = rendering_classes
 
     def join(self, real):
@@ -152,51 +248,7 @@ class Realization(object):
                 halos.append(halos_long[i])
 
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self._mass_sheet_correction, self.rendering_classes)
-
-    def _tags(self, halos=None):
-
-        if halos is None:
-            halos = self.halos
-        tags = []
-
-        for halo in halos:
-
-            tags.append(halo._unique_tag)
-
-        return tags
-
-    def _reset(self):
-
-        self.x = []
-        self.y = []
-        self.masses = []
-        self.redshifts = []
-        self.r2d = []
-        self.r3d = []
-        self.mdefs = []
-        self._halo_tags = []
-        self.subhalo_flags = []
-
-        for halo in self.halos:
-            self.masses.append(halo.mass)
-            self.x.append(halo.x)
-            self.y.append(halo.y)
-            self.redshifts.append(halo.z)
-            self.r2d.append(halo.r2d)
-            self.r3d.append(halo.r3d)
-            self.mdefs.append(halo.mdef)
-            self._halo_tags.append(halo._unique_tag)
-            self.subhalo_flags.append(halo.is_subhalo)
-
-        self.masses = np.array(self.masses)
-        self.x = np.array(self.x)
-        self.y = np.array(self.y)
-        self.r2d = np.array(self.r2d)
-        self.r3d = np.array(self.r3d)
-        self.redshifts = np.array(self.redshifts)
-
-        self.unique_redshifts = np.unique(self.redshifts)
+                                      self.apply_mass_sheet_correction, self.rendering_classes)
 
     def shift_background_to_source(self, ray_interp_x, ray_interp_y):
 
@@ -219,31 +271,20 @@ class Realization(object):
             comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(halo.z)
 
             xshift, yshift = ray_interp_x(comoving_distance_z), ray_interp_y(comoving_distance_z)
-
-            new_x, new_y = halo.x + xshift, halo.y + yshift
-
-            new_halo = Halo(mass=halo.mass, x=new_x, y=new_y, r2d=halo.r2d, r3d=halo.r3d, mdef=halo.mdef, z=halo.z,
-                            sub_flag=halo.is_subhalo, lens_cosmo_instance=self.lens_cosmo,
-                            args=self._prof_params)
+            new_halo = deepcopy(halo)
+            new_halo.x += xshift
+            new_halo.y += yshift
             halos.append(new_halo)
 
         new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self._mass_sheet_correction,
-                                      rendering_classes=self.rendering_classes)
+                                                 self.apply_mass_sheet_correction,
+                                                 rendering_classes=self.rendering_classes)
 
         new_realization._has_been_shifted = True
 
         return new_realization
 
-    def _add_halo(self, m, x, y, r2, r3, md, z, sub_flag, halo=None):
-        if halo is None:
-
-            halo = Halo(mass=m, x=x, y=y, r2d=r2, r3d=r3, mdef=md, z=z, sub_flag=sub_flag, lens_cosmo_instance=self.lens_cosmo,
-                        args=self._prof_params)
-        self._lensing_functions.append(self._lens(halo))
-        self.halos.append(halo)
-
-    def lensing_quantities(self, return_kwargs=False, add_mass_sheet_correction=True, z_mass_sheet_max=None):
+    def lensing_quantities(self, add_mass_sheet_correction=True, z_mass_sheet_max=None):
 
         """
 
@@ -257,51 +298,109 @@ class Realization(object):
         """
 
         kwargs_lens = []
-        lens_model_names = []
-        redshift_list = []
+        lens_model_list = []
+        redshift_array = []
         kwargs_lensmodel = None
 
         for i, halo in enumerate(self.halos):
 
-            args = tuple([halo.x, halo.y, halo.mass, halo.z] + halo.profile_args)
+            lens_model_name = halo.lenstronomy_ID
+            kwargs_halo, numerical_interp = halo.lenstronomy_params
 
-            kw, model_args = self._lensing_functions[i].params(*args)
+            lens_model_list.append(lens_model_name)
+            kwargs_lens.append(kwargs_halo)
+            redshift_array += [halo.z]
 
-            lenstronomy_ID = self._lensing_functions[i].lenstronomy_ID
-
-            lens_model_names.append(lenstronomy_ID)
-            kwargs_lens.append(kw)
-            redshift_list += [halo.z]
-
-            if kwargs_lensmodel is None:
-                kwargs_lensmodel = model_args
-            else:
-
-                if model_args is not None and not (type(model_args) is type(kwargs_lensmodel)):
-                    raise Exception('Currently only one numerical lens class at once is supported.')
-
-        if self._mass_sheet_correction and add_mass_sheet_correction:
+        if self.apply_mass_sheet_correction and add_mass_sheet_correction:
 
             if self.rendering_classes is None:
                 raise Exception('if applying a convergence sheet correction, must specify '
                                 'the rendering classes.')
 
-            kwargs_mass_sheets, profile_list, z_sheets = self.mass_sheet_correction(self.rendering_classes,
-                                                                                    z_mass_sheet_max)
+            kwargs_mass_sheets, profile_list, z_sheets = self._mass_sheet_correction(self.rendering_classes,
+                                                                                     z_mass_sheet_max)
             kwargs_lens += kwargs_mass_sheets
-            lens_model_names += profile_list
-            redshift_list = np.append(redshift_list, z_sheets)
+            lens_model_list += profile_list
+            redshift_array = np.append(redshift_array, z_sheets)
 
-        if return_kwargs:
-            return {'lens_model_list': lens_model_names,
-                    'lens_redshift_list': redshift_list,
-                    'z_source': self.geometry._zsource,
-                    'z_lens': self.geometry._zlens,
-                    'multi_plane': True}, kwargs_lens
-        else:
-            return lens_model_names, redshift_list, kwargs_lens, kwargs_lensmodel
+        return lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel
 
-    def mass_sheet_correction(self, rendering_classes, z_mass_sheet_max):
+    def halo_comoving_coordinates(self, halos):
+
+        """
+        :param halos: a list of halos
+        :return: the comoving (x, y) position, mass, and redshift of each halo in the realization
+        """
+        xcoords, ycoords, masses, redshifts = [], [], [], []
+
+        for halo in halos:
+            D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
+            x_arcsec, y_arcsec = halo.x, halo.y
+            x_comoving, y_comoving = D * x_arcsec, D * y_arcsec
+            xcoords.append(x_comoving)
+            ycoords.append(y_comoving)
+            masses.append(halo.mass)
+            redshifts.append(halo.z)
+
+        return np.array(xcoords), np.array(ycoords), np.log10(masses), np.array(redshifts)
+
+    def split_at_z(self, z):
+
+        halos_1, halos_2 = [], []
+        for halo in self.halos:
+            if halo.z <= z:
+                halos_1.append(halo)
+            else:
+                halos_2.append(halo)
+
+        realization_1 = Realization.from_halos(halos_1, self.halo_mass_function,
+                                               self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes)
+        realization_2 = Realization.from_halos(halos_2, self.halo_mass_function,
+                                               self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes)
+
+        return realization_1, realization_2
+
+    def halos_at_z(self,z):
+
+        halos = []
+        index = []
+        for i, halo in enumerate(self.halos):
+            if halo.z != z:
+                continue
+            halos.append(halo)
+            index.append(i)
+
+        return halos, index
+
+    def mass_at_z_exact(self, z):
+
+        inds = np.where(self.redshifts == z)
+        m_exact = np.sum(self.masses[inds])
+        return m_exact
+
+    def number_of_halos_before_redshift(self, z):
+        n = 0
+        for halo in self.halos:
+            if halo.z < z:
+                n += 1
+        return n
+
+    def number_of_halos_after_redshift(self, z):
+        n = 0
+        for halo in self.halos:
+            if halo.z > z:
+                n += 1
+        return n
+
+    def number_of_halos_at_redshift(self, z):
+
+        n = 0
+        for halo in self.halos:
+            if halo.z == z:
+                n += 1
+        return n
+
+    def _mass_sheet_correction(self, rendering_classes, z_mass_sheet_max):
 
         """
         This routine adds the negative mass sheet corrections along the LOS and in the main lens plane.
@@ -359,231 +458,100 @@ class Realization(object):
 
             return kwargs_mass_sheets_out, profiles_out, redshifts_out
 
-    def _lens(self, halo):
-
-        if halo.mdef not in self._loaded_models.keys():
-
-            model = self._load_model(halo)
-            self._loaded_models.update({halo.mdef: model})
-
-        return self._loaded_models[halo.mdef]
-
-    def _load_model(self, halo):
+    def _load_halo_model(self, mass, x, y, r3d, mdef, z, is_subhalo,
+                         lens_cosmo_instance, args, unique_tag):
 
         """
-        Loads the lensing properties of each halo model
+        Loads the halo model for each object based on the mass definition
         :param halo: an instance of Halo
         :return: the class
         """
-        if halo.mdef == 'NFW':
-            from pyHalo.Lensing.NFW import NFWLensingRhoCrit0
-            lens = NFWLensingRhoCrit0(self.lens_cosmo)
 
-        elif halo.mdef == 'TNFW':
-            from pyHalo.Lensing.NFW import TNFWLensing
-            lens = TNFWLensing(self.lens_cosmo)
-        #
-        # elif halo.mdef == 'TNFW_rhocritz':
-        #     from pyHalo.Lensing.NFW import TNFWLensingRhoCritz
-        #     lens = TNFWLensingRhoCritz(self.lens_cosmo)
-        #
-        # elif halo.mdef == 'SIDM_TNFW':
-        #     from pyHalo.Lensing.coredTNFW import coreTNFW
-        #     lens = coreTNFW(self.lens_cosmo)
+        if mdef == 'NFW':
 
-        elif halo.mdef == 'PT_MASS':
-            from pyHalo.Lensing.PTmass import PTmassLensing
-            lens = PTmassLensing(self.lens_cosmo)
+            if is_subhalo:
+                model = NFWSubhhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                    lens_cosmo_instance, args, unique_tag)
+            else:
+                model = NFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                    lens_cosmo_instance, args, unique_tag)
 
-        elif halo.mdef == 'PJAFFE':
 
-            from pyHalo.Lensing.pjaffe import PJaffeLensing
-            lens = PJaffeLensing(self.lens_cosmo)
+        elif mdef == 'TNFW':
+
+            if is_subhalo:
+                model = TNFWSubhhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                     lens_cosmo_instance, args, unique_tag)
+
+            else:
+                model = TNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                      lens_cosmo_instance, args, unique_tag)
+
+        elif mdef == 'PT_MASS':
+
+            model = PTMass(mass, x, y, r3d, mdef, z, is_subhalo,
+                           lens_cosmo_instance, args, unique_tag)
+
+        elif mdef == 'PJAFFE':
+
+            model = PJaffeSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
 
         else:
-            raise ValueError('halo profile ' + str(halo.mdef) + ' not recongnized.')
+            raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
 
-        return lens
+        return model
 
-    def halo_physical_coordinates(self, halos):
+    def _tags(self, halos=None):
 
-        """
-        :param halos: a list of halos
-        :return: the comoving (x, y) position, mass, and redshift of each halo in the realization
-        """
-        xcoords, ycoords, masses, redshifts = [], [], [], []
+        if halos is None:
+            halos = self.halos
+        tags = []
 
         for halo in halos:
-            D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
-            x_arcsec, y_arcsec = halo.x, halo.y
-            x_comoving, y_comoving = D * x_arcsec, D * y_arcsec
-            xcoords.append(x_comoving)
-            ycoords.append(y_comoving)
-            masses.append(halo.mass)
-            redshifts.append(halo.z)
 
-        return np.array(xcoords), np.array(ycoords), np.log10(masses), np.array(redshifts)
+            tags.append(halo.unique_tag)
 
-    def add_halo(self, mass, x, y, r2d, r3d, mdef, z, sub_flag):
+        return tags
 
-        new_real = Realization([mass], [x], [y], [r2d], [r3d], [mdef], [z], [sub_flag], self.halo_mass_function,
-                               halos = None, other_params=self._prof_params,
-                               mass_sheet_correction=self._mass_sheet_correction)
+    def _reset(self):
 
-        realization = self.join(new_real)
-        return realization
+        self.x = []
+        self.y = []
+        self.masses = []
+        self.redshifts = []
+        self.r3d = []
+        self.mdefs = []
+        self._halo_tags = []
+        self.subhalo_flags = []
 
-    def add_halos(self, masses, x, y, r2d, r3d, mdefs, z, sub_flags):
-
-        """
-        Added this routine to maintain backwards compatability
-
-        """
-        new_real = Realization(masses, x, y, r2d, r3d, mdefs, z, sub_flags, self.halo_mass_function,
-                               halos=None, other_params=self._prof_params,
-                               mass_sheet_correction=self._mass_sheet_correction)
-
-        realization = self.join(new_real)
-        return realization
-
-    def split_at_z(self, z):
-
-        halos_1, halos_2 = [], []
         for halo in self.halos:
-            if halo.z <= z:
-                halos_1.append(halo)
-            else:
-                halos_2.append(halo)
+            self.masses.append(halo.mass)
+            self.x.append(halo.x)
+            self.y.append(halo.y)
+            self.redshifts.append(halo.z)
+            self.r3d.append(halo.r3d)
+            self.mdefs.append(halo.mdef)
+            self._halo_tags.append(halo.unique_tag)
+            self.subhalo_flags.append(halo.is_subhalo)
 
-        realization_1 = Realization.from_halos(halos_1, self.halo_mass_function,
-                                               self._prof_params, self._mass_sheet_correction, self.rendering_classes)
-        realization_2 = Realization.from_halos(halos_2, self.halo_mass_function,
-                                               self._prof_params, self._mass_sheet_correction, self.rendering_classes)
+        self.masses = np.array(self.masses)
+        self.x = np.array(self.x)
+        self.y = np.array(self.y)
+        self.r3d = np.array(self.r3d)
+        self.redshifts = np.array(self.redshifts)
 
-        return realization_1, realization_2
+        self.unique_redshifts = np.unique(self.redshifts)
 
-    def filter(self, aperture_radius_front,
-                   aperture_radius_back,
-                   mass_allowed_in_apperture_front,
-                   mass_allowed_in_apperture_back,
-                   mass_allowed_global_front,
-                   mass_allowed_global_back,
-                   interpolated_x_angle, interpolated_y_angle,
-                    zmin=None, zmax=None):
+    def __eq__(self, other_reealization):
 
-        halos = []
-
-        if zmax is None:
-            zmax = self.geometry._zsource
-        if zmin is None:
-            zmin = 0
-
-        for plane_index, zi in enumerate(self.unique_redshifts):
-
-            plane_halos, _ = self.halos_at_z(zi)
-            inds_at_z = np.where(self.redshifts == zi)[0]
-            x_at_z = self.x[inds_at_z]
-            y_at_z = self.y[inds_at_z]
-            masses_at_z = self.masses[inds_at_z]
-
-            if zi < zmin:
-                continue
-            if zi > zmax:
-                continue
-
-            comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(zi)
-
-            if zi <= self.geometry._zlens:
-
-                minimum_mass_everywhere = deepcopy(mass_allowed_global_front)
-                minimum_mass_in_window = deepcopy(mass_allowed_in_apperture_front)
-                position_cut_in_window = deepcopy(aperture_radius_front)
-
-            else:
-
-                minimum_mass_everywhere = deepcopy(mass_allowed_global_back)
-                minimum_mass_in_window = deepcopy(mass_allowed_in_apperture_back)
-                position_cut_in_window = deepcopy(aperture_radius_back)
-
-            keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
-
-            inds_m_low = np.where(masses_at_z < 10 ** minimum_mass_everywhere)[0]
-
-            keep_inds_dr = []
-            for idx in inds_m_low:
-                for k, (interp_x, interp_y) in enumerate(zip(interpolated_x_angle, interpolated_y_angle)):
-
-                    dx = x_at_z[idx] - interp_x(comoving_distance_z)
-                    dy = y_at_z[idx] - interp_y(comoving_distance_z)
-                    dr = np.sqrt(dx ** 2 + dy ** 2)
-                    if dr <= position_cut_in_window:
-                        keep_inds_dr.append(idx)
-                        break
-
-            keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
-
-            tempmasses = masses_at_z[keep_inds]
-            keep_inds = keep_inds[np.where(tempmasses >= 10 ** minimum_mass_in_window)[0]]
-
-            for halo_index in keep_inds:
-                halos.append(plane_halos[halo_index])
-
-        return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self._mass_sheet_correction, self.rendering_classes)
-
-    def halos_at_z(self,z):
-
-        halos = []
-        index = []
-        for i, halo in enumerate(self.halos):
-            if halo.z != z:
-                continue
-            halos.append(halo)
-            index.append(i)
-
-        return halos, index
-
-    def mass_at_z_exact(self, z):
-
-        inds = np.where(self.redshifts == z)
-        m_exact = np.sum(self.masses[inds])
-        return m_exact
-
-    def number_of_halos_before_redshift(self, z):
-        n = 0
-        for halo in self.halos:
-            if halo.z < z:
-                n += 1
-        return n
-
-    def number_of_halos_after_redshift(self, z):
-        n = 0
-        for halo in self.halos:
-            if halo.z > z:
-                n += 1
-        return n
-
-    def number_of_halos_at_redshift(self, z):
-
-        n = 0
-        for halo in self.halos:
-            if halo.z == z:
-                n += 1
-        return n
-
-    def halo_comoving_coordinates(self):
-
-        x_comoving, y_comoving, distance, masses = [], [], [], []
-
-        for zi in self.unique_redshifts:
-            di = self.lens_cosmo.cosmo.D_C_transverse(zi)
-            for halo in self.halos_at_z(zi)[0]:
-                x_comoving.append(halo.x * di)
-                y_comoving.append(halo.y * di)
-                distance.append(di)
-                masses.append(halo.mass)
-
-        return np.array(x_comoving), np.array(y_comoving), np.array(distance), np.array(masses)
+        tags = self._tags(self.halos)
+        other_tags = other_reealization._tags()
+        for tag in other_tags:
+            if tag not in tags:
+                return False
+        else:
+            return True
 
 
 class SingleHalo(Realization):
@@ -597,17 +565,15 @@ class SingleHalo(Realization):
                  cone_opening_angle=6, log_mlow=6, log_mhigh=10,
                  kwargs_halo={}, cosmo=None):
 
-        r2d = np.sqrt(x ** 2 + y ** 2)
-
         if cosmo is None:
             cosmo = Cosmology()
         halo_mass_function = LensingMassFunction(cosmo, 10**log_mlow, 10**log_mhigh,
                                                  zlens, zsource, cone_opening_angle, use_lookup_table=True)
 
         kwargs_halo.update({'cone_opening_angle': cone_opening_angle})
-        super(SingleHalo, self).__init__([halo_mass], [x], [y], [r2d],
+        super(SingleHalo, self).__init__([halo_mass], [x], [y],
                                          [r3d], [mdef], [z], [subhalo_flag], halo_mass_function,
-                                         other_params=kwargs_halo, mass_sheet_correction=False)
+                                         halo_profile_args=kwargs_halo, mass_sheet_correction=False)
 
 def add_core_collapsed_subhalos(f_collapsed, realization):
 

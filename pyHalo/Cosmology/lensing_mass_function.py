@@ -4,6 +4,7 @@ from scipy.interpolate import interp1d
 from pyHalo.defaults import *
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import simps
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad
 
 class LensingMassFunction(object):
 
@@ -201,8 +202,8 @@ class LensingMassFunction(object):
 
         return rho_2h
 
-    def integrate_mass_function(self, z, plaw_index, delta_z, mlow, mhigh, log_m_break, break_index, break_scale, n=1,
-                                norm_scale = 1):
+    def integrate_mass_function(self, z, plaw_index, delta_z, mlow, mhigh, log_m_break,
+                                break_index, break_scale, n=1, norm_scale=1):
 
         """
         Integrates the halo mass function between m_low and m_high
@@ -215,39 +216,14 @@ class LensingMassFunction(object):
         :param plaw_index: logarithmic slope of power law
         :param break_index: see parameterization above
         :param break_scale: see parameterization above
+        :param norm_scale: rescaling of the overall normalization
         :return: the desired integral
         """
 
         norm = self.norm_at_z(z, plaw_index, delta_z, self.m_pivot)
-        moment = self.integrate_power_law(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
-                                          break_index=break_index, break_scale=break_scale)
 
-        return moment
-
-    def integrate_power_law(self, norm, m_low, m_high, log_m_break, n, plaw_index, break_index=0, break_scale=1):
-
-        """
-        Integrates a power law function of the form
-
-        f(x) = norm * x ^ (n + plaw_index) * (1 + (xc / x)^break_scale )^break_index
-
-        from x = m_low to x = m_high
-
-        :param norm: normalization prefactor
-        :param m_low: low bound of integral
-        :param m_high: high bound of integral
-        :param log_m_break: characteristic break mass (in log) of the power law
-        :param n: computes the nth moment
-        :param plaw_index: logarithmic slope of power law
-        :param break_index: see parameterization above
-        :param break_scale: see parameterization above
-        :return: the desired integral
-        """
-        def _integrand(m, m_break, plaw_index, n):
-
-            return norm * m ** (n + plaw_index) * (1 + (m_break / m)**break_scale) ** break_index
-
-        moment = quad(_integrand, m_low, m_high, args=(10**log_m_break, plaw_index, n))[0]
+        moment = integrate_power_law_quad(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
+                                          break_index, break_scale)
 
         return moment
 

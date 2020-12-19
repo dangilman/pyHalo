@@ -1,0 +1,43 @@
+import numpy.testing as npt
+from scipy.special import hyp2f1
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
+import pytest
+
+
+class TestMassFunctionUtil(object):
+
+    def test_integrate_mass_function(self):
+
+        def _analytic_integral_bound(x, a, b, c, n):
+
+            term1 = x ** (a + n + 1) * ((c + x) / c) ** (-b) * ((c + x) / x) ** b
+            term2 = hyp2f1(-b, a - b + n + 1, a - b + n + 2, -x / c) / (a - b + n + 1)
+            return term1 * term2
+
+        norm = 1.
+        m_low, m_high = 10 ** 6, 10 ** 10
+        log_m_break = 0.
+        plaw_index = -1.8
+
+        for n in [0, 1]:
+            integral = integrate_power_law_quad(norm, m_low, m_high, log_m_break, n, plaw_index)
+            integral_analytic = integrate_power_law_analytic(norm, m_low, m_high, n, plaw_index)
+
+            analytic_integral = norm * (m_high ** (1 + plaw_index + n) - m_low ** (1 + plaw_index + n)) / (
+                    n + 1 + plaw_index)
+            npt.assert_almost_equal(integral, analytic_integral)
+            npt.assert_almost_equal(integral_analytic, analytic_integral)
+
+        log_m_break = 8.
+
+        for n in [0, 1]:
+            integral = integrate_power_law_quad(norm, m_low, m_high, log_m_break, n, plaw_index,
+                                           break_index=-1.3, break_scale=1.)
+
+            analytic_integral = _analytic_integral_bound(m_high, plaw_index, -1.3, 10 ** log_m_break, n) - \
+                                _analytic_integral_bound(m_low, plaw_index, -1.3, 10 ** log_m_break, n)
+
+            npt.assert_almost_equal(integral, analytic_integral)
+
+if __name__ == '__main__':
+    pytest.main()

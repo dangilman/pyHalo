@@ -71,14 +71,11 @@ class DMHaloDefaults(object):
     def __init__(self):
 
         self.mass_concentration_relation = 'diemer19'
+        self.mass_concentration_mdef = '200c'
         self.evaluate_mc_at_zlens = False
 
-        if self.mass_concentration_relation == 'diemer19':
-            self.mc_mdef = '200c'
-        else:
-            self.mc_mdef = '200c'
-
         self.scatter = True
+        self.c_scatter_dex = 0.1
 
         # From Bose et al 2016
         self.c_scale = 60
@@ -197,14 +194,14 @@ def set_default_kwargs(profile_params, dynamic, zsource):
             print('c_scale not specified, assuming 60')
         profile_params.update({'c_scale': halo_default.c_scale})
 
-    if 'parent_m200' in profile_params.keys():
-        profile_params.update({'parent_m200': profile_params['parent_m200']})
+    if 'host_m200' in profile_params.keys():
+        profile_params.update({'host_m200': profile_params['host_m200']})
     elif 'log_m_host' in profile_params.keys():
-        profile_params.update({'parent_m200': 10**profile_params['log_m_host']})
+        profile_params.update({'host_m200': 10**profile_params['log_m_host']})
     else:
         if print_defaults:
             print('Warning: halo mass not specified, assuming a parent halo mass of 10^13.')
-        profile_params.update({'parent_m200': realization_default.m_parent})
+        profile_params.update({'host_m200': realization_default.m_parent})
 
     if 'subhalo_spatial_distribution' not in profile_params.keys():
         profile_params.update({'subhalo_spatial_distribution':
@@ -225,13 +222,16 @@ def set_default_kwargs(profile_params, dynamic, zsource):
 
     if 'mc_model' not in profile_params.keys():
         profile_params.update({'mc_model': halo_default.mass_concentration_relation})
+    if 'mc_mdef' not in profile_params.keys():
+        profile_params.update({'mc_mdef': halo_default.mass_concentration_mdef})
 
     if 'evaluate_mc_at_zlens' not in profile_params.keys():
         profile_params.update({'evaluate_mc_at_zlens': halo_default.evaluate_mc_at_zlens})
 
     if 'c_scatter' not in profile_params.keys():
         profile_params.update({'c_scatter': halo_default.scatter})
-
+    if 'c_scatter_dex' not in profile_params.keys():
+        profile_params.update({'c_scatter_dex': halo_default.c_scatter_dex})
     if 'truncation_routine' not in profile_params.keys():
         profile_params.update({'truncation_routine': truncation_default.routine})
     if profile_params['truncation_routine'] == 'simple':

@@ -1,12 +1,12 @@
 import numpy.testing as npt
 import numpy as np
-from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
+from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from colossus.halo.concentration import concentration, peaks
 import pytest
 
-class TestNFWHalos(object):
+class TestPjaffeHalo(object):
 
     def setup(self):
 
@@ -15,8 +15,8 @@ class TestNFWHalos(object):
         y = 1.
         r3d = np.sqrt(1 + 0.5 ** 2 + 70**2)
         self.r3d = r3d
-        mdef = 'TNFW'
-        self.z = 1.2
+        mdef = 'PJAFFE'
+        self.z = 0.25
         sub_flag = True
 
         self.H0 = 70
@@ -33,7 +33,7 @@ class TestNFWHalos(object):
 
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_m_break': None, 'c_scale': 60.,
+                        'log_m_break': 0., 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
                         'mc_mdef': '200c',
@@ -42,47 +42,45 @@ class TestNFWHalos(object):
         self._profile_args = profile_args
 
         self.mass_subhalo = mass
-        self.subhalo = NFWSubhhalo(mass, x, y, r3d, mdef, self.z,
+        self.subhalo = PJaffeSubhalo(mass, x, y, r3d, mdef, self.z,
                             sub_flag, self.lens_cosmo,
                             profile_args, unique_tag=np.random.rand())
 
         mass_field_halo = 10 ** 7.
         sub_flag = False
         self.mass_field_halo = mass_field_halo
-        self.field_halo = NFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
+        self.field_halo = PJaffeSubhalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
                             sub_flag, self.lens_cosmo,
                             profile_args, unique_tag=np.random.rand())
 
         self.profile_args_custom = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_m_break': None, 'c_scale': 60.,
+                        'log_m_break': 0., 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
-                        'mc_model': {'custom': True, 'c0': 28., 'beta': 1.2, 'zeta': -0.5},
+                        'mc_model': {'custom': True, 'c0': 17., 'beta': 0.8, 'zeta': -0.2},
                                'LOS_truncation_factor': 40, 'mc_mdef': '200c',
                                     'c_scatter_dex': 0.1}
 
         mdef = 'NFW'
         sub_flag = False
-        self.field_halo_custom = NFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
+        self.field_halo_custom = PJaffeSubhalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
                                sub_flag, self.lens_cosmo,
                                self.profile_args_custom, unique_tag=np.random.rand())
 
         sub_flag = True
-        self.subhalo_custom = NFWSubhhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
+        self.subhalo_custom = PJaffeSubhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
                                       sub_flag, self.lens_cosmo,
                                       self.profile_args_custom, unique_tag=np.random.rand())
 
-
     def test_lenstronomy_ID(self):
-
         id = self.subhalo_custom.lenstronomy_ID
-        npt.assert_string_equal(id, 'NFW')
+        npt.assert_string_equal(id, 'PJAFFE')
 
     def test_change_profile_definition(self):
 
         new_mdef = 'PT_MASS'
 
-        new_halo = NFWSubhhalo.change_profile_definition(self.subhalo, new_mdef)
+        new_halo = PJaffeSubhalo.change_profile_definition(self.subhalo, new_mdef)
         npt.assert_almost_equal(new_halo.x, self.subhalo.x)
         npt.assert_almost_equal(new_halo.y, self.subhalo.y)
         npt.assert_almost_equal(new_halo.r3d, self.subhalo.r3d)
@@ -90,7 +88,7 @@ class TestNFWHalos(object):
         npt.assert_almost_equal(new_halo.unique_tag, self.subhalo.unique_tag)
         npt.assert_string_equal(new_halo.mdef, new_mdef)
 
-        new_halo = NFWFieldHalo.change_profile_definition(self.field_halo, new_mdef)
+        new_halo = PJaffeSubhalo.change_profile_definition(self.field_halo, new_mdef)
         npt.assert_almost_equal(new_halo.x, self.field_halo.x)
         npt.assert_almost_equal(new_halo.y, self.field_halo.y)
         npt.assert_almost_equal(new_halo.r3d, self.field_halo.r3d)
@@ -102,18 +100,6 @@ class TestNFWHalos(object):
 
         z_infall = self.subhalo.z_infall
         npt.assert_array_less(self.z, z_infall)
-
-    def test_lenstronomy_kwargs(self):
-
-        for prof in [self.subhalo_custom, self.subhalo, self.field_halo, self.field_halo_custom]:
-
-            (c) = prof.profile_args
-            kwargs, other = prof.lenstronomy_params
-            rs, theta_rs = self.lens_cosmo.nfw_physical2angle(prof.mass, c, self.z)
-            names = ['center_x', 'center_y', 'alpha_Rs', 'Rs']
-            values = [prof.x, prof.y, theta_rs, rs]
-            for name, value in zip(names, values):
-                npt.assert_almost_equal(kwargs[name], value)
 
     def test_profile_args(self):
 

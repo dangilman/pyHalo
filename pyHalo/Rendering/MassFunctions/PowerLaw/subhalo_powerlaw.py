@@ -21,6 +21,8 @@ class SubhaloPowerLaw(PowerLawBase):
     def __init__(self, log_mlow, M_parent, draw_poisson,
                  log_m_break, break_index, break_scale, N_0=0.21, alpha=0.8, k=6.283, **kwargs):
 
+        raise Exception('this class is still under development')
+
         if break_index > 0:
             raise ValueError('Break index should be a negative number (otherwise mass function gets steeper (unphysical)')
         if break_scale < 0:

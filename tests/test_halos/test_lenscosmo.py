@@ -80,7 +80,7 @@ class TestLensCosmo(object):
     def test_subhalo_accretion(self):
 
         zi = [self.lens_cosmo.z_accreted_from_zlens(10**8, 0.5)
-              for _ in range(0, 6000)]
+              for _ in range(0, 20000)]
 
         h, b = np.histogram(zi, bins=np.linspace(0.5, 6, 20))
 

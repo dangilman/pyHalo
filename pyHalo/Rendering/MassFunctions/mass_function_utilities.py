@@ -3,10 +3,28 @@ import numpy as np
 
 def integrate_power_law_quad(norm, m_low, m_high, log_m_break, n, plaw_index, break_index=0, break_scale=1):
 
-    def _integrand(m, m_break, plaw_index, n):
-        return norm * m ** (n + plaw_index) * (1 + (m_break / m) ** break_scale) ** break_index
+    """
+    Numerically integrates a power law profile
+    :param norm:
+    :param m_low:
+    :param m_high:
+    :param log_m_break:
+    :param n:
+    :param plaw_index:
+    :param break_index:
+    :param break_scale:
+    :return:
+    """
 
-    moment = quad(_integrand, m_low, m_high, args=(10 ** log_m_break, plaw_index, n))[0]
+    def _integrand_wdm(m, m_break, plaw_index, n):
+        return norm * m ** (n + plaw_index) * (1 + (m_break / m) ** break_scale) ** break_index
+    def _integrand_cdm(m, plaw_index, n):
+        return norm * m ** (n + plaw_index)
+
+    if log_m_break is not None:
+        moment = quad(_integrand_wdm, m_low, m_high, args=(10 ** log_m_break, plaw_index, n))[0]
+    else:
+        moment = quad(_integrand_cdm, m_low, m_high, args=(plaw_index, n))[0]
 
     return moment
 

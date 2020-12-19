@@ -81,7 +81,9 @@ class TestConeGeometry(object):
         cone_arcsec = 3
         radius = cone_arcsec*0.5
         angle_pad = 0.7
-        geo = Geometry(self.cosmo, 1, 1.5, cone_arcsec, 'DOUBLE_CONE', angle_pad=angle_pad)
+        zlens = 1.
+        zsrc = 1.8
+        geo = Geometry(self.cosmo, zlens, zsrc, cone_arcsec, 'DOUBLE_CONE', angle_pad=angle_pad)
         astropy = geo._cosmo.astropy
 
         delta_z = 1e-3
@@ -91,6 +93,13 @@ class TestConeGeometry(object):
 
         dV_astropy = dV * delta_z
         steradian = np.pi * (radius * self.arcsec) ** 2
+        npt.assert_almost_equal(dV_astropy * steradian, dV_pyhalo, 5)
+
+        angle_scale = geo.rendering_scale(1.3)
+        dV_pyhalo = geo.volume_element_comoving(1.3, delta_z)
+        dV = astropy.differential_comoving_volume(1.3).value
+        dV_astropy = dV * delta_z
+        steradian = np.pi * (radius * angle_scale * self.arcsec) ** 2
         npt.assert_almost_equal(dV_astropy * steradian, dV_pyhalo, 5)
 
     def test_total_volume(self):
@@ -107,7 +116,7 @@ class TestConeGeometry(object):
         ds = self.cosmo.D_C_z(1.5)
         dz = self.cosmo.D_C_z(0.5)
         volume_true = 1./3 * np.pi * radius_radians ** 2 * dz ** 2 * ds
-        npt.assert_almost_equal(volume_true, volume_pyhalo, 2)
+        npt.assert_almost_equal(volume_true, volume_pyhalo, 3)
 
 
 if __name__ == '__main__':
