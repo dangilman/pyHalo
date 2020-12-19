@@ -10,19 +10,21 @@ python:
 before_install:
   - pip install coverage
   - pip install coveralls
-  - pip install python-coveralls
   - pip install scipy
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: 
   - pip install -U tox-travis
-  - pip install .
   - pip install -r requirements.txt
+  - pip install coverage coveralls
+  - pip install python-coveralls
+  - pip install pytest pytest-cov
 # Command to run tests, e.g. python setup.py test
 script:
 #  - py.test
+  - python setup.py install
   - coverage run --source pyHalo setup.py test
 after_success:
-   coveralls
+  - coveralls
 
 # Assuming you have installed the travis-ci CLI tool, after you
 # create the Github repo and add it to Travis, run the
