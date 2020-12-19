@@ -128,7 +128,6 @@ class TestFieldPowerLaw(object):
         diff = np.absolute(1 - mtheory/np.sum(m))
         npt.assert_array_less(diff, 0.1, 2)
 
-
         m = self.func_wdm.render_masses(z, dz, None)
         plaw_index = self.halo_mass_function.plaw_index_z(z) + self.delta_power_law_index
         mtheory = self.halo_mass_function.integrate_mass_function(z, plaw_index, dz, 10 ** self.kwargs['log_mlow'],
