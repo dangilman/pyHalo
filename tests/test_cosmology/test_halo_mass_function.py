@@ -18,14 +18,13 @@ class TestLensingMassFunction(object):
         m_pivot = 10**8
         mass_function_model = 'sheth99'
         use_lookup_table = True
-        two_halo_term = True
         geometry_type = 'DOUBLE_CONE'
         self.lmf_lookup_ShethTormen = LensingMassFunction(cosmo, mlow, mhigh, zlens, zsource, cone_opening_angle, m_pivot,
-                                       mass_function_model, use_lookup_table, two_halo_term, geometry_type)
+                                       mass_function_model, use_lookup_table, geometry_type)
 
         use_lookup_table = False
         self.lmf_no_lookup_ShethTormen = LensingMassFunction(cosmo, mlow, mhigh, zlens, zsource, cone_opening_angle, m_pivot,
-                                              mass_function_model, use_lookup_table, two_halo_term, geometry_type)
+                                              mass_function_model, use_lookup_table, geometry_type)
 
         self._m = np.logspace(6., 10, 50)
 

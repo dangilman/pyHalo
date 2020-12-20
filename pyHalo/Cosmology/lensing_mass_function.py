@@ -9,7 +9,7 @@ from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_pow
 class LensingMassFunction(object):
 
     def __init__(self, cosmology, mlow, mhigh, zlens, zsource, cone_opening_angle,
-                 m_pivot=10**8, mass_function_model=None, use_lookup_table=True, two_halo_term=True,
+                 m_pivot=10**8, mass_function_model=None, use_lookup_table=True,
                  geometry_type=None):
 
 
@@ -25,7 +25,6 @@ class LensingMassFunction(object):
         :param m_pivot: pivot mass of the mass function in M_sun
         :param mass_function_model (optional): the halo mass function model, default is Sheth-Tormen
         :param use_lookup_table: Whether to use a precomputed lookup table for the normalization and slope of the mass function
-        :param two_halo_term: Whether to include the contribution from the two halo term of the main deflector
         :param geometry_type: Type of lensing geometry (DOUBLE_CONE, CYLINDER)
         """
 
@@ -40,7 +39,6 @@ class LensingMassFunction(object):
         self.geometry = Geometry(cosmology, zlens, zsource, cone_opening_angle, geometry_type)
         self._mass_function_model = mass_function_model
         self._mlow, self._mhigh = mlow, mhigh
-        self._two_halo_term = two_halo_term
 
         self._norms_z_dV, self._plaw_indexes_z, self._log_mbin = [], [], []
 

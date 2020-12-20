@@ -32,7 +32,7 @@ class TestFieldPowerLaw(object):
         self.opening_angle= 6.
         cosmo = Cosmology()
         halo_mass_function = LensingMassFunction(cosmo, kwargs['log_mlow'], kwargs['log_mhigh'],
-                                                 0.5, 1.5, 6., m_pivot=kwargs['m_pivot'], two_halo_term=True,
+                                                 0.5, 1.5, 6., m_pivot=kwargs['m_pivot'],
                                                  geometry_type='DOUBLE_CONE')
         self.halo_mass_function = halo_mass_function
         geometry_class = Geometry(cosmo, 0.5, 1.5, 6., 'DOUBLE_CONE')

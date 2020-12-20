@@ -84,7 +84,6 @@ class RealizationDefaults(object):
 
         self.log_mlow = 6
         self.log_mhigh = 10
-        self.two_halo_term = True
 
         self.host_m200 = 10 ** 13
 

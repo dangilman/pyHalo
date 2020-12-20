@@ -200,8 +200,6 @@ class pyHaloBase(object):
                 else:
                     logLOS_mhigh = args['log_mhigh_los']
 
-            if 'two_halo_term' not in self._halo_mass_function_args.keys():
-                self._halo_mass_function_args.update({'two_halo_term': realization_default.two_halo_term})
             if 'mass_function_model' not in self._halo_mass_function_args.keys():
                 self._halo_mass_function_args.update({'mass_function_model': cosmo_default.default_mass_function})
 
