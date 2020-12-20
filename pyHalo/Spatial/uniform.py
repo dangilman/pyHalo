@@ -12,7 +12,7 @@ class LensConeUniform(object):
     def draw(self, N, z_plane, center_x=0, center_y=0):
 
         if N == 0:
-            return np.array([]), np.array([]), np.array([]), np.array([])
+            return np.array([]), np.array([]), np.array([])
 
         rescale = self._cosmo_geometry.rendering_scale(z_plane)
 
@@ -29,7 +29,7 @@ class Uniform(object):
 
     def draw(self, N, z_plane, rescale=1.0, center_x=0, center_y=0):
         if N == 0:
-            return [], [], [], []
+            return [], [], []
 
         angle = np.random.uniform(0, 2 * np.pi, int(N))
 

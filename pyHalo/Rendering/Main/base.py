@@ -63,11 +63,9 @@ class MainLensBase(RenderingBase):
 
         if self.rendering_args['log_mc'] is not None:
             mass_in_subhalos = integrate_power_law_quad(self.rendering_args['normalization'],
-                                                        m_low, m_high, 1, power_law_index,
-                                                        self.rendering_args['log_mc'],
-                                                        self.rendering_args['a_wdm'],
-                                                        self.rendering_args['b_wdm'],
-                                                        self.rendering_args['c_wdm'])
+                                                        m_low, m_high, self.rendering_args['log_mc'],
+                                                        1, power_law_index, self.rendering_args['a_wdm'],
+                                                        self.rendering_args['b_wdm'], self.rendering_args['c_wdm'])
         else:
             mass_in_subhalos = integrate_power_law_analytic(self.rendering_args['normalization'],
                                                         m_low, m_high, 1, power_law_index)

@@ -29,7 +29,7 @@ class LensingMassFunction(object):
         :param geometry_type: Type of lensing geometry (DOUBLE_CONE, CYLINDER)
         """
 
-        self._cosmo = cosmology
+        self.cosmo = cosmology
 
         if mass_function_model is None:
             mass_function_model = realization_default.default_mass_function
@@ -84,7 +84,7 @@ class LensingMassFunction(object):
         [N * M_sun ^ -1 * Mpc ^ -3]
         """
 
-        h = self._cosmo.h
+        h = self.cosmo.h
 
         # To M_sun / h units
         M_h = M*h
@@ -108,7 +108,7 @@ class LensingMassFunction(object):
         :return: the number of objects of mass M * Mpc^-3
         """
 
-        rho_dV = component_fraction * self._cosmo.rho_dark_matter_crit(z)
+        rho_dV = component_fraction * self.cosmo.rho_dark_matter_crit(z)
 
         return rho_dV
 
@@ -195,11 +195,11 @@ class LensingMassFunction(object):
         :return:
         """
 
-        h = self._cosmo.h
+        h = self.cosmo.h
         M_h = M * h
         r_h = r * h
 
-        rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self._cosmo._colossus_cosmo.rho_m(z)
+        rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self.cosmo._colossus_cosmo.rho_m(z)
 
         return rho_2h
 

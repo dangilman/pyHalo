@@ -7,9 +7,11 @@ presented here show what each keyword argument accepted by pyHalo does.
 from pyHalo.pyhalo import pyHalo
 
 
-def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., kwargs_model_other={}):
+def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6,
+        log_mhigh=10, kwargs_model_other={}):
 
     """
+
     This specifies the keywords for a CDM halo mass function model with a subhalo mass function described by a power law
     and a line of sight halo mass function described by Sheth-Tormen.
 
@@ -27,12 +29,24 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     F(M_host, z) = a * log10(M_host / 10^13) + b * (1+z)
     with a = 0.88 and b = 1.7.
 
+    :param z_lens: main deflector redshift
+    :param z_source: sourcee redshift
+    :param sigma_sub: normalization of the subhalo mass function
+    :param shmf_log_slope: logarithmic slope of the subhalo mass function
+    :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
+    :param log_mlow: log10(minimum halo mass) rendered
+    :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density
+    :param kwargs_model_other: any other keyword arguments one wants to pass to realization
+    :return:
     """
 
-    kwargs_model_field = {'cone_opening_angle': cone_opening_angle_arcsec}
+    mass_definition = 'TNFW'  # truncated NFW profile
+    kwargs_model_field = {'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
+                          'mass_func_type': 'POWER_LAW', 'log_mlow': log_mlow, 'log_mhigh': log_mhigh}
 
     kwargs_model_subhalos = {'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub,
-                             'power_law_index': shmf_log_slope}
+                             'power_law_index': shmf_log_slope, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                             'mdef_main': mass_definition, 'mass_func_type': 'POWER_LAW'}
 
     kwargs_model_field.update(kwargs_model_other)
     kwargs_model_subhalos.update(kwargs_model_other)
@@ -76,9 +90,11 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 
     return cdm_realization
 
-def WDMLovell2020(log_mc, z_lens, z_source, a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1., a_wdm_sub=4.2, b_wdm_sub=2.5,
+def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1., a_wdm_sub=4.2, b_wdm_sub=2.5,
                    c_wdm_sub=-0.2, c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6., sigma_sub=0.025, kwargs_model_other={}):
+
     """
+
     This specifies the keywords for the Warm Dark Matter (WDM) halo mass function model presented by Lovell 2020
     (https://arxiv.org/pdf/2003.01125.pdf)
 
@@ -106,9 +122,11 @@ def WDMLovell2020(log_mc, z_lens, z_source, a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_
     factor of 60 makes the effect on halo concentrations kick on mass scales > m_c. This routine assumes the
     a mass-concentration for CDM halos given by Diemer & Joyce 2019 (https://arxiv.org/pdf/1809.07326.pdf)
 
-    :param log_mc: log10(half mode mass) in units M_sun (no little h)
     :param z_lens: the lens redshift
     :param z_source: the source redshift
+    :param log_mc: log10(half mode mass) in units M_sun (no little h)
+    :param log_mlow: log10(minimum halo mass) rendered
+    :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density
     :param a_wdm_los: describes the line of sight WDM halo mass function (see above)
     :param b_wdm_los: describes the line of sight WDM halo mass function (see above)
     :param c_wdm_los: describes the line of sight WDM halo mass function (see above)
@@ -124,14 +142,16 @@ def WDMLovell2020(log_mc, z_lens, z_source, a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_
 
     :return:
     """
-
+    mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
-                          'c_scale': c_scale, 'c_power': c_power,
-                          'cone_opening_angle': cone_opening_angle_arcsec}
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
+                          'mass_func_type': 'POWER_LAW'}
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
-                          'c_scale': c_scale, 'c_power': c_power,
-                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub}
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_main': mass_definition,
+                             'mass_func_type': 'POWER_LAW'}
 
     kwargs_model_field.update(kwargs_model_other)
     kwargs_model_subhalos.update(kwargs_model_other)

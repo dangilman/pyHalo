@@ -79,6 +79,7 @@ class Realization(object):
         self.geometry = halo_mass_function.geometry
         self.lens_cosmo = LensCosmo(self.geometry._zlens, self.geometry._zsource,
                                     self.geometry._cosmo)
+        self.astropy_instance = self.halo_mass_function.cosmo.astropy
 
         self.halos = []
         self._loaded_models = {}
