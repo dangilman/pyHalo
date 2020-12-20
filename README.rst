@@ -23,13 +23,13 @@ This code is under active development, but the core functionality expressed in t
 If you would like to use this package and have questions, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
 
 * Free software: MIT license
-* Documentation: https://pyhalo.readthedocs.io.
 
 
 Features
 --------
 
-* TODO
+- Quickly rendering full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations
+- Translte halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy
 
 Credits
 -------
