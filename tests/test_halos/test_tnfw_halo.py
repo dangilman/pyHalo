@@ -142,7 +142,7 @@ class TestTNFWHalos(object):
     def test_z_infall(self):
 
         z_infall = self.subhalo.z_infall
-        npt.assert_array_less(self.z, z_infall)
+        npt.assert_equal(True, self.z <= z_infall)
 
     def test_profile_args(self):
 
