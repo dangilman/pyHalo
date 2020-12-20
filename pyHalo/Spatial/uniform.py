@@ -28,6 +28,7 @@ class Uniform(object):
         self._geo = geometry
 
     def draw(self, N, z_plane, rescale=1.0, center_x=0, center_y=0):
+
         if N == 0:
             return [], [], []
 

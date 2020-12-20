@@ -1,5 +1,5 @@
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
-from pyHalo.Spatial.nfw_core import UniformNFW
+from pyHalo.Spatial.nfw_core import ProjectedNFW
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Spatial.keywords import subhalo_spatial_NFW
 from pyHalo.Rendering.Main.SHMF_normalizations import *
@@ -24,7 +24,7 @@ class MainLensBase(RenderingBase):
 
         elif args['subhalo_spatial_distribution'] == 'HOST_NFW':
             spatial_args = subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo)
-            spatial_class = UniformNFW
+            spatial_class = ProjectedNFW
 
         else:
             raise Exception('subhalo_spatial_distribution '+str(args['subhalo_spatial_distribution'])+

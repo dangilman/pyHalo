@@ -48,6 +48,12 @@ class TestSingleRealization(object):
                   'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
                   'delta_power_law_index': 0., 'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
                   'm_pivot': 10 ** 8, 'cone_opening_angle': 6.}
+        kwargs_cdm_2 = {'zmin': 0.01, 'zmax': 1.98, 'log_mc': None, 'log_mlow': 6.,
+                      'log_mhigh': 9., 'host_m200': 10 ** 13, 'LOS_normalization': 2000.,
+                      'LOS_normalization_mass_sheet': 1.,
+                      'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
+                      'delta_power_law_index': 0., 'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
+                      'm_pivot': 10 ** 8, 'cone_opening_angle': 6., 'subtract_exact_mass_sheets': True}
 
         kwargs_cdm.update(profile_args_TNFW)
         self.kwargs_cdm = kwargs_cdm
@@ -65,12 +71,20 @@ class TestSingleRealization(object):
                                         delta_zs)]
         self.rendering_classes = rendering_classes
 
-        self.realization_cdm = Realization(masses, x, y, r3d, mdefs_TNFW, redshifts, subflags,
-                                  halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
+        mdef = 'NFW'
+        self.realization_cdm = Realization(masses, x, y, r3d, mdef, redshifts, subflags,
+                                  halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm_2,
                                   mass_sheet_correction=True, rendering_classes=rendering_classes)
-        self.realization_cdm2 = Realization(masses2, x2, y2, r3d2, mdefs_TNFW, redshifts2, subflags2,
+
+        mdef = 'PT_MASS'
+        self.realization_cdm2 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
                                            halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
                                            mass_sheet_correction=True, rendering_classes=rendering_classes)
+
+        mdef = 'PJAFFE'
+        self.realization_cdm3 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
+                                            halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
+                                            mass_sheet_correction=True, rendering_classes=rendering_classes)
 
         self.halos_cdm = self.realization_cdm.halos
 
@@ -268,6 +282,11 @@ class TestSingleRealization(object):
 
         lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = \
             self.realization_cdm.lensing_quantities(add_mass_sheet_correction=False)
+        npt.assert_equal(True, 'CONVERGENCE' not in lens_model_list)
+        npt.assert_equal(len(lens_model_list), len(self.x))
+
+        lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = \
+            self.realization_cdm2.lensing_quantities(add_mass_sheet_correction=True)
         npt.assert_equal(True, 'CONVERGENCE' not in lens_model_list)
         npt.assert_equal(len(lens_model_list), len(self.x))
 

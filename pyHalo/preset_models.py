@@ -119,7 +119,7 @@ def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_lo
     c_wdm / c_cdm = (1+z)^B(z) * (1 + c_scale * m_c / m) ^ c_power
 
     where m_c is the same as the definition for the halo mass function and (c_scale, c_power) = (60, -0.17). Note that the
-    factor of 60 makes the effect on halo concentrations kick on mass scales > m_c. This routine assumes the
+    factor of 60 makes the effect on halo concentrations kick in on mass scales > m_c. This routine assumes the
     a mass-concentration for CDM halos given by Diemer & Joyce 2019 (https://arxiv.org/pdf/1809.07326.pdf)
 
     :param z_lens: the lens redshift

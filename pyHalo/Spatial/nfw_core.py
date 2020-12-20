@@ -103,10 +103,18 @@ class CoreNFW3DFast(object):
 class NFW3DCoreRejectionSampling(object):
 
     """
-    Samples from a cored NFW profile with any core radius (within reason) using rejection sampling,
-    can be slow.
+    Samples from a cored NFW profile using rejection sampling,
+    This can be slow.
     """
     def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
+
+        """
+
+        :param Rs: host scale radius in kpc
+        :param rmax2d: max 2d radius to render halos in kpc
+        :param rmax3d: max radius in 3d, or the virial radius
+        :param r_core_parent: core radius units kpc
+        """
 
         self._Rs = Rs
         self._rmax2d = rmax2d
@@ -140,7 +148,7 @@ class NFW3DCoreRejectionSampling(object):
 
     def _draw(self, N, zlens):
 
-        x, y, r2, r3 = self.nfw.draw(N, zlens)
+        x, y, r3 = self.nfw.draw(N, zlens)
         x3 = r3/self._Rs
         #prob = np.array([self.p_x(x3i, self._xcore) for x3i in x3])
         prob = np.array(self.p_x(x3, self._xcore))
@@ -163,8 +171,7 @@ class NFW3DCoreRejectionSampling(object):
 
         return x[0:N], y[0:N], r3[0:N]
 
-
-class UniformNFW(object):
+class ProjectedNFW(object):
 
     """
     This class approximates sampling from a full 3D NFW profile by
