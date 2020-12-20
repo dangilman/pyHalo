@@ -17,22 +17,25 @@ class PJaffeSubhalo(Halo):
     @property
     def lenstronomy_params(self):
 
-        (concentration) = self.profile_args
-        _, rs_kpc, r200_kpc = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+        if not hasattr(self, '_lenstronomy_args'):
+            (concentration) = self.profile_args
+            _, rs_kpc, r200_kpc = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
 
-        r_a_kpc = 0.001 * rs_kpc
-        Sigma0 = self.mass/rs_kpc/(2*np.pi*r_a_kpc) # units M_sun / kpc^2
+            r_a_kpc = 0.001 * rs_kpc
+            Sigma0 = self.mass/rs_kpc/(2*np.pi*r_a_kpc) # units M_sun / kpc^2
 
-        sigma_crit_Mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
-        sigma_crit_kpc = sigma_crit_Mpc * 1000 ** -2
-        sigma_0 = Sigma0/sigma_crit_kpc
+            sigma_crit_Mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+            sigma_crit_kpc = sigma_crit_Mpc * 1000 ** -2
+            sigma_0 = Sigma0/sigma_crit_kpc
 
-        kpc_to_arcsec = 1/self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-        r_trunc_arcsec = rs_kpc * kpc_to_arcsec
-        r_a_arcsec = r_a_kpc * kpc_to_arcsec
+            kpc_to_arcsec = 1/self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            r_trunc_arcsec = rs_kpc * kpc_to_arcsec
+            r_a_arcsec = r_a_kpc * kpc_to_arcsec
 
-        return {'center_x': self.x, 'center_y': self.y, 'Ra': r_a_arcsec,
-                'Rs': r_trunc_arcsec, 'sigma0': sigma_0}, None
+            self._lenstronomy_args = {'center_x': self.x, 'center_y': self.y, 'Ra': r_a_arcsec,
+                'Rs': r_trunc_arcsec, 'sigma0': sigma_0}
+
+        return self._lenstronomy_args, None
 
     @property
     def lenstronomy_ID(self):

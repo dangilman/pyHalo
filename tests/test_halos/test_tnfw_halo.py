@@ -115,6 +115,7 @@ class TestTNFWHalos(object):
             for name, value in zip(names, values):
                 npt.assert_almost_equal(kwargs[name], value)
 
+
     def test_lenstronomy_ID(self):
         id = self.subhalo_custom.lenstronomy_ID
         npt.assert_string_equal(id, 'TNFW')

@@ -7,6 +7,7 @@ from scipy.integrate import quad
 from astropy.constants import G, c
 from pyHalo.Halos.concentration import Concentration
 import astropy.units as un
+from colossus.halo.profile_nfw import NFWProfile
 
 class TestLensCosmo(object):
 
@@ -18,6 +19,8 @@ class TestLensCosmo(object):
         self.lens_cosmo = LensCosmo(zlens, zsource, self.cosmo)
         self.h = self.cosmo.h
         self.con = Concentration(self.lens_cosmo)
+
+        self._colossus_nfw = NFWProfile
 
     def test_const(self):
 
@@ -90,12 +93,23 @@ class TestLensCosmo(object):
 
     def test_nfw_fundamental_parameters(self):
 
-        for z in [0., 0.74]:
+        for z in [0., 0.74, 1.2]:
 
             M, c = 10**8, 17.5
             rho_crit_z = self.cosmo.rho_crit(z)
 
             rhos, rs, r200 = self.lens_cosmo._nfwParam_physical_Mpc(M, c, z)
+
+            h = self.cosmo.h
+            _rhos, _rs = self._colossus_nfw.fundamentalParameters(M * h, c, z, '200c')
+            # output in units (M h^2 / kpc^2, kpc/h)
+            rhos_col = _rhos * h ** 2 * 1000 ** 3
+            rs_col = _rs / h / 1000
+            r200_col = rs * c
+
+            npt.assert_almost_equal(rhos/rhos_col, 1, 3)
+            npt.assert_almost_equal(rs/rs_col, 1, 3)
+            npt.assert_almost_equal(r200/r200_col, 1, 3)
 
             def _profile(x):
                 fac = x * (1 + x) ** 2
@@ -109,6 +123,7 @@ class TestLensCosmo(object):
             ratio = mean_density/rho_crit_z
 
             npt.assert_almost_equal(ratio/200, 1., 3)
+
 
 if __name__ == '__main__':
     pytest.main()

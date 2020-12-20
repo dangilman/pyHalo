@@ -39,15 +39,16 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
         halos = _halos
         indexes = _indexes
 
+    lens_cosmo_class = realization.lens_cosmo
     return Realization.from_halos(halos, realization.halo_mass_function,
                                   realization._prof_params, realization._mass_sheet_correction,
-                                  realization.rendering_classes), indexes
+                                  realization.rendering_classes, lens_cosmo_class), indexes
 
 class Realization(object):
 
     def __init__(self, masses, x, y, r3d, mdefs, z, subhalo_flag, halo_mass_function,
                  halos=None, halo_profile_args={}, mass_sheet_correction=True, dynamic=False,
-                 rendering_classes=None):
+                 rendering_classes=None, lens_cosmo_class=None):
 
         """
 
@@ -77,8 +78,12 @@ class Realization(object):
 
         self.halo_mass_function = halo_mass_function
         self.geometry = halo_mass_function.geometry
-        self.lens_cosmo = LensCosmo(self.geometry._zlens, self.geometry._zsource,
+
+        if lens_cosmo_class is None:
+            lens_cosmo_class = LensCosmo(self.geometry._zlens, self.geometry._zsource,
                                     self.geometry._cosmo)
+        self.lens_cosmo = lens_cosmo_class
+
         self.astropy_instance = self.halo_mass_function.cosmo.astropy
 
         self.halos = []
@@ -107,7 +112,8 @@ class Realization(object):
         self.set_rendering_classes(rendering_classes)
 
     @classmethod
-    def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction, rendering_classes):
+    def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction, rendering_classes,
+                   lens_cosmo_class=None):
 
         """
 
@@ -116,13 +122,15 @@ class Realization(object):
         :param prof_params: keyword arguments for the realization
         :param msheet_correction: whether or not to apply a mass sheet correction
         :param rendering_classes: a list of rendering classes
+        :param lens_cosmo_class: an instance of lens_cosmo to be passed to the new realization (optional)
         :return: an instance of Realization created directly from the halo class instances
         """
 
         realization = Realization(None, None, None, None, None, None, None, halo_mass_function,
                                   halos=halos, halo_profile_args=prof_params,
                                   mass_sheet_correction=msheet_correction,
-                                  rendering_classes=rendering_classes)
+                                  rendering_classes=rendering_classes,
+                                  lens_cosmo_class=lens_cosmo_class)
 
         return realization
 
@@ -214,8 +222,10 @@ class Realization(object):
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 
+        lens_cosmo_class = self.lens_cosmo
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self.apply_mass_sheet_correction, self.rendering_classes)
+                                      self.apply_mass_sheet_correction, self.rendering_classes,
+                                      lens_cosmo_class)
 
     def set_rendering_classes(self, rendering_classes):
 
@@ -274,8 +284,10 @@ class Realization(object):
         else:
             rendering_classes = self.rendering_classes
 
+        lens_cosmo_class = self.lens_cosmo
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self.apply_mass_sheet_correction, rendering_classes)
+                                      self.apply_mass_sheet_correction, rendering_classes,
+                                      lens_cosmo_class)
 
     def shift_background_to_source(self, ray_interp_x, ray_interp_y):
 
@@ -287,25 +299,23 @@ class Realization(object):
         :return:
         """
 
-        # add all halos in front of main deflector with positions unchanged
-        halos = []
-
         if self._has_been_shifted:
             return self
+
+        halos = []
 
         for halo in self.halos:
 
             comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(halo.z)
 
             xshift, yshift = ray_interp_x(comoving_distance_z), ray_interp_y(comoving_distance_z)
-            new_halo = deepcopy(halo)
-            new_halo.x += xshift
-            new_halo.y += yshift
-            halos.append(new_halo)
 
-        new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                                 self.apply_mass_sheet_correction,
-                                                 rendering_classes=self.rendering_classes)
+            halo.x += xshift
+            halo.y += yshift
+            halos.append(halo)
+
+        new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params, self.apply_mass_sheet_correction,
+                                      self.rendering_classes, self.lens_cosmo)
 
         new_realization._has_been_shifted = True
 
@@ -378,10 +388,13 @@ class Realization(object):
             else:
                 halos_2.append(halo)
 
+        lens_cosmo_class = self.lens_cosmo
         realization_1 = Realization.from_halos(halos_1, self.halo_mass_function,
-                                               self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes)
+                                               self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes,
+                                               lens_cosmo_class)
         realization_2 = Realization.from_halos(halos_2, self.halo_mass_function,
-                                               self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes)
+                                               self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes,
+                                               lens_cosmo_class)
 
         return realization_1, realization_2
 
@@ -677,6 +690,6 @@ def add_core_collapsed_subhalos(f_collapsed, realization):
     rendering_classes = realization.rendering_classes
 
     return Realization.from_halos(halos, halo_mass_function, prof_params,
-                                  msheet_correction, rendering_classes)
+                                  msheet_correction, rendering_classes, realization.lens_cosmo)
 
 

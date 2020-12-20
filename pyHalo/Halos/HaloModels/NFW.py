@@ -92,18 +92,22 @@ class NFWSubhhalo(Halo):
     @property
     def lenstronomy_params(self):
 
-        (concentration) = self.profile_args
-        Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+        if not hasattr(self, '_kwargs_lenstronomy'):
 
-        x, y = np.round(self.x, 4), np.round(self.y, 4)
+            (concentration) = self.profile_args
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
 
-        Rs_angle = np.round(Rs_angle, 10)
-        theta_Rs = np.round(theta_Rs, 10)
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
 
-        kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                  'center_x': x, 'center_y': y}
+            Rs_angle = np.round(Rs_angle, 10)
+            theta_Rs = np.round(theta_Rs, 10)
 
-        return kwargs, None
+            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                      'center_x': x, 'center_y': y}
+
+            self._kwargs_lenstronomy = kwargs
+
+        return self._kwargs_lenstronomy, None
 
     @property
     def profile_args(self):

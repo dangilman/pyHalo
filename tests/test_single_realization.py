@@ -5,6 +5,7 @@ from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
 import numpy as np
 import numpy.testing as npt
 from scipy.interpolate import interp1d
+from copy import deepcopy
 import pytest
 
 class TestSingleRealization(object):
@@ -105,7 +106,8 @@ class TestSingleRealization(object):
 
         realization_fromhalos = Realization.from_halos(self.halos_cdm, self.halo_mass_function,
                                    self.kwargs_cdm, self.realization_cdm.apply_mass_sheet_correction,
-                                                       self.realization_cdm.rendering_classes)
+                                                       self.realization_cdm.rendering_classes,
+                                                       self.realization_cdm.lens_cosmo)
 
         for halo_1, halo_2 in zip(realization_fromhalos.halos, self.realization_cdm.halos):
             npt.assert_equal(halo_1.x, halo_2.x)
@@ -155,9 +157,12 @@ class TestSingleRealization(object):
         dmax = self.halo_mass_function.geometry._cosmo.D_C_transverse(2.)
         z = np.linspace(0, dmax, 100)
         ray_interp_x, ray_interp_y = interp1d(z, np.ones_like(z)), interp1d(z, -np.ones_like(z))
-        realization_shifted = self.realization_cdm.shift_background_to_source(ray_interp_x, ray_interp_y)
+
+        test_realization = deepcopy(self.realization_cdm)
+        realization_shifted = test_realization.shift_background_to_source(ray_interp_x, ray_interp_y)
 
         for halo, halo_0 in zip(realization_shifted.halos, self.realization_cdm.halos):
+
             npt.assert_equal(halo.x, halo_0.x + 1)
             npt.assert_equal(halo.y, halo_0.y - 1)
 
@@ -319,6 +324,7 @@ class TestSingleRealization(object):
         for halo in realatz.halos:
             npt.assert_equal(True, halo.z == 0.5)
             npt.assert_array_less(np.hypot(halo.x, halo.y), 1.00000000001)
+
 
 if __name__ == '__main__':
     pytest.main()

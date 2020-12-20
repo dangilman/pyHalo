@@ -27,6 +27,8 @@ class LensCosmo(object):
 
         self._concentration = Concentration(self)
 
+        self._computed_zacc_pdf = False
+
     def sigma_crit_mass(self, z, area):
 
         """
@@ -225,7 +227,6 @@ class LensCosmo(object):
 
         D_d = self.cosmo.D_A_z(z)
         rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
-
         Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
         theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
         eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
@@ -240,7 +241,7 @@ class LensCosmo(object):
         rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
         return 200. / 3 * rho_crit * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
 
-    def rN_M_nfw_comoving(self, M, N, z_eval_rho=0.):
+    def rN_M_nfw_comoving(self, M, N, z):
         """
         computes the radius R_N of a halo of mass M in comoving distances
         :param M: halo mass in M_sun/h
@@ -248,10 +249,11 @@ class LensCosmo(object):
         :return: radius R_200 in comoving Mpc/h
         """
 
-        rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
+        rho_crit = self.cosmo.rho_crit(z) / self.cosmo.h ** 2
 
         return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
 
+    @property
     def _colossus_nfwProfile(self):
 
         """
@@ -279,16 +281,10 @@ class LensCosmo(object):
         """
 
         h = self.cosmo.h
-
-        profile = self._colossus_nfwProfile()
-
-        _rhos, _rs = profile.fundamentalParameters(M * h, c, z, '200c')
-        # output in units (M h^2 / kpc^2, kpc/h)
-        rhos = _rhos * h ** 2
-        rs = _rs / h
-        r200 = rs * c
-
-        return rhos * 1000**3, rs / 1000, r200 / 1000
+        r200 = self.rN_M_nfw_comoving(M * h, 200., z) / h  # physical radius r200
+        rhos = self.rho0_c_NFW(c, z) * h ** 2  # physical density in M_sun/Mpc**3
+        rs = r200 / c
+        return rhos, rs, r200
 
     def NFW_params_physical_fromM(self, M, z, mc_kwargs={}):
 
@@ -335,8 +331,9 @@ class LensCosmo(object):
     @property
     def _subhalo_accretion_pdfs(self):
 
-        if not hasattr(self, '_mlist') or not hasattr(self, '_dzvals') \
-            or not hasattr(self, '_cdfs'):
+        if self._computed_zacc_pdf is False:
+
+            self._computed_zacc_pdf = True
             self._mlist, self._dzvals, self._cdfs = self._Msub_cdfs(self.z_lens)
 
         return self._mlist, self._dzvals, self._cdfs

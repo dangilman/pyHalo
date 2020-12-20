@@ -20,19 +20,23 @@ class TNFWFieldHalo(Halo):
     @property
     def lenstronomy_params(self):
 
-        [concentration, rt] = self.profile_args
-        Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+        if not hasattr(self, '_kwargs_lenstronomy'):
 
-        x, y = np.round(self.x, 4), np.round(self.y, 4)
+            [concentration, rt] = self.profile_args
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
 
-        Rs_angle = np.round(Rs_angle, 10)
-        theta_Rs = np.round(theta_Rs, 10)
-        r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
 
-        kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                  'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
+            Rs_angle = np.round(Rs_angle, 10)
+            theta_Rs = np.round(theta_Rs, 10)
+            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-        return kwargs, None
+            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
+
+            self._kwargs_lenstronomy = kwargs
+
+        return self._kwargs_lenstronomy, None
 
     @property
     def profile_args(self):
@@ -56,6 +60,7 @@ class TNFWFieldHalo(Halo):
 
         return self._profile_args
 
+
 class TNFWSubhhalo(Halo):
 
     def __init__(self, mass, x, y, r3d, mdef, z,
@@ -74,24 +79,29 @@ class TNFWSubhhalo(Halo):
     @property
     def lenstronomy_params(self):
 
-        (concentration, rt) = self.profile_args
-        Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+        if not hasattr(self, '_kwargs_lenstronomy'):
 
-        x, y = np.round(self.x, 4), np.round(self.y, 4)
+            (concentration, rt) = self.profile_args
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
 
-        Rs_angle = np.round(Rs_angle, 10)
-        theta_Rs = np.round(theta_Rs, 10)
-        r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
 
-        kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                  'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
+            Rs_angle = np.round(Rs_angle, 10)
+            theta_Rs = np.round(theta_Rs, 10)
+            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-        return kwargs, None
+            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
+
+            self._kwargs_lenstronomy = kwargs
+
+        return self._kwargs_lenstronomy, None
 
     @property
     def profile_args(self):
 
         if not hasattr(self, '_profile_args'):
+
             if self._args['evaluate_mc_at_zlens']:
                 z_eval = self.z
             else:

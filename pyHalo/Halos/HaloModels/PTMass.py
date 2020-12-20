@@ -18,11 +18,18 @@ class PTMass(Halo):
     @property
     def lenstronomy_params(self):
 
-        factor = self._lens_cosmo.point_mass_factor_z(self.z)
+        if not hasattr(self, '_lenstronomy_params'):
 
-        theta_E = factor * np.sqrt(self.mass)
+            factor = self._lens_cosmo.point_mass_factor_z(self.z)
 
-        return {'center_x': self.x, 'center_y': self.y, 'theta_E': theta_E}, None
+            theta_E = factor * np.sqrt(self.mass)
+
+            kwargs = {'center_x': self.x, 'center_y': self.y, 'theta_E': theta_E}
+
+            self._lenstronomy_params = kwargs
+
+        return self._lenstronomy_params, None
+
 
     @property
     def profile_args(self):
