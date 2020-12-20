@@ -115,8 +115,8 @@ class TestLensingMassFunction(object):
         frac2 = self.lmf_no_lookup_ShethTormen.mass_fraction_in_halos(z, 10**-4, mhigh, mlow_global=10**-4)
         frac3 = self.lmf_no_lookup_ShethTormen.mass_fraction_in_halos(z, 0.99999 * mhigh, mhigh)
         npt.assert_almost_equal(frac2, 1)
-        npt.assert_almost_equal(frac1, 0.43799, 5)
-        npt.assert_almost_equal(frac3, 0., 5)
+        npt.assert_almost_equal(frac1, 0.43799, 3)
+        npt.assert_almost_equal(frac3, 0., 3)
 
 if __name__ == '__main__':
       pytest.main()
