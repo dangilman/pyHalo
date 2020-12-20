@@ -14,29 +14,6 @@ class PJaffeSubhalo(Halo):
         super(PJaffeSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
-    @classmethod
-    def change_profile_definition(cls, halo, new_mdef):
-        """
-
-        :param halo: an instance of Halo with a certain mdef
-        :param new_mdef: a new mass definition
-        :return: a new instance of Halo with the same mass, redshift, and angular position,
-        but a new mass definition.
-        """
-
-        mass = halo.mass
-        x = halo.x
-        y = halo.y
-        r3d = halo.r3d
-        z = halo.z
-        sub_flag = halo.is_subhalo
-        args = halo._args
-        cosmo_m_prof = halo.lens_cosmo
-        unique_tag = halo.unique_tag
-
-        return PJaffeSubhalo(mass, x, y, r3d, new_mdef, z,
-                             sub_flag, cosmo_m_prof, args, unique_tag)
-
     @property
     def lenstronomy_params(self):
 
@@ -46,7 +23,8 @@ class PJaffeSubhalo(Halo):
         r_a_kpc = 0.001 * rs_kpc
         Sigma0 = self.mass/rs_kpc/(2*np.pi*r_a_kpc) # units M_sun / kpc^2
 
-        sigma_crit_kpc = self._lens_cosmo.get_sigma_crit_lensing_kpc(self.z, self._lens_cosmo.z_source)
+        sigma_crit_Mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_Mpc * 1000 ** -2
         sigma_0 = Sigma0/sigma_crit_kpc
 
         kpc_to_arcsec = 1/self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)

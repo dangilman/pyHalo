@@ -45,11 +45,6 @@ class Halo(ABC):
     def lenstronomy_params(self):
         ...
 
-    @classmethod
-    @abstractmethod
-    def change_profile_definition(cls, halo, new_mdef):
-        ...
-
     @property
     def z_infall(self):
 

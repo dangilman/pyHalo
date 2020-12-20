@@ -11,12 +11,6 @@ class PTMass(Halo):
         super(PTMass, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
-    @classmethod
-    def change_profile_definition(cls, halo, new_mdef):
-
-        raise Exception('changing mass definition from PT_MASS to something '
-                        'else is currently not yet implemented')
-
     @property
     def lenstronomy_ID(self):
         return 'POINT_MASS'

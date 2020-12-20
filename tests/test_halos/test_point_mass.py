@@ -41,10 +41,6 @@ class TestPTMass(object):
         id = self.ptmass.lenstronomy_ID
         npt.assert_string_equal(id, 'POINT_MASS')
 
-    def test_change_profile_definition(self):
-
-        npt.assert_raises(Exception, self.ptmass.change_profile_definition, 'TNFW')
-
     def test_profile_args(self):
 
         profile_args = self.ptmass.profile_args

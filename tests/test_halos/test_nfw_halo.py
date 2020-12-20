@@ -78,26 +78,6 @@ class TestNFWHalos(object):
         id = self.subhalo_custom.lenstronomy_ID
         npt.assert_string_equal(id, 'NFW')
 
-    def test_change_profile_definition(self):
-
-        new_mdef = 'PT_MASS'
-
-        new_halo = NFWSubhhalo.change_profile_definition(self.subhalo, new_mdef)
-        npt.assert_almost_equal(new_halo.x, self.subhalo.x)
-        npt.assert_almost_equal(new_halo.y, self.subhalo.y)
-        npt.assert_almost_equal(new_halo.r3d, self.subhalo.r3d)
-        npt.assert_almost_equal(new_halo.mass, self.subhalo.mass)
-        npt.assert_almost_equal(new_halo.unique_tag, self.subhalo.unique_tag)
-        npt.assert_string_equal(new_halo.mdef, new_mdef)
-
-        new_halo = NFWFieldHalo.change_profile_definition(self.field_halo, new_mdef)
-        npt.assert_almost_equal(new_halo.x, self.field_halo.x)
-        npt.assert_almost_equal(new_halo.y, self.field_halo.y)
-        npt.assert_almost_equal(new_halo.r3d, self.field_halo.r3d)
-        npt.assert_almost_equal(new_halo.mass, self.field_halo.mass)
-        npt.assert_almost_equal(new_halo.unique_tag, self.field_halo.unique_tag)
-        npt.assert_string_equal(new_halo.mdef, new_mdef)
-
     def test_z_infall(self):
 
         z_infall = self.subhalo.z_infall

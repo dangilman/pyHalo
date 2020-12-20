@@ -485,6 +485,9 @@ class Realization(object):
 
             for rendering_class in rendering_classes:
 
+                if rendering_class is None:
+                    continue
+
                 kwargs_new, profiles_new, redshifts_new = \
                     rendering_class.negative_kappa_sheets_theory()
 
@@ -629,16 +632,17 @@ class SingleHalo(Realization):
     user-specified halos.
     """
 
-    def __init__(self, halo_mass, x, y, r3d, mdef, z, zlens, zsource, subhalo_flag=True,
-                 cone_opening_angle=6, log_mlow=6, log_mhigh=10,
+    def __init__(self, halo_mass, x, y, r3d, mdef, z, zlens, zsource, subhalo_flag=False,
                  kwargs_halo={}, cosmo=None):
 
         if cosmo is None:
             cosmo = Cosmology()
-        halo_mass_function = LensingMassFunction(cosmo, 10**log_mlow, 10**log_mhigh,
-                                                 zlens, zsource, cone_opening_angle, use_lookup_table=True)
+        # Realization will look for functions here so we just have to go ahead and build the class
+        halo_mass_function = LensingMassFunction(cosmo, 10**6., 10**10,
+                                                 zlens, zsource, 6., use_lookup_table=True)
 
-        kwargs_halo.update({'cone_opening_angle': cone_opening_angle})
+        # these are redundant keywords for a single halo, but we need to specify them...
+        kwargs_halo.update({'cone_opening_angle': 6., 'log_mlow': 6., 'log_mhigh': 10.})
         super(SingleHalo, self).__init__([halo_mass], [x], [y],
                                          [r3d], [mdef], [z], [subhalo_flag], halo_mass_function,
                                          halo_profile_args=kwargs_halo, mass_sheet_correction=False)
@@ -663,7 +667,8 @@ def add_core_collapsed_subhalos(f_collapsed, realization):
             u = np.random.rand()
             if u < f_collapsed:
                 # change mass definition
-                new_halo = Halo.change_profile_definition(halo, 'PJAFFE')
+                new_halo = PJaffeSubhalo(halo.mass, halo.x, halo.y, halo.r3d, halo.mdef,
+                                         halo.z, True, halo.lens_cosmo, halo._args, halo.unique_tag)
                 halos[index] = new_halo
 
     halo_mass_function = realization.halo_mass_function

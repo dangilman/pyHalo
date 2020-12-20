@@ -1,4 +1,4 @@
-from pyHalo.single_realization import Realization
+from pyHalo.single_realization import Realization, SingleHalo, realization_at_z, add_core_collapsed_subhalos
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
@@ -42,6 +42,7 @@ class TestSingleRealization(object):
         halo_mass_function = LensingMassFunction(cosmo, 10 ** 6, 10 ** 9, zlens, zsource, 6.,
                                                          m_pivot=10 ** 8)
         self.halo_mass_function = halo_mass_function
+
         kwargs_cdm = {'zmin': 0.01, 'zmax': 1.98, 'log_mc': None, 'log_mlow': 6.,
                   'log_mhigh': 9., 'host_m200': 10 ** 13, 'LOS_normalization': 2000.,
                   'LOS_normalization_mass_sheet': 1.,
@@ -57,6 +58,7 @@ class TestSingleRealization(object):
 
         kwargs_cdm.update(profile_args_TNFW)
         self.kwargs_cdm = kwargs_cdm
+        self.kwargs_cdm_2 = kwargs_cdm_2
 
         lens_plane_redshifts = np.append(np.arange(0.01, 0.5, 0.02), np.arange(0.5, 1.5, 0.02))
         delta_zs = []
@@ -71,17 +73,17 @@ class TestSingleRealization(object):
                                         delta_zs)]
         self.rendering_classes = rendering_classes
 
-        mdef = 'NFW'
+        mdef = ['NFW'] * len(masses)
         self.realization_cdm = Realization(masses, x, y, r3d, mdef, redshifts, subflags,
                                   halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm_2,
                                   mass_sheet_correction=True, rendering_classes=rendering_classes)
 
-        mdef = 'PT_MASS'
+        mdef = ['PT_MASS'] * len(masses)
         self.realization_cdm2 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
                                            halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
                                            mass_sheet_correction=True, rendering_classes=rendering_classes)
 
-        mdef = 'PJAFFE'
+        mdef = ['PJAFFE'] * len(masses)
         self.realization_cdm3 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
                                             halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
                                             mass_sheet_correction=True, rendering_classes=rendering_classes)
@@ -287,8 +289,7 @@ class TestSingleRealization(object):
 
         lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = \
             self.realization_cdm2.lensing_quantities(add_mass_sheet_correction=True)
-        npt.assert_equal(True, 'CONVERGENCE' not in lens_model_list)
-        npt.assert_equal(len(lens_model_list), len(self.x))
+        npt.assert_equal(True, 'CONVERGENCE' in lens_model_list)
 
     def test_split_at_z(self):
 
@@ -297,6 +298,27 @@ class TestSingleRealization(object):
         halos_after = real_after.halos
         npt.assert_equal(len(halos_before), np.sum(np.array(self.redshifts) <= 0.4))
         npt.assert_equal(len(halos_after), np.sum(np.array(self.redshifts) > 0.4))
+
+    def test_single_halo(self):
+
+        single_halo = SingleHalo(10**8, 0.5, -0.1, 100, 'TNFW', 0.5, 0.5, 1.5)
+        lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = single_halo.lensing_quantities()
+        npt.assert_equal(len(lens_model_list), 1)
+        npt.assert_string_equal(lens_model_list[0], 'TNFW')
+
+    def test_core_collapsed_halo(self):
+
+        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 100, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
+        new = add_core_collapsed_subhalos(1., single_halo)
+        lens_model_list = new.lensing_quantities()[0]
+        npt.assert_string_equal(lens_model_list[0], 'PJAFFE')
+
+    def test_realization_at_z(self):
+
+        realatz, inds = realization_at_z(self.realization_cdm, 0.5, 0., 0., 1)
+        for halo in realatz.halos:
+            npt.assert_equal(True, halo.z == 0.5)
+            npt.assert_array_less(np.hypot(halo.x, halo.y), 1.00000000001)
 
 if __name__ == '__main__':
     pytest.main()
