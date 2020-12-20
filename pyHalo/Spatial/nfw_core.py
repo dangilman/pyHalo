@@ -4,7 +4,6 @@ from pyHalo.Spatial.compute_nfw_fast import FastNFW
 import inspect
 
 local_path = inspect.getfile(inspect.currentframe())[0:-11] + 'nfw_tables/'
-local_path_cored = inspect.getfile(inspect.currentframe())[0:-11] + 'core_nfw_tables/'
 
 class NFW3DFast(object):
 
@@ -55,18 +54,10 @@ class NFW3DFast(object):
 class NFW3DCoreRejectionSampling(object):
 
     """
-    Samples from a cored NFW profile using rejection sampling,
-    This can be slow.
+    Samples from a cored NFW profile with any core radius (within reason) using rejection sampling,
+    can be slow.
     """
     def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
-
-        """
-
-        :param Rs: host scale radius in kpc
-        :param rmax2d: max 2d radius to render halos in kpc
-        :param rmax3d: max radius in 3d, or the virial radius
-        :param r_core_parent: core radius units kpc
-        """
 
         self._Rs = Rs
         self._rmax2d = rmax2d

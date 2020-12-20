@@ -121,7 +121,7 @@ class Compute3D(object):
 
         for x2di in x2d_values:
             for ci in c_values:
-                if count % 1000 == 0 and count > 0:
+                if count % 50 == 0 and count > 0:
                     print('progress: ', str(100 * np.round(count / N_comb, 2)) + '%')
                     tel = time()
                     rate = count / (tel - t0)
@@ -267,19 +267,18 @@ class FastNFW(object):
 
         return np.array(x), np.array(y), np.array(z)
 
-#c_min, c_max, c_step = 1, 16, 1.
-#x2d_min, x2d_max, x2d_step = 0.001, 3., 0.1
+# c_min, c_max, c_step = 1, 16, 1.
+# x2d_min, x2d_max, x2d_step = 0.001, 3., 0.1
 # import inspect
 # local_path = inspect.getfile(inspect.currentframe())[0:-19]
 # print(local_path)
 # fastnfw = FastNFW(local_path)
 
-#_ = ComputeProjected()
-#_ = Compute3D()
-# lookup2d = LookupProjected()
-# lookup3d = Lookup3D()
-# fast_nfw = FastNFW(lookup2d, lookup3d)
-#
+# _ = ComputeProjected()
+# _ = Compute3D()
+# lookup2d = LookupProjected('./')
+# lookup3d = Lookup3D('./')
+
 # fname = 'NFWfast_lookup'
 # file = open(fname, 'wb')
 # dill.dump(fast_nfw, file)
