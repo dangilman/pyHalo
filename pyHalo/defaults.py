@@ -8,13 +8,6 @@ class CosmoDefaults(object):
 
         default_mass_function = 'sheth99'
 
-        if default_mass_function == 'despali16':
-            self.default_mdef = '200c'
-        if default_mass_function == 'reed07':
-            self.default_mdef = 'fof'
-        if default_mass_function == 'sheth99':
-            self.default_mdef = 'fof'
-
         self.default_mass_function = default_mass_function
 
         # default from WMAP9
@@ -58,14 +51,6 @@ class TruncationDefaults(object):
         self.RocheNu = 2./3
         self.LOS_truncation = 50 # truncate at 'r50'
 
-        trunc_routines = ['mean_ISOhost',
-                          'mean_NFWhost',
-                          'simple',
-                          'constant']
-
-        self.routine = trunc_routines[2]
-        self.truncate_at_pericenter = False
-
 class DMHaloDefaults(object):
 
     def __init__(self):
@@ -88,9 +73,6 @@ class RealizationDefaults(object):
         # opening angle = opening_anlge_factor * Rein
         self.opening_angle_factor = 6
 
-        self.default_mhm = 0
-        self.default_break_scale = 1
-        self.default_break_index = -1.3
         self.default_r_tidal = '0.5Rs' # r_tidal = 'default_r_ridal * Rs'
 
         self.default_type = 'composite_powerlaw'
@@ -104,7 +86,7 @@ class RealizationDefaults(object):
         self.log_mhigh = 10
         self.two_halo_term = True
 
-        self.m_parent = 10**13
+        self.host_m200 = 10 ** 13
 
         self.m_pivot = 10 ** 8
 
@@ -117,7 +99,7 @@ class RealizationDefaults(object):
 
         self.subhalo_spatial_distribution = 'HOST_NFW'
 
-        self.subhalo_convergence_correction_profile = 'NFW'
+        self.subhalo_convergence_correction_profile = 'UNIFORM'
 
         self.kappa_scale = 1
 
@@ -135,12 +117,6 @@ def set_default_kwargs(profile_params, dynamic, zsource):
     if 'm_pivot' not in profile_params.keys():
         profile_params.update({'m_pivot': realization_default.m_pivot})
 
-    if 'subhalos_of_field_halos' not in profile_params.keys():
-        profile_params.update({'subhalos_of_field_halos':
-                                   realization_default.default_subhalos_of_field_halos})
-        if realization_default.default_subhalos_of_field_halos is True:
-            raise Exception('not yet implemented.')
-
     if 'delta_power_law_index' not in profile_params.keys():
         profile_params.update({'delta_power_law_index': realization_default.delta_power_law_index})
 
@@ -153,9 +129,6 @@ def set_default_kwargs(profile_params, dynamic, zsource):
     if 'subhalo_convergence_correction_profile' not in profile_params.keys():
         profile_params.update({'subhalo_convergence_correction_profile': realization_default.subhalo_convergence_correction_profile})
 
-    if 'nfw_kappa_centroid' not in profile_params.keys():
-        profile_params.update({'nfw_kappa_centroid': [0., 0.]})
-
     if 'subhalo_mass_sheet_scale' not in profile_params.keys():
         profile_params.update({'subhalo_mass_sheet_scale': realization_default.subhalo_mass_sheet_scale})
 
@@ -165,26 +138,36 @@ def set_default_kwargs(profile_params, dynamic, zsource):
     if 'draw_poisson' not in profile_params.keys():
         profile_params.update({'draw_poisson': realization_default.draw_poisson})
 
-    if 'log_m_break' in profile_params.keys():
-        if 'break_index' not in profile_params.keys():
-            raise Exception('If log_m_break is specified, must include break_index keyword.'
-                            'default is '+str(realization_default.default_break_index))
-        if 'break_scale' not in profile_params.keys():
-            profile_params['break_scale'] = realization_default.default_break_scale
+    if 'log_mc' in profile_params.keys():
 
-        profile_params.update({'log_m_break': profile_params['log_m_break'],
-                               'break_index': profile_params['break_index'],
-                               'break_scale': profile_params['break_scale']})
+        if 'log_mc' is not None:
+            for param_name in ['a_wdm', 'b_wdm', 'c_wdm']:
+                if param_name not in profile_params.keys():
+                    raise Exception('If log_mc is specified, must include a_wdm, b_wdm, c_wdm keywords. See documentation in '
+                                'Rendering/MassFuncctions/broken_powerlaw')
+
+            profile_params.update({'log_mc': profile_params['log_mc'],
+                                   'a_wdm': profile_params['a_wdm'],
+                                   'b_wdm': profile_params['b_wdm'],
+                                   'c_wdm': profile_params['c_wdm']})
+
+        else:
+            profile_params.update({'log_mc': None,
+                                   'a_wdm': None,
+                                   'b_wdm': None,
+                                   'c_wdm': None})
+
     else:
-        profile_params.update({'log_m_break': realization_default.default_mhm,
-                               'break_index': realization_default.default_break_index,
-                              'break_scale': realization_default.default_break_scale})
+        profile_params.update({'log_mc': None,
+                               'a_wdm': None,
+                              'b_wdm': None,
+                               'c_wdm': None})
 
     if 'c_power' in profile_params.keys():
         profile_params.update({'c_power': profile_params['c_power']})
     else:
         if print_defaults:
-            print('c_power not specified, assuming -0.17 (only applies if log_m_break>0)')
+            print('c_power not specified, assuming -0.17 (only applies if log_mc is specified)')
         profile_params.update({'c_power': halo_default.c_power})
 
     if 'c_scale' in profile_params.keys():
@@ -201,7 +184,7 @@ def set_default_kwargs(profile_params, dynamic, zsource):
     else:
         if print_defaults:
             print('Warning: halo mass not specified, assuming a parent halo mass of 10^13.')
-        profile_params.update({'host_m200': realization_default.m_parent})
+        profile_params.update({'host_m200': realization_default.host_m200})
 
     if 'subhalo_spatial_distribution' not in profile_params.keys():
         profile_params.update({'subhalo_spatial_distribution':
@@ -232,15 +215,12 @@ def set_default_kwargs(profile_params, dynamic, zsource):
         profile_params.update({'c_scatter': halo_default.scatter})
     if 'c_scatter_dex' not in profile_params.keys():
         profile_params.update({'c_scatter_dex': halo_default.c_scatter_dex})
-    if 'truncation_routine' not in profile_params.keys():
-        profile_params.update({'truncation_routine': truncation_default.routine})
-    if profile_params['truncation_routine'] == 'simple':
-        if 'RocheNorm' not in profile_params.keys():
-            profile_params.update({'RocheNorm': truncation_default.RocheNorm})
-        if 'RocheNu' not in profile_params.keys():
-            profile_params.update({'RocheNu': truncation_default.RocheNu})
-    if 'truncate_at_pericenter' not in profile_params.keys():
-        profile_params.update({'truncate_at_pericenter': truncation_default.truncate_at_pericenter})
+
+    if 'RocheNorm' not in profile_params.keys():
+        profile_params.update({'RocheNorm': truncation_default.RocheNorm})
+    if 'RocheNu' not in profile_params.keys():
+        profile_params.update({'RocheNu': truncation_default.RocheNu})
+
     if 'LOS_truncation_factor' not in profile_params.keys():
         profile_params.update({'LOS_truncation_factor': truncation_default.LOS_truncation})
 

@@ -33,7 +33,7 @@ class TestNFWHalos(object):
 
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_m_break': None, 'c_scale': 60.,
+                        'log_mc': None, 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
                         'mc_mdef': '200c',
@@ -55,7 +55,7 @@ class TestNFWHalos(object):
 
         self.profile_args_custom = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_m_break': None, 'c_scale': 60.,
+                        'log_mc': None, 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': {'custom': True, 'c0': 28., 'beta': 1.2, 'zeta': -0.5},
                                'LOS_truncation_factor': 40, 'mc_mdef': '200c',

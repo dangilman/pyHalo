@@ -3,6 +3,7 @@ from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.render import render_los
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic, integrate_power_law_quad
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -12,18 +13,20 @@ class TestFieldPowerLaw(object):
     def setup(self):
 
         self.delta_power_law_index = -0.17
-        kwargs = {'zmin': 0.01, 'zmax': 1.98, 'log_m_break': None, 'log_mlow': 6.,
-         'log_mhigh': 9., 'host_m200': 10**13, 'LOS_normalization': 2000., 'LOS_normalization_mass_sheet': 1.,
+        kwargs = {'zmin': 0.01, 'zmax': 1.98, 'log_mc': None, 'log_mlow': 6.,
+                  'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
+         'log_mhigh': 9., 'host_m200': 10**13, 'LOS_normalization': 1000., 'LOS_normalization_mass_sheet': 1.,
          'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
          'break_index': None, 'break_scale': None, 'delta_power_law_index': self.delta_power_law_index,
          'm_pivot': 10**8, 'cone_opening_angle': 6.}
         self.kwargs = kwargs
 
-        kwargs_wdm = {'zmin': 0.01, 'zmax': 1.98, 'log_m_break': 7.5, 'log_mlow': 6.,
-                  'log_mhigh': 9., 'host_m200': 10 ** 13, 'LOS_normalization': 2000.,
+        kwargs_wdm = {'zmin': 0.01, 'zmax': 1.98, 'log_mc': 7.5, 'log_mlow': 6.,
+                  'log_mhigh': 9., 'host_m200': 10 ** 13, 'LOS_normalization': 1000.,
                   'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.6,
-                  'break_index': -1.3, 'break_scale': 1., 'delta_power_law_index': self.delta_power_law_index,
+                  'a_wdm': 1., 'b_wdm': 0.5, 'c_wdm': -1.3, 'delta_power_law_index': self.delta_power_law_index,
                   'm_pivot': 10 ** 8, 'cone_opening_angle': 6.}
+
         self.kwargs_wdm = kwargs_wdm
 
         self.opening_angle= 6.
@@ -53,11 +56,14 @@ class TestFieldPowerLaw(object):
         mtotal = np.sum(m)
         mtheory = 0
         for zi, dzi in zip(self.func.lens_plane_redshifts, self.func.delta_zs):
-            plawindex = self.halo_mass_function.plaw_index_z(zi) + self.delta_power_law_index
-            mtheory += self.halo_mass_function.integrate_mass_function(zi, plawindex, dzi, 10 ** self.kwargs['log_mlow'],
-                                                                      10 ** self.kwargs['log_mhigh'], None, None, None,
-                                                                      n=1,
-                                                                      norm_scale=self.kwargs['LOS_normalization'])
+
+            plawindex = self.halo_mass_function.plaw_index_z(zi) + self.kwargs['delta_power_law_index']
+            norm = self.halo_mass_function.norm_at_z(zi, plawindex, dzi, 10 ** 8) * self.kwargs[
+                'LOS_normalization']
+
+            mtheory += integrate_power_law_analytic(norm, 10 ** self.kwargs['log_mlow'],
+                                                   10 ** self.kwargs['log_mhigh'],
+                                                   1, plawindex)
         npt.assert_array_less(abs(mtheory/mtotal - 1), 0.2)
 
         m, x, y, r3, redshifts = render_los(self.func_wdm, self.func_wdm.lens_plane_redshifts, self.func_wdm.delta_zs,
@@ -65,14 +71,14 @@ class TestFieldPowerLaw(object):
         mtotal = np.sum(m)
         mtheory = 0
         for zi, dzi in zip(self.func_wdm.lens_plane_redshifts, self.func_wdm.delta_zs):
-            plawindex = self.halo_mass_function.plaw_index_z(zi) + self.delta_power_law_index
-            mtheory += self.halo_mass_function.integrate_mass_function(zi, plawindex, dzi,
-                                                                       10 ** self.kwargs['log_mlow'],
-                                                                       10 ** self.kwargs['log_mhigh'],
-                                                                       self.kwargs_wdm['log_m_break'],
-                                                                       self.kwargs_wdm['break_index'],
-                                                                       self.kwargs_wdm['break_scale'],
-                                                                       n=1, norm_scale=self.kwargs['LOS_normalization'])
+
+            plaw_index = self.halo_mass_function.plaw_index_z(zi) + self.kwargs_wdm['delta_power_law_index']
+            norm = self.halo_mass_function.norm_at_z(zi, plaw_index, dzi, 10 ** 8) * self.kwargs_wdm['LOS_normalization']
+            mtheory += integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mlow'], 10 ** self.kwargs_wdm['log_mhigh'],
+                                                   self.kwargs_wdm['log_mc'], 1, plaw_index,
+                                                self.kwargs_wdm['a_wdm'], self.kwargs_wdm['b_wdm'], self.kwargs_wdm['c_wdm'])
+
+
         npt.assert_array_less(abs(mtheory / mtotal - 1), 0.2)
 
     def test_render_positions_at_z(self):
@@ -118,49 +124,28 @@ class TestFieldPowerLaw(object):
 
     def test_render_masses(self):
 
-        z = 0.2
-        dz = 0.03
-        m = self.func.render_masses(z, dz, None)
-        plaw_index = self.halo_mass_function.plaw_index_z(z) + self.delta_power_law_index
-        mtheory = self.halo_mass_function.integrate_mass_function(z, plaw_index, dz, 10**self.kwargs['log_mlow'],
-                                                        10**self.kwargs['log_mhigh'], None, None, None, n=1,
-                                                                  norm_scale=self.kwargs['LOS_normalization'])
-        diff = np.absolute(1 - mtheory/np.sum(m))
-        npt.assert_array_less(diff, 0.1, 2)
+        zlist = [0.45, 0.8]
+        dzlist = [0.03, 0.03]
 
-        m = self.func_wdm.render_masses(z, dz, None)
-        plaw_index = self.halo_mass_function.plaw_index_z(z) + self.delta_power_law_index
-        mtheory = self.halo_mass_function.integrate_mass_function(z, plaw_index, dz, 10 ** self.kwargs['log_mlow'],
-                                                                  10 ** self.kwargs['log_mhigh'], self.kwargs_wdm['log_m_break'],
-                                                                  self.kwargs_wdm['break_index'], self.kwargs_wdm['break_scale'],
-                                                                  n=1, norm_scale=self.kwargs_wdm['LOS_normalization'])
-        diff = np.absolute(1 - mtheory / np.sum(m))
-        npt.assert_array_less(diff, 0.1, 2)
+        for z, dz in zip(zlist, dzlist):
 
+            m = self.func.render_masses(z, dz, None)
+            plaw_index = self.halo_mass_function.plaw_index_z(z) + self.kwargs['delta_power_law_index']
+            norm = self.halo_mass_function.norm_at_z(z, plaw_index, dz, 10**8) * self.kwargs['LOS_normalization']
+            mtheory = integrate_power_law_analytic(norm, 10**self.kwargs['log_mlow'], 10**self.kwargs['log_mhigh'],
+                                                   1, plaw_index)
+            diff = np.absolute(1 - mtheory/np.sum(m))
+            npt.assert_array_less(diff, 0.05, 2)
 
+            m = self.func_wdm.render_masses(z, dz, None)
+            plaw_index = self.halo_mass_function.plaw_index_z(z) + self.kwargs_wdm['delta_power_law_index']
+            norm = self.halo_mass_function.norm_at_z(z, plaw_index, dz, 10 ** 8) * self.kwargs_wdm['LOS_normalization']
+            mtheory = integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mlow'], 10 ** self.kwargs_wdm['log_mhigh'],
+                                                   self.kwargs_wdm['log_mc'], 1, plaw_index, self.kwargs_wdm['a_wdm'],
+                                                   self.kwargs_wdm['b_wdm'], self.kwargs_wdm['c_wdm'])
 
-
-        z = 0.9
-        dz = 0.03
-        m = self.func.render_masses(z, dz, None)
-
-        plaw_index = self.halo_mass_function.plaw_index_z(z) + self.delta_power_law_index
-        mtheory = self.halo_mass_function.integrate_mass_function(z, plaw_index, dz, 10 ** self.kwargs['log_mlow'],
-                                                                  10 ** self.kwargs['log_mhigh'], None, None, None, n=1,
-                                                                  norm_scale=self.kwargs['LOS_normalization'])
-        diff = np.absolute(1 - mtheory / np.sum(m))
-        npt.assert_array_less(diff, 0.1, 2)
-
-        m = self.func_wdm.render_masses(z, dz, None)
-        plaw_index = self.halo_mass_function.plaw_index_z(z) + self.delta_power_law_index
-        mtheory = self.halo_mass_function.integrate_mass_function(z, plaw_index, dz, 10 ** self.kwargs['log_mlow'],
-                                                                  10 ** self.kwargs['log_mhigh'],
-                                                                  self.kwargs_wdm['log_m_break'],
-                                                                  self.kwargs_wdm['break_index'],
-                                                                  self.kwargs_wdm['break_scale'],
-                                                                  n=1, norm_scale=self.kwargs['LOS_normalization'])
-        diff = np.absolute(1 - mtheory / np.sum(m))
-        npt.assert_array_less(diff, 0.1, 2)
+            diff = np.absolute(1 - mtheory / np.sum(m))
+            npt.assert_array_less(diff, 0.05, 2)
 
     def test_normalization(self):
 
@@ -188,15 +173,17 @@ class TestFieldPowerLaw(object):
 
         kwargs_out, profile_names_out, zout = self.func.negative_kappa_sheets_theory()
         kwargs_out_wdm, profile_names_out, zout = self.func.negative_kappa_sheets_theory()
+
         redshifts = self.func.lens_plane_redshifts[0::2]
         delta_z = 2 * self.func.delta_zs[0::2]
         kappa_scale = self.kwargs['kappa_scale']
         for i, (zi, dzi) in enumerate(zip(redshifts, delta_z)):
 
-            plaw_index = self.halo_mass_function.plaw_index_z(zi) + self.delta_power_law_index
-            mtheory = self.halo_mass_function.integrate_mass_function(zi, plaw_index, dzi,
-                                      10 ** self.kwargs['log_mass_sheet_min'], 10 ** self.kwargs['log_mass_sheet_max'], None, None, None,
-                                           n=1, norm_scale=self.kwargs['LOS_normalization'])
+            plaw_index = self.halo_mass_function.plaw_index_z(zi) + self.kwargs['delta_power_law_index']
+            norm = self.halo_mass_function.norm_at_z(zi, plaw_index, dzi, 10 ** 8) * self.kwargs['LOS_normalization']
+            mtheory = integrate_power_law_analytic(norm, 10 ** self.kwargs['log_mass_sheet_min'],
+                                                   10 ** self.kwargs['log_mass_sheet_max'],
+                                                   1, plaw_index)
 
             kappa = self.func._convergence_at_z(zi, dzi, self.kwargs['log_mass_sheet_min'],
                                                                 self.kwargs['log_mass_sheet_max'], self.kwargs['kappa_scale'])
@@ -215,13 +202,13 @@ class TestFieldPowerLaw(object):
         kappa_scale = self.kwargs_wdm['kappa_scale']
         for i, (zi, dzi) in enumerate(zip(redshifts, delta_z)):
 
-            plaw_index = self.halo_mass_function.plaw_index_z(zi) + self.delta_power_law_index
-            mtheory = self.halo_mass_function.integrate_mass_function(zi, plaw_index, dzi,
-                                                                      10 ** self.kwargs_wdm['log_mass_sheet_min'],
-                                                                      10 ** self.kwargs_wdm['log_mass_sheet_max'],
-                                                                      self.kwargs_wdm['log_m_break'],
-                                                                      self.kwargs_wdm['break_index'], self.kwargs_wdm['break_scale'],
-                                                                      1, self.kwargs_wdm['LOS_normalization'])
+            plaw_index = self.halo_mass_function.plaw_index_z(zi) + self.kwargs_wdm['delta_power_law_index']
+            norm = self.halo_mass_function.norm_at_z(zi, plaw_index, dzi, 10 ** 8) * self.kwargs_wdm['LOS_normalization']
+            mtheory = integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mass_sheet_min'],
+                                               10 ** self.kwargs_wdm['log_mass_sheet_max'],
+                                               self.kwargs_wdm['log_mc'],
+                                               1, plaw_index, self.kwargs_wdm['a_wdm'],
+                                               self.kwargs_wdm['b_wdm'], self.kwargs_wdm['c_wdm'])
 
             kappa = self.func_wdm._convergence_at_z(zi, dzi, self.kwargs_wdm['log_mass_sheet_min'],
                                                 self.kwargs_wdm['log_mass_sheet_max'], self.kwargs_wdm['kappa_scale'])

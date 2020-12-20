@@ -5,6 +5,7 @@ from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
 import numpy as np
 import numpy.testing as npt
 from scipy.interpolate import interp1d
+import pytest
 
 class TestSingleRealization(object):
 
@@ -41,12 +42,13 @@ class TestSingleRealization(object):
         halo_mass_function = LensingMassFunction(cosmo, 10 ** 6, 10 ** 9, zlens, zsource, 6.,
                                                          m_pivot=10 ** 8)
         self.halo_mass_function = halo_mass_function
-        kwargs_cdm = {'zmin': 0.01, 'zmax': 1.98, 'log_m_break': None, 'log_mlow': 6.,
+        kwargs_cdm = {'zmin': 0.01, 'zmax': 1.98, 'log_mc': None, 'log_mlow': 6.,
                   'log_mhigh': 9., 'host_m200': 10 ** 13, 'LOS_normalization': 2000.,
                   'LOS_normalization_mass_sheet': 1.,
                   'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
-                  'break_index': None, 'break_scale': None, 'delta_power_law_index': 0.,
+                  'delta_power_law_index': 0., 'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
                   'm_pivot': 10 ** 8, 'cone_opening_angle': 6.}
+
         kwargs_cdm.update(profile_args_TNFW)
         self.kwargs_cdm = kwargs_cdm
 
@@ -103,10 +105,13 @@ class TestSingleRealization(object):
 
     def test_join(self):
 
+        new_realization = self.realization_cdm.join(self.realization_cdm2, join_rendering_classes=True)
+        npt.assert_equal(len(new_realization.rendering_classes), 2)
+
         length = len(self.realization_cdm2.halos) + len(self.realization_cdm.halos)
         new_realization = self.realization_cdm.join(self.realization_cdm2)
         npt.assert_equal(len(new_realization.halos), length)
-
+        npt.assert_equal(len(new_realization.rendering_classes), 1)
         # now change two of the tags to be the same as in realization_cdm, make sure they're gone
 
         idx2_1 = 0
@@ -255,15 +260,27 @@ class TestSingleRealization(object):
         npt.assert_equal(True, tag in new_tags)
         npt.assert_equal(True, tag2 not in new_tags)
 
+    def test_lensing_quantities(self):
 
+        lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = \
+            self.realization_cdm.lensing_quantities(add_mass_sheet_correction=True)
+        npt.assert_equal(True, 'CONVERGENCE' in lens_model_list)
 
+        lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = \
+            self.realization_cdm.lensing_quantities(add_mass_sheet_correction=False)
+        npt.assert_equal(True, 'CONVERGENCE' not in lens_model_list)
+        npt.assert_equal(len(lens_model_list), len(self.x))
 
-t = TestSingleRealization()
-t.setup()
-t.test_filter()
-#
-# if __name__ == '__main__':
-#     pytest.main()
+    def test_split_at_z(self):
+
+        real_before, real_after = self.realization_cdm.split_at_z(0.4)
+        halos_before = real_before.halos
+        halos_after = real_after.halos
+        npt.assert_equal(len(halos_before), np.sum(np.array(self.redshifts) <= 0.4))
+        npt.assert_equal(len(halos_after), np.sum(np.array(self.redshifts) > 0.4))
+
+if __name__ == '__main__':
+    pytest.main()
 
 
 

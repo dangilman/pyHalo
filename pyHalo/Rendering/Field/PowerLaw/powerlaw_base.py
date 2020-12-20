@@ -33,7 +33,8 @@ class PowerLawBase(LOSBase):
         args.update({'power_law_index': plaw_index})
 
         mfunc = BrokenPowerLaw(args['log_mlow'], args['log_mhigh'], plaw_index, args['draw_poisson'],
-                               norm, args['log_m_break'], args['break_index'], args['break_scale'])
+                               norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
+                               args['c_wdm'])
 
         m = mfunc.draw()
 
@@ -50,21 +51,17 @@ class PowerLawBase(LOSBase):
                                   volume_element_comoving, self.rendering_args['LOS_normalization'], plaw_index,
                                   self.rendering_args['m_pivot'])
 
-        if self.rendering_args['log_m_break'] is None or self.rendering_args['log_m_break'] == 0\
-            or self.rendering_args['break_index'] is None or self.rendering_args['break_scale'] is None:
-            use_analytic = True
-        else:
-            use_analytic = False
-
         m_low = 10 ** log_sheet_min
         m_high = 10 ** log_sheet_max
 
-        if use_analytic:
+        if self.rendering_args['log_mc'] is None:
             mtheory = integrate_power_law_analytic(norm, m_low, m_high, 1, plaw_index)
+
         else:
-            mtheory = integrate_power_law_quad(norm, m_low, m_high, self.rendering_args['log_m_break'], 1,
-                                            plaw_index, self.rendering_args['break_index'],
-                                            self.rendering_args['break_scale'])
+            mtheory = integrate_power_law_quad(norm, m_low, m_high, self.rendering_args['log_mc'], 1,
+                                               plaw_index, self.rendering_args['a_wdm'],
+                                               self.rendering_args['b_wdm'],
+                                               self.rendering_args['c_wdm'])
 
         area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
         sigma_crit_mass = self.lens_cosmo.sigma_crit_mass(z, area)
@@ -147,10 +144,10 @@ class PowerLawBase(LOSBase):
     def keyword_parse(args, lens_mass_function):
 
         args_mfunc = {}
-        required_keys = ['zmin', 'zmax', 'log_m_break', 'log_mlow',
+        required_keys = ['zmin', 'zmax', 'log_mc', 'log_mlow',
                          'log_mhigh', 'host_m200', 'LOS_normalization',
                          'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
-                         'break_index', 'break_scale', 'delta_power_law_index',
+                         'a_wdm', 'b_wdm', 'c_wdm', 'delta_power_law_index',
                          'm_pivot']
 
         for key in required_keys:
@@ -167,10 +164,11 @@ class PowerLawBase(LOSBase):
                 else:
                     raise Exception('Required keyword argument '+str(key) +' not specified.')
 
-        if args_mfunc['log_m_break'] is None:
-            args_mfunc['break_index'] = None
+        if args_mfunc['log_mc'] is None:
+            args_mfunc['a_wdm'] = None
+            args_mfunc['b_wdm'] = None
+            args_mfunc['c_wdm'] = None
             args_mfunc['c_scale'] = None
             args_mfunc['c_power'] = None
-            args_mfunc['break_scale'] = None
 
         return args_mfunc

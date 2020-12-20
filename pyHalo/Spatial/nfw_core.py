@@ -259,5 +259,4 @@ class UniformNFW(object):
         z_units_rs = self.cdf(u)
         z_kpc = z_units_rs * self._rs_kpc
 
-        return np.array(x_kpc), np.array(y_kpc), np.hypot(x_kpc, y_kpc), \
-               np.sqrt(x_kpc ** 2 + y_kpc**2 + z_kpc ** 2)
+        return np.array(x_kpc), np.array(y_kpc), np.hypot(x_kpc, y_kpc), np.sqrt(x_kpc ** 2 + y_kpc**2 + z_kpc ** 2)

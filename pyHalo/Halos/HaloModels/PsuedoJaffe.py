@@ -62,18 +62,19 @@ class PJaffeSubhalo(Halo):
 
     @property
     def profile_args(self):
+
         if not hasattr(self, '_profile_args'):
 
             if self._args['evaluate_mc_at_zlens']:
                 z_eval = self.z
             else:
-                z_eval = self.z_infall()
+                z_eval = self.z_infall
 
             concentration = self._concentration.NFW_concentration(self.mass,
                                                                   z_eval,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],
-                                                                  self._args['log_m_break'],
+                                                                  self._args['log_mc'],
                                                                   self._args['c_scatter'],
                                                                   self._args['c_scale'],
                                                                   self._args['c_power'],

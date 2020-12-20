@@ -218,16 +218,35 @@ class Realization(object):
 
     def set_rendering_classes(self, rendering_classes):
 
+        """
+        This method sets the rendering classes for the realization, which are used to apply the negative convergence sheet
+        corrections after adding halos. The properties of the convergence sheets you need to add depend on the form of the
+        mass function you have specified, so this information is stored in the classes used to render halos
+        (LOSPowerLaw, MainLensPowerLaw, etc, see classes in pyHalo/Rendering)
+
+        The rendering classes are not specified for whatever reason, the code will still run but no negative convergence
+        sheets will be included in your lens models. This could potentially bias results as you've effectively made every
+        light cone over dense relative to the mean matter density in the Universe...
+
+        :param rendering_classes: a list or an instance of a rendering class (LOSPowerLaw, MainLensPowerLaw)
+        """
         if not isinstance(rendering_classes, list):
             rendering_classes = [rendering_classes]
         self.rendering_classes = rendering_classes
 
-    def join(self, real):
+    def join(self, real, join_rendering_classes=False):
+
         """
+        This routine combines one realization with another realization, keeping only the unqiue halos
+        (as identified by their .unique_tag attribute) between them.
 
         :param real: another realization, possibly a filtered version of self
-        :return: a new realization with all unique halos from self and real
+        :param join_rendering_classes: If True, the rendering classes associated with the new
+        realization will include both the rendering class associated with self and that of real.
+
+        :return: a new realization that contains all unique halos from self and real
         """
+
         halos = []
 
         tags = self._tags(self.halos)
@@ -247,8 +266,15 @@ class Realization(object):
             if tag not in short:
                 halos.append(halos_long[i])
 
+        if join_rendering_classes:
+            rendering_class_self = self.rendering_classes
+            rendering_class_new = real.rendering_classes
+            rendering_classes = rendering_class_self + rendering_class_new
+        else:
+            rendering_classes = self.rendering_classes
+
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
-                                      self.apply_mass_sheet_correction, self.rendering_classes)
+                                      self.apply_mass_sheet_correction, rendering_classes)
 
     def shift_background_to_source(self, ray_interp_x, ray_interp_y):
 
@@ -287,8 +313,6 @@ class Realization(object):
     def lensing_quantities(self, add_mass_sheet_correction=True, z_mass_sheet_max=None):
 
         """
-
-        :param return_kwargs: return the lens_model_list, kwrargs_list, etc. as keyword arguments in a dict
         :param add_mass_sheet_correction: include sheets of negative convergence to correct for mass added subhalos/field halos
         :param z_mass_sheet_max: don't include negative convergence sheets at z>z_mass_sheet_max (this does nothing
         if the previous argument is False
@@ -360,8 +384,12 @@ class Realization(object):
 
         return realization_1, realization_2
 
-    def halos_at_z(self,z):
+    def halos_at_z(self, z):
+        """
 
+        :param z: redshift
+        :return: all halos in the realization that are at redshift z
+        """
         halos = []
         index = []
         for i, halo in enumerate(self.halos):
@@ -374,11 +402,23 @@ class Realization(object):
 
     def mass_at_z_exact(self, z):
 
+        """
+        Computes the total mass rendered at each redshift z
+        :param z: redshift
+        :return: total mass rendered at z
+        """
+
         inds = np.where(self.redshifts == z)
         m_exact = np.sum(self.masses[inds])
         return m_exact
 
     def number_of_halos_before_redshift(self, z):
+
+        """
+        Computes the number of halos with redshifts < z
+        :param z: redshift
+        :return: number of halos with redshift < z
+        """
         n = 0
         for halo in self.halos:
             if halo.z < z:
@@ -386,6 +426,12 @@ class Realization(object):
         return n
 
     def number_of_halos_after_redshift(self, z):
+
+        """
+        Computes the number of halos with redshifts > z
+        :param z: redshift
+        :return: number of halos with redshift > z
+        """
         n = 0
         for halo in self.halos:
             if halo.z > z:
@@ -393,6 +439,12 @@ class Realization(object):
         return n
 
     def number_of_halos_at_redshift(self, z):
+
+        """
+        Computes the number of halos with redshifts == z
+        :param z: redshift
+        :return: number of halos at z
+        """
 
         n = 0
         for halo in self.halos:
@@ -504,6 +556,12 @@ class Realization(object):
 
     def _tags(self, halos=None):
 
+        """
+
+        :param halos: a list of halos
+        :return: the unique tag for each halo in halos; if halos is not specified, returns the unique tag for each
+        halo in the realization
+        """
         if halos is None:
             halos = self.halos
         tags = []
@@ -516,6 +574,10 @@ class Realization(object):
 
     def _reset(self):
 
+        """
+        Resets all class attributes to the current set of halos
+        :return:
+        """
         self.x = []
         self.y = []
         self.masses = []
@@ -545,6 +607,11 @@ class Realization(object):
 
     def __eq__(self, other_reealization):
 
+        """
+        Defintes equality between two realizations if they contain the same halos
+        :param other_reealization:
+        :return:
+        """
         tags = self._tags(self.halos)
         other_tags = other_reealization._tags()
         for tag in other_tags:

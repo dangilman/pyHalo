@@ -1,35 +1,35 @@
 from scipy.integrate import quad
 import numpy as np
 
-def integrate_power_law_quad(norm, m_low, m_high, log_m_break, n, plaw_index, break_index=0, break_scale=1):
+def integrate_power_law_quad(norm, m_low, m_high, log_mc, n, plaw_index, a_wdm, b_wdm, c_wdm):
 
     """
-    Numerically integrates a power law profile
-    :param norm:
-    :param m_low:
-    :param m_high:
-    :param log_m_break:
-    :param n:
-    :param plaw_index:
-    :param break_index:
-    :param break_scale:
-    :return:
+    Numerically integrates a double power law profile
+
     """
 
     def _integrand_wdm(m, m_break, plaw_index, n):
-        return norm * m ** (n + plaw_index) * (1 + (m_break / m) ** break_scale) ** break_index
+        return norm * m ** (n + plaw_index) * WDM_suppression(m, m_break, a_wdm, b_wdm, c_wdm)
     def _integrand_cdm(m, plaw_index, n):
         return norm * m ** (n + plaw_index)
 
-    if log_m_break is not None:
-        moment = quad(_integrand_wdm, m_low, m_high, args=(10 ** log_m_break, plaw_index, n))[0]
+    if log_mc is not None:
+        moment = quad(_integrand_wdm, m_low, m_high, args=(10 ** log_mc, plaw_index, n))[0]
     else:
         moment = quad(_integrand_cdm, m_low, m_high, args=(plaw_index, n))[0]
 
     return moment
 
 def integrate_power_law_analytic(norm, m_low, m_high, n, plaw_index):
-
+    """
+    Numerically integrates a power law profile
+    :param norm:
+    :param m_low:
+    :param m_high:
+    :param n:
+    :param plaw_index:
+    :return:
+    """
     if plaw_index == -1:
 
         integral = np.log(m_high/m_low)
@@ -41,28 +41,16 @@ def integrate_power_law_analytic(norm, m_low, m_high, n, plaw_index):
 
     return norm * integral
 
-def WDM_suppression(m, m_half_mode, break_index, break_scale, break_coeff=1.):
+def WDM_suppression(m, m_c, a_wdm, b_wdm, c_wdm):
 
     """
-    Suppression function from Lovell et al.
+    Suppression function from Lovell et al. 2020
     :return: the factor that multiplies the CDM halo mass function to give the WDM halo mass function
 
     dN/dm (WDM) = dN/dm (CDM) * WDM_suppression
+
+    where WDM suppression is (1 + (a_wdm * m_c / m)^b_wdm)^c_wdm
     """
-    ratio = m_half_mode/m
-    factor = 1 + break_coeff * ratio ** break_scale
-    return factor ** break_index
-
-def subhalo_of_field_halo_suppression(m, m_host, N_0=0.21, alpha=0.8, k=6.283):
-
-    """
-
-    :param m: subhalo mass
-    :param m_host: host halo mass
-    :param k: factor from Giocoli et al. 2008
-    :return: the factor that multiplies a power law to give the subhalo mass function from Giocoli et al. 2008
-    """
-
-    x = m * (alpha * m_host) ** -1
-    return np.exp(-k * x ** 3)
-
+    ratio = a_wdm * m_c / m
+    factor = 1 + ratio ** b_wdm
+    return factor ** c_wdm

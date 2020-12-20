@@ -69,7 +69,7 @@ class TNFWFieldHalo(Halo):
                                                                   self.z,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],
-                                                                  self._args['log_m_break'],
+                                                                  self._args['log_mc'],
                                                                   self._args['c_scatter'],
                                                                   self._args['c_scale'],
                                                                   self._args['c_power'],
@@ -142,14 +142,14 @@ class TNFWSubhhalo(Halo):
             if self._args['evaluate_mc_at_zlens']:
                 z_eval = self.z
             else:
-                z_eval = self.z_infall()
+                z_eval = self.z_infall
 
             truncation_radius = self._lens_cosmo.truncation_roche(self.mass, self.r3d, self._args['RocheNorm'], self._args['RocheNu'])
             concentration = self._concentration.NFW_concentration(self.mass,
                                                                   z_eval,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],
-                                                                  self._args['log_m_break'],
+                                                                  self._args['log_mc'],
                                                                   self._args['c_scatter'],
                                                                   self._args['c_scale'],
                                                                   self._args['c_power'],

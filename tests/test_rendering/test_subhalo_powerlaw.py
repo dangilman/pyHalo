@@ -15,30 +15,29 @@ class TestFieldPowerLaw(object):
     def setup(self):
 
         self.delta_power_law_index = -0.17
-        kwargs = {'power_law_index': -1.95, 'log_mlow': 6., 'log_mhigh': 10., 'log_m_break': None, 'sigma_sub': 0.2,
-                         'break_index': None, 'break_scale': None, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
+        kwargs = {'power_law_index': -1.95, 'log_mlow': 6., 'log_mhigh': 10., 'log_mc': None, 'sigma_sub': 0.2,
+                         'a_wdm': None, 'b_wdm': None, 'c_wdm': None, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
                          'subhalo_convergence_correction_profile': 'UNIFORM', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
                         'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
                          'delta_power_law_index': -0.2, 'm_pivot': 10**8}
 
-        kwargs_nfw_kappa_sheet = {'power_law_index': -1.95, 'log_mlow': 6., 'log_mhigh': 10., 'log_m_break': None,
-                                  'sigma_sub': 0.2,
-                  'break_index': None, 'break_scale': None, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
-                  'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
-                  'subhalo_convergence_correction_profile': 'NFW', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
-                  'subhalo_spatial_distribution': 'HOST_NFW', 'cone_opening_angle': 6.,
-                  'delta_power_law_index': -0.2, 'm_pivot': 10 ** 8}
+        kwargs_nfw_kappa_sheet = {'power_law_index': -1.95, 'log_mlow': 6., 'log_mhigh': 10., 'log_mc': None, 'sigma_sub': 0.2,
+                         'a_wdm': None, 'b_wdm': None, 'c_wdm': None, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
+                        'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
+                         'subhalo_convergence_correction_profile': 'NFW', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
+                        'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8}
 
         self.kwargs = kwargs
         self.kwargs_nfw_kappa_sheet = kwargs_nfw_kappa_sheet
 
-        kwargs_wdm = {'power_law_index': -1.9, 'log_mlow': 6., 'log_mhigh': 10., 'log_m_break': 7.3, 'sigma_sub': 0.2,
-                         'break_index': -1.3, 'break_scale': 0.5, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
-                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
-                         'subhalo_convergence_correction_profile': 'UNIFORM', 'host_m200': 10**14., 'r_tidal': '0.25Rs',
-                         'delta_power_law_index': -0., 'm_pivot': 10**8,
-                      'subhalo_spatial_distribution': 'HOST_NFW', 'cone_opening_angle': 6.}
+        kwargs_wdm = {'power_law_index': -1.95, 'log_mlow': 6., 'log_mhigh': 10., 'log_mc': None, 'sigma_sub': 0.2,
+                         'a_wdm': 1., 'b_wdm': 1., 'c_wdm': -1.2, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
+                        'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
+                         'subhalo_convergence_correction_profile': 'UNIFORM', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
+                        'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8}
 
         self.kwargs_wdm = kwargs_wdm
 
@@ -78,9 +77,9 @@ class TestFieldPowerLaw(object):
 
         nhalos_expected = integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mlow'],
                                                        10 ** self.kwargs_wdm['log_mhigh'],
-                                                   self.kwargs_wdm['log_m_break'],
-                                                   0, plaw_index, self.kwargs_wdm['break_index'],
-                                                   self.kwargs_wdm['break_scale'])
+                                                   self.kwargs_wdm['log_mc'],
+                                                   0, plaw_index, self.kwargs_wdm['a_wdm'],
+                                                   self.kwargs_wdm['b_wdm'], self.kwargs_wdm['c_wdm'])
         r2d_max = max(np.hypot(x, y))
         rmax_arcsec = self.geometry.cone_opening_angle / 2
         npt.assert_array_less(r2d_max, rmax_arcsec)

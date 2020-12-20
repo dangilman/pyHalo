@@ -34,14 +34,14 @@ class TestTNFWHalos(object):
 
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_m_break': None, 'c_scale': 60.,
+                        'log_mc': None, 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
                         'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
 
         self.profile_args_WDM = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
                         'evaluate_mc_at_zlens': True,
-                        'log_m_break': 7.6, 'c_scale': 60.,
+                        'log_mc': 7.6, 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
                         'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
@@ -68,7 +68,7 @@ class TestTNFWHalos(object):
 
         self.profile_args_custom = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_m_break': None, 'c_scale': 60.,
+                        'log_mc': None, 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': {'custom': True, 'c0': 6., 'beta': 0.2, 'zeta': -0.3},
                                'LOS_truncation_factor': 40,
@@ -87,7 +87,7 @@ class TestTNFWHalos(object):
 
         self.profile_args_WDM_custom = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
                                     'evaluate_mc_at_zlens': True,
-                                    'log_m_break': 8., 'c_scale': 40.,
+                                    'log_mc': 8., 'c_scale': 40.,
                                     'c_power': -0.3, 'c_scatter': False,
                                     'mc_model': {'custom': True, 'c0': 6., 'beta': 0.2, 'zeta': -0.3},
                                     'LOS_truncation_factor': 40,
@@ -160,7 +160,7 @@ class TestTNFWHalos(object):
         con = concentration(self.lens_cosmo.cosmo.h * self.mass_subhalo, '200c', self.z,
                             model='diemer19')
         c_scale, c_power = self.profile_args_WDM['c_scale'], self.profile_args_WDM['c_power']
-        wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 + c_scale * 10 ** self.profile_args_WDM['log_m_break'] /
+        wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 + c_scale * 10 ** self.profile_args_WDM['log_mc'] /
                           self.subhalo.mass) ** c_power
         npt.assert_almost_equal(con * wdm_suppresion, c)
 
@@ -180,7 +180,7 @@ class TestTNFWHalos(object):
         con = concentration(self.lens_cosmo.cosmo.h * self.mass_field_halo, '200c', self.z,
                             model='diemer19')
         c_scale, c_power = self.profile_args_WDM['c_scale'], self.profile_args_WDM['c_power']
-        wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 + c_scale * 10 ** self.profile_args_WDM['log_m_break'] /
+        wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 + c_scale * 10 ** self.profile_args_WDM['log_mc'] /
                           self.field_halo_WDM.mass) ** c_power
         npt.assert_almost_equal(con * wdm_suppresion, c)
 
@@ -217,7 +217,7 @@ class TestTNFWHalos(object):
         zeta = self.profile_args_custom['mc_model']['zeta']
         c_scale, c_power = self.profile_args_WDM_custom['c_scale'], self.profile_args_WDM_custom['c_power']
         wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 +
-                          c_scale * 10 ** self.profile_args_WDM_custom['log_m_break'] /
+                          c_scale * 10 ** self.profile_args_WDM_custom['log_mc'] /
                           self.field_halo_custom_WDM.mass) ** c_power
 
         h = self.lens_cosmo.cosmo.h

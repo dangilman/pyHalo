@@ -1,12 +1,9 @@
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 from pyHalo.Spatial.nfw_core import UniformNFW
-from pyHalo.Spatial.uniform import Uniform
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Spatial.keywords import subhalo_spatial_NFW, subhalo_spatial_uniform
+from pyHalo.Spatial.keywords import subhalo_spatial_NFW
 from pyHalo.Rendering.Main.SHMF_normalizations import *
-
-from copy import deepcopy
-
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 from pyHalo.Rendering.render_base import RenderingBase
 
 class MainLensBase(RenderingBase):
@@ -34,10 +31,16 @@ class MainLensBase(RenderingBase):
                             ' not recognized. Try HOST_NFW.')
 
         self.rendering_args = self.keyword_parse(args, kpc_per_arcsec_zlens, zlens)
-        self._mass_func_parameterization = BrokenPowerLaw(
-            self.rendering_args['log_mlow'], self.rendering_args['log_mhigh'], self.rendering_args['power_law_index'],
-            self.rendering_args['draw_poisson'], self.rendering_args['normalization'],
-                 self.rendering_args['log_m_break'], self.rendering_args['break_index'], self.rendering_args['break_scale'])
+        power_law_index = self.rendering_args['power_law_index'] + self.rendering_args['delta_power_law_index']
+        self._mass_func_parameterization = BrokenPowerLaw(self.rendering_args['log_mlow'],
+                                                          self.rendering_args['log_mhigh'],
+                                                          power_law_index,
+                                                          self.rendering_args['draw_poisson'],
+                                                          self.rendering_args['normalization'],
+                                                          self.rendering_args['log_mc'],
+                                                          self.rendering_args['a_wdm'],
+                                                          self.rendering_args['b_wdm'],
+                                                          self.rendering_args['c_wdm'])
 
         self._spatial_args = spatial_args
 
@@ -56,7 +59,18 @@ class MainLensBase(RenderingBase):
 
         m_low, m_high = 10 ** log_mass_sheet_correction_min, 10 ** log_mass_sheet_correction_max
 
-        mass_in_subhalos = self._mass_func_parameterization.theory_mass(m_low, m_high)
+        power_law_index = self.rendering_args['power_law_index'] + self.rendering_args['delta_power_law_index']
+
+        if self.rendering_args['log_mc'] is not None:
+            mass_in_subhalos = integrate_power_law_quad(self.rendering_args['normalization'],
+                                                        m_low, m_high, 1, power_law_index,
+                                                        self.rendering_args['log_mc'],
+                                                        self.rendering_args['a_wdm'],
+                                                        self.rendering_args['b_wdm'],
+                                                        self.rendering_args['c_wdm'])
+        else:
+            mass_in_subhalos = integrate_power_law_analytic(self.rendering_args['normalization'],
+                                                        m_low, m_high, 1, power_law_index)
 
         if kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 
@@ -148,8 +162,8 @@ class MainLensBase(RenderingBase):
 
         args_mfunc = {}
 
-        required_keys = ['power_law_index', 'log_mlow', 'log_mhigh', 'log_m_break', 'sigma_sub',
-                         'break_index', 'break_scale', 'log_mass_sheet_min', 'log_mass_sheet_max',
+        required_keys = ['power_law_index', 'log_mlow', 'log_mhigh', 'log_mc', 'sigma_sub',
+                         'a_wdm', 'b_wdm', 'c_wdm', 'log_mass_sheet_min', 'log_mass_sheet_max',
                          'subhalo_mass_sheet_scale', 'draw_poisson', 'host_m200',
                          'subhalo_convergence_correction_profile', 'r_tidal',
                          'delta_power_law_index', 'm_pivot']
@@ -160,13 +174,12 @@ class MainLensBase(RenderingBase):
             except:
                 raise ValueError('must specify a value for ' + key)
 
-        args_mfunc['power_law_index'] += args_mfunc['delta_power_law_index']
-
+        power_law_index = args_mfunc['power_law_index'] + args_mfunc['delta_power_law_index']
         args_mfunc['normalization'] = normalization_sigmasub(args['sigma_sub'], args['host_m200'],
                                                              zlens,
                                                              kpc_per_arcsec_zlens,
                                                              args['cone_opening_angle'],
-                                                             args_mfunc['power_law_index'],
+                                                             power_law_index,
                                                              args['m_pivot'])
 
 

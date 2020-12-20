@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import pytest
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 import numpy as np
 
 class TestBrokenPowerLaw(object):
@@ -13,28 +13,26 @@ class TestBrokenPowerLaw(object):
         self.plaw_index = -1.9
         self.norm = 10 ** 12
         self.func_cdm = BrokenPowerLaw(self.log_mlow, self.log_mhigh, self.plaw_index,
-                                   draw_poisson=False, normalization=self.norm, log_m_break=None,
-                                       break_index=None, break_scale=None)
+                                       draw_poisson=False, normalization=self.norm, log_mc=None,
+                                       a_wdm=None, b_wdm=None, c_wdm=None)
 
         self.func_wdm = BrokenPowerLaw(self.log_mlow, self.log_mhigh, self.plaw_index,
                                        draw_poisson=False, normalization=self.norm,
-                                       log_m_break=7.5, break_index=-1.3, break_scale=0.5)
+                                       log_mc=7.5, a_wdm=2., b_wdm=0.5, c_wdm=-1.3)
 
     def test_draw_cdm(self):
 
-        logmhm = 0
         n = 1
-        mtheory = integrate_power_law_quad(self.norm, 10**self.log_mlow, 10**self.log_mhigh, logmhm, n,
+        mtheory = integrate_power_law_analytic(self.norm, 10**self.log_mlow, 10**self.log_mhigh, n,
                                            self.plaw_index)
         m = self.func_cdm.draw()
         npt.assert_almost_equal(np.sum(m)/mtheory, 1, 2)
 
     def test_draw_wdm(self):
 
-        logmhm = 7.5
         n = 1
-        mtheory = integrate_power_law_quad(self.norm, 10**self.log_mlow, 10**self.log_mhigh, logmhm, n,
-                                           self.plaw_index, break_index=-1.3, break_scale=0.5)
+        mtheory = integrate_power_law_quad(self.norm, 10**self.log_mlow, 10**self.log_mhigh, 7.5, n,
+                                           self.plaw_index, a_wdm=2., b_wdm=0.5, c_wdm=-1.3)
         m = self.func_wdm.draw()
         npt.assert_almost_equal(np.sum(m)/mtheory, 1, 2)
 

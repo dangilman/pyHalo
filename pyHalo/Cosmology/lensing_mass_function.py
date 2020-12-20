@@ -194,6 +194,7 @@ class LensingMassFunction(object):
         :param mdef:
         :return:
         """
+
         h = self._cosmo.h
         M_h = M * h
         r_h = r * h
@@ -201,31 +202,6 @@ class LensingMassFunction(object):
         rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self._cosmo._colossus_cosmo.rho_m(z)
 
         return rho_2h
-
-    def integrate_mass_function(self, z, plaw_index, delta_z, mlow, mhigh, log_m_break,
-                                break_index, break_scale, n=1, norm_scale=1):
-
-        """
-        Integrates the halo mass function between m_low and m_high
-
-        :param norm: normalization prefactor
-        :param m_low: low bound of integral
-        :param m_high: high bound of integral
-        :param log_m_break: characteristic break mass (in log) of the power law
-        :param n: computes the nth moment
-        :param plaw_index: logarithmic slope of power law
-        :param break_index: see parameterization above
-        :param break_scale: see parameterization above
-        :param norm_scale: rescaling of the overall normalization
-        :return: the desired integral
-        """
-
-        norm = self.norm_at_z(z, plaw_index, delta_z, self.m_pivot)
-
-        moment = integrate_power_law_quad(norm_scale * norm, mlow, mhigh, log_m_break, n, plaw_index,
-                                          break_index, break_scale)
-
-        return moment
 
     def mass_fraction_in_halos(self, z, mlow, mhigh, mlow_global=10**-6):
 
