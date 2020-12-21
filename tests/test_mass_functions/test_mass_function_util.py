@@ -2,6 +2,7 @@ import numpy.testing as npt
 from scipy.special import hyp2f1
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 import pytest
+import numpy as np
 
 
 class TestMassFunctionUtil(object):
@@ -41,6 +42,9 @@ class TestMassFunctionUtil(object):
                                 _analytic_integral_bound(m_low, plaw_index, c_wdm, 10 ** log_mc, n)
 
             npt.assert_almost_equal(integral/analytic_integral, 1, 4)
+
+        integral_analytic = integrate_power_law_analytic(norm, m_low, m_high, 0, -1)
+        npt.assert_almost_equal(integral_analytic, norm * np.log(m_high/m_low))
 
 if __name__ == '__main__':
     pytest.main()
