@@ -8,7 +8,7 @@ from pyHalo.pyhalo import pyHalo
 
 
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6,
-        log_mhigh=10, kwargs_model_other={}):
+        log_mhigh=10, LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs'):
 
     """
 
@@ -36,49 +36,21 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
     :param log_mlow: log10(minimum halo mass) rendered
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density
-    :param kwargs_model_other: any other keyword arguments one wants to pass to realization
-    :return:
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
+    to account for tidal stripping of halos that pass close to the central galaxy
+    :return: a realization of CDM halos
     """
 
     mass_definition = 'TNFW'  # truncated NFW profile
     kwargs_model_field = {'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
-                          'mass_func_type': 'POWER_LAW', 'log_mlow': log_mlow, 'log_mhigh': log_mhigh}
+                          'mass_func_type': 'POWER_LAW', 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
 
     kwargs_model_subhalos = {'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub,
                              'power_law_index': shmf_log_slope, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                             'mdef_main': mass_definition, 'mass_func_type': 'POWER_LAW'}
-
-    kwargs_model_field.update(kwargs_model_other)
-    kwargs_model_subhalos.update(kwargs_model_other)
-
-    """
-    Optional parameters for line of sight:
-
-    LOS_normalization: the amplitude of the line of sight mass function relative to Sheth-Tormen
-    Note: you can optionally turn off the line of sight contribution by specifying LOS_normalization=0 in kwargs_model_other
-
-    log_m_host: host halo mass in M_sun (see CDM preset model for details). The line of sight mass function
-    needs the host halo mass because the amount of correlated structure around the host depends on the host halo mass.
-    """
-
-    optional_params_field = {'LOS_normalization': 1., 'log_m_host': 13.3}
-    for param in optional_params_field.keys():
-        if param not in kwargs_model_field.keys():
-            kwargs_model_field[param] = optional_params_field[param]
-
-    """
-    Optional parameters for subhalo mass function:
-
-    log_m_host: host halo mass in M_sun (see CDM preset model for details).
-
-    r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
-    to account for tidal stripping of halos that pass close to the central galaxy
-    """
-
-    optional_params_subhalos = {'log_m_host': 13.3, 'r_tidal': '0.25Rs'}
-    for param in optional_params_subhalos.keys():
-        if param not in kwargs_model_subhalos.keys():
-            kwargs_model_subhalos[param] = optional_params_subhalos[param]
+                             'mdef_main': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
 
     # this will use the default cosmology. parameters can be found in defaults.py
     pyhalo = pyHalo(z_lens, z_source)
@@ -90,8 +62,10 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 
     return cdm_realization
 
-def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1., a_wdm_sub=4.2, b_wdm_sub=2.5,
-                   c_wdm_sub=-0.2, c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6., sigma_sub=0.025, kwargs_model_other={}):
+def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
+                  a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, c_scale=60., c_power=-0.17, cone_opening_angle=6.,
+                  sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
+                  **kwargs_other):
 
     """
 
@@ -135,48 +109,31 @@ def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_lo
     :param c_wdm_sub: defines the WDM subhalo mass function (see above)
     :param c_scale: scale where concentrations in WDM deviate from CDM
     :param c_power: modification to logarithmic slope of mass-concentration relation
-    :param cone_opening_angle_arcsec: the opening angle in arcsec of the double cone geometry where halos are added
+    :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
     :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
-    :param kwargs_model_other: (optional) additional keyword arguments for the model
-    :return: a realization of WDM halos
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param power_law_index: logarithmic slope of the subhalo mass function
+    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
+    to account for tidal stripping of halos that pass close to the central galaxy
+    :param kwargs_other: any other optional keyword arguments
 
-    :return:
+    :return: a realization of WDM halos
     """
     mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
-                          'mass_func_type': 'POWER_LAW'}
+                          'cone_opening_angle': cone_opening_angle, 'mdef_los': mass_definition,
+                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
+                          }
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_main': mass_definition,
-                             'mass_func_type': 'POWER_LAW'}
+                          'cone_opening_angle': cone_opening_angle, 'sigma_sub': sigma_sub, 'mdef_main': mass_definition,
+                             'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
 
-    kwargs_model_field.update(kwargs_model_other)
-    kwargs_model_subhalos.update(kwargs_model_other)
-
-    """
-    LOS_normalization: the amplitude of the line of sight mass function relative to Sheth-Tormen
-    log_m_host: host halo mass in M_sun (see CDM preset model for details). The line of sight mass function
-    needs the host halo mass because the amount of correlated structure around the host depends on the host halo mass.
-    """
-    optional_params_field = {'LOS_normalization': 1., 'log_m_host': 13.3}
-    for param in optional_params_field.keys():
-        if param not in kwargs_model_field.keys():
-            kwargs_model_field[param] = optional_params_field[param]
-
-    """
-    power_law_index: the logarithmic slope of the differential subhalo mass function
-    log_m_host: host halo mass in M_sun (see CDM preset model for details).
-    r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
-    to account for tidal stripping of halos that pass close to the central galaxy
-    """
-
-    optional_params_subhalos = {'power_law_index': -1.9, 'log_m_host': 13.3, 'r_tidal': '0.25Rs'}
-    for param in optional_params_subhalos.keys():
-        if param not in kwargs_model_subhalos.keys():
-            kwargs_model_subhalos[param] = optional_params_subhalos[param]
+    kwargs_model_field.update(kwargs_other)
+    kwargs_model_subhalos.update(kwargs_other)
 
     # this will use the default cosmology. parameters can be found in defaults.py
     pyhalo = pyHalo(z_lens, z_source)
