@@ -1,4 +1,4 @@
-from pyHalo.Halos.halo_base import Halo
+from scipy.interpolate import interp1d
 from pyHalo.defaults import *
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -40,15 +40,23 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
         indexes = _indexes
 
     lens_cosmo_class = realization.lens_cosmo
+    centerx, centery = realization.rendering_center
     return Realization.from_halos(halos, realization.halo_mass_function,
                                   realization._prof_params, realization._mass_sheet_correction,
-                                  realization.rendering_classes, lens_cosmo_class), indexes
+                                  realization.rendering_classes, lens_cosmo_class,
+                                  centerx, centery), indexes
 
 class Realization(object):
 
+    """
+    This is the main class for storing a population of dark matter halos, both in the main lens plane and along the
+    line of sight. This class is created by the main pyhalo module.
+    """
+
+
     def __init__(self, masses, x, y, r3d, mdefs, z, subhalo_flag, halo_mass_function,
                  halos=None, halo_profile_args={}, mass_sheet_correction=True, dynamic=False,
-                 rendering_classes=None, lens_cosmo_class=None):
+                 rendering_classes=None, lens_cosmo_class=None, rendering_center_x=None, rendering_center_y=None):
 
         """
 
@@ -72,6 +80,11 @@ class Realization(object):
         :param mass_sheet_correction: whether to apply a mass sheet correction
         :param dynamic: whether the realization is rendered with pyhalo_dynamic or not
         :param rendering_classes: a list of rendering class instances
+        :param lens_cosmo_class: an instance of LensCosmo, if it is not supplied to the class it will be re-instantiated
+        :param rendering_center_x: an instance of scipy.interp1d that returns an angular position given a comoving distance.
+        The angular coordinate defines the center of the rendering volume, and halos will be distributed symmetrically around it.
+        The value defaults to 0, but is overridden when the method shift_background_to_source is called
+        :param rendering_center_y: same as rendering_center_x, but for the y angular coordinate
         """
 
         self.apply_mass_sheet_correction = mass_sheet_correction
@@ -111,9 +124,19 @@ class Realization(object):
 
         self.set_rendering_classes(rendering_classes)
 
+        if rendering_center_x is None or rendering_center_y is None:
+            _z = np.linspace(0, self.geometry._zsource, 100)
+            d = [self.lens_cosmo.cosmo.D_C_transverse(zi) for zi in _z]
+            angle = np.zeros_like(d)
+            rendering_center_x = interp1d(d, angle)
+            rendering_center_y = interp1d(d, angle)
+
+        self._rendering_center_x = rendering_center_x
+        self._rendering_center_y = rendering_center_y
+
     @classmethod
     def from_halos(cls, halos, halo_mass_function, prof_params, msheet_correction, rendering_classes,
-                   lens_cosmo_class=None):
+                   lens_cosmo_class, rendering_center_x=None, rendering_center_y=None):
 
         """
 
@@ -130,9 +153,20 @@ class Realization(object):
                                   halos=halos, halo_profile_args=prof_params,
                                   mass_sheet_correction=msheet_correction,
                                   rendering_classes=rendering_classes,
-                                  lens_cosmo_class=lens_cosmo_class)
+                                  lens_cosmo_class=lens_cosmo_class,
+                                  rendering_center_x=rendering_center_x,
+                                  rendering_center_y=rendering_center_y)
 
         return realization
+
+    @property
+    def rendering_center(self):
+
+        """
+        Returns the instances of scipy.interp1d that compute the coordinate center of the lensing volume given a comoving
+        distance.
+        """
+        return self._rendering_center_x, self._rendering_center_y
 
     def filter(self, aperture_radius_front,
                aperture_radius_back,
@@ -225,7 +259,7 @@ class Realization(object):
         lens_cosmo_class = self.lens_cosmo
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self.apply_mass_sheet_correction, self.rendering_classes,
-                                      lens_cosmo_class)
+                                      lens_cosmo_class, self._rendering_center_x, self._rendering_center_y)
 
     def set_rendering_classes(self, rendering_classes):
 
@@ -235,12 +269,13 @@ class Realization(object):
         mass function you have specified, so this information is stored in the classes used to render halos
         (LOSPowerLaw, MainLensPowerLaw, etc, see classes in pyHalo/Rendering)
 
-        The rendering classes are not specified for whatever reason, the code will still run but no negative convergence
+        If the rendering classes are not specified for whatever reason, the code will still run but no negative convergence
         sheets will be included in your lens models. This could potentially bias results as you've effectively made every
-        light cone over dense relative to the mean matter density in the Universe...
+        light cone overdense relative to the mean matter density in the Universe.
 
         :param rendering_classes: a list or an instance of a rendering class (LOSPowerLaw, MainLensPowerLaw)
         """
+
         if not isinstance(rendering_classes, list):
             rendering_classes = [rendering_classes]
         self.rendering_classes = rendering_classes
@@ -285,9 +320,10 @@ class Realization(object):
             rendering_classes = self.rendering_classes
 
         lens_cosmo_class = self.lens_cosmo
+        centerx, centery = self.rendering_center
         return Realization.from_halos(halos, self.halo_mass_function, self._prof_params,
                                       self.apply_mass_sheet_correction, rendering_classes,
-                                      lens_cosmo_class)
+                                      lens_cosmo_class, centerx, centery)
 
     def shift_background_to_source(self, ray_interp_x, ray_interp_y):
 
@@ -315,7 +351,7 @@ class Realization(object):
             halos.append(halo)
 
         new_realization = Realization.from_halos(halos, self.halo_mass_function, self._prof_params, self.apply_mass_sheet_correction,
-                                      self.rendering_classes, self.lens_cosmo)
+                                      self.rendering_classes, self.lens_cosmo, ray_interp_x, ray_interp_y)
 
         new_realization._has_been_shifted = True
 
@@ -369,7 +405,7 @@ class Realization(object):
         xcoords, ycoords, masses, redshifts = [], [], [], []
 
         for halo in halos:
-            D = self.lens_cosmo.cosmo.D_C_transverse(halo.z)
+            D = self.lens_cosmo.cosmo.D_C_z(halo.z)
             x_arcsec, y_arcsec = halo.x, halo.y
             x_comoving, y_comoving = D * x_arcsec, D * y_arcsec
             xcoords.append(x_comoving)
@@ -389,12 +425,13 @@ class Realization(object):
                 halos_2.append(halo)
 
         lens_cosmo_class = self.lens_cosmo
+        centerx, centery = self.rendering_center
         realization_1 = Realization.from_halos(halos_1, self.halo_mass_function,
                                                self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes,
-                                               lens_cosmo_class)
+                                               lens_cosmo_class, centerx, centery)
         realization_2 = Realization.from_halos(halos_2, self.halo_mass_function,
                                                self._prof_params, self.apply_mass_sheet_correction, self.rendering_classes,
-                                               lens_cosmo_class)
+                                               lens_cosmo_class, centerx, centery)
 
         return realization_1, realization_2
 
@@ -488,7 +525,7 @@ class Realization(object):
 
             for zi in self.unique_redshifts:
                 area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, zi)
-                kwargs_mass_sheets = [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)}]
+                kwargs_mass_sheets += [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)}]
 
             redshifts = self.unique_redshifts
 
@@ -508,11 +545,7 @@ class Realization(object):
                 redshifts += redshifts_new
                 profiles += profiles_new
 
-        if z_mass_sheet_max is None:
-            return kwargs_mass_sheets, profiles, redshifts
-
-        else:
-
+        if z_mass_sheet_max is not None:
             kwargs_mass_sheets_out = []
             profiles_out = []
             redshifts_out = []
@@ -524,8 +557,23 @@ class Realization(object):
                     kwargs_mass_sheets_out.append(kwargs_mass_sheets[i])
                     profiles_out.append(profiles[i])
                     redshifts_out.append(redshifts[i])
+        else:
+            kwargs_mass_sheets_out, profiles_out, redshifts_out = kwargs_mass_sheets, profiles, redshifts
 
-            return kwargs_mass_sheets_out, profiles_out, redshifts_out
+        # define the center of mass sheet to be the center of the rendering volume
+        centerx_interp, centery_interp = self.rendering_center
+
+        for i, (zi, profile_name) in enumerate(zip(redshifts_out, profiles_out)):
+            di = self.lens_cosmo.cosmo.D_C_z(zi)
+            x_center, y_center = centerx_interp(di), centery_interp(di)
+            if profile_name == 'CONVERGENCE':
+                kwargs_mass_sheets_out[i]['ra_0'] = float(x_center)
+                kwargs_mass_sheets_out[i]['dec_0'] = float(y_center)
+            else:
+                kwargs_mass_sheets_out[i]['center_x'] = float(x_center)
+                kwargs_mass_sheets_out[i]['center_y'] = float(y_center)
+
+        return kwargs_mass_sheets_out, profiles_out, redshifts_out
 
     def _load_halo_model(self, mass, x, y, r3d, mdef, z, is_subhalo,
                          lens_cosmo_instance, args, unique_tag):

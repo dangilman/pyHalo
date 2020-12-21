@@ -86,8 +86,6 @@ class MainLensBase(RenderingBase):
             if 'host_m200' not in self.rendering_args.keys():
                 raise Exception('must specify host halo mass when using NFW convergence sheet correction for subhalos')
 
-            #host_m200 = self.rendering_args['parent_m200']
-
             Rs_host_kpc = self._spatial_args['Rs']
             rs_mpc = Rs_host_kpc / 1000
             r_tidal_host_kpc = self._spatial_args['r_core_parent']

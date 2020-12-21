@@ -158,6 +158,16 @@ class TestSingleRealization(object):
         z = np.linspace(0, dmax, 100)
         ray_interp_x, ray_interp_y = interp1d(z, np.ones_like(z)), interp1d(z, -np.ones_like(z))
 
+        centerx_interp, centery_interp = self.realization_cdm.rendering_center
+        npt.assert_almost_equal(centerx_interp(1000), 0.)
+        npt.assert_almost_equal(centery_interp(1000), 0.)
+
+        model_name, _, kwargs_lens_init, _ = self.realization_cdm.lensing_quantities()
+        for name, kw in zip(model_name, kwargs_lens_init):
+            if name == 'CONVERGENCE':
+                npt.assert_almost_equal(kw['ra_0'], 0.)
+                npt.assert_almost_equal(kw['dec_0'], 0.)
+
         test_realization = deepcopy(self.realization_cdm)
         realization_shifted = test_realization.shift_background_to_source(ray_interp_x, ray_interp_y)
 
@@ -165,6 +175,14 @@ class TestSingleRealization(object):
 
             npt.assert_equal(halo.x, halo_0.x + 1)
             npt.assert_equal(halo.y, halo_0.y - 1)
+
+        model_names, redshifts_lens, kwargs_lens_init, _ = self.realization_cdm.lensing_quantities()
+        centerx, centerey = self.realization_cdm.rendering_center
+        for kw, zi, name in zip(kwargs_lens_init, redshifts_lens, model_names):
+            if name == 'CONVERGENCE':
+                di = self.realization_cdm.lens_cosmo.cosmo.D_C_z(zi)
+                npt.assert_almost_equal(kw['ra_0'], centerx(di))
+                npt.assert_almost_equal(kw['dec_0'], centerey(di))
 
         # make sure you can only shift realizations once
         realization_shifted = realization_shifted.shift_background_to_source(ray_interp_x, ray_interp_y)
@@ -324,7 +342,6 @@ class TestSingleRealization(object):
         for halo in realatz.halos:
             npt.assert_equal(True, halo.z == 0.5)
             npt.assert_array_less(np.hypot(halo.x, halo.y), 1.00000000001)
-
 
 if __name__ == '__main__':
     pytest.main()
