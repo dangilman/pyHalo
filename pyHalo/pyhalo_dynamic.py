@@ -6,7 +6,7 @@ from pyHalo.single_realization import Realization
 from pyHalo.Rendering.render import render_los_dynamic, render_main_dynamic
 from pyHalo.Cosmology.geometry import Geometry
 from scipy.interpolate import interp1d
-
+from pyHalo.defaults import set_default_kwargs
 from copy import deepcopy
 
 class pyHaloDynamic(pyHaloBase):
@@ -39,206 +39,80 @@ class pyHaloDynamic(pyHaloBase):
         self._rendering_class_main = [None, None]
         self.reset_redshifts(zlens, zsource)
 
-    def render_dynamic_with_macromodel(self, type, args, realization_start,
-                     lens_centroid_x, lens_centroid_y,
-                     macromodel_lensModel, kwargs_macromodel,
-                     source_x, source_y, aperture_radius, verbose=False,
-                       include_mass_sheet_correction=True):
+    def render_dynamic(self, realization_type, kwargs_realization, rendering_geometry, realization_start,
+                       guiding_center_x_interp, guiding_center_y_interp, aperture_radius, verbose=False,
+                       include_mass_sheet_correction=False, global_render=True):
 
         """
 
-        :param type: the kind of realization to generate. options are:
-         'line_of_sight' -> LOS halos only
-         'main_lens' -> subhalos only
-         'composite_powerlaw' -> both LOS and subhalos
-        :param args: the keyword arguments for the realization (e.g. normalization of subhalo mass func., etc.)
-        :param realization_start: a realization onto which you append a new realization. Can be None if you want to create a
-        realization from scratch
-        :param lens_centroid_x: the x-coordinate of the lens centroid in arcsec
-        :param lens_centroid_y: the y-coordinate of the lens centroid in arcsec
-        For both of the above, (0, 0) is usually a good enough starting point
-        :param macromodel_lensModel: and instance of LensModel (lenstronomy) with only the main deflector and
-        any line of sight or satellite galaxies included. These large deflectors determine the path of the light.
-        :param kwargs_macromodel: keyword arguments for macromodel_lensModel
-        :param source_x: the source position (arcsec)
-        :param source_y: the source position (arcsec)
-        :param aperture_radius: the size of the rendering area. This is also = 0.5*cone_opening_angle
-        :param verbose: whether to print stuff
-        :param include_mass_sheet_correction: whether to apply negative convergence sheet corrections after adding halos
-        :return: instance of SingleRealization automatically shifted to lie along the path traversed by the light
+        :param realization_type:
+        :param kwargs_realization:
+        :param rendering_geometry:
+        :param realization_start:
+        :param guiding_center_x_interp:
+        :param guiding_center_y_interp:
+        :param aperture_radius:
+        :param verbose:
+        :param include_mass_sheet_correction:
+        :param global_render:
+        :return:
         """
 
-        x_interp_list, y_interp_list = self.interpolate_ray_paths([lens_centroid_x], [lens_centroid_y],
-                                                                  macromodel_lensModel, kwargs_macromodel, self.zsource,
-                                                                  terminate_at_source=True, source_x=source_x,
-                                                                  source_y=source_y)
+        lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(kwargs_realization[0])
 
-        return self.render_dynamic(type, args, realization_start, lens_centroid_x, lens_centroid_y, x_interp_list,
-                                   y_interp_list, aperture_radius, verbose, include_mass_sheet_correction,
-                                   global_render=True)
+        kwargs_init = set_default_kwargs(kwargs_realization, True, self.zsource)
 
-    def render_dynamic(self, type, args, realization_start, lens_centroid_x, lens_centroid_y,
-                       x_interp_list, y_interp_list, aperture_radius,
-                       verbose=False, include_mass_sheet_correction=False, global_render=True):
+        kwargs_realization = deepcopy(kwargs_init)
 
-        """
+        for j, (x_position_interp, y_position_interp) in enumerate(zip(guiding_center_x_interp, guiding_center_y_interp)):
 
-        :param type: the kind of realization to generate. options are:
-         'line_of_sight' -> LOS halos only
-         'main_lens' -> subhalos only
-         'composite_powerlaw' -> both LOS and subhalos
-        :param args: the keyword arguments for the realization (e.g. normalization of subhalo mass func., etc.)
-        :param realization_start: a realization onto which you append a new realization. Can be None if you want to create a
-        realization from scratch
-        :param lens_centroid_x: the x-coordinate of the lens centroid in arcsec
-        :param lens_centroid_y: the y-coordinate of the lens centroid in arcsec
-        For both of the above, (0, 0) is usually a good enough starting point
-        :param macromodel_lensModel: and instance of LensModel (lenstronomy) with only the main deflector and
-        any line of sight or satellite galaxies included. These large deflectors determine the path of the light.
-        :param x_interp_list: a list of scipy interp1d functions that return the angular position of a lensed light ray
-        given a co-moving distance. See interpolate_ray_paths function
-        :param y_interp_list: ^
-        :param aperture_radius: the size of the rendering area. This is also = 0.5*cone_opening_angle
-        :param verbose: whether to print stuff
-        :param include_mass_sheet_correction: whether to apply negative convergence sheet corrections after adding halos
-        :param global render: flag to specify whether this is the global realization, or halos rendered around each image
-        leave this =TRUE for most applications
-        :return: instance of SingleRealization automatically shifted to lie along the path traversed by the light
-        specified by x_interp_list, y_interp_list
+            if realization_type == 'main_lens' or realization_type == 'composite_powerlaw':
+                realization_subs, rendering_class_subs = self._render_dynamic_main_single(kwargs_realization,
+                                                                                          x_position_interp,
+                                                                                          y_position_interp,
+                                                                                          aperture_radius,
+                                                                                          guiding_center_x_interp,
+                                                                                          guiding_center_y_interp,
+                                                                                          include_mass_sheet_correction,
+                                                                                          rendering_geometry)
 
-        You can use this to creat a full realization that follows the path of the light through the entire lesing volume
-        by using the interpolate_ray_paths function to interpolate the path of a ray fired through the lens centroid with
-        termminate_at_source=True.
-        """
+            if realization_type == 'line_of_sight' or realization_type == 'composite_powerlaw':
+                realization_LOS, rendering_class_LOS = self._render_dynamic_los(kwargs_realization,
+                                                                                x_position_interp,
+                                                                                y_position_interp,
+                                                                                aperture_radius,
+                                                                                lens_plane_redshifts,
+                                                                                delta_zs,
+                                                                                include_mass_sheet_correction,
+                                                                                rendering_geometry,
+                                                                                global_render)
 
-        self.halo_mass_function = self.build_LOS_mass_function(args)
-        self.geometry = self.halo_mass_function.geometry
+            if realization_type == 'composite_powerlaw':
+                realization = realization_subs.join(realization_LOS, join_rendering_classes=True)
 
-        if not isinstance(args, list):
-            args = [args]
-        else:
-            if len(args) > 2:
-                raise Exception('only two types of realiztions can be combined.')
+            elif realization_type == 'main_lens':
+                realization = realization_subs
 
-        lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args[0])
-
-        if global_render is True:
-            geometry_render = self.geometry
-            for arg_i in args:
-                assert 'cone_opening_angle' in arg_i.keys(), 'Must specify cone_opening_angle in keyword arguments'
-        else:
-            geometry_render = Geometry(self.cosmology, self.zlens, self.zsource,
-                                       self.geometry.cone_opening_angle, 'DOUBLE_CONE')
-
-            if include_mass_sheet_correction:
-                print('WARNING: You specified include_mass_sheet_corretion = True for a local rendering of halos,'
-                      'you should probably only do this for a global rendering of halos throughout the entire volume.')
-
-        kwargs_init = []
-        for arg_i in args:
-            kwargs_init.append(self._add_profile_params(arg_i, True))
-
-        args = deepcopy(kwargs_init)
-
-        rendering_class_main, rendering_class_LOS = None, None
-
-        for j, (x_position_interp, y_position_interp) in enumerate(zip(x_interp_list, y_interp_list)):
-
-            realization_new, rendering_class_main, rendering_class_LOS = self._render(type, args, aperture_radius,
-                                           lens_centroid_x, lens_centroid_y,
-                                           x_position_interp, y_position_interp,
-                                           lens_plane_redshifts, delta_zs, include_mass_sheet_correction,
-                                            geometry_render, global_render)
+            else:
+                realization = realization_LOS
 
             if realization_start is None:
-                realization_start = realization_new
-            elif realization_new is not None:
-                realization_start = realization_start.join(realization_new)
+                realization_start = realization
+            else:
+                realization_start = realization_start.join(realization)
 
             if verbose:
-
-                new_foreground = realization_new.number_of_halos_before_redshift(self.zlens)
-                new_background = realization_new.number_of_halos_after_redshift(self.zlens)
-                new_subhalos = realization_new.number_of_halos_at_redshift(self.zlens)
+                new_foreground = realization.number_of_halos_before_redshift(self.zlens)
+                new_background = realization.number_of_halos_after_redshift(self.zlens)
+                new_subhalos = realization.number_of_halos_at_redshift(self.zlens)
                 print('added ' + str(new_foreground) + ' halos before the lens redshift around coordinate '+str(j+1))
                 print('added ' + str(new_subhalos) + ' halos at the lens redshift ' + str(j + 1))
                 print('added ' + str(new_background) + ' halos after the lens redshift around coordinate '+str(j+1))
 
-        rendering_classes = []
-
-        if rendering_class_main is not None:
-            rendering_classes += [rendering_class_main]
-        if rendering_class_LOS is not None:
-            rendering_classes += [rendering_class_LOS]
-
-        realization_start.set_rendering_classes(rendering_classes)
-
         return realization_start
 
-    def _render(self, type, args, aperture_radius, x_centroid_main, y_centroid_main,
-                            x_position_interp, y_position_interp,
-                            lens_plane_redshifts, delta_zs, include_mass_sheet_correction,
-                            geometry_render, global_render):
-
-        rendering_class_main, rendering_class_LOS = None, None
-
-        if type == 'main_lens' or type == 'composite_powerlaw':
-
-            realization, rendering_class_main = self._render_dynamic_main(args, x_position_interp, y_position_interp,
-                                                    aperture_radius, x_centroid_main, y_centroid_main,
-                                                    include_mass_sheet_correction, geometry_render)
-
-            if type == 'composite_powerlaw':
-
-                realization_LOS, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
-                                                           aperture_radius, lens_plane_redshifts, delta_zs,
-                                                           include_mass_sheet_correction, geometry_render,
-                                                                                global_render)
-
-                if realization is None:
-                    realization = realization_LOS
-                else:
-                    realization = realization.join(realization_LOS)
-
-        elif type == 'line_of_sight':
-
-            realization, rendering_class_LOS = self._render_dynamic_los(args, x_position_interp, y_position_interp,
-                                                       aperture_radius, lens_plane_redshifts, delta_zs,
-                                                   include_mass_sheet_correction, geometry_render,
-                                                                        global_render)
-
-        else:
-            raise Exception('rendering type '+str(type) + ' not recognized.')
-
-        return realization, rendering_class_main, rendering_class_LOS
-
-    def _render_dynamic_main(self, args, x_aperture, y_aperture, aperture_radius,
-                             x_centroid_main, y_centroid_main, include_mass_sheet_correction, geometry_render):
-
-        assert len(args) > 0
-
-        init = True
-        for count, arg_i in enumerate(args):
-
-            if init:
-                realization, rendering_class_main = self._render_dynamic_main_single(arg_i, x_aperture, y_aperture, aperture_radius,
-                             x_centroid_main, y_centroid_main, include_mass_sheet_correction, geometry_render, count)
-                init = False
-
-            else:
-
-                realization_i, _ = self._render_dynamic_main_single(arg_i, x_aperture, y_aperture,
-                                                                                       aperture_radius,
-                                                                                       x_centroid_main, y_centroid_main,
-                                                                                       include_mass_sheet_correction,
-                                                                                    geometry_render, count)
-
-                realization = realization_i.join(realization)
-
-        return realization, self._rendering_class_main[0]
-
-    def _render_dynamic_main_single(self, arg_i, x_aperture, y_aperture, aperture_radius,
-                             x_centroid_main, y_centroid_main, include_mass_sheet_correction, geometry_render,
+    def _render_dynamic_main_single(self, arg_i, rendering_center_x, rendering_center_y, aperture_radius,
+                                    x_centroid_main, y_centroid_main, include_mass_sheet_correction, geometry_render,
                                     render_index):
 
         args_render = deepcopy(arg_i)
@@ -246,28 +120,19 @@ class pyHaloDynamic(pyHaloBase):
         if self.zlens < args_render['zmin'] or self.zlens > args_render['zmax']:
             return None, None
 
-        x_window_location, y_window_location = x_aperture(self.zlens), y_aperture(self.zlens)
+        d = self.cosmology.D_C_z(self.zlens)
+        x_center, y_center = rendering_center_x(d), rendering_center_y(d)
 
         # Make cuts on mass based on log_mlow/log_mhigh
         log_mlow_cut = args_render['log_mlow']
         log_mhigh_cut = args_render['log_mhigh']
 
-        if self._rendering_class_main[render_index] is None:
+        args_render['log_mlow'] = args_render['log_mlow_subs']
+        args_render['log_mhigh'] = args_render['log_mhigh_subs']
 
-            if render_index == 0:
-                # Render subhalos include all masses, make cuts on mass and position later
-                args_render['log_mlow'] = args_render['log_mlow_subs']
-                args_render['log_mhigh'] = args_render['log_mhigh_subs']
-
-            self._rendering_class_main[render_index] = MainLensPowerLawDynamic(args_render, geometry_render,
-                                                                               x_centroid_main, y_centroid_main)
-
-
-        masses, x, y, r2d, r3d, redshifts = render_main_dynamic(self._rendering_class_main[render_index], aperture_radius,
-                                                        x_window_location, y_window_location,
-                                                        log_mlow_cut, log_mhigh_cut)
-
-
+        rendering_class_main = MainLensPowerLawDynamic(args_render, geometry_render, x_centroid_main, y_centroid_main)
+        masses, x, y, r2d, r3d, redshifts = rendering_class_main(x_center, y_center, args_render['log_mlow'],
+                                                                 args_render['log_mhigh'], aperture_radius)
 
         is_subhalo = True
         flag = [is_subhalo] * len(masses)
@@ -275,9 +140,10 @@ class pyHaloDynamic(pyHaloBase):
 
         # mass sheet correction is False because we don't want to override the main mass sheet funciton
         # in the realization created with the largest LOS halos
-        realization = Realization(masses, x, y, r2d, r3d, mdefs, redshifts, flag, self.halo_mass_function,
-                                  halo_profile_args=args_render, mass_sheet_correction=include_mass_sheet_correction,
-                                  dynamic=True)
+        halo_mass_function = self.build_LOS_mass_function()
+        realization = Realization(masses, x, y, r3d, mdefs, redshifts, flag, halo_mass_function, halo_profile_args=args_render,
+                                  mass_sheet_correction=include_mass_sheet_correction, dynamic=True, rendering_classes=rendering_class_main,
+                                  lens_cosmo_class=None, rendering_center_x=rendering_center_x, rendering_center_y=rendering_center_y)
 
         return realization, self._rendering_class_main[render_index]
 
@@ -351,37 +217,6 @@ class pyHaloDynamic(pyHaloBase):
                                   dynamic=True)
 
         return realization, rendering_class
-
-    def interpolated_ray_paths(self, lens_model, kwargs, x_coords, y_coords,
-                    source_x, source_y, lens_plane_redshifts):
-
-        from lenstronomy.LensModel.lens_model import LensModel
-
-        lens_model_list_empty = []
-        zlist_empty = []
-        kwargs_empty = []
-        for i, zi in enumerate(lens_plane_redshifts):
-            lens_model_list_empty.append('CONVERGENCE')
-            zlist_empty.append(zi)
-            kwargs_empty.append({'kappa_ext': 0.})
-
-        lens_model_list, redshift_list, convention_index = \
-            self._lenstronomy_args_from_lensmodel(lens_model)
-
-        lens_model_list += lens_model_list_empty
-        redshift_list += zlist_empty
-        kwargs += kwargs_empty
-
-        lensmodel_new = LensModel(lens_model_list, z_lens=self.zlens,
-                                  z_source=self.zsource, lens_redshift_list=redshift_list,
-                                  cosmo=lens_model.cosmo, multi_plane=True,
-                                  numerical_alpha_class=None)
-
-        x_interp, y_interp = self._interpolate_ray_paths(x_coords, y_coords,
-                              lensmodel_new, kwargs, self.zsource, terminate_at_source=True,
-                                                   source_x=source_x, source_y=source_y)
-
-        return x_interp, y_interp
 
     @staticmethod
     def _lenstronomy_args_from_lensmodel(lensmodel):

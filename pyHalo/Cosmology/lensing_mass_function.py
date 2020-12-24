@@ -8,13 +8,17 @@ from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_pow
 
 class LensingMassFunction(object):
 
+    """
+    This class handles computations pertaining to the halo mass function, including evaluating the normalization and slope
+    of the mass function itself, and computing the two halo term.
+    """
+
     def __init__(self, cosmology, mlow, mhigh, zlens, zsource, cone_opening_angle,
-                 m_pivot=10**8, mass_function_model=None, use_lookup_table=True,
+                 m_pivot=10**8, mass_function_model='sheth99', use_lookup_table=True,
                  geometry_type=None):
 
 
         """
-        This class handles computations of the halo mass function
 
         :param cosmology: An instance of Cosmology (see cosmology.py)
         :param mlow: low end of mass function
@@ -86,14 +90,12 @@ class LensingMassFunction(object):
 
         # To M_sun / h units
         M_h = M*h
-
         dndlogM = massFunction(M_h, z, q_out='dndlnM', model=self._mass_function_model)
 
-        dndM_comoving_h = dndlogM / M_h
-        # now we have an h^3 from the rho / M term in the mass function,
-        # and a 1/(h^-1) = h from M_h, so four factors of h
+        dndM_comoving_h = dndlogM / M
 
-        dndM_comoving = dndM_comoving_h * h ** 4
+        # thee factors of h for the (Mpc/h)^-3 to Mpc^-3 conversion
+        dndM_comoving = dndM_comoving_h * h ** 3
 
         return dndM_comoving
 
@@ -173,10 +175,8 @@ class LensingMassFunction(object):
         the rendering of halos
         :return: scaling factor applied to the normalization of the LOS mass function
         """
-        def _integrand(x):
-            return self.twohaloterm(x, m200, z)
 
-        mean_boost = 2 * quad(_integrand, rmin, rmax)[0] / (rmax - rmin)
+        mean_boost = 2 * quad(self.twohaloterm, rmin, rmax, args=(m200, z))[0] / (rmax - rmin)
         # factor of two for symmetry in front/behind host halo
 
         return 1. + mean_boost

@@ -3,7 +3,7 @@ import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
-from pyHalo.Halos.concentration import Concentration
+from pyHalo.Halos.concentration import Concentration, WDM_concentration_suppresion_factor
 
 class TestConcentration(object):
 
@@ -44,13 +44,13 @@ class TestConcentration(object):
             npt.assert_equal(_c, ci)
 
         cwdm = self.concentration.NFW_concentration(m, z, 'diemer19', '200c', 8., False, 60., -0.26, 0.1)
-        fac = self.concentration.WDM_concentration_suppresion_factor(m, z, 8., 60, -0.26)
+        fac = WDM_concentration_suppresion_factor(m, z, 8., 60, -0.26)
         npt.assert_equal(cwdm, c * fac)
 
         model = {'custom': True, 'c0': 2., 'beta': 0.9, 'zeta': -0.1}
         ccdm = self.concentration.NFW_concentration(m, z, model, None, None, False, None, None, None)
         cwdm = self.concentration.NFW_concentration(m, z, model, None, 8., False, 60., -0.26, 0.1)
-        fac = self.concentration.WDM_concentration_suppresion_factor(m, z, 8., 60, -0.26)
+        fac = WDM_concentration_suppresion_factor(m, z, 8., 60, -0.26)
         npt.assert_equal(cwdm, ccdm * fac)
 
 if __name__ == '__main__':

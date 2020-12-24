@@ -1,9 +1,8 @@
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
-from pyHalo.defaults import *
 import numpy as np
+from pyHalo.defaults import *
 from scipy.interpolate import interp1d
-
 
 class pyHaloBase(object):
 
@@ -208,13 +207,4 @@ class pyHaloBase(object):
                                                           **self._halo_mass_function_args)
 
         return self.halo_mass_function
-
-    def _add_profile_params(self, args, dynamic):
-
-        return set_default_kwargs(args, dynamic, self.zsource)
-
-
-
-
-
 

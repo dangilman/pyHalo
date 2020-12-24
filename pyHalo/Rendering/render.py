@@ -69,10 +69,3 @@ def render_main(rendering_class):
     masses, x_arcsec, y_arcsec, r3d, redshifts = rendering_class()
 
     return masses, x_arcsec, y_arcsec, r3d, redshifts
-
-def render_main_dynamic(rendering_class, aperture_size, center_x, center_y, mlow, mhigh):
-
-    masses, x_arcsec, y_arcsec, r3d, redshifts = rendering_class(center_x, center_y, mlow, mhigh, aperture_size)
-
-    return masses, x_arcsec, y_arcsec, r3d, redshifts
-

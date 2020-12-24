@@ -1,6 +1,7 @@
 import numpy.testing as npt
-from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
+from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction, massFunction
 from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 import pytest
 from scipy.integrate import quad
 import numpy as np
@@ -116,6 +117,38 @@ class TestLensingMassFunction(object):
         npt.assert_almost_equal(frac2, 1)
         npt.assert_almost_equal(frac1, 0.43799, 3)
         npt.assert_almost_equal(frac3, 0., 3)
+
+    def test_norm(self):
+
+        h = self.cosmo.h
+
+        z = 0.5
+        mass_function = self.lmf_no_lookup_ShethTormen.dN_dMdV_comoving
+
+        m = np.logspace(6, 10, 10)
+
+        # units Mpc ^ -3 M ^ -1
+        mfunc = mass_function(m, z)
+
+        # to units (Mpc/h) ^ =3 M ^ -1
+        mfunc *= h ** -3
+
+        # to units (Mpc/h) ^ -3 (M/h) ^ -1
+        mfunc *= h ** -1
+        coefs = np.polyfit(np.log10(m), np.log10(mfunc), 1)
+        # coefs = (-1.907, 8.732)
+
+        m_h = m * h
+        # units (Mpc/h) ^ -3 ln(M/h)^-1
+        dndlogm = massFunction(m_h, z, q_out='dndlnM', model='sheth99')
+        # units (Mpc/h) ^ -3 M ^ -1
+        dndm = dndlogm / m
+        # units (Mpc/h) ^ -3 (M/h) ^ -1
+        dndm *= h ** -1
+        coefs_theory = np.polyfit(np.log10(m), np.log10(dndm), 1)
+        # coefs_theory = (-1.907, 8.732)
+
+        npt.assert_almost_equal(coefs_theory, coefs)
 
 if __name__ == '__main__':
       pytest.main()

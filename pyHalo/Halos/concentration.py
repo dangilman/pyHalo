@@ -81,7 +81,7 @@ class Concentration(object):
             c = numpy.random.lognormal(_log_c, scatter_amplitude)
 
         if logmhm is not None:
-            rescale = self.WDM_concentration_suppresion_factor(M, z, logmhm, c_scale, c_power)
+            rescale = WDM_concentration_suppresion_factor(M, z, logmhm, c_scale, c_power)
         else:
             rescale = 1.
 
@@ -112,38 +112,38 @@ class Concentration(object):
 
         return c
 
-    def WDM_concentration_suppresion_factor(self, halo_mass, z, log_half_mode_mass, c_scale, c_power):
+def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, c_scale, c_power):
 
-        """
+    """
 
-        :param halo_mass: the mass of the halo in units M
-        (note that the exact units don't mass as long as the half mode mass is in the same units)
-        :param z: redshift
-        :param log_half_mode_mass: log10 of the half mode mass in a WDM model
-        :param c_scale: coefficient that multiplies the mass ratio M_hm / M
-        :param c_power: exponent of the suppression factor
+    :param halo_mass: the mass of the halo in units M
+    (note that the exact units don't mass as long as the half mode mass is in the same units)
+    :param z: redshift
+    :param log_half_mode_mass: log10 of the half mode mass in a WDM model
+    :param c_scale: coefficient that multiplies the mass ratio M_hm / M
+    :param c_power: exponent of the suppression factor
 
-        The functional form is:
-        c_wdm / c_cdm = (1 + c_scale * mhm / m)^c_power * redshift_factor
-        where
-        redshift_factor = (1+z)^(0.026 * z - 0.04)
-        (Bose et al. 2016)
+    The functional form is:
+    c_wdm / c_cdm = (1 + c_scale * mhm / m)^c_power * redshift_factor
+    where
+    redshift_factor = (1+z)^(0.026 * z - 0.04)
+    (Bose et al. 2016)
 
-        :return: the ratio c_wdm over c_cdm
-        """
+    :return: the ratio c_wdm over c_cdm
+    """
 
-        if c_power > 0:
-            raise Exception('c_power parameters > 0 are unphysical')
-        if c_scale < 0:
-            raise Exception('c_scale parameters < 0 are unphysical')
+    if c_power > 0:
+        raise Exception('c_power parameters > 0 are unphysical')
+    if c_scale < 0:
+        raise Exception('c_scale parameters < 0 are unphysical')
 
-        mhm = 10 ** log_half_mode_mass
+    mhm = 10 ** log_half_mode_mass
 
-        mass_ratio = mhm / halo_mass
+    mass_ratio = mhm / halo_mass
 
-        concentration_factor = (1 + c_scale * mass_ratio) ** c_power
-        redshift_factor = (1 + z) ** ( 0.026 * z - 0.04 )
+    concentration_factor = (1 + c_scale * mass_ratio) ** c_power
+    redshift_factor = (1 + z) ** (0.026 * z - 0.04)
 
-        rescale = redshift_factor * concentration_factor
+    rescale = redshift_factor * concentration_factor
 
-        return rescale
+    return rescale

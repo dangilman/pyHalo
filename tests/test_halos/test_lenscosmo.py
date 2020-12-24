@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from scipy.integrate import quad
 from astropy.constants import G, c
-from pyHalo.Halos.concentration import Concentration
+from pyHalo.Halos.concentration import Concentration, WDM_concentration_suppresion_factor
 import astropy.units as un
 from colossus.halo.profile_nfw import NFWProfile
 
@@ -77,7 +77,7 @@ class TestLensCosmo(object):
         c_wdm = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=False, logmhm=logmhm,
                                                   c_scale=100, c_power=-0.4)
 
-        suppresion = self.con.WDM_concentration_suppresion_factor(10**9, 0.2, logmhm, 100, -0.4)
+        suppresion = WDM_concentration_suppresion_factor(10**9, 0.2, logmhm, 100, -0.4)
         npt.assert_almost_equal(suppresion * c, c_wdm)
 
     def test_subhalo_accretion(self):

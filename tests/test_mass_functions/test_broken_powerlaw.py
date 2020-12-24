@@ -36,5 +36,12 @@ class TestBrokenPowerLaw(object):
         m = self.func_wdm.draw()
         npt.assert_almost_equal(np.sum(m)/mtheory, 1, 2)
 
+    def test_number_of_halos(self):
+
+        n_model = self.func_cdm._nhalos_mean_unbroken
+        ntheory = self.norm * 4.407e-6
+        npt.assert_almost_equal(n_model/ntheory, 1, 5)
+
+
 if __name__ == '__main__':
     pytest.main()

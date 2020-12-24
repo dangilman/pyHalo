@@ -5,6 +5,7 @@ from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
 from pyHalo.Rendering.Field.Delta.delta import LOSDelta
 from pyHalo.Rendering.Main.mainlens import MainLensPowerLaw
 from pyHalo.Rendering.render import render_los, render_main
+from pyHalo.defaults import set_default_kwargs
 
 class pyHalo(pyHaloBase):
 
@@ -36,7 +37,7 @@ class pyHalo(pyHaloBase):
 
         for n in range(nrealizations):
 
-            args = self._add_profile_params(args, False)
+            args = set_default_kwargs(args, False, self.zsource)
 
             realizations.append(self._render_single(type, args, verbose))
 
