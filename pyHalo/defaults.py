@@ -111,7 +111,7 @@ halo_default = DMHaloDefaults()
 realization_default = RealizationDefaults()
 print_defaults = False
 
-def set_default_kwargs(profile_params, dynamic, zsource):
+def set_default_kwargs(profile_params, zsource):
 
     if 'm_pivot' not in profile_params.keys():
         profile_params.update({'m_pivot': realization_default.m_pivot})
@@ -227,11 +227,6 @@ def set_default_kwargs(profile_params, dynamic, zsource):
         profile_params.update({'zmin': lenscone_default.default_zstart})
     if 'zmax' not in profile_params.keys():
         profile_params.update({'zmax': zsource - lenscone_default.default_zstart})
-
-    if not dynamic:
-        if 'cone_opening_angle' not in profile_params.keys():
-            if require_opening_angle:
-                raise Exception('must specify cone_opening_angle in keyword arguments.')
 
     if 'log_mass_sheet_min' not in profile_params.keys():
         profile_params.update({'log_mass_sheet_min': profile_params['log_mlow']})

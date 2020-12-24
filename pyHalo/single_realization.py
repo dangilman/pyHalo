@@ -103,7 +103,7 @@ class Realization(object):
         self._loaded_models = {}
         self._has_been_shifted = False
 
-        self._prof_params = set_default_kwargs(halo_profile_args, dynamic, self.geometry._zsource)
+        self._prof_params = set_default_kwargs(halo_profile_args, self.geometry._zsource)
 
         if halos is None:
 

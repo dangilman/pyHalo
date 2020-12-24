@@ -37,7 +37,7 @@ class pyHalo(pyHaloBase):
 
         for n in range(nrealizations):
 
-            args = set_default_kwargs(args, False, self.zsource)
+            args = set_default_kwargs(args, self.zsource)
 
             realizations.append(self._render_single(type, args, verbose))
 
