@@ -204,33 +204,19 @@ class LensCosmo(object):
 
         return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
 
-    def nfw_physical2angle_fromM(self, M, z, mc_kwargs={}):
+    def nfw_physical2angle_fromM(self, M, z, **mc_kwargs):
         """
         converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
         (with no scatter in MC relation)
-        :param M: mass enclosed 200 \rho_crit
+        :param M: mass enclosed 200 \rho_crit(z)
+        :param z: redshift
+        :param mc_kwargs: keyword arguments for NFW_concentration
         :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
         """
 
         c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
 
         return self.nfw_physical2angle(M, c, z)
-
-    def nfw_physical2angle(self, M, c, z):
-
-        """
-        converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
-        :param M: mass enclosed 200 \rho_crit
-        :param c: NFW concentration parameter (r200/r_s)
-        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
-        """
-
-        D_d = self.cosmo.D_A_z(z)
-        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
-        Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
-        theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
-        eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
-        return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
 
     def rho0_c_NFW(self, c, z_eval_rho=0.):
         """
@@ -253,20 +239,6 @@ class LensCosmo(object):
 
         return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
 
-    @property
-    def _colossus_nfwProfile(self):
-
-        """
-        :return: instance of NFWProfile in colossus
-        """
-
-        if not hasattr(self, '_colossus_nfw'):
-
-            from colossus.halo.profile_nfw import NFWProfile
-            self._colossus_nfw = NFWProfile
-
-        return self._colossus_nfw
-
     def _nfwParam_physical_Mpc(self, M, c, z):
 
         """
@@ -285,19 +257,6 @@ class LensCosmo(object):
         rhos = self.rho0_c_NFW(c, z) * h ** 2  # physical density in M_sun/Mpc**3
         rs = r200 / c
         return rhos, rs, r200
-
-    def NFW_params_physical_fromM(self, M, z, mc_kwargs={}):
-
-        """
-
-        :param M: halo mass in M_sun (no little h)
-        :param z: redshift
-        :param mc_kwargs: keywords for the MC relation
-        :return: profile parameters rho_s, rs, r200 for the NFW profile
-        """
-
-        c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
-        return self.NFW_params_physical(M, c, z)
 
     ##################################################################################
     """Routines relevant for other lensing by other mass profiles"""

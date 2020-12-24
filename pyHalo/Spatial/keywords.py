@@ -5,12 +5,6 @@ def LOS_spatial_global(args):
     args_spatial['cone_opening_angle'] = args['cone_opening_angle']
     return args_spatial
 
-def subhalo_spatial_uniform(args):
-
-    args_spatial = {}
-    args_spatial['rmax2d_arcsec'] = 0.5 * args['cone_opening_angle']
-    return args_spatial
-
 def subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo):
     args_spatial = {}
 
@@ -22,30 +16,22 @@ def subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo):
 
     if 'host_m200' in args.keys():
         # EVERYTHING EXPRESSED IN KPC
-        if args['host_m200'] < 100:
-            raise Exception('you have specified a host halo mass less than 10 ** 2 solar masses... '
-                            'probably not what you intended.')
 
-        if 'parent_c' not in args.keys():
-            args['parent_c'] = lenscosmo.NFW_concentration(args['host_m200'], zlens,
+        if 'host_c' not in args.keys():
+            args['host_c'] = lenscosmo.NFW_concentration(args['host_m200'], zlens,
                   model='diemer19', mdef='200c', logmhm=0, scatter=True,
                  c_scale=60., c_power=-0.17, scatter_amplitude=0.13)
 
-        if 'parent_Rs' not in args.keys():
-            parent_Rs = lenscosmo.NFW_params_physical(args['host_m200'],
-                                                            args['parent_c'], zlens)[1]
+        if 'host_Rs' not in args.keys():
+            host_Rs = lenscosmo.NFW_params_physical(args['host_m200'],
+                                                            args['host_c'], zlens)[1]
 
-        parent_r200 = parent_Rs * args['parent_c']
+        parent_r200 = host_Rs * args['host_c']
 
-        args_spatial['Rs'] = parent_Rs
+        args_spatial['Rs'] = host_Rs
         args_spatial['rmax3d'] = parent_r200
     else:
-        try:
-            args_spatial['Rs'] = args['parent_Rs']
-            args_spatial['rmax3d'] = args['parent_r200']
-        except:
-            raise ValueError('must specify either (parent_c, host_m200, log_m_host) for parent halo, or '
-                             '(parent_Rs, parent_r200) directly')
+        raise Exception('Must specify the host halo mass when rendering subhalos')
 
     if 'r_tidal' in args.keys():
 

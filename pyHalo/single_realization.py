@@ -396,7 +396,7 @@ class Realization(object):
 
         return lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel
 
-    def halo_comoving_coordinates(self, halos):
+    def halo_comoving_coordinates(self):
 
         """
         :param halos: a list of halos
@@ -404,7 +404,7 @@ class Realization(object):
         """
         xcoords, ycoords, masses, redshifts = [], [], [], []
 
-        for halo in halos:
+        for halo in self.halos:
             D = self.lens_cosmo.cosmo.D_C_z(halo.z)
             x_arcsec, y_arcsec = halo.x, halo.y
             x_comoving, y_comoving = D * x_arcsec, D * y_arcsec

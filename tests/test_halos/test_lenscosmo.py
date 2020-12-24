@@ -124,6 +124,25 @@ class TestLensCosmo(object):
 
             npt.assert_almost_equal(ratio/200, 1., 3)
 
+    def test_mhm_convert(self):
+
+        mthermal = 5.3
+        mhm = self.lens_cosmo.mthermal_to_halfmode(mthermal)
+        mthermal_out = self.lens_cosmo.halfmode_to_thermal(mhm)
+        npt.assert_almost_equal(mthermal/mthermal_out, 1, 2)
+
+        fsl = self.lens_cosmo.mhm_to_fsl(10**8.)
+        npt.assert_array_less(fsl, 100)
+
+    def test_NFW_phys2angle(self):
+
+        c = self.lens_cosmo.NFW_concentration(10**8, 0.5, scatter=False)
+        out = self.lens_cosmo.nfw_physical2angle(10**8, c, 0.5)
+        out2 = self.lens_cosmo.nfw_physical2angle_fromM(10**8, 0.5)
+        for (x, y) in zip(out, out2):
+            npt.assert_almost_equal(x, y)
+
+
 
 if __name__ == '__main__':
     pytest.main()

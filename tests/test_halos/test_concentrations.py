@@ -53,5 +53,11 @@ class TestConcentration(object):
         fac = WDM_concentration_suppresion_factor(m, z, 8., 60, -0.26)
         npt.assert_equal(cwdm, ccdm * fac)
 
+        ccdm = self.concentration.NFW_concentration(m_array_2, z_array_2, model, None, None, False, None, None, None)
+        npt.assert_equal(len(ccdm), len(m_array_2))
+
+        npt.assert_raises(Exception, WDM_concentration_suppresion_factor, 10**8, 0.1, 7., -1., -0.17)
+        npt.assert_raises(Exception, WDM_concentration_suppresion_factor, 10 ** 8, 0.1, 7., 60., 0.17)
+
 if __name__ == '__main__':
     pytest.main()

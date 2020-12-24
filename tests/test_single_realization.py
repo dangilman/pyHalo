@@ -343,6 +343,14 @@ class TestSingleRealization(object):
             npt.assert_equal(True, halo.z == 0.5)
             npt.assert_array_less(np.hypot(halo.x, halo.y), 1.00000000001)
 
+    def test_comoving_coordinates(self):
+
+        x, y, logm, z = self.realization_cdm.halo_comoving_coordinates()
+        d1 = self.realization_cdm.lens_cosmo.cosmo.D_C_z(z[0])
+        npt.assert_almost_equal(x[0], self.realization_cdm.x[0]*d1)
+        npt.assert_almost_equal(y[0], self.realization_cdm.y[0] * d1)
+        npt.assert_almost_equal(10**logm[0], self.realization_cdm.masses[0])
+
 if __name__ == '__main__':
     pytest.main()
 

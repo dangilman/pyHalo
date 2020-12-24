@@ -2,6 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from pyHalo.Spatial.nfw_core import ProjectedNFW
+from pyHalo.Spatial.keywords import subhalo_spatial_NFW
 
 
 class TestProjectedNFW(object):
@@ -13,6 +14,13 @@ class TestProjectedNFW(object):
         self.rvir = 350
         self.rcore = 10.
         self.nfw = ProjectedNFW(self.rs, self.rmax2d, self.rvir, self.rcore)
+
+    def test_keywords(self):
+
+        npt.assert_raises(Exception, subhalo_spatial_NFW, {'blah': 0.}, 6., 0.5, None)
+        npt.assert_raises(Exception, subhalo_spatial_NFW, {'host_m200': 10**13.,
+                                                           'host_c': 4.,'host_Rs': 50.,
+                                                           'r_tidal': 'Rss'}, 6., 0.5, None)
 
     def test_limit(self):
 
