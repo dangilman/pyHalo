@@ -3,7 +3,6 @@ from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction, massFunc
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 import pytest
-import matplotlib.pyplot as plt
 from scipy.integrate import quad
 import numpy as np
 
