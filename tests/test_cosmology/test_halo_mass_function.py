@@ -3,6 +3,7 @@ from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction, massFunc
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 import pytest
+import matplotlib.pyplot as plt
 from scipy.integrate import quad
 import numpy as np
 
@@ -150,5 +151,41 @@ class TestLensingMassFunction(object):
 
         npt.assert_almost_equal(coefs_theory, coefs)
 
+    def test_samples(self):
+
+        h = self.cosmo.h
+        z = 0.5
+
+        volume_element = 100000.
+        nbins = 15
+        m = np.logspace(6, 8.7, nbins)
+        m_h = m * h
+        dndlnmdv = massFunction(m_h, z, q_out='dndlnM', model='sheth99')
+        dndm_theory = dndlnmdv * h ** 3 / m
+        coefs_theory = np.polyfit(np.log10(m), np.log10(dndm_theory), 1)
+
+        norm_theory = coefs_theory[1]
+        plaw_index_theory = coefs_theory[0]
+
+        norm = volume_element * self.lmf_no_lookup_ShethTormen.norm_at_z_density(z, plaw_index_theory, 10**8)
+
+        mfunc = BrokenPowerLaw(6, 8.7, plaw_index_theory, False, norm, None, None, None, None)
+        mdraw = mfunc.draw()
+        dndm_model = []
+
+        mstep = 0.08
+        msteps = 10**np.arange(6, 8.7+mstep, mstep)
+        for i in range(0, len(msteps)-1):
+            cond1 = mdraw >= msteps[i]
+            cond2 = mdraw < msteps[i+1]
+            n = np.sum(np.logical_and(cond1, cond2))
+            delta_m = msteps[i+1] - msteps[i]
+            new = n / delta_m
+            dndm_model.append(new)
+
+        coefs_model = np.polyfit(np.log10(msteps[0:-1]), np.log10(dndm_model), 1)
+        norm_model = coefs_model[1]
+        npt.assert_almost_equal(10**(norm_model - norm_theory) / volume_element, 1, 1)
+
 if __name__ == '__main__':
-      pytest.main()
+       pytest.main()
