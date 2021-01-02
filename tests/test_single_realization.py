@@ -299,6 +299,23 @@ class TestSingleRealization(object):
         npt.assert_equal(True, tag in new_tags)
         npt.assert_equal(True, tag2 not in new_tags)
 
+        realization_filtered = realization_cdm.filter(aperture_radius_front,
+                                                      aperture_radius_back,
+                                                      log_mass_allowed_in_aperture_front,
+                                                      log_mass_allowed_in_aperture_back,
+                                                      log_mass_allowed_global_front,
+                                                      log_mass_allowed_global_back,
+                                                      interpolated_x_angle, interpolated_y_angle, aperture_units='MPC')
+
+        npt.assert_equal(len(realization_filtered.halos) > 0, True)
+
+        args = (aperture_radius_front,aperture_radius_back, log_mass_allowed_in_aperture_front,
+                        log_mass_allowed_in_aperture_back, log_mass_allowed_global_front,
+                        log_mass_allowed_global_back, interpolated_x_angle,
+                interpolated_y_angle, None, None, 'nonsense')
+
+        npt.assert_raises(Exception, realization_cdm.filter, *args)
+
     def test_lensing_quantities(self):
 
         lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = \

@@ -8,7 +8,7 @@ from pyHalo.pyhalo import pyHalo
 
 
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6,
-        log_mhigh=10, LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs'):
+        log_mhigh=10, LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs', mass_definition='TNFW', kwargs_other={}):
 
     """
 
@@ -40,10 +40,11 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     :param log_m_host: log10 host halo mass in M_sun
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
+    :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
+    :param mass_definition: mass profile model for halos (TNFW is truncated NFW)
     :return: a realization of CDM halos
     """
 
-    mass_definition = 'TNFW'  # truncated NFW profile
     kwargs_model_field = {'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
                           'mass_func_type': 'POWER_LAW', 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
@@ -51,6 +52,9 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     kwargs_model_subhalos = {'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub,
                              'power_law_index': shmf_log_slope, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                              'mdef_main': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
+
+    kwargs_model_field.update(kwargs_other)
+    kwargs_model_subhalos.update(kwargs_other)
 
     # this will use the default cosmology. parameters can be found in defaults.py
     pyhalo = pyHalo(z_lens, z_source)

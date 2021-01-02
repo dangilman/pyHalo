@@ -175,7 +175,7 @@ class Realization(object):
                log_mass_allowed_global_front,
                log_mass_allowed_global_back,
                interpolated_x_angle, interpolated_y_angle,
-               zmin=None, zmax=None):
+               zmin=None, zmax=None, aperture_units='ANGLES'):
 
         """
 
@@ -197,6 +197,18 @@ class Realization(object):
         arcsec given a comoving distance
         :param zmin: only keep halos at z > zmin
         :param zmax: only keep halos at z < zmax
+        :param aperture_units: either 'ANGLES' or 'MPC'
+
+        - If 'ANGLES', then halos are kept inside angular apertures
+        around each light ray with size aperture_radius_front/aperture_radius_back.
+        - If 'MPC', then halos are kept inside circular apertures with radius
+        R = aperture_radius_front/back * mpc_per_arcsec(0.5)
+        where D_C(0.5) is the comoving transverse distance at z = 0.5. The unit of R is arcsec * Mpc
+
+        'ANGLES' is more conservative in that it keeps more halos in the lens model; the rendering area is basically a cone
+        since the aperture size is a fixed angle at every redshift, whereas 'MPC' distributes halos in cylindrical
+        tubes around each light ray along the line of sight.
+
         :return: A new instance of Realization with the cuts on position and mass applied
         """
         halos = []
@@ -225,13 +237,23 @@ class Realization(object):
 
                 minimum_mass_everywhere = deepcopy(log_mass_allowed_global_front)
                 minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_front)
-                position_cut_in_window = deepcopy(aperture_radius_front)
+                aperture_radius_arcsec = deepcopy(aperture_radius_front)
 
             else:
 
                 minimum_mass_everywhere = deepcopy(log_mass_allowed_global_back)
                 minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_back)
-                position_cut_in_window = deepcopy(aperture_radius_back)
+                aperture_radius_arcsec = deepcopy(aperture_radius_back)
+
+            if aperture_units == 'ANGLES':
+                angle_scale = 1.
+                position_cut_in_window = aperture_radius_arcsec
+
+            elif aperture_units == 'MPC':
+                angle_scale = self.lens_cosmo.cosmo.D_C_z(zi)
+                position_cut_in_window = aperture_radius_arcsec * self.lens_cosmo.cosmo.D_C_z(0.5)
+            else:
+                raise Exception('aperture units must be either MPC or ANGLES')
 
             keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
 
@@ -243,8 +265,9 @@ class Realization(object):
 
                     dx = x_at_z[idx] - interp_x(comoving_distance_z)
                     dy = y_at_z[idx] - interp_y(comoving_distance_z)
-                    dr = np.sqrt(dx ** 2 + dy ** 2)
-                    if dr <= position_cut_in_window:
+                    dr_arcsec = np.sqrt(dx ** 2 + dy ** 2) * angle_scale
+
+                    if dr_arcsec <= position_cut_in_window:
                         keep_inds_dr.append(idx)
                         break
 
