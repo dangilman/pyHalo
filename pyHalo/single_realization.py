@@ -245,16 +245,6 @@ class Realization(object):
                 minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_back)
                 aperture_radius_arcsec = deepcopy(aperture_radius_back)
 
-            if aperture_units == 'ANGLES':
-                angle_scale = 1.
-                position_cut_in_window = aperture_radius_arcsec
-
-            elif aperture_units == 'MPC':
-                angle_scale = self.lens_cosmo.cosmo.D_C_z(zi)
-                position_cut_in_window = aperture_radius_arcsec * self.lens_cosmo.cosmo.D_C_z(0.5)
-            else:
-                raise Exception('aperture units must be either MPC or ANGLES')
-
             keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
 
             inds_m_low = np.where(masses_at_z < 10 ** minimum_mass_everywhere)[0]
@@ -265,9 +255,20 @@ class Realization(object):
 
                     dx = x_at_z[idx] - interp_x(comoving_distance_z)
                     dy = y_at_z[idx] - interp_y(comoving_distance_z)
-                    dr_arcsec = np.sqrt(dx ** 2 + dy ** 2) * angle_scale
 
-                    if dr_arcsec <= position_cut_in_window:
+                    if aperture_units == 'ANGLES':
+                        dr_cut = aperture_radius_arcsec
+
+                    elif aperture_units == 'MPC':
+                        dx *= comoving_distance_z
+                        dy *= comoving_distance_z
+                        dr_cut = aperture_radius_arcsec * self.lens_cosmo.cosmo.D_C_z(0.5)
+                    else:
+                        raise Exception('aperture units must be either MPC or ANGLES')
+
+                    dr = np.sqrt(dx ** 2 + dy ** 2)
+
+                    if dr <= dr_cut:
                         keep_inds_dr.append(idx)
                         break
 
