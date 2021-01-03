@@ -90,6 +90,7 @@ class RealizationDefaults(object):
         self.m_pivot = 10 ** 8
 
         self.delta_power_law_index = 0.
+        self.delta_power_law_index_coupling = 1.
 
         self.subtract_exact_mass_sheets = False
         self.subhalo_mass_sheet_scale = 1.
@@ -118,6 +119,8 @@ def set_default_kwargs(profile_params, zsource):
 
     if 'delta_power_law_index' not in profile_params.keys():
         profile_params.update({'delta_power_law_index': realization_default.delta_power_law_index})
+    if 'delta_power_law_index_coupling' not in profile_params.keys():
+        profile_params.update({'delta_power_law_index_coupling': realization_default.delta_power_law_index_coupling})
 
     if 'subtract_exact_mass_sheets' not in profile_params.keys():
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
