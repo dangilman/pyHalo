@@ -31,7 +31,8 @@ class MainLensBase(RenderingBase):
                             ' not recognized. Try HOST_NFW.')
 
         self.rendering_args = self.keyword_parse(args, kpc_per_arcsec_zlens, zlens)
-        power_law_index = self.rendering_args['power_law_index'] + self.rendering_args['delta_power_law_index']
+        delta_power_law_index = self.rendering_args['delta_power_law_index_coupling'] * self.rendering_args['delta_power_law_index']
+        power_law_index = self.rendering_args['power_law_index'] + delta_power_law_index
         self._mass_func_parameterization = BrokenPowerLaw(self.rendering_args['log_mlow'],
                                                           self.rendering_args['log_mhigh'],
                                                           power_law_index,
@@ -59,7 +60,9 @@ class MainLensBase(RenderingBase):
 
         m_low, m_high = 10 ** log_mass_sheet_correction_min, 10 ** log_mass_sheet_correction_max
 
-        power_law_index = self.rendering_args['power_law_index'] + self.rendering_args['delta_power_law_index']
+        delta_power_law_index = self.rendering_args['delta_power_law_index_coupling'] * self.rendering_args[
+            'delta_power_law_index']
+        power_law_index = self.rendering_args['power_law_index'] + delta_power_law_index
 
         if self.rendering_args['log_mc'] is not None:
             mass_in_subhalos = integrate_power_law_quad(self.rendering_args['normalization'],
@@ -133,7 +136,7 @@ class MainLensBase(RenderingBase):
         args_convergence_sheets = {}
         required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'subhalo_mass_sheet_scale',
                          'subhalo_convergence_correction_profile',
-                         'r_tidal', 'delta_power_law_index']
+                         'r_tidal', 'delta_power_law_index', 'delta_power_law_index_coupling']
 
         raise_error = False
         for key in required_keys:
@@ -162,7 +165,7 @@ class MainLensBase(RenderingBase):
                          'a_wdm', 'b_wdm', 'c_wdm', 'log_mass_sheet_min', 'log_mass_sheet_max',
                          'subhalo_mass_sheet_scale', 'draw_poisson', 'host_m200',
                          'subhalo_convergence_correction_profile', 'r_tidal',
-                         'delta_power_law_index', 'm_pivot']
+                         'delta_power_law_index', 'm_pivot', 'delta_power_law_index_coupling']
 
         for key in required_keys:
             try:
@@ -170,7 +173,8 @@ class MainLensBase(RenderingBase):
             except:
                 raise ValueError('must specify a value for ' + key)
 
-        power_law_index = args_mfunc['power_law_index'] + args_mfunc['delta_power_law_index']
+        delta_power_law_index = args_mfunc['delta_power_law_index_coupling'] * args_mfunc['delta_power_law_index']
+        power_law_index = args_mfunc['power_law_index'] + delta_power_law_index
         args_mfunc['normalization'] = normalization_sigmasub(args['sigma_sub'], args['host_m200'],
                                                              zlens,
                                                              kpc_per_arcsec_zlens,

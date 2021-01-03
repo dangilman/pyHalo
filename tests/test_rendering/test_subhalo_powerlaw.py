@@ -20,14 +20,14 @@ class TestFieldPowerLaw(object):
                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
                          'subhalo_convergence_correction_profile': 'UNIFORM', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
                         'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
-                         'delta_power_law_index': -0.2, 'm_pivot': 10**8}
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.5}
 
         kwargs_nfw_kappa_sheet = {'power_law_index': -1.95, 'log_mlow': 6., 'log_mhigh': 10., 'log_mc': None, 'sigma_sub': 0.2,
                          'a_wdm': None, 'b_wdm': None, 'c_wdm': None, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
                          'subhalo_convergence_correction_profile': 'NFW', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
                         'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
-                         'delta_power_law_index': -0.2, 'm_pivot': 10**8}
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.5}
 
         self.kwargs = kwargs
         self.kwargs_nfw_kappa_sheet = kwargs_nfw_kappa_sheet
@@ -37,7 +37,7 @@ class TestFieldPowerLaw(object):
                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
                          'subhalo_convergence_correction_profile': 'UNIFORM', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
                         'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
-                         'delta_power_law_index': -0.2, 'm_pivot': 10**8}
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.75}
 
         self.kwargs_wdm = kwargs_wdm
 
@@ -56,7 +56,7 @@ class TestFieldPowerLaw(object):
 
     def test_render(self):
 
-        plaw_index = self.kwargs['power_law_index'] + self.kwargs['delta_power_law_index']
+        plaw_index = self.kwargs['power_law_index'] + self.kwargs['delta_power_law_index'] * self.kwargs['delta_power_law_index_coupling']
         kpc_per_arcsec_zlens = self.geometry.kpc_per_arcsec(0.5)
         norm = normalization_sigmasub(self.kwargs['sigma_sub'], self.kwargs['host_m200'], 0.5,
                                       kpc_per_arcsec_zlens, self.geometry.cone_opening_angle, plaw_index, 10 ** 8)
@@ -70,7 +70,7 @@ class TestFieldPowerLaw(object):
         npt.assert_array_less(r2d_max, rmax_arcsec)
 
         m, x, y, r3, redshifts = self.func_wdm()
-        plaw_index = self.kwargs_wdm['power_law_index'] + self.kwargs_wdm['delta_power_law_index']
+        plaw_index = self.kwargs_wdm['power_law_index'] + self.kwargs_wdm['delta_power_law_index'] * self.kwargs_wdm['delta_power_law_index_coupling']
         kpc_per_arcsec_zlens = self.geometry.kpc_per_arcsec(0.5)
         norm = normalization_sigmasub(self.kwargs_wdm['sigma_sub'], self.kwargs_wdm['host_m200'], 0.5,
                                       kpc_per_arcsec_zlens, self.geometry.cone_opening_angle, plaw_index, 10 ** 8)
@@ -88,7 +88,7 @@ class TestFieldPowerLaw(object):
     def test_render_function(self):
 
         m, x, y, r3, redshifts = render_main(self.func)
-        plawindex = self.kwargs['power_law_index'] + self.delta_power_law_index
+        plawindex = self.kwargs['power_law_index'] + self.kwargs['delta_power_law_index'] * self.kwargs['delta_power_law_index_coupling']
         mtotal = np.sum(m)
         kpc_per_arcsec_zlens = self.geometry.kpc_per_arcsec(0.5)
         norm = normalization_sigmasub(self.kwargs['sigma_sub'], self.kwargs['host_m200'], 0.5,
@@ -97,7 +97,6 @@ class TestFieldPowerLaw(object):
         mtheory = integrate_power_law_analytic(norm, 10**self.kwargs['log_mlow'], 10**self.kwargs['log_mhigh'],
                                                        n=1, plaw_index=plawindex)
         npt.assert_array_less(abs(mtheory/mtotal - 1), 0.2)
-
 
     def test_convergence_sheets(self):
 
