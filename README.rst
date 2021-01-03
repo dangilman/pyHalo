@@ -6,12 +6,12 @@ pyHalo
 .. image:: https://img.shields.io/pypi/v/pyhalo.svg
         :target: https://pypi.python.org/pypi/pyhalo
 
-.. image:: https://img.shields.io/travis/dangilman/pyhalo.svg
-        :target: https://travis-ci.org/dangilman/pyhalo
+.. image:: https://travis-ci.org/dangilman/pyHalo.png?branch=master
+        :target: https://travis-ci.org/dangilman/pyHalo
 
-.. image:: https://readthedocs.org/projects/pyhalo/badge/?version=latest
-        :target: https://pyhalo.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+.. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
+        :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
+
 
 
 
