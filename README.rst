@@ -23,6 +23,11 @@ This code is under active development, but the core functionality expressed in t
 If you would like to use this package and have questions, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
 
 * Free software: MIT license
+Installation
+------------
+.. code-block:: bash
+
+    $ pip install pyHaloLens --user
 
 
 Features
