@@ -44,7 +44,7 @@ setup(
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='pyHalo',
-    name='pyHalo',
+    name='pyHaloLens',
     packages=find_packages(include=['pyHalo']),
     setup_requires=setup_requirements,
     test_suite='tests',
