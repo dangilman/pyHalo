@@ -43,7 +43,7 @@ setup(
     license="MIT license",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='pyHalo',
+    keywords='pyHaloLens',
     name='pyHaloLens',
     packages=find_packages(include=['pyHalo']),
     setup_requires=setup_requirements,
