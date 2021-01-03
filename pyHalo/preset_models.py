@@ -8,7 +8,7 @@ from pyHalo.pyhalo import pyHalo
 
 
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6,
-        log_mhigh=10, LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs', mass_definition='TNFW', kwargs_other={}):
+        log_mhigh=10, LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs', mass_definition='TNFW', **kwargs_other):
 
     """
 
