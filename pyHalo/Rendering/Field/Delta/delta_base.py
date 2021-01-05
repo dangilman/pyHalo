@@ -1,19 +1,19 @@
-from pyHalo.Rendering.Field.base import LOSBase
+from pyHalo.Rendering.Field.base import LineOfSightBase
 import numpy as np
 from pyHalo.defaults import *
 
-class DeltaBase(LOSBase):
+class DeltaBase(LineOfSightBase):
 
-    def __init__(self, lensing_mass_func, geometry_render, rendering_args, spatial_parameterization, minimum_mass,
+    def __init__(self, halo_mass_function_class, geometry_class, rendering_args, spatial_parameterization, minimum_mass,
                  lens_plane_redshifts, delta_zs):
 
         self._minimum_mass = minimum_mass
 
-        self._zlens = lensing_mass_func.geometry._zlens
+        self._zlens = halo_mass_function_class.geometry._zlens
 
         self.lens_plane_redshifts, self.delta_zs = lens_plane_redshifts, delta_zs
 
-        super(DeltaBase, self).__init__(lensing_mass_func, geometry_render, rendering_args, spatial_parameterization,
+        super(DeltaBase, self).__init__(halo_mass_function_class, geometry_class, rendering_args, spatial_parameterization,
                                         lens_plane_redshifts, delta_zs)
 
     def negative_kappa_sheets_theory(self):

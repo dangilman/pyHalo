@@ -1,11 +1,11 @@
-from pyHalo.Rendering.Field.base import LOSBase
+from pyHalo.Rendering.Field.base import LineOfSightBase
 from pyHalo.defaults import *
 from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
 from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, \
     integrate_power_law_analytic
 
-class PowerLawBase(LOSBase):
+class PowerLawBase(LineOfSightBase):
 
     def render_masses(self, zi, delta_zi, aperture_radius=None):
 

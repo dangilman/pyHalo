@@ -1,22 +1,20 @@
 import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Rendering.render_base import RenderingBase
+from abc import ABC, abstractmethod
 
-class LOSBase(RenderingBase):
+class LineOfSightBase(ABC):
 
     type = 'LOS'
 
-    def __init__(self, lensing_mass_func, geometry_render, rendering_args, spatial_parameterization, lens_plane_redshifts, delta_zs):
+    def __init__(self, rendering_type, halo_mass_function_class, geometry_class, lens_plane_redshifts, delta_zs):
 
-        self.halo_mass_function = lensing_mass_func
+        self.halo_mass_function = halo_mass_function_class
+        self.lens_plane_redshifts = lens_plane_redshifts
+        self.delta_zs = delta_zs
+        self.geometry = geometry_class
 
-        self._spatial_parameterization = spatial_parameterization
 
-        self.rendering_args = rendering_args
-
-        self.lens_plane_redshifts, self.delta_zs = lens_plane_redshifts, delta_zs
-
-        super(LOSBase, self).__init__(geometry_render)
 
     @staticmethod
     def two_halo_boost(z, delta_z, host_m200, zlens, lensing_mass_function_class):
@@ -28,6 +26,8 @@ class LOSBase(RenderingBase):
             boost = lensing_mass_function_class.two_halo_boost(host_m200, z, rmax=rmax)
 
         return boost
+
+    def render_masses(self, *args, **kwargs):
 
     def render_positions_at_z(self, z, nhalos, xshift_arcsec, yshift_arcsec):
 
