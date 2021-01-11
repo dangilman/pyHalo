@@ -105,7 +105,7 @@ class LensingMassFunction(object):
 
         :param z: redshift
         :param component_fraction: density parameter; fraction of the matter density (not fraction of critical density!)
-        :return: the number of objects of mass M * Mpc^-3
+        :return: the dark matter density at redshift z times component_fraction [M * Mpc^-3]
         """
 
         rho_dV = component_fraction * self.cosmo.rho_dark_matter_crit(z)
