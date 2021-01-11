@@ -19,8 +19,8 @@ def subhalo_spatial_NFW(args, kpc_per_arcsec_zlens, zlens, lenscosmo):
 
         if 'host_c' not in args.keys():
             args['host_c'] = lenscosmo.NFW_concentration(args['host_m200'], zlens,
-                  model='diemer19', mdef='200c', logmhm=0, scatter=True,
-                 c_scale=60., c_power=-0.17, scatter_amplitude=0.13)
+                  model='diemer19', mdef='200c', logmhm=args['log_mc'], scatter=True,
+                 c_scale=args['c_scale'], c_power=args['c_power'], scatter_amplitude=args['c_scatter_dex'])
 
         if 'host_Rs' not in args.keys():
             host_Rs = lenscosmo.NFW_params_physical(args['host_m200'],
