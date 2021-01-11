@@ -25,9 +25,7 @@ If you would like to use this package and have questions, please get in touch wi
 * Free software: MIT license
 Installation
 ------------
-.. code-block:: bash
-
-    $ pip install pyHaloLens --user
+Clone the repository, navigate into the main pyHalo directory and run python3 setup.py develop --user. (in the process of making this pip-installable) 
 
 
 Features
