@@ -20,14 +20,16 @@ class TestFieldPowerLaw(object):
                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
                          'subhalo_convergence_correction_profile': 'UNIFORM', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
                         'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
-                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.5}
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.5,
+                  'c_scale': 60., 'c_power': -0.17, 'c_scatter_dex': 0.2}
 
         kwargs_nfw_kappa_sheet = {'power_law_index': -1.95, 'log_mlow': 6., 'log_mhigh': 10., 'log_mc': None, 'sigma_sub': 0.2,
                          'a_wdm': None, 'b_wdm': None, 'c_wdm': None, 'log_mass_sheet_min': 6., 'log_mass_sheet_max': 10.,
                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
                          'subhalo_convergence_correction_profile': 'NFW', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
                         'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
-                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.5}
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.5,
+                                  'c_scale': 60., 'c_power': -0.17, 'c_scatter_dex': 0.2}
 
         self.kwargs = kwargs
         self.kwargs_nfw_kappa_sheet = kwargs_nfw_kappa_sheet
@@ -37,7 +39,8 @@ class TestFieldPowerLaw(object):
                         'subhalo_mass_sheet_scale': 1., 'draw_poisson': False,
                          'subhalo_convergence_correction_profile': 'UNIFORM', 'host_m200': 10**13.1, 'r_tidal': '0.25Rs',
                         'subhalo_spatial_distribution': 'HOST_NFW','cone_opening_angle': 6.,
-                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.75}
+                         'delta_power_law_index': -0.2, 'm_pivot': 10**8, 'delta_power_law_index_coupling': 0.75,
+                      'c_scale': 60., 'c_power': -0.17, 'c_scatter_dex': 0.2}
 
         self.kwargs_wdm = kwargs_wdm
 

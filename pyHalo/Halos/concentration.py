@@ -142,6 +142,7 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, c_scal
     mass_ratio = mhm / halo_mass
 
     concentration_factor = (1 + c_scale * mass_ratio) ** c_power
+
     redshift_factor = (1 + z) ** (0.026 * z - 0.04)
 
     rescale = redshift_factor * concentration_factor
