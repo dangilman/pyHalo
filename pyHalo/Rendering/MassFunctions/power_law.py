@@ -1,6 +1,4 @@
-import numpy
 import numpy as np
-from Cython.Includes import numpy
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import WDM_suppression
 
