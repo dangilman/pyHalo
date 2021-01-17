@@ -1,12 +1,14 @@
 from pyHalo.single_realization import Realization, SingleHalo, realization_at_z, add_core_collapsed_subhalos
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
+from pyHalo.Cosmology.geometry import Geometry
+from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
 import numpy.testing as npt
 from scipy.interpolate import interp1d
 from copy import deepcopy
 import pytest
+from pyHalo.Rendering.halo_population import HaloPopulation
 
 class TestSingleRealization(object):
 
@@ -67,27 +69,27 @@ class TestSingleRealization(object):
             delta_zs.append(lens_plane_redshifts[i + 1] - lens_plane_redshifts[i])
         delta_zs.append(1.5 - lens_plane_redshifts[-1])
 
-        rendering_classes = [LOSPowerLaw(kwargs_cdm,
-                                        halo_mass_function,
-                                        halo_mass_function.geometry,
-                                        lens_plane_redshifts,
-                                        delta_zs)]
-        self.rendering_classes = rendering_classes
+        geometry = Geometry(cosmo, 0.5, 1.5, 6., 'DOUBLE_CONE')
+        lens_cosmo = LensCosmo(zlens, zsource, cosmo)
+        halo_population = HaloPopulation(['LINE_OF_SIGHT'], self.kwargs_cdm, lens_cosmo, geometry, halo_mass_function,
+                                         lens_plane_redshifts, delta_zs)
+
+        self.rendering_classes = halo_population.rendering_classes
 
         mdef = ['NFW'] * len(masses)
         self.realization_cdm = Realization(masses, x, y, r3d, mdef, redshifts, subflags,
                                   halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm_2,
-                                  mass_sheet_correction=True, rendering_classes=rendering_classes)
+                                  mass_sheet_correction=True, rendering_classes=self.rendering_classes)
 
         mdef = ['PT_MASS'] * len(masses)
         self.realization_cdm2 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
                                            halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
-                                           mass_sheet_correction=True, rendering_classes=rendering_classes)
+                                           mass_sheet_correction=True, rendering_classes=self.rendering_classes)
 
         mdef = ['PJAFFE'] * len(masses)
         self.realization_cdm3 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
                                             halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
-                                            mass_sheet_correction=True, rendering_classes=rendering_classes)
+                                            mass_sheet_correction=True, rendering_classes=self.rendering_classes)
 
         self.halos_cdm = self.realization_cdm.halos
 

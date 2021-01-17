@@ -3,12 +3,11 @@ from pyHalo.defaults import *
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
-from pyHalo.Rendering.Main.SHMF_normalizations import *
 from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
-
+import numpy as np
 from copy import deepcopy
 
 def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordinate_y=None, max_range=None):
@@ -563,7 +562,7 @@ class Realization(object):
                     continue
 
                 kwargs_new, profiles_new, redshifts_new = \
-                    rendering_class.negative_kappa_sheets_theory()
+                    rendering_class.convergence_sheet_correction()
 
                 kwargs_mass_sheets += kwargs_new
                 redshifts += redshifts_new

@@ -1,0 +1,121 @@
+from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
+import numpy as np
+from copy import deepcopy
+from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.rendering_class_base import RenderingClassBase
+
+class TwoHaloContribution(RenderingClassBase):
+
+    def __init__(self, keywords_master, halo_mass_function, geometry, lens_cosmo, lens_plane_redshifts, delta_z_list):
+
+        self._rendering_kwargs = self.keyword_parse_render(keywords_master)
+        self.halo_mass_function = halo_mass_function
+        self.geometry = geometry
+        self.lens_cosmo = lens_cosmo
+        self.spatial_distribution_model = LensConeUniform(keywords_master['cone_opening_angle'], geometry)
+        self._lens_plane_redshifts = lens_plane_redshifts
+        self._delta_z_list = delta_z_list
+        super(TwoHaloContribution, self).__init__()
+
+    def render(self):
+
+        """
+        Generates halo masses and positions for correlated structure around the main deflector
+        :return: mass (in Msun), x (arcsec), y (arcsec), r3d (kpc), redshift
+        """
+
+        idx = np.argmin(abs(np.array(self._lens_plane_redshifts) - self.lens_cosmo.z_lens))
+
+        delta_z = self._delta_z_list[idx]
+
+        m = self.render_masses_at_z(self.lens_cosmo.z_lens, delta_z)
+        x, y, r3d = self.render_positions_at_z(self.lens_cosmo.z_lens, len(m))
+        subhalo_flag = [False] * len(m)
+        redshifts = [self.lens_cosmo.z_lens] * len(m)
+
+        return m, x, y, r3d, redshifts, subhalo_flag
+
+    def render_masses_at_z(self, z, delta_z):
+
+        """
+        :param z: redshift at which to render masses
+        :param delta_z: thickness of the redshift slice
+        :return: halo masses at the desired redshift in units Msun
+        """
+
+        norm, slope = self._norm_slope(z, delta_z)
+        args = deepcopy(self._rendering_kwargs)
+
+        mfunc = GeneralPowerLaw(args['log_mlow'], args['log_mhigh'], slope, args['draw_poisson'],
+                                norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
+                                args['c_wdm'])
+        m = mfunc.draw()
+
+        return m
+
+    def render_positions_at_z(self, z, nhalos):
+
+        """
+        :param z: redshift
+        :param nhalos: number of halos or objects to generate
+        :return: the x, y coordinate of objects in arcsec, and a 3 dimensional coordinate in kpc
+        The 3d coordinate only has a clear physical interpretation for subhalos, and is used to compute truncation raddi.
+        For line of sight halos it is set to None.
+        """
+
+        x_kpc, y_kpc, r3d_kpc = self.spatial_distribution_model.draw(nhalos, z)
+        if len(x_kpc) > 0:
+            kpc_per_asec = self.geometry.kpc_per_arcsec(z)
+            x_arcsec = x_kpc * kpc_per_asec ** -1
+            y_arcsec = y_kpc * kpc_per_asec ** -1
+            return x_arcsec, y_arcsec, r3d_kpc
+
+        else:
+            return np.array([]), np.array([]), np.array([])
+
+    def _norm_slope(self, z, delta_z):
+
+        if z != self.lens_cosmo.z_lens:
+            raise Exception('this class must be evaluated at the main deflector redshift')
+
+        volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z)
+        plaw_index = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
+        norm_per_unit_volume = self.halo_mass_function.norm_at_z_density(z, plaw_index,
+                                                                         self._rendering_kwargs['m_pivot'])
+        norm_per_unit_volume *= self._rendering_kwargs['LOS_normalization']
+        reference_norm = norm_per_unit_volume * volume_element_comoving
+
+        rmax = self.lens_cosmo.cosmo.D_C_transverse(z + delta_z) - self.lens_cosmo.cosmo.D_C_transverse(z)
+        rmin = min(rmax, 0.5)
+
+        two_halo_boost = self.halo_mass_function.two_halo_boost(self._rendering_kwargs['host_m200'], z, rmax=rmax,
+                                                                rmin=rmin)
+
+        slope = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
+        norm = (two_halo_boost - 1) * reference_norm
+        return norm, slope
+
+
+    def convergence_sheet_correction(self):
+
+        return {}, [], []
+
+    @staticmethod
+    def keyword_parse_render(keywords_master):
+
+        kwargs = {}
+        required_keys = ['log_mlow', 'log_mhigh', 'host_m200', 'LOS_normalization',
+                         'draw_poisson', 'delta_power_law_index', 'm_pivot', 'log_mc', 'a_wdm', 'b_wdm', 'c_wdm']
+
+        for key in required_keys:
+
+            if key not in keywords_master:
+                raise Exception('Required keyword argument ' + str(key) + ' not specified.')
+            else:
+                kwargs[key] = keywords_master[key]
+
+        return kwargs
+
+    def keys_convergence_sheets(self):
+
+        return {}

@@ -51,7 +51,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 
     kwargs_model_subhalos = {'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub,
                              'power_law_index': shmf_log_slope, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                             'mdef_main': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
+                             'mdef_subs': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
 
     kwargs_model_field.update(kwargs_other)
     kwargs_model_subhalos.update(kwargs_other)
@@ -59,8 +59,9 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     # this will use the default cosmology. parameters can be found in defaults.py
     pyhalo = pyHalo(z_lens, z_source)
     # Using the render method will result a list of realizations
-    realization_subs = pyhalo.render('main_lens', kwargs_model_subhalos, nrealizations=1)[0]
-    realization_line_of_sight = pyhalo.render('line_of_sight', kwargs_model_field, nrealizations=1)[0]
+
+    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
+    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
 
     cdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 
@@ -133,7 +134,7 @@ def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_lo
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle, 'sigma_sub': sigma_sub, 'mdef_main': mass_definition,
+                          'cone_opening_angle': cone_opening_angle, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
 
     kwargs_model_field.update(kwargs_other)
@@ -142,8 +143,8 @@ def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_lo
     # this will use the default cosmology. parameters can be found in defaults.py
     pyhalo = pyHalo(z_lens, z_source)
     # Using the render method will result a list of realizations
-    realization_subs = pyhalo.render('main_lens', kwargs_model_subhalos, nrealizations=1)[0]
-    realization_line_of_sight = pyhalo.render('line_of_sight', kwargs_model_field, nrealizations=1)[0]
+    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
+    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
 
     wdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 

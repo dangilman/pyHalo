@@ -1,4 +1,4 @@
-from pyHalo.Spatial.uniform import Uniform, LensConeUniform
+from pyHalo.Rendering.SpatialDistributions.uniform import Uniform, LensConeUniform
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy as np

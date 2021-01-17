@@ -1,9 +1,10 @@
+import numpy
 import numpy as np
-from pyHalo.Rendering.MassFunctions.PowerLaw.powerlaw_base import PowerLawBase
+from Cython.Includes import numpy
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import WDM_suppression
 
-class BrokenPowerLaw(PowerLawBase):
+class GeneralPowerLaw(object):
 
     """
     This class handles computations of a double power law mass function of the form
@@ -55,14 +56,33 @@ class BrokenPowerLaw(PowerLawBase):
         self._b_wdm = b_wdm
         self._c_wdm = c_wdm
 
+        self.draw_poisson = draw_poisson
+        self._index = power_law_index
+        self._mL = 10 ** log_mlow
+        self._mH = 10 ** log_mhigh
+
+
         self._nhalos_mean_unbroken = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10 ** log_mhigh, 0,
                                                                   power_law_index)
 
-        super(BrokenPowerLaw, self).__init__(log_mlow, log_mhigh, power_law_index, draw_poisson)
-
     def draw(self):
 
-        m = self.sample_from_power_law(self._nhalos_mean_unbroken)
+        """
+        Draws samples from a double power law distribution between mL and mH of the form
+        m ^ power_law_index * (1 + (a*mc / m)^b )^c
+
+        Physically, the second term multiplying m^power_law_index can be a suppression in the mass function on small
+        scales.
+
+        :param draw_poisson:
+        :param _index:
+        :param _mH:
+        :param _mL:
+        :param n_draw:
+        :return:
+        """
+
+        m = self._sample(self.draw_poisson, self._index, self._mH, self._mL, self._nhalos_mean_unbroken)
 
         if len(m) == 0 or self._log_mc is None:
             return m
@@ -70,3 +90,31 @@ class BrokenPowerLaw(PowerLawBase):
         factor = WDM_suppression(m, 10 ** self._log_mc, self._a_wdm, self._b_wdm, self._c_wdm)
         u = np.random.rand(int(len(m)))
         return m[np.where(u < factor)]
+
+    def _sample(self, draw_poisson, index, mH, mL, n_draw):
+
+        """
+        Draws samples from a power law distribution between mL and mH
+        :param draw_poisson:
+        :param _index:
+        :param _mH:
+        :param _mL:
+        :param n_draw:
+        :return:
+        """
+
+        if draw_poisson:
+            N = np.random.poisson(n_draw)
+        else:
+            N = int(round(np.round(n_draw)))
+
+        x = np.random.rand(N)
+        if index == -1:
+            norm = np.log(mH / mL)
+            X = mL * np.exp(norm * x)
+        else:
+            X = (x * (mH ** (1 + index) - mL ** (1 + index)) + mL ** (
+                1 + index)) ** (
+                    (1 + index) ** -1)
+
+        return np.array(X)

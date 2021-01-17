@@ -1,10 +1,10 @@
 import numpy.testing as npt
 import pytest
-from pyHalo.Rendering.MassFunctions.PowerLaw.broken_powerlaw import BrokenPowerLaw
+from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 import numpy as np
 
-class TestBrokenPowerLaw(object):
+class TestGeneralPowerLaw(object):
 
     def setup(self):
 
@@ -12,13 +12,13 @@ class TestBrokenPowerLaw(object):
         self.log_mhigh = 8.7
         self.plaw_index = -1.9
         self.norm = 10 ** 12
-        self.func_cdm = BrokenPowerLaw(self.log_mlow, self.log_mhigh, self.plaw_index,
-                                       draw_poisson=False, normalization=self.norm, log_mc=None,
-                                       a_wdm=None, b_wdm=None, c_wdm=None)
+        self.func_cdm = GeneralPowerLaw(self.log_mlow, self.log_mhigh, self.plaw_index,
+                                        draw_poisson=False, normalization=self.norm, log_mc=None,
+                                        a_wdm=None, b_wdm=None, c_wdm=None)
 
-        self.func_wdm = BrokenPowerLaw(self.log_mlow, self.log_mhigh, self.plaw_index,
-                                       draw_poisson=False, normalization=self.norm,
-                                       log_mc=7.5, a_wdm=2., b_wdm=0.5, c_wdm=-1.3)
+        self.func_wdm = GeneralPowerLaw(self.log_mlow, self.log_mhigh, self.plaw_index,
+                                        draw_poisson=False, normalization=self.norm,
+                                        log_mc=7.5, a_wdm=2., b_wdm=0.5, c_wdm=-1.3)
 
     def test_draw_cdm(self):
 

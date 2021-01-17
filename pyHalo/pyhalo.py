@@ -1,11 +1,9 @@
 from pyHalo.pyhalo_base import pyHaloBase
-import numpy as np
 from pyHalo.single_realization import Realization
-from pyHalo.Rendering.Field.PowerLaw.powerlaw import LOSPowerLaw
-from pyHalo.Rendering.Field.Delta.delta import LOSDelta
-from pyHalo.Rendering.Main.mainlens import MainLensPowerLaw
-from pyHalo.Rendering.render import render_los, render_main
+from pyHalo.Rendering.halo_population import HaloPopulation
 from pyHalo.defaults import set_default_kwargs
+from pyHalo.Halos.lens_cosmo import LensCosmo
+
 
 class pyHalo(pyHaloBase):
 
@@ -28,91 +26,35 @@ class pyHalo(pyHaloBase):
         """
         super(pyHalo, self).__init__(zlens, zsource, cosmology_kwargs, kwargs_halo_mass_function)
 
-    def render(self, type, args, nrealizations=1, verbose=False):
+    def render(self, population_model_list, model_keywords, nrealizations=1,
+               convergence_sheet_correction=True):
 
-        self.halo_mass_function = self.build_LOS_mass_function(args)
-        self._geometry = self.halo_mass_function.geometry
+        halo_mass_function = self.build_LOS_mass_function(model_keywords)
+        geometry = self.halo_mass_function.geometry
+        keywords_master = set_default_kwargs(model_keywords, self.zsource)
 
-        realizations = []
+        lens_cosmo = LensCosmo(self.zlens, self.zsource, self.cosmology)
+        plane_redshifts, redshift_spacing = self.lens_plane_redshifts(keywords_master)
+
+        realization_list = []
 
         for n in range(nrealizations):
 
-            args = set_default_kwargs(args, self.zsource)
+            population_model = HaloPopulation(population_model_list, keywords_master, lens_cosmo, geometry,
+                                              halo_mass_function, plane_redshifts, redshift_spacing)
 
-            realizations.append(self._render_single(type, args, verbose))
+            masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag = population_model.render()
 
-        return realizations
+            mdefs = []
+            for i in range(0, len(masses)):
+                if subhalo_flag[i]:
+                    mdefs += [keywords_master['mdef_subs']]
+                else:
+                    mdefs += [keywords_master['mdef_los']]
 
-    def _render_single(self, type, args, verbose,
-                       add_mass_sheet=True):
+            realization = Realization(masses, x_arcsec, y_arcsec, r3d, mdefs, redshifts, subhalo_flag, self.halo_mass_function,
+                                      halo_profile_args=keywords_master, mass_sheet_correction=convergence_sheet_correction,
+                                      rendering_classes=population_model.rendering_classes)
+            realization_list.append(realization)
 
-        assert type in ['main_lens', 'composite_powerlaw', 'line_of_sight', 'dynamic_main', 'dynamic_LOS']
-
-        flag = []
-        init = True
-
-        mass_sheet = add_mass_sheet
-
-        lens_plane_redshifts, delta_zs = self.lens_plane_redshifts(args)
-
-        rendering_classes = []
-
-        if type == 'main_lens' or type == 'composite_powerlaw':
-
-            rendering_class = MainLensPowerLaw(args, self._geometry)
-            rendering_classes += [rendering_class]
-            mdef = args['mdef_main']
-
-            masses, x, y, r3d, redshifts = render_main(rendering_class)
-            flag += [True] * len(masses)
-            init = False
-            mdefs = [mdef] * len(masses)
-
-        if type == 'composite_powerlaw' or type == 'line_of_sight':
-
-            if args['mass_func_type'] == 'DELTA':
-                mass_sheet = False
-                rendering_class = LOSDelta(args, self.halo_mass_function, self._geometry, args['log_mlow'],
-                                           lens_plane_redshifts, delta_zs)
-                rendering_classes += [rendering_class]
-
-            elif args['mass_func_type'] == 'POWER_LAW':
-                rendering_class = LOSPowerLaw(args, self.halo_mass_function, self._geometry, lens_plane_redshifts, delta_zs)
-                rendering_classes += [rendering_class]
-
-            else:
-                raise Exception('Must specify mass_func_type.\nAllowed types: POWER_LAW, DELTA')
-
-            mdef_los = args['mdef_los']
-
-            if init:
-                masses, x, y, r3d, redshifts \
-                    = render_los(rendering_class, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
-                flag += [False] * len(masses)
-                mdefs = [mdef_los] * len(masses)
-
-            else:
-
-                field_halo_masses, field_xpos, field_ypos, field_r3d, field_z \
-                    = render_los(rendering_class, lens_plane_redshifts, delta_zs, args['zmin'], args['zmax'])
-
-                masses = np.append(masses, field_halo_masses)
-                x = np.append(x, field_xpos)
-                y = np.append(y, field_ypos)
-                r3d = np.append(r3d, field_r3d)
-                redshifts = np.append(redshifts, field_z)
-                flag += [False] * len(field_halo_masses)
-                mdefs += [mdef_los] * len(field_halo_masses)
-
-        realization = Realization(masses, x, y, r3d, mdefs, redshifts, flag, self.halo_mass_function,
-                                  halo_profile_args=args, mass_sheet_correction=mass_sheet,
-                                  rendering_classes=rendering_classes)
-
-        return realization
-
-
-
-
-
-
-
+        return realization_list

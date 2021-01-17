@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-from pyHalo.Spatial.nfw_core import NFW3DCoreRejectionSampling
+from pyHalo.Rendering.SpatialDistributions.nfw_core import NFW3DCoreRejectionSampling
 from lenstronomy.LensModel.Profiles.cnfw import CNFW
 
 class TestNFWRejSamp(object):

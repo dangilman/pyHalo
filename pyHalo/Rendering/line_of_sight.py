@@ -1,0 +1,215 @@
+import numpy as np
+from copy import deepcopy
+from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
+from pyHalo.Rendering.rendering_class_base import RenderingClassBase
+
+class LineOfSight(RenderingClassBase):
+
+    def __init__(self, keywords_master, halo_mass_function, geometry, lens_cosmo,
+                 lens_plane_redshifts, delta_z_list):
+
+        self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
+        self._rendering_kwargs = self.keyword_parse_render(keywords_master)
+
+        self.lens_cosmo = lens_cosmo
+
+        self.spatial_distribution_model = LensConeUniform(keywords_master['cone_opening_angle'],
+                                                          geometry)
+
+        self.halo_mass_function = halo_mass_function
+        self.geometry = geometry
+        self._lens_plane_redshifts = lens_plane_redshifts
+        self._delta_z_list = delta_z_list
+        super(LineOfSight, self).__init__()
+
+    def render(self):
+
+        """
+        Generates halo masses and positions for objects along the line of sight
+        (except for halos from the two-halo contribution)
+        :return: mass (in Msun), x (arcsec), y (arcsec), r3d (kpc), redshift
+        """
+
+        masses = np.array([])
+        x = np.array([])
+        y = np.array([])
+        r3d = np.array([])
+        redshifts = np.array([])
+
+        for z, dz in zip(self._lens_plane_redshifts, self._delta_z_list):
+
+            m = self.render_masses_at_z(z, dz)
+            nhalos = len(m)
+            _x, _y, _r3d = self.render_positions_at_z(z, nhalos)
+            _z = np.array([z] * len(_x))
+            masses = np.append(masses, m)
+            x = np.append(x, _x)
+            y = np.append(y, _y)
+            r3d = np.append(r3d, _r3d)
+            redshifts = np.append(redshifts, _z)
+
+        subhalo_flag = [False] * len(masses)
+
+        return masses, x, y, r3d, redshifts, subhalo_flag
+
+    def render_positions_at_z(self, z, nhalos):
+
+        """
+        :param z: redshift
+        :param nhalos: number of halos or objects to generate
+        :return: the x, y coordinate of objects in arcsec, and a 3 dimensional coordinate in kpc
+        The 3d coordinate only has a clear physical interpretation for subhalos, and is used to compute truncation raddi.
+        For line of sight halos it is set to None.
+        """
+
+        x_kpc, y_kpc, r3d_kpc = self.spatial_distribution_model.draw(nhalos, z)
+
+        if len(x_kpc) > 0:
+            kpc_per_asec = self.geometry.kpc_per_arcsec(z)
+            x_arcsec = x_kpc * kpc_per_asec ** -1
+            y_arcsec = y_kpc * kpc_per_asec ** -1
+            return x_arcsec, y_arcsec, r3d_kpc
+
+        else:
+            return np.array([]), np.array([]), np.array([])
+
+    def render_masses_at_z(self, z, delta_z):
+
+        """
+        :param z: redshift at which to render masses
+        :param delta_z: thickness of the redshift slice
+        :return: halo masses at the desired redshift in units Msun
+        """
+
+        norm, plaw_index = self._normalization_slope(z, delta_z)
+
+        args = deepcopy(self._rendering_kwargs)
+
+        args.update({'normalization': norm})
+        args.update({'power_law_index': plaw_index})
+
+        mfunc = GeneralPowerLaw(args['log_mlow'], args['log_mhigh'], plaw_index, args['draw_poisson'],
+                                norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
+                                args['c_wdm'])
+
+        m = mfunc.draw()
+
+        return m
+
+    @staticmethod
+    def keys_convergence_sheets(keywords_master):
+
+        args_convergence_sheets = {}
+        required_keys = ['log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale', 'zmin', 'zmax',
+                         'delta_power_law_index']
+
+        raise_error = False
+        missing_list = []
+        for key in required_keys:
+            if key not in keywords_master.keys():
+                raise_error = True
+                missing_list.append(key)
+            else:
+                args_convergence_sheets[key] = keywords_master[key]
+
+        if raise_error:
+            text = 'When specifying mass function type POWER_LAW and rendering line of sight halos, must provide all ' \
+                   'required keyword arguments. The following need to be specified: '
+            for key in missing_list:
+                text += str(key) + '\n'
+            raise Exception(text)
+
+        return args_convergence_sheets
+
+    @staticmethod
+    def keyword_parse_render(keywords_master):
+
+        args_mfunc = {}
+
+        required_keys = ['zmin', 'zmax', 'log_mc', 'log_mlow',
+                         'log_mhigh', 'host_m200', 'LOS_normalization',
+                         'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
+                         'a_wdm', 'b_wdm', 'c_wdm', 'delta_power_law_index',
+                         'm_pivot']
+
+        for key in required_keys:
+
+            if key not in keywords_master:
+                raise Exception('Required keyword argument ' + str(key) + ' not specified.')
+            else:
+                args_mfunc[key] = keywords_master[key]
+
+        if args_mfunc['log_mc'] is None:
+            args_mfunc['a_wdm'] = None
+            args_mfunc['b_wdm'] = None
+            args_mfunc['c_wdm'] = None
+            args_mfunc['c_scale'] = None
+            args_mfunc['c_power'] = None
+
+        return args_mfunc
+
+    def convergence_sheet_correction(self):
+
+        kwargs_mass_sheets = self._convergence_sheet_kwargs
+
+        log_mass_sheet_correction_min, log_mass_sheet_correction_max = \
+            kwargs_mass_sheets['log_mass_sheet_min'], kwargs_mass_sheets['log_mass_sheet_max']
+
+        kappa_scale = kwargs_mass_sheets['kappa_scale']
+
+        lens_plane_redshifts = self._lens_plane_redshifts[0::2]
+        delta_zs = 2 * self._delta_z_list[0::2]
+
+        kwargs_out = []
+        profile_names_out = []
+        redshifts = []
+
+        for z, delta_z in zip(lens_plane_redshifts, delta_zs):
+
+            if z < kwargs_mass_sheets['zmin']:
+                continue
+            if z > kwargs_mass_sheets['zmax']:
+                continue
+
+            kappa = self._convergence_at_z(z, delta_z, log_mass_sheet_correction_min, log_mass_sheet_correction_max,
+                                           kappa_scale)
+
+            if kappa > 0:
+
+                kwargs_out.append({'kappa_ext': -kappa})
+                profile_names_out += ['CONVERGENCE']
+                redshifts.append(z)
+
+        return kwargs_out, profile_names_out, redshifts
+
+    def _normalization_slope(self, z, delta_z):
+
+        volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z)
+        plaw_index = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
+        norm_dv = self.halo_mass_function.norm_at_z_density(z, plaw_index, self._rendering_kwargs['m_pivot'])
+        norm = self._rendering_kwargs['LOS_normalization'] * norm_dv * volume_element_comoving
+        return norm, plaw_index
+
+    def _convergence_at_z(self, z, delta_z, log_sheet_min,
+                             log_sheet_max, kappa_scale):
+
+        norm, plaw_index = self._normalization_slope(z, delta_z)
+
+        m_low = 10 ** log_sheet_min
+        m_high = 10 ** log_sheet_max
+
+        if self._rendering_kwargs['log_mc'] is None:
+            mtheory = integrate_power_law_analytic(norm, m_low, m_high, 1, plaw_index)
+
+        else:
+            mtheory = integrate_power_law_quad(norm, m_low, m_high, self._rendering_kwargs['log_mc'], 1,
+                                               plaw_index, self._rendering_kwargs['a_wdm'],
+                                               self._rendering_kwargs['b_wdm'],
+                                               self._rendering_kwargs['c_wdm'])
+
+        area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
+        sigma_crit_mass = self.lens_cosmo.sigma_crit_mass(z, area)
+
+        return kappa_scale * mtheory / sigma_crit_mass

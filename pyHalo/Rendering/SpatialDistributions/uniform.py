@@ -3,11 +3,11 @@ import numpy as np
 
 class LensConeUniform(object):
 
-    def __init__(self, cone_opening_angle, cosmo_geometry):
+    def __init__(self, cone_opening_angle, geometry):
 
-        self._cosmo_geometry = cosmo_geometry
+        self._cosmo_geometry = geometry
 
-        self._uni = Uniform(cone_opening_angle * 0.5, cosmo_geometry)
+        self._uni = Uniform(0.5 * cone_opening_angle, geometry)
 
     def draw(self, N, z_plane, center_x=0, center_y=0):
 
@@ -24,6 +24,7 @@ class LensConeUniform(object):
 class Uniform(object):
 
     def __init__(self, rmax2d_arcsec, geometry):
+
         self.rmax2d_arcsec = rmax2d_arcsec
         self._geo = geometry
 
