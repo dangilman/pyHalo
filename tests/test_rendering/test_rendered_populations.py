@@ -22,7 +22,7 @@ class TestRenderedPopulations(object):
         log_mlow = 6.
         log_mhigh = 9.
         host_m200 = 10 ** 13
-        LOS_normalization = 50.
+        LOS_normalization = 100.
         draw_poisson = False
         log_mass_sheet_min = 7.
         log_mass_sheet_max = 10.
@@ -63,7 +63,7 @@ class TestRenderedPopulations(object):
 
         kwargs_wdm = deepcopy(kwargs_cdm)
 
-        log_mc = 7.3
+        log_mc = 7.1
         a_wdm = 1.
         b_wdm = 0.8
         c_wdm = -1.3
@@ -238,7 +238,8 @@ class TestRenderedPopulations(object):
 
         log_slope_predictd_cdm = self.kwargs_cdm['power_law_index'] + self.kwargs_cdm['delta_power_law_index'] * \
                 self.kwargs_cdm['delta_power_law_index_coupling']
-        log_slope_predictd_wdm = log_slope_predictd_cdm - \
+        log_slope_predictd_wdm =  self.kwargs_wdm['power_law_index'] + self.kwargs_wdm['delta_power_law_index'] * \
+                self.kwargs_wdm['delta_power_law_index_coupling'] - \
                                  (self.kwargs_wdm['b_wdm'] * self.kwargs_wdm['c_wdm'])
 
         npt.assert_almost_equal(abs(1-differential_slope_cdm/log_slope_predictd_cdm), 0, 1)
