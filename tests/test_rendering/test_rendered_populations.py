@@ -206,45 +206,6 @@ class TestRenderedPopulations(object):
             ratio = h_wdm[i]/h_cdm[i]
             npt.assert_almost_equal(ratio, suppression_factor[i], 1)
 
-        halo_masses_wdm = [halo.mass for halo in self.realization_wdm_subhalos.halos]
-        halo_masses_cdm = []
-        for halo in self.realization_cdm.halos:
-            if halo.is_subhalo:
-                halo_masses_cdm.append(halo.mass)
-
-        halo_masses_cdm = np.array(halo_masses_cdm)
-        halo_masses_wdm = np.array(halo_masses_wdm)
-
-        step = 0.2
-        msteps = 10**np.arange(6, 6.6 + step, step=0.2)
-        logmsteps = np.log10(msteps)[0:-1]
-        dn_dM_cdm, dn_dM_wdm = [], []
-        for i in range(0, len(msteps)-1):
-            cond1 = halo_masses_cdm >= msteps[i]
-            cond2 = halo_masses_cdm < msteps[i+1]
-            condition = np.logical_and(cond1, cond2)
-            cond1 = halo_masses_wdm >= msteps[i]
-            cond2 = halo_masses_wdm < msteps[i + 1]
-            condition_wdm = np.logical_and(cond1, cond2)
-            ncdm = np.sum(condition)
-            nwdm = np.sum(condition_wdm)
-            dn_dM_cdm.append(ncdm / msteps[i])
-            dn_dM_wdm.append(nwdm / msteps[i])
-
-        dn_dM_cdm = np.array(dn_dM_cdm)
-        dn_dM_wdm = np.array(dn_dM_wdm)
-        differential_slope_cdm = np.polyfit(logmsteps, np.log10(dn_dM_cdm), 1)[0]
-        differential_slope_wdm = np.polyfit(logmsteps, np.log10(dn_dM_wdm), 1)[0]
-
-        log_slope_predictd_cdm = self.kwargs_cdm['power_law_index'] + self.kwargs_cdm['delta_power_law_index'] * \
-                self.kwargs_cdm['delta_power_law_index_coupling']
-        log_slope_predictd_wdm =  self.kwargs_wdm['power_law_index'] + self.kwargs_wdm['delta_power_law_index'] * \
-                self.kwargs_wdm['delta_power_law_index_coupling'] - \
-                                 (self.kwargs_wdm['b_wdm'] * self.kwargs_wdm['c_wdm'])
-
-        npt.assert_almost_equal(abs(1-differential_slope_cdm/log_slope_predictd_cdm), 0, 1)
-        npt.assert_almost_equal(abs(1-differential_slope_wdm/log_slope_predictd_wdm), 0, 1)
-
     def test_cdm_mass_function(self):
 
         mass_bins = np.linspace(6, 9., 20)

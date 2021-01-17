@@ -31,12 +31,13 @@ def integrate_power_law_analytic(norm, m_low, m_high, n, plaw_index):
     :return:
     """
 
-    if plaw_index == -1 and n == 0:
+    factor = n + 1 + plaw_index
+
+    if factor == 0:
 
         integral = np.log(m_high/m_low)
 
     else:
-        factor = n + 1 + plaw_index
 
         integral = (m_high ** factor - m_low ** factor)/factor
 
