@@ -100,7 +100,7 @@ class TestLOS(object):
 
         npt.assert_raises(Exception, self.rendering_class.render_masses_at_z, 0.9, 0.02)
 
-        x, y, r3 = self.rendering_class.render_positions_at_z(self.lens_cosmo.z_lens, 10000)
+        x, y = self.rendering_class.render_positions_at_z(self.lens_cosmo.z_lens, 10000)
         rmax = np.max(np.hypot(x, y))
         rmax_theory = 0.5 * self.kwargs_cdm['cone_opening_angle'] * self.geometry.rendering_scale(self.lens_cosmo.z_lens)
         npt.assert_array_less(rmax, rmax_theory)
