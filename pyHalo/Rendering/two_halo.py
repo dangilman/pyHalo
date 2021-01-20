@@ -87,12 +87,13 @@ class TwoHaloContribution(RenderingClassBase):
         This method computes the normalization of the mass function for correlated structure around the main deflector.
 
         The normalization is defined as (boost - 1) * background, where background is the mean normalization of the
-        halo mass function computed with (for example) Sheth-Tormen, and boost is the average contribution of the two-halo
-        term integrated over a comoving distance corresponding to 2 * dz, where dz is the redshift plane spacing.
+        halo mass function computed with (for example) Sheth-Tormen, and boost is the average contribution of the
+        two-halo term integrated over a comoving distance corresponding to 2 * dz, where dz is the redshift plane
+        spacing.
 
-        boost(z, r_min, r_max) = 2 / r_max \int_{r_min}^{r_max} \xi\left(r, z, M_{host}\right) * dr
+        boost(z, r_min, r_max) = 2 / r_max int_{r_min}^{r_max} x(r, z, M_{host}) * dr
 
-        where \xi\left(r, M_{host}\right) is the linear halo bias times the matter-matter correlation function,
+        where xi(r, M_{host) is the linear halo bias times the matter-matter correlation function,
         r_min is set of 0.5 Mpc, and r_max is the comoving distance corresponding to 2*dz, where dz is the redshift
         spacing. M_host is the mass in M_sun of the host dark matter halo
         :param z: the redshift which to evaluate the matter-matter correlation function and halo bias
