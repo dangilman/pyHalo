@@ -16,6 +16,14 @@ class ProjectedNFW(object):
 
     def __init__(self, rendering_radius, Rs, r_core_host, r200):
 
+        """
+
+        :param rendering_radius: the maximum projected 2D radius where halos are rendered [arcsec]
+        :param Rs: the scale radius of the host dark matter halo [kpc]
+        :param r_core_host: the core radius of the host dark matter halo [kpc]
+        :param r200: the virial radius of the host dark matter halo [kpc]
+        """
+
         self._cnfw_profile = CNFW()
 
         self.rmax2d_kpc = rendering_radius
@@ -219,11 +227,21 @@ class NFW3DFast(object):
 class NFW3DCoreRejectionSampling(object):
 
     """
-    Samples from a cored NFW profile with any core radius (within reason) using rejection sampling,
-    can be slow.
+    Samples from a cored NFW profile using rejection sampling; this can be slow. Depending on the input parameters
+
+    The probability of rendering at halo at 3D position r is proportional to
+
+    p(r) ~ 1/ [ (r + r_c) * (r + r_s)^2 ]
     """
     def __init__(self, Rs, rmax2d, rmax3d, r_core_parent):
 
+        """
+
+        :param Rs: the scale radius of the host dark matter halo [kpc]
+        :param rmax2d: the maximum projected 2D radius where halos are rendered [arcsec]
+        :param rmax3d: the virial radius of the host dark matter halo [kpc]
+        :param r_core_parent: the core radius of the host dark matter halo [kpc]
+        """
         self._Rs = Rs
         self._rmax2d = rmax2d
         self._rmax3d = rmax3d

@@ -83,6 +83,24 @@ class TwoHaloContribution(RenderingClassBase):
 
     def _norm_slope(self, z, delta_z):
 
+        """
+        This method computes the normalization of the mass function for correlated structure around the main deflector.
+
+        The normalization is defined as (boost - 1) * background, where background is the mean normalization of the
+        halo mass function computed with (for example) Sheth-Tormen, and boost is the average contribution of the two-halo
+        term integrated over a comoving distance corresponding to 2 * dz, where dz is the redshift plane spacing.
+
+        boost(z, r_min, r_max) = 2 / r_max \int_{r_min}^{r_max} \xi\left(r, z, M_{host}\right) * dr
+
+        where \xi\left(r, M_{host}\right) is the linear halo bias times the matter-matter correlation function,
+        r_min is set of 0.5 Mpc, and r_max is the comoving distance corresponding to 2*dz, where dz is the redshift
+        spacing. M_host is the mass in M_sun of the host dark matter halo
+        :param z: the redshift which to evaluate the matter-matter correlation function and halo bias
+        :param delta_z: the redshift spacing of the lens planes adjacent the main deflector
+        :return: the normalization of the two-halo term mass function. The form of the two-halo term mass function is
+        assumed to have the same shape as the background halo mass function
+        """
+
         if z != self.lens_cosmo.z_lens:
             raise Exception('this class must be evaluated at the main deflector redshift')
 
@@ -102,7 +120,6 @@ class TwoHaloContribution(RenderingClassBase):
         slope = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
         norm = (two_halo_boost - 1) * reference_norm
         return norm, slope
-
 
     def convergence_sheet_correction(self):
 

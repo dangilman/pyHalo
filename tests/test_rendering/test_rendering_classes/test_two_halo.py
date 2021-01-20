@@ -8,7 +8,6 @@ import numpy.testing as npt
 from copy import deepcopy
 from pyHalo.pyhalo import pyHalo
 import pytest
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
 
 class TestLOS(object):
 
