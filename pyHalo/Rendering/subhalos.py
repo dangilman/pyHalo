@@ -6,7 +6,17 @@ from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
 class Subhalos(RenderingClassBase):
 
+    """
+    This class generates subhalos, or objects that have been accreted onto the host halo of the main deflector.
+    """
+
     def __init__(self, keywords_master, geometry, lens_cosmo):
+
+        """
+        :param keywords_master: a dictionary of keyword arguments to be passed to each model class
+        :param geometry: an instance of Geometry (see Cosmology.geometry)
+        :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
+        """
 
         self._zlens = lens_cosmo.z_lens
         self._z_source = lens_cosmo.z_source
@@ -29,6 +39,11 @@ class Subhalos(RenderingClassBase):
         super(Subhalos, self).__init__()
 
     def render(self):
+
+        """
+        Generates halo masses and positions for subhalos of the main deflector host halo.
+        :return: mass (in Msun), x (arcsec), y (arcsec), r3d (kpc), redshift
+        """
 
         m = self.render_masses_at_z()
         x, y, r3d = self.render_positions_at_z(len(m))

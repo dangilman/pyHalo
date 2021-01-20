@@ -6,6 +6,13 @@ from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
 class TwoHaloContribution(RenderingClassBase):
 
+    """
+    This class adds correlated structure associated with the host dark matter halo. The amount of structure added is
+    proportional to b * corr, where b is the halo bias as computed by Sheth and Tormen (1999) and corr is the
+    matter-matter correlation function. Currently, this term is implemented as a rescaling of the background density by
+    b * corr, where the product is the average value computed over 2*dz, where dz is the spacing of the redshift planes
+    adjacent the redshift plane of the main deflector.
+    """
     def __init__(self, keywords_master, halo_mass_function, geometry, lens_cosmo, lens_plane_redshifts, delta_z_list):
 
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
@@ -29,9 +36,10 @@ class TwoHaloContribution(RenderingClassBase):
         delta_z = self._delta_z_list[idx]
 
         m = self.render_masses_at_z(self.lens_cosmo.z_lens, delta_z)
-        x, y, r3d = self.render_positions_at_z(self.lens_cosmo.z_lens, len(m))
+        x, y = self.render_positions_at_z(self.lens_cosmo.z_lens, len(m))
         subhalo_flag = [False] * len(m)
         redshifts = [self.lens_cosmo.z_lens] * len(m)
+        r3d = np.array([None] * len(m))
 
         return m, x, y, r3d, redshifts, subhalo_flag
 
@@ -63,15 +71,15 @@ class TwoHaloContribution(RenderingClassBase):
         For line of sight halos it is set to None.
         """
 
-        x_kpc, y_kpc, r3d_kpc = self.spatial_distribution_model.draw(nhalos, z)
+        x_kpc, y_kpc = self.spatial_distribution_model.draw(nhalos, z)
         if len(x_kpc) > 0:
             kpc_per_asec = self.geometry.kpc_per_arcsec(z)
             x_arcsec = x_kpc * kpc_per_asec ** -1
             y_arcsec = y_kpc * kpc_per_asec ** -1
-            return x_arcsec, y_arcsec, r3d_kpc
+            return x_arcsec, y_arcsec
 
         else:
-            return np.array([]), np.array([]), np.array([])
+            return np.array([]), np.array([])
 
     def _norm_slope(self, z, delta_z):
 

@@ -52,9 +52,9 @@ class pyHalo(pyHaloBase):
                 else:
                     mdefs += [keywords_master['mdef_los']]
 
-            realization = Realization(masses, x_arcsec, y_arcsec, r3d, mdefs, redshifts, subhalo_flag, self.halo_mass_function,
-                                      halo_profile_args=keywords_master, mass_sheet_correction=convergence_sheet_correction,
-                                      rendering_classes=population_model.rendering_classes)
+            realization = Realization(masses, x_arcsec, y_arcsec, r3d, mdefs, redshifts, subhalo_flag, lens_cosmo,
+                                      kwargs_realization=keywords_master, mass_sheet_correction=convergence_sheet_correction,
+                                      rendering_classes=population_model.rendering_classes, geometry=geometry)
             realization_list.append(realization)
 
         return realization_list

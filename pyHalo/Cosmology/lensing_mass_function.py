@@ -4,7 +4,7 @@ from scipy.interpolate import interp1d
 from pyHalo.defaults import *
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import simps
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad
+
 
 class LensingMassFunction(object):
 
@@ -13,7 +13,7 @@ class LensingMassFunction(object):
     of the mass function itself, and computing the two halo term.
     """
 
-    def __init__(self, cosmology, mlow, mhigh, zlens, zsource, cone_opening_angle,
+    def __init__(self, cosmology, mlow=None, mhigh=None, zlens=None, zsource=None, cone_opening_angle=None,
                  m_pivot=10**8, mass_function_model='sheth99', use_lookup_table=True,
                  geometry_type=None):
 

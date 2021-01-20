@@ -7,9 +7,24 @@ from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
 class LineOfSight(RenderingClassBase):
 
+    """
+    This class generates line-of-sight halos, or more precisely objects between the observer and the source that are
+    not associated with the host dark matter halo around the main deflector.
+    """
+
     def __init__(self, keywords_master, halo_mass_function, geometry, lens_cosmo,
                  lens_plane_redshifts, delta_z_list):
 
+        """
+
+        :param keywords_master: a dictionary of keyword arguments to be passed to each model class
+        :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
+        :param geometry: an instance of Geometry (see Cosmology.geometry)
+        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.lensing_mass_function)
+        :param lens_plane_redshifts: a list of redshifts at which to render halos
+        :param delta_z_list: a list of redshift increments between each lens plane (should be the same length as
+        lens_plane_redshifts)
+        """
         self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
 
@@ -35,22 +50,21 @@ class LineOfSight(RenderingClassBase):
         masses = np.array([])
         x = np.array([])
         y = np.array([])
-        r3d = np.array([])
         redshifts = np.array([])
 
         for z, dz in zip(self._lens_plane_redshifts, self._delta_z_list):
 
             m = self.render_masses_at_z(z, dz)
             nhalos = len(m)
-            _x, _y, _r3d = self.render_positions_at_z(z, nhalos)
+            _x, _y = self.render_positions_at_z(z, nhalos)
             _z = np.array([z] * len(_x))
             masses = np.append(masses, m)
             x = np.append(x, _x)
             y = np.append(y, _y)
-            r3d = np.append(r3d, _r3d)
             redshifts = np.append(redshifts, _z)
 
         subhalo_flag = [False] * len(masses)
+        r3d = np.array([None] * len(masses))
 
         return masses, x, y, r3d, redshifts, subhalo_flag
 
@@ -64,16 +78,16 @@ class LineOfSight(RenderingClassBase):
         For line of sight halos it is set to None.
         """
 
-        x_kpc, y_kpc, r3d_kpc = self.spatial_distribution_model.draw(nhalos, z)
+        x_kpc, y_kpc = self.spatial_distribution_model.draw(nhalos, z)
 
         if len(x_kpc) > 0:
             kpc_per_asec = self.geometry.kpc_per_arcsec(z)
             x_arcsec = x_kpc * kpc_per_asec ** -1
             y_arcsec = y_kpc * kpc_per_asec ** -1
-            return x_arcsec, y_arcsec, r3d_kpc
+            return x_arcsec, y_arcsec
 
         else:
-            return np.array([]), np.array([]), np.array([])
+            return np.array([]), np.array([])
 
     def render_masses_at_z(self, z, delta_z):
 

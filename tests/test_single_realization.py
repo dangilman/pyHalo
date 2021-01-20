@@ -1,4 +1,4 @@
-from pyHalo.single_realization import Realization, SingleHalo, realization_at_z, add_core_collapsed_subhalos
+from pyHalo.single_realization import Realization, SingleHalo, realization_at_z
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.geometry import Geometry
@@ -71,6 +71,7 @@ class TestSingleRealization(object):
 
         geometry = Geometry(cosmo, 0.5, 1.5, 6., 'DOUBLE_CONE')
         lens_cosmo = LensCosmo(zlens, zsource, cosmo)
+        self.lens_cosmo = lens_cosmo
         halo_population = HaloPopulation(['LINE_OF_SIGHT'], self.kwargs_cdm, lens_cosmo, geometry, halo_mass_function,
                                          lens_plane_redshifts, delta_zs)
 
@@ -78,18 +79,21 @@ class TestSingleRealization(object):
 
         mdef = ['NFW'] * len(masses)
         self.realization_cdm = Realization(masses, x, y, r3d, mdef, redshifts, subflags,
-                                  halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm_2,
-                                  mass_sheet_correction=True, rendering_classes=self.rendering_classes)
+                                           lens_cosmo, halos=None, kwargs_realization=self.kwargs_cdm_2,
+                                           mass_sheet_correction=True, rendering_classes=self.rendering_classes,
+                                           geometry=geometry)
 
         mdef = ['PT_MASS'] * len(masses)
         self.realization_cdm2 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
-                                           halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
-                                           mass_sheet_correction=True, rendering_classes=self.rendering_classes)
+                                            lens_cosmo, halos=None, kwargs_realization=self.kwargs_cdm,
+                                            mass_sheet_correction=True, rendering_classes=self.rendering_classes,
+                                            geometry=geometry)
 
         mdef = ['PJAFFE'] * len(masses)
         self.realization_cdm3 = Realization(masses2, x2, y2, r3d2, mdef, redshifts2, subflags2,
-                                            halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
-                                            mass_sheet_correction=True, rendering_classes=self.rendering_classes)
+                                            lens_cosmo, halos=None, kwargs_realization=self.kwargs_cdm,
+                                            mass_sheet_correction=True, rendering_classes=self.rendering_classes,
+                                            geometry=geometry)
 
         self.halos_cdm = self.realization_cdm.halos
 
@@ -104,12 +108,25 @@ class TestSingleRealization(object):
         self.real_1_data = [x, y, masses, redshifts, subflags, redshifts]
         self.real_2_data = [x2, y2, masses2, redshifts2, subflags2, redshifts2]
 
+    def test_mass_sheet_correction(self):
+
+        kwargs_mass_sheets, profile_list, z_sheets = self.realization_cdm._mass_sheet_correction(self.rendering_classes,
+                                                                                                 None)
+        npt.assert_equal(len(kwargs_mass_sheets), len(profile_list))
+        npt.assert_equal(len(kwargs_mass_sheets), len(z_sheets))
+
+        kwargs_mass_sheets, profile_list, z_sheets = self.realization_cdm._mass_sheet_correction(self.rendering_classes,
+                                                                                                 z_mass_sheet_max=0.3)
+        npt.assert_equal(len(kwargs_mass_sheets), len(profile_list))
+        npt.assert_equal(len(kwargs_mass_sheets), len(z_sheets))
+        npt.assert_equal(True, max(z_sheets) <= 0.3)
+
     def test_build_from_halos(self):
 
-        realization_fromhalos = Realization.from_halos(self.halos_cdm, self.halo_mass_function,
+        realization_fromhalos = Realization.from_halos(self.halos_cdm, self.lens_cosmo,
                                    self.kwargs_cdm, self.realization_cdm.apply_mass_sheet_correction,
                                                        self.realization_cdm.rendering_classes,
-                                                       self.realization_cdm.lens_cosmo)
+                                                       )
 
         for halo_1, halo_2 in zip(realization_fromhalos.halos, self.realization_cdm.halos):
             npt.assert_equal(halo_1.x, halo_2.x)
@@ -121,7 +138,10 @@ class TestSingleRealization(object):
             npt.assert_equal(halo_1.is_subhalo, halo_2.is_subhalo)
             npt.assert_equal(halo_1.unique_tag, halo_2.unique_tag)
 
-        npt.assert_equal(realization_fromhalos.apply_mass_sheet_correction, self.realization_cdm.apply_mass_sheet_correction)
+        npt.assert_equal(True, realization_fromhalos == self.realization_cdm)
+
+        npt.assert_equal(realization_fromhalos.apply_mass_sheet_correction,
+                         self.realization_cdm.apply_mass_sheet_correction)
 
     def test_join(self):
 
@@ -203,7 +223,7 @@ class TestSingleRealization(object):
         mdefs_TNFW = ['TNFW'] * len(masses)
 
         realization_cdm = Realization(masses, x, y, r3d, mdefs_TNFW, redshifts, subflags,
-                                      self.halo_mass_function, halos=None, halo_profile_args=self.kwargs_cdm,
+                                      self.lens_cosmo, halos=None, kwargs_realization=self.kwargs_cdm,
                                       mass_sheet_correction=True, rendering_classes=self.rendering_classes)
 
         r = [self.halo_mass_function.geometry._cosmo.D_C_transverse(zi) for zi in self.redshifts]
@@ -347,13 +367,6 @@ class TestSingleRealization(object):
         lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = single_halo.lensing_quantities()
         npt.assert_equal(len(lens_model_list), 1)
         npt.assert_string_equal(lens_model_list[0], 'TNFW')
-
-    def test_core_collapsed_halo(self):
-
-        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 100, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
-        new = add_core_collapsed_subhalos(1., single_halo)
-        lens_model_list = new.lensing_quantities()[0]
-        npt.assert_string_equal(lens_model_list[0], 'PJAFFE')
 
     def test_realization_at_z(self):
 

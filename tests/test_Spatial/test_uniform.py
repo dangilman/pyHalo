@@ -17,14 +17,14 @@ class TestUniform(object):
 
     def test_uniform(self):
 
-        x, y, r3d = self.uni.draw(1000, 0.3, 1., 0., 0.)
+        x, y = self.uni.draw(1000, 0.3, 1., 0., 0.)
         kpc_per_asec = self.geometry.kpc_per_arcsec(0.3)
         x *= kpc_per_asec ** -1
         y *= kpc_per_asec ** -1
         r2d = np.hypot(x, y)
         npt.assert_equal(True, max(r2d) < 3)
 
-        x, y, r3d = self.uni.draw(1000, 0.3, 0.5, 0., 0.)
+        x, y = self.uni.draw(1000, 0.3, 0.5, 0., 0.)
         x *= kpc_per_asec ** -1
         y *= kpc_per_asec ** -1
         r2d = np.hypot(x, y)
@@ -32,11 +32,11 @@ class TestUniform(object):
 
     def test_lens_cone_uniform(self):
 
-        x, y, r3d = self.lenscone_uni.draw(10000, 0.5)
+        x, y = self.lenscone_uni.draw(10000, 0.5)
         kpc_per_asec = self.geometry.kpc_per_arcsec(0.5)
         x *= kpc_per_asec ** -1
         y *= kpc_per_asec ** -1
-        x2, y2, r3d2 = self.lenscone_uni.draw(10000, 0.9)
+        x2, y2 = self.lenscone_uni.draw(10000, 0.9)
         kpc_per_asec = self.geometry.kpc_per_arcsec(0.9)
         x2 *= kpc_per_asec ** -1
         y2 *= kpc_per_asec ** -1
@@ -50,7 +50,7 @@ class TestUniform(object):
 
     def test_distribution(self):
 
-        x, y, r3d = self.uni.draw(1000000, 0.2, 1., 0., 0.)
+        x, y = self.uni.draw(1000000, 0.2, 1., 0., 0.)
         r2 = np.hypot(x, y)
         rbins = np.arange(1., 3.+0.5, 0.5)
         n = []
