@@ -1,6 +1,6 @@
 import numpy.testing as npt
 import numpy as np
-from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhhalo
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from colossus.halo.concentration import concentration, peaks
@@ -49,12 +49,12 @@ class TestTNFWHalos(object):
         self._profile_args = profile_args
 
         self.mass_subhalo = mass
-        self.subhalo = TNFWSubhhalo(mass, x, y, r3d, mdef, self.z,
-                            sub_flag, self.lens_cosmo,
-                            profile_args, unique_tag=np.random.rand())
-        self.subhalo_WDM = TNFWSubhhalo(mass, x, y, r3d, mdef, self.z,
-                                    sub_flag, self.lens_cosmo,
-                                    self.profile_args_WDM, unique_tag=np.random.rand())
+        self.subhalo = TNFWSubhalo(mass, x, y, r3d, mdef, self.z,
+                                   sub_flag, self.lens_cosmo,
+                                   profile_args, unique_tag=np.random.rand())
+        self.subhalo_WDM = TNFWSubhalo(mass, x, y, r3d, mdef, self.z,
+                                       sub_flag, self.lens_cosmo,
+                                       self.profile_args_WDM, unique_tag=np.random.rand())
 
         mass_field_halo = 10 ** 7.
         sub_flag = False
@@ -81,9 +81,9 @@ class TestTNFWHalos(object):
                                self.profile_args_custom, unique_tag=np.random.rand())
 
         sub_flag = True
-        self.subhalo_custom = TNFWSubhhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
-                                      sub_flag, self.lens_cosmo,
-                                      self.profile_args_custom, unique_tag=np.random.rand())
+        self.subhalo_custom = TNFWSubhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
+                                          sub_flag, self.lens_cosmo,
+                                          self.profile_args_custom, unique_tag=np.random.rand())
 
         self.profile_args_WDM_custom = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
                                     'evaluate_mc_at_zlens': True,
@@ -93,9 +93,9 @@ class TestTNFWHalos(object):
                                     'LOS_truncation_factor': 40,
                                     'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
         sub_flag = True
-        self.subhalo_custom_WDM = TNFWSubhhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
-                                           sub_flag, self.lens_cosmo,
-                                           self.profile_args_WDM_custom, unique_tag=np.random.rand())
+        self.subhalo_custom_WDM = TNFWSubhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
+                                              sub_flag, self.lens_cosmo,
+                                              self.profile_args_WDM_custom, unique_tag=np.random.rand())
         sub_flag = False
         self.field_halo_custom_WDM = TNFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
                                                sub_flag, self.lens_cosmo,

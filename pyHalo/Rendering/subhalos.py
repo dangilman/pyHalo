@@ -54,6 +54,9 @@ class Subhalos(RenderingClassBase):
 
     def render_positions_at_z(self, nhalos):
 
+        if nhalos == 0:
+            return np.array([]), np.array([]), np.array([])
+
         x_kpc, y_kpc, r3d_kpc = self.spatial_distribution_model.draw(nhalos)
 
         x_arcsec = np.array(x_kpc) / self.geometry.kpc_per_arcsec_zlens
@@ -132,16 +135,18 @@ class Subhalos(RenderingClassBase):
 
         return args_mfunc
 
-    def convergence_sheet_correction(self):
+    def convergence_sheet_correction(self, kwargs_mass_sheets=None):
 
         norm, slope = self._norm_slope()
 
-        kwargs_mass_sheets = self._convergence_sheet_kwargs
+        kw_mass_sheets = self._convergence_sheet_kwargs
+        if kwargs_mass_sheets is not None:
+            kwargs_mass_sheets.update(kw_mass_sheets)
 
         log_mass_sheet_correction_min, log_mass_sheet_correction_max = \
-            kwargs_mass_sheets['log_mass_sheet_min'], kwargs_mass_sheets['log_mass_sheet_max']
+            kw_mass_sheets['log_mass_sheet_min'], kw_mass_sheets['log_mass_sheet_max']
 
-        kappa_scale = kwargs_mass_sheets['subhalo_mass_sheet_scale']
+        kappa_scale = kw_mass_sheets['subhalo_mass_sheet_scale']
 
         m_low, m_high = 10 ** log_mass_sheet_correction_min, 10 ** log_mass_sheet_correction_max
 
@@ -158,7 +163,7 @@ class Subhalos(RenderingClassBase):
             mass_in_subhalos = integrate_power_law_analytic(norm,
                                                         m_low, m_high, 1, power_law_index)
 
-        if kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
+        if kw_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 
             area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, self._zlens)
             kappa = mass_in_subhalos / self.lens_cosmo.sigma_crit_mass(self._zlens, area)
@@ -169,7 +174,7 @@ class Subhalos(RenderingClassBase):
             profile_name_out = ['CONVERGENCE']
             redshifts_out = [self._zlens]
 
-        elif kwargs_mass_sheets['subhalo_convergence_correction_profile'] == 'NFW':
+        elif kw_mass_sheets['subhalo_convergence_correction_profile'] == 'NFW':
 
             if 'host_m200' not in self._rendering_kwargs.keys():
                 raise Exception('must specify host halo mass when using NFW convergence sheet correction for subhalos')
@@ -200,7 +205,7 @@ class Subhalos(RenderingClassBase):
 
         else:
             raise Exception('subhalo convergence correction profile '+
-                            str(kwargs_mass_sheets['subhalo_convergence_correction_profile']) + ' not recognized.')
+                            str(kw_mass_sheets['subhalo_convergence_correction_profile']) + ' not recognized.')
 
         return kwargs_out, profile_name_out, redshifts_out
 

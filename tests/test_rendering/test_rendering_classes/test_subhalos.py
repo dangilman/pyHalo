@@ -68,7 +68,8 @@ class TestSubhalos(object):
         cosmo = Cosmology()
         self.lens_plane_redshifts = lens_plane_redshifts
         self.delta_zs = delta_zs
-        self.halo_mass_function = LensingMassFunction(cosmo, kwargs_cdm_uniform['log_mlow'], kwargs_cdm_uniform['log_mhigh'],
+        self.halo_mass_function = LensingMassFunction(cosmo, zlens, zsource, kwargs_cdm_uniform['log_mlow'],
+                                                      kwargs_cdm_uniform['log_mhigh'],
                                                       zlens, zsource, kwargs_cdm_uniform['cone_opening_angle'],
                                                       m_pivot=kwargs_cdm_uniform['m_pivot'],
                                                       geometry_type='DOUBLE_CONE')

@@ -42,7 +42,7 @@ class TestSingleRealization(object):
 
         profile_args_TNFW = {'mc_model': 'diemer19', 'c_scatter': False, 'c_scatter_dex': 0.1}
         cosmo = Cosmology()
-        halo_mass_function = LensingMassFunction(cosmo, 10 ** 6, 10 ** 9, zlens, zsource, 6.,
+        halo_mass_function = LensingMassFunction(cosmo, zlens, zsource, 10 ** 6, 10 ** 9, 6.,
                                                          m_pivot=10 ** 8)
         self.halo_mass_function = halo_mass_function
 
@@ -111,12 +111,14 @@ class TestSingleRealization(object):
     def test_mass_sheet_correction(self):
 
         kwargs_mass_sheets, profile_list, z_sheets = self.realization_cdm._mass_sheet_correction(self.rendering_classes,
-                                                                                                 None)
+                                                                                                 z_mass_sheet_max=None,
+                                                                                                 kwargs_mass_sheet_correction=None)
         npt.assert_equal(len(kwargs_mass_sheets), len(profile_list))
         npt.assert_equal(len(kwargs_mass_sheets), len(z_sheets))
 
         kwargs_mass_sheets, profile_list, z_sheets = self.realization_cdm._mass_sheet_correction(self.rendering_classes,
-                                                                                                 z_mass_sheet_max=0.3)
+                                                                                                 z_mass_sheet_max=0.3,
+                                                                                                 kwargs_mass_sheet_correction=None)
         npt.assert_equal(len(kwargs_mass_sheets), len(profile_list))
         npt.assert_equal(len(kwargs_mass_sheets), len(z_sheets))
         npt.assert_equal(True, max(z_sheets) <= 0.3)

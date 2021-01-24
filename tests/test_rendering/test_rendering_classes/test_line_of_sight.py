@@ -65,8 +65,8 @@ class TestLOS(object):
         cosmo = Cosmology()
         self.lens_plane_redshifts = lens_plane_redshifts
         self.delta_zs = delta_zs
-        self.halo_mass_function = LensingMassFunction(cosmo, kwargs_cdm['log_mlow'], kwargs_cdm['log_mhigh'],
-                                                      zlens, zsource, kwargs_cdm['cone_opening_angle'],
+        self.halo_mass_function = LensingMassFunction(cosmo, zlens, zsource, kwargs_cdm['log_mlow'],
+                                                      kwargs_cdm['log_mhigh'], kwargs_cdm['cone_opening_angle'],
                                                       m_pivot=kwargs_cdm['m_pivot'],
                                                       geometry_type='DOUBLE_CONE')
         self.geometry = Geometry(cosmo, zlens, zsource, kwargs_cdm['cone_opening_angle'], 'DOUBLE_CONE')
@@ -118,24 +118,37 @@ class TestLOS(object):
         idx = 20
         z = self.lens_plane_redshifts[idx]
         dz = self.delta_zs[idx]
+        log_mass_sheet_min = 8.
 
         # factor of two because the kappa sheets are added at every other lens plane
-        norm, slope = self.rendering_class._normalization_slope(z, dz)
-        mtheory = integrate_power_law_analytic(2 * norm, 10 ** self.kwargs_cdm['log_mlow'],
-                                               10 ** self.kwargs_cdm['log_mhigh'],
+        norm, slope = self.rendering_class._normalization_slope(z, 2 * dz)
+
+        mtheory = integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mass_sheet_min'],
+                                               10 ** self.kwargs_cdm['log_mass_sheet_max'],
                                                1., slope)
+        mtheory_2 = integrate_power_law_analytic(norm, 10**log_mass_sheet_min,
+                                               10 ** self.kwargs_cdm['log_mass_sheet_max'],
+                                               1., slope)
+
         area = self.geometry.angle_to_physical_area(0.5 * self.kwargs_cdm['cone_opening_angle'], z)
         kappa_theory = mtheory / self.lens_cosmo.sigma_crit_mass(z, area)
+        kappa_theory_2 = mtheory_2 / self.lens_cosmo.sigma_crit_mass(z, area)
 
         kwargs_out, profile_names_out, redshifts = self.rendering_class.convergence_sheet_correction()
-        idx = np.where(redshifts == z)[0][0]
+        kwargs_out_2, profile_names_out_2, redshifts_2 = self.rendering_class.\
+            convergence_sheet_correction({'log_mass_sheet_min': log_mass_sheet_min})
 
+        idx = np.where(redshifts == z)[0][0]
         kw = kwargs_out[idx]
+        kw2 = kwargs_out_2[idx]
         name = profile_names_out[idx]
 
         npt.assert_equal(True, name=='CONVERGENCE')
         kappa_generated = -kw['kappa_ext']
-        npt.assert_array_less(abs(kappa_theory/kappa_generated - 1), 0.05)
+        kappa_generated_2 = -kw2['kappa_ext']
+        npt.assert_almost_equal(kappa_theory, kappa_generated)
+        npt.assert_almost_equal(kappa_theory_2, kappa_generated_2)
+        npt.assert_equal(True, kw['kappa_ext'] < 0.)
 
     def test_keys_convergence_sheets(self):
 

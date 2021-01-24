@@ -78,8 +78,8 @@ class TestPopulationModel(object):
         cosmo = Cosmology()
         self.lens_plane_redshifts = lens_plane_redshifts
         self.delta_zs = delta_zs
-        self.halo_mass_function = LensingMassFunction(cosmo, kwargs_cdm['log_mlow'], kwargs_cdm['log_mhigh'],
-                                                      0.5, 1.5, 6., m_pivot=kwargs_cdm['m_pivot'],
+        self.halo_mass_function = LensingMassFunction(cosmo, 0.5, 1.5, kwargs_cdm['log_mlow'], kwargs_cdm['log_mhigh'],
+                                                      6., m_pivot=kwargs_cdm['m_pivot'],
                                                       geometry_type='DOUBLE_CONE')
         self.geometry = Geometry(cosmo, 0.5, 1.5, 6., 'DOUBLE_CONE')
         self.lens_cosmo = LensCosmo(zlens, zsource, cosmo)

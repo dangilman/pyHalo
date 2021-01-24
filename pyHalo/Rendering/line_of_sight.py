@@ -164,14 +164,23 @@ class LineOfSight(RenderingClassBase):
 
         return args_mfunc
 
-    def convergence_sheet_correction(self):
+    def convergence_sheet_correction(self, kwargs_mass_sheets=None):
 
-        kwargs_mass_sheets = self._convergence_sheet_kwargs
+        """
+        this routine applies the negative convergence sheet correction for lens planes along the line of sight
+        :param kwargs_mass_sheets: keyword arguments that overwrite whatever the default settings for the mass sheet
+        sheet are - leave it as None for most applications
+        :return:
+        """
+        kw_mass_sheets = self._convergence_sheet_kwargs
+
+        if kwargs_mass_sheets is not None:
+            kw_mass_sheets.update(kwargs_mass_sheets)
 
         log_mass_sheet_correction_min, log_mass_sheet_correction_max = \
-            kwargs_mass_sheets['log_mass_sheet_min'], kwargs_mass_sheets['log_mass_sheet_max']
+            kw_mass_sheets['log_mass_sheet_min'], kw_mass_sheets['log_mass_sheet_max']
 
-        kappa_scale = kwargs_mass_sheets['kappa_scale']
+        kappa_scale = kw_mass_sheets['kappa_scale']
 
         lens_plane_redshifts = self._lens_plane_redshifts[0::2]
         delta_zs = 2 * self._delta_z_list[0::2]
@@ -182,9 +191,9 @@ class LineOfSight(RenderingClassBase):
 
         for z, delta_z in zip(lens_plane_redshifts, delta_zs):
 
-            if z < kwargs_mass_sheets['zmin']:
+            if z < kw_mass_sheets['zmin']:
                 continue
-            if z > kwargs_mass_sheets['zmax']:
+            if z > kw_mass_sheets['zmax']:
                 continue
 
             kappa = self._convergence_at_z(z, delta_z, log_mass_sheet_correction_min, log_mass_sheet_correction_max,

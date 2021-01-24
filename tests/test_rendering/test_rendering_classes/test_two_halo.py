@@ -64,8 +64,8 @@ class TestLOS(object):
         cosmo = Cosmology()
         self.lens_plane_redshifts = lens_plane_redshifts
         self.delta_zs = delta_zs
-        self.halo_mass_function = LensingMassFunction(cosmo, kwargs_cdm['log_mlow'], kwargs_cdm['log_mhigh'],
-                                                      zlens, zsource, kwargs_cdm['cone_opening_angle'],
+        self.halo_mass_function = LensingMassFunction(cosmo, zlens, zsource, kwargs_cdm['log_mlow'], kwargs_cdm['log_mhigh'],
+                                                      kwargs_cdm['cone_opening_angle'],
                                                       m_pivot=kwargs_cdm['m_pivot'],
                                                       geometry_type='DOUBLE_CONE')
         self.geometry = Geometry(cosmo, zlens, zsource, kwargs_cdm['cone_opening_angle'], 'DOUBLE_CONE')

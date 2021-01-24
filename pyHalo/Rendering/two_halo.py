@@ -122,7 +122,7 @@ class TwoHaloContribution(RenderingClassBase):
         norm = (two_halo_boost - 1) * reference_norm
         return norm, slope
 
-    def convergence_sheet_correction(self):
+    def convergence_sheet_correction(self, *args, **kwargs):
 
         return {}, [], []
 

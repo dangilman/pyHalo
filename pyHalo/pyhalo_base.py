@@ -28,6 +28,12 @@ class pyHaloBase(object):
 
     def lens_plane_redshifts(self, kwargs_render={}):
 
+        """
+        This routine sets up the redshift planes along the line of sight in the lens system
+        :param kwargs_render: keyword arguments, if none are specified default values will be used (see defaults.py)
+        :return: lens plane redshifts and the thickness of each slice
+        """
+
         zmin = lenscone_default.default_zstart
         if 'zstep' not in kwargs_render.keys():
             zstep = lenscone_default.default_z_step
@@ -61,29 +67,21 @@ class pyHaloBase(object):
 
         if self.halo_mass_function is None:
 
-            if 'mass_func_type' not in args.keys():
-                args['mass_func_type'] = realization_default.default_type
-
-            if args['mass_func_type'] == 'delta':
-
-                logLOS_mlow = args['logM_delta'] - 0.01
-                logLOS_mhigh = args['logM_delta'] + 0.01
-
+            if 'log_mlow_los' not in args.keys():
+                logLOS_mlow = realization_default.log_mlow
             else:
-                if 'log_mlow_los' not in args.keys():
-                    logLOS_mlow = realization_default.log_mlow
-                else:
-                    logLOS_mlow = args['log_mlow_los']
+                logLOS_mlow = args['log_mlow_los']
 
-                if 'log_mhigh_los' not in args.keys():
-                    logLOS_mhigh = realization_default.log_mhigh
-                else:
-                    logLOS_mhigh = args['log_mhigh_los']
+            if 'log_mhigh_los' not in args.keys():
+                logLOS_mhigh = realization_default.log_mhigh
+            else:
+                logLOS_mhigh = args['log_mhigh_los']
 
             if 'mass_function_model' not in self._halo_mass_function_args.keys():
                 self._halo_mass_function_args.update({'mass_function_model': cosmo_default.default_mass_function})
 
-            self.halo_mass_function = LensingMassFunction(self.cosmology, 10 ** logLOS_mlow, 10 ** logLOS_mhigh, self.zlens, self.zsource,
+            self.halo_mass_function = LensingMassFunction(self.cosmology, self.zlens, self.zsource,
+                                                          10 ** logLOS_mlow, 10 ** logLOS_mhigh,
                                                           cone_opening_angle=args['cone_opening_angle'],
                                                           **self._halo_mass_function_args)
 

@@ -3,7 +3,7 @@ from pyHalo.defaults import *
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
-from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhhalo
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
 import numpy as np
@@ -346,6 +346,9 @@ class Realization(object):
     def shift_background_to_source(self, ray_interp_x, ray_interp_y):
 
         """
+        This routine shifts the entire relation along a path specified by ray_interp_x/y. This routine is intended
+        to be used in situations where the source is significantly offset from the origin, and you want to align the
+        center of the rendering volume such that tracks the path of the light.
 
         :param ray_interp_x: instance of scipy.interp1d, returns the angular position of a ray
         fired through the lens center given a comoving distance
@@ -375,13 +378,15 @@ class Realization(object):
 
         return new_realization
 
-    def lensing_quantities(self, add_mass_sheet_correction=True, z_mass_sheet_max=None):
+    def lensing_quantities(self, add_mass_sheet_correction=True, z_mass_sheet_max=None,
+                           kwargs_mass_sheet_correction=None):
 
         """
         :param add_mass_sheet_correction: include sheets of negative convergence to correct for mass added subhalos/field halos
         :param z_mass_sheet_max: don't include negative convergence sheets at z>z_mass_sheet_max (this does nothing
         if the previous argument is False
-
+        :pararm kwargs_mass_sheet_correction: additional keyword arguments for the mass sheet correction
+        (changes the default setting)
         :return: the lens_model_list, redshift_list, kwargs_lens, and numerical_alpha_class keywords that can be plugged
         directly into a lenstronomy LensModel class
         """
@@ -407,7 +412,8 @@ class Realization(object):
                                 'the rendering classes.')
 
             kwargs_mass_sheets, profile_list, z_sheets = self._mass_sheet_correction(self.rendering_classes,
-                                                                                     z_mass_sheet_max)
+                                                                                     z_mass_sheet_max,
+                                                                                     kwargs_mass_sheet_correction)
             kwargs_lens += kwargs_mass_sheets
             lens_model_list += profile_list
             redshift_array = np.append(redshift_array, z_sheets)
@@ -528,7 +534,7 @@ class Realization(object):
                 n += 1
         return n
 
-    def _mass_sheet_correction(self, rendering_classes, z_mass_sheet_max):
+    def _mass_sheet_correction(self, rendering_classes, z_mass_sheet_max, kwargs_mass_sheet_correction):
 
         """
         This routine adds the negative mass sheet corrections along the LOS and in the main lens plane.
@@ -536,7 +542,8 @@ class Realization(object):
         (see for example Rendering.Field.PowerLaw.powerlaw_base.py)
 
         :param rendering_classes: the rendering class associated with each realization
-        :param z_mass_sheet_max: don't include convergence sheets at redshift > z_mass_sheet_max
+        :param z_mass_sheet_max: don't add mass sheets at lens planes with redshift > z_mass_sheet_max
+        :param kwargs_mass_sheet_correction: keyword arguments for the convergence sheet correction
         :return: the kwargs_lens, lens_model_list, and redshift_list of the mass sheets that can be plugged into lenstronomy
         """
 
@@ -564,7 +571,7 @@ class Realization(object):
                     continue
 
                 kwargs_new, profiles_new, redshifts_new = \
-                    rendering_class.convergence_sheet_correction()
+                    rendering_class.convergence_sheet_correction(kwargs_mass_sheet_correction)
 
                 kwargs_mass_sheets += kwargs_new
                 redshifts += redshifts_new
@@ -622,8 +629,8 @@ class Realization(object):
         elif mdef == 'TNFW':
 
             if is_subhalo:
-                model = TNFWSubhhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                     lens_cosmo_instance, args, unique_tag)
+                model = TNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                    lens_cosmo_instance, args, unique_tag)
 
             else:
                 model = TNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,

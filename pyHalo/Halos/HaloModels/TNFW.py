@@ -60,8 +60,7 @@ class TNFWFieldHalo(Halo):
 
         return self._profile_args
 
-
-class TNFWSubhhalo(Halo):
+class TNFWSubhalo(Halo):
 
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
@@ -69,8 +68,8 @@ class TNFWSubhhalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = Concentration(lens_cosmo_instance)
 
-        super(TNFWSubhhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                       lens_cosmo_instance, args, unique_tag)
+        super(TNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
+                                          lens_cosmo_instance, args, unique_tag)
 
     @property
     def lenstronomy_ID(self):
