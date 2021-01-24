@@ -21,10 +21,10 @@ class LensingMassFunction(object):
         """
 
         :param cosmology: An instance of Cosmology (see cosmology.py)
-        :param mlow: low end of mass function
-        :param mhigh: high end of mass function
         :param zlens: lens redshift
         :param zsource: source redshift
+        :param mlow: low end of mass function
+        :param mhigh: high end of mass function
         :param cone_opening_angle: opening angle of lensing volume in arcseconds
         :param m_pivot: pivot mass of the mass function in M_sun
         :param mass_function_model (optional): the halo mass function model, default is Sheth-Tormen
