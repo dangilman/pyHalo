@@ -102,6 +102,9 @@ class TestLOS(object):
         rmax_theory = 0.5 * self.kwargs_cdm['cone_opening_angle'] * self.geometry.rendering_scale(0.9)
         npt.assert_array_less(rmax, rmax_theory)
 
+        x, y = self.rendering_class.render_positions_at_z(0.2, 0)
+        npt.assert_equal(True, len(x) == 0)
+
         m, x, y, r3, redshifts, flag = self.rendering_class.render()
         npt.assert_equal(len(m), len(x))
         npt.assert_equal(len(y), len(r3))
