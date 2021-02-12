@@ -6,7 +6,11 @@ import astropy.units as un
 
 class LensCosmo(object):
 
-    def __init__(self, z_lens, z_source, cosmology):
+    def __init__(self, z_lens=None, z_source=None, cosmology=None):
+
+        if cosmology is None:
+            from pyHalo.Cosmology.cosmology import Cosmology
+            cosmology = Cosmology()
 
         self.cosmo = cosmology
         self.z_lens, self.z_source = z_lens, z_source
@@ -15,15 +19,16 @@ class LensCosmo(object):
         rhoc = un.Quantity(self.cosmo.astropy.critical_density(0), unit=un.Msun / un.Mpc ** 3).value
         self.rhoc = rhoc / self.cosmo.h ** 2
 
-        # critical density for lensing in units M_sun * Mpc ^ -2
-        self.sigma_crit_lensing = self.get_sigma_crit_lensing(z_lens, z_source)
-        # critical density for lensing in units M_sun * kpc ^ -2
-        self.sigma_crit_lens_kpc = self.sigma_crit_lensing * (0.001) ** 2
-        # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
-        self.sigmacrit = self.sigma_crit_lensing * (0.001) ** 2 * self.cosmo.kpc_proper_per_asec(z_lens) ** 2
-        # lensing distances
-        self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
-            z_lens, z_source)
+        if z_lens is not None and z_source is not None:
+            # critical density for lensing in units M_sun * Mpc ^ -2
+            self.sigma_crit_lensing = self.get_sigma_crit_lensing(z_lens, z_source)
+            # critical density for lensing in units M_sun * kpc ^ -2
+            self.sigma_crit_lens_kpc = self.sigma_crit_lensing * (0.001) ** 2
+            # critical density for lensing in units M_sun * arcsec ^ -2 at lens redshift
+            self.sigmacrit = self.sigma_crit_lensing * (0.001) ** 2 * self.cosmo.kpc_proper_per_asec(z_lens) ** 2
+            # lensing distances
+            self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
+                z_lens, z_source)
 
         self._concentration = Concentration(self)
 
