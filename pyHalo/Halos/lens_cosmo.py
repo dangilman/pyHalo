@@ -192,6 +192,23 @@ class LensCosmo(object):
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
+    def nfw_physical2angle_fromNFWparams(self, rhos, rs, z):
+
+        """
+        computes the deflection angle properties of an NFW halo from the density normalization mass and scale radius
+        :param rhos: central density normalization in M_sun / Mpc^3
+        :param rs: scale radius in Mpc
+        :param z: redshift
+        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
+        """
+
+        D_d = self.cosmo.D_A_z(z)
+        Rs_angle = rhos / D_d / self.cosmo.arcsec  # Rs in arcsec
+        theta_Rs = rhos * (4 * rs ** 2 * (1 + numpy.log(1. / 2.)))
+        eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
+
+        return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
+
     def nfw_physical2angle(self, M, c, z):
         """
         converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
@@ -200,14 +217,9 @@ class LensCosmo(object):
         :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
         """
 
-        D_d = self.cosmo.D_A_z(z)
-        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
+        rhos, rs, _ = self._nfwParam_physical_Mpc(M, c, z)
 
-        Rs_angle = Rs / D_d / self.cosmo.arcsec  # Rs in arcsec
-        theta_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
-        eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
-
-        return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
+        return self.nfw_physical2angle_fromNFWparams(rhos, rs)
 
     def nfw_physical2angle_fromM(self, M, z, **mc_kwargs):
         """
