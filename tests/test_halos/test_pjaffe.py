@@ -3,8 +3,9 @@ import numpy as np
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
-from colossus.halo.concentration import concentration, peaks
+from colossus.halo.concentration import concentration
 import pytest
+from lenstronomy.LensModel.Profiles.p_jaffe import PJaffe
 
 class TestPjaffeHalo(object):
 
@@ -39,7 +40,7 @@ class TestPjaffeHalo(object):
                         'mc_mdef': '200c',
                         'c_scatter_dex': 0.1}
 
-        self._profile_args = profile_args
+        self.profile_args = profile_args
 
         self.mass_subhalo = mass
         self.subhalo = PJaffeSubhalo(mass, x, y, r3d, mdef, self.z,
@@ -53,33 +54,34 @@ class TestPjaffeHalo(object):
                             sub_flag, self.lens_cosmo,
                             profile_args, unique_tag=np.random.rand())
 
-        self.profile_args_custom = {'RocheNorm': 1.2, 'RocheNu': 2/3,
-                        'evaluate_mc_at_zlens': True,
-                        'log_mc': 0., 'c_scale': 60.,
-                        'c_power': -0.17, 'c_scatter': False,
-                        'mc_model': {'custom': True, 'c0': 17., 'beta': 0.8, 'zeta': -0.2},
-                               'LOS_truncation_factor': 40, 'mc_mdef': '200c',
-                                    'c_scatter_dex': 0.1}
-
-        mdef = 'NFW'
-        sub_flag = False
-        self.field_halo_custom = PJaffeSubhalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
-                               sub_flag, self.lens_cosmo,
-                               self.profile_args_custom, unique_tag=np.random.rand())
-
-        sub_flag = True
-        self.subhalo_custom = PJaffeSubhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
-                                      sub_flag, self.lens_cosmo,
-                                      self.profile_args_custom, unique_tag=np.random.rand())
 
     def test_lenstronomy_ID(self):
-        id = self.subhalo_custom.lenstronomy_ID
+        id = self.subhalo.lenstronomy_ID
+        npt.assert_string_equal(id, 'PJAFFE')
+
+        id = self.field_halo.lenstronomy_ID
         npt.assert_string_equal(id, 'PJAFFE')
 
     def test_z_infall(self):
 
         z_infall = self.subhalo.z_infall
         npt.assert_equal(True, self.z <= z_infall)
+
+    def test_total_mass(self):
+
+        prof = PJaffe()
+        z_infall = self.subhalo.z_infall
+        c = self.lens_cosmo.NFW_concentration(self.subhalo.mass, z_infall)
+        _, _, r200 = self.lens_cosmo.NFW_params_physical(self.subhalo.mass, c, self.z)
+        lenstronomy_kwargs, _ = self.subhalo.lenstronomy_params
+        arcsec_to_kpc = self.lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit = self.lens_cosmo.get_sigma_crit_lensing(self.subhalo.z, 2.) / 1000**2
+        sigma0, ra, rs = lenstronomy_kwargs['sigma0'], lenstronomy_kwargs['Ra'], lenstronomy_kwargs['Rs']
+        sigma0 *= sigma_crit
+        ra *= arcsec_to_kpc
+        rs *= arcsec_to_kpc
+        m3d = prof.mass_3d_lens(r200, sigma0, ra, rs)
+        npt.assert_almost_equal(np.log10(m3d), 8.)
 
     def test_profile_args(self):
 
@@ -96,31 +98,6 @@ class TestPjaffeHalo(object):
                             model='diemer19')
         npt.assert_almost_equal(c / con, 1, 2)
 
-        profile_args = self.subhalo_custom.profile_args
-        (c) = profile_args
-        c0 = self.profile_args_custom['mc_model']['c0']
-        beta = self.profile_args_custom['mc_model']['beta']
-        zeta = self.profile_args_custom['mc_model']['zeta']
-
-        h = self.lens_cosmo.cosmo.h
-        mh_sub = self.mass_subhalo * h
-        nu = peaks.peakHeight(mh_sub, self.z)
-        nu_ref = peaks.peakHeight(h * 10 ** 8, 0.)
-        con_subhalo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
-        npt.assert_almost_equal(con_subhalo/c, 1, 2)
-
-        profile_args = self.field_halo_custom.profile_args
-        (c) = profile_args
-        c0 = self.profile_args_custom['mc_model']['c0']
-        beta = self.profile_args_custom['mc_model']['beta']
-        zeta = self.profile_args_custom['mc_model']['zeta']
-
-        h = self.lens_cosmo.cosmo.h
-        mh_sub = self.mass_field_halo * h
-        nu = peaks.peakHeight(mh_sub, self.z)
-        nu_ref = peaks.peakHeight(h * 10 ** 8, 0.)
-        con_field_halo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
-        npt.assert_almost_equal(con_field_halo / c, 1, 2)
 
 if __name__ == '__main__':
     pytest.main()

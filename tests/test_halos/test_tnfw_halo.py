@@ -74,7 +74,7 @@ class TestTNFWHalos(object):
                                'LOS_truncation_factor': 40,
                                     'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
 
-        mdef = 'NFW'
+        mdef = 'TNFW'
         sub_flag = False
         self.field_halo_custom = TNFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
                                sub_flag, self.lens_cosmo,

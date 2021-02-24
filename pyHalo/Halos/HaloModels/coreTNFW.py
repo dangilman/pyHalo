@@ -1,105 +1,38 @@
 from pyHalo.Halos.halo_base import Halo
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
-import numpy as np
+from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
-class coreTNFWFieldHalo(Halo):
-
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
-
-        self._tnfw = TNFWFieldHalo(mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag)
-        self._lens_cosmo = lens_cosmo_instance
-        self._concentration = self._tnfw._concentration
-        super(coreTNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                            lens_cosmo_instance, args, unique_tag)
-
-    @property
-    def lenstronomy_ID(self):
-        return 'NUMERICAL_ALPHA'
-
-    def central_density(self):
-
-        function_rho = self._args['SIDM_rhocentral_function']
-        profile_args_tnfw = self._tnfw.profile_args
-        median_concentration = self._concentration.NFW_concentration(self.mass,
-                                                              self.z,
-                                                              self._args['mc_model'],
-                                                              self._args['mc_mdef'],
-                                                              self._args['log_mc'],
-                                                              False,
-                                                              self._args['c_scale'],
-                                                              self._args['c_power'])
-
-        delta_concentration_dex = np.log10(profile_args_tnfw[0]) - np.log10(median_concentration)
-        cross_section_type = self._args['cross_section_type']
-        kwargs_cross_section = self._args['kwargs_cross_section']
-        args_function = (self.mass, self.z, delta_concentration_dex, cross_section_type, kwargs_cross_section)
-        log10_rho = function_rho(*args_function)
-        rho0 = 10 ** log10_rho
-        return rho0
-
-    @property
-    def lenstronomy_params(self):
-
-        if not hasattr(self, '_kwargs_lenstronomy'):
-
-            [concentration, rt, rho_central] = self.profile_args
-            rhos_kpc, rs_kpc, _ = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            rhos, rs = rhos_kpc * 1000 ** 3, rs_kpc / 1000
-            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos, rs, self.z)
-
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
-
-            Rs_angle = np.round(Rs_angle, 10)
-            theta_Rs = np.round(theta_Rs, 10)
-            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-            rc_over_rs = rhos_kpc / rho_central
-            r_core = rc_over_rs * rs_kpc
-
-            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec, 'r_core': r_core}
-
-            self._kwargs_lenstronomy = kwargs
-
-        return self._kwargs_lenstronomy, self._args['numerical_deflection_angle_class']
-
-    @property
-    def profile_args(self):
-
-        if not hasattr(self, '_profile_args'):
-
-            profile_args_tnfw = self._tnfw.profile_args
-            core_density = self.central_density()
-            self._profile_args = (profile_args_tnfw[0], profile_args_tnfw[1], core_density)
-
-        return self._profile_args
-
-
-class coreTNFWSubhalo(Halo):
+class coreTNFWBase(Halo):
 
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, unique_tag, tnfw_class):
 
-        self._tnfw = TNFWFieldHalo(mass, x, y, r3d, mdef, z,
-                                   sub_flag, lens_cosmo_instance, args, unique_tag)
+        self._tnfw_lenstronomy = TNFW()
+        self._tnfw = tnfw_class
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = self._tnfw._concentration
-        super(coreTNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
+        super(coreTNFWBase, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                                 lens_cosmo_instance, args, unique_tag)
 
     @property
     def lenstronomy_ID(self):
-        return 'NUMERICAL_ALPHA'
+        return 'NumericalAlpha'
 
+    @property
+    def params_physical(self):
+
+        if not hasattr(self, '_params_physical'):
+            [concentration, rt, core_density] = self.profile_args
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc': rt,
+                                     'rc_over_rs': min(1., rhos/core_density)}
+
+        return self._params_physical
+
+    @property
     def central_density(self):
 
-        if self._args['evaluate_mc_at_zlens']:
-            z_eval = self.z
-        else:
-            z_eval = self.z_infall
-
-        function_rho = self._args['SIDM_rhocentral_function']
+        z_eval = self._tnfw.z_eval
         profile_args_tnfw = self._tnfw.profile_args
         median_concentration = self._concentration.NFW_concentration(self.mass,
                                                                      z_eval,
@@ -108,39 +41,47 @@ class coreTNFWSubhalo(Halo):
                                                                      self._args['log_mc'],
                                                                      False,
                                                                      self._args['c_scale'],
-                                                                     self._args['c_power'])
+                                                                     self._args['c_power'],
+                                                                     0.)
 
-        delta_concentration_dex = np.log10(profile_args_tnfw[0]) - np.log10(median_concentration)
+        c = profile_args_tnfw[0]
+        delta_c_over_c = (c - median_concentration)/c
         cross_section_type = self._args['cross_section_type']
         kwargs_cross_section = self._args['kwargs_cross_section']
+        args_function = (self.mass, self.z, delta_c_over_c, cross_section_type, kwargs_cross_section)
+        function_rho = self._args['SIDM_rhocentral_function']
+        rho_central = function_rho(*args_function)
 
-        args_function = (self.mass, z_eval, delta_concentration_dex, cross_section_type, kwargs_cross_section)
-        log10_rho = function_rho(*args_function)
-        rho0 = 10 ** log10_rho
-        return rho0
+        return rho_central
 
     @property
     def lenstronomy_params(self):
 
         if not hasattr(self, '_kwargs_lenstronomy'):
 
-            [concentration, rt, rho_central] = self.profile_args
-            rhos_kpc, rs_kpc, _ = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            rhos, rs = rhos_kpc * 1000 ** 3, rs_kpc / 1000
-            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos, rs, self.z)
+            lenstronomy_kwargs_tnfw = self._tnfw.lenstronomy_params[0]
+            [concentration, _, rho_central] = self.profile_args
 
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
+            rhos, _, _ = self.lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            rc_over_rs = min(1., rhos / rho_central)
+            r_core = rc_over_rs * lenstronomy_kwargs_tnfw['Rs']
 
-            Rs_angle = np.round(Rs_angle, 10)
-            theta_Rs = np.round(theta_Rs, 10)
-            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-            rc_over_rs = rhos_kpc / rho_central
-            r_core = rc_over_rs * rs_kpc
+            numerical_deflection_class = self._args['numerical_deflection_angle_class']
 
-            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec, 'r_core': r_core}
+            rs = lenstronomy_kwargs_tnfw['Rs']
+            beta = 0.0025 * lenstronomy_kwargs_tnfw['Rs']
+            r_trunc = lenstronomy_kwargs_tnfw['r_trunc']
+            alpha_norm = numerical_deflection_class(10 * rs, 0., rs, beta, r_trunc, norm=1.)
+            alpha_tnfw, _ = self._tnfw_lenstronomy.derivatives(10 * rs, 0., Rs=rs,
+                                                               alpha_Rs=lenstronomy_kwargs_tnfw['alpha_Rs'],
+                                                               r_trunc=r_trunc)
 
-            self._kwargs_lenstronomy = kwargs
+            norm = alpha_tnfw / alpha_norm
+            lenstronomy_kwargs_tnfw['r_core'] = r_core
+            lenstronomy_kwargs_tnfw['norm'] = norm
+            del lenstronomy_kwargs_tnfw['alpha_Rs']
+
+            self._kwargs_lenstronomy = lenstronomy_kwargs_tnfw
 
         return self._kwargs_lenstronomy, self._args['numerical_deflection_angle_class']
 
@@ -149,7 +90,47 @@ class coreTNFWSubhalo(Halo):
 
         if not hasattr(self, '_profile_args'):
             profile_args_tnfw = self._tnfw.profile_args
-            core_density = self.central_density()
+            core_density = self.central_density
             self._profile_args = (profile_args_tnfw[0], profile_args_tnfw[1], core_density)
 
         return self._profile_args
+
+class coreTNFWFieldHalo(coreTNFWBase):
+
+    def __init__(self, mass, x, y, r3d, mdef, z,
+                 sub_flag, lens_cosmo_instance, args, unique_tag):
+
+        tnfw_class = TNFWFieldHalo(mass, x, y, r3d, mdef, z,
+                 sub_flag, lens_cosmo_instance, args, unique_tag)
+        super(coreTNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z,
+                 sub_flag, lens_cosmo_instance, args, unique_tag, tnfw_class)
+
+    @classmethod
+    def fromTNFW(cls, tnfw_halo, kwargs_new):
+
+        new_halo = coreTNFWFieldHalo(tnfw_halo.mass, tnfw_halo.x, tnfw_halo.y, tnfw_halo.r3d, 'coreTNFW',
+                                 tnfw_halo.z, False, tnfw_halo.lens_cosmo, kwargs_new, tnfw_halo.unique_tag)
+        profile_args = tnfw_halo.profile_args
+        new_halo._profile_args = (profile_args[0], profile_args[1], new_halo.central_density)
+
+        return new_halo
+
+class coreTNFWSubhalo(coreTNFWBase):
+
+    def __init__(self, mass, x, y, r3d, mdef, z,
+                 sub_flag, lens_cosmo_instance, args, unique_tag):
+
+        tnfw_class = TNFWSubhalo(mass, x, y, r3d, mdef, z,
+                 sub_flag, lens_cosmo_instance, args, unique_tag)
+        super(coreTNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z,
+                                                sub_flag, lens_cosmo_instance, args, unique_tag, tnfw_class)
+
+    @classmethod
+    def fromTNFW(cls, tnfw_halo, kwargs_new):
+
+        new_halo = coreTNFWSubhalo(tnfw_halo.mass, tnfw_halo.x, tnfw_halo.y, tnfw_halo.r3d, 'coreTNFW',
+                                     tnfw_halo.z, True, tnfw_halo.lens_cosmo, kwargs_new, tnfw_halo.unique_tag)
+        profile_args = tnfw_halo.profile_args
+        new_halo._profile_args = (profile_args[0], profile_args[1], new_halo.central_density)
+
+        return new_halo

@@ -188,7 +188,7 @@ class LensCosmo(object):
         :return: physical NFW parameters in kpc units
         """
 
-        rho0, Rs, r200 = self._nfwParam_physical_Mpc(M, c, z)
+        rho0, Rs, r200 = self.nfwParam_physical_Mpc(M, c, z)
 
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
@@ -203,7 +203,7 @@ class LensCosmo(object):
         """
 
         D_d = self.cosmo.D_A_z(z)
-        Rs_angle = rhos / D_d / self.cosmo.arcsec  # Rs in arcsec
+        Rs_angle = rs / D_d / self.cosmo.arcsec  # Rs in arcsec
         theta_Rs = rhos * (4 * rs ** 2 * (1 + numpy.log(1. / 2.)))
         eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
 
@@ -217,9 +217,9 @@ class LensCosmo(object):
         :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
         """
 
-        rhos, rs, _ = self._nfwParam_physical_Mpc(M, c, z)
+        rhos, rs, _ = self.nfwParam_physical_Mpc(M, c, z)
 
-        return self.nfw_physical2angle_fromNFWparams(rhos, rs)
+        return self.nfw_physical2angle_fromNFWparams(rhos, rs, z)
 
     def nfw_physical2angle_fromM(self, M, z, **mc_kwargs):
         """
@@ -256,7 +256,7 @@ class LensCosmo(object):
 
         return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
 
-    def _nfwParam_physical_Mpc(self, M, c, z):
+    def nfwParam_physical_Mpc(self, M, c, z):
 
         """
 

@@ -35,6 +35,10 @@ class Halo(ABC):
         self.unique_tag = unique_tag
 
     @property
+    def params_physical(self):
+        raise Exception('this halo class does not have attribute params_physical')
+
+    @property
     @abstractmethod
     def lenstronomy_ID(self):
         ...

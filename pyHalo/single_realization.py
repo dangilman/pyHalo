@@ -6,6 +6,7 @@ from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
+from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWFieldHalo, coreTNFWSubhalo
 import numpy as np
 from copy import deepcopy
 
@@ -394,16 +395,19 @@ class Realization(object):
         kwargs_lens = []
         lens_model_list = []
         redshift_array = []
-        kwargs_lensmodel = None
+        numerical_interp = None
 
         for i, halo in enumerate(self.halos):
 
             lens_model_name = halo.lenstronomy_ID
-            kwargs_halo, numerical_interp = halo.lenstronomy_params
+            kwargs_halo, interp_class = halo.lenstronomy_params
 
             lens_model_list.append(lens_model_name)
             kwargs_lens.append(kwargs_halo)
             redshift_array += [halo.z]
+
+            if interp_class is not None:
+                numerical_interp = interp_class
 
         if self.apply_mass_sheet_correction and add_mass_sheet_correction:
 
@@ -418,7 +422,7 @@ class Realization(object):
             lens_model_list += profile_list
             redshift_array = np.append(redshift_array, z_sheets)
 
-        return lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel
+        return lens_model_list, redshift_array, kwargs_lens, numerical_interp
 
     def split_at_z(self, z):
         """
@@ -644,6 +648,15 @@ class Realization(object):
         elif mdef == 'PJAFFE':
 
             model = PJaffeSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
+
+        elif mdef == 'coreTNFW':
+
+            if is_subhalo:
+                model = coreTNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
+            else:
+                model = coreTNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
                                   lens_cosmo_instance, args, unique_tag)
 
         else:

@@ -18,6 +18,32 @@ class TNFWFieldHalo(Halo):
         return 'TNFW'
 
     @property
+    def c(self):
+
+        if not hasattr(self, '_c'):
+            self._c = self._concentration.NFW_concentration(self.mass,
+                                                                  self.z_eval,
+                                                                  self._args['mc_model'],
+                                                                  self._args['mc_mdef'],
+                                                                  self._args['log_mc'],
+                                                                  self._args['c_scatter'],
+                                                                  self._args['c_scale'],
+                                                                  self._args['c_power'],
+                                                                  self._args['c_scatter_dex'])
+        return self._c
+
+    @property
+    def params_physical(self):
+
+        if not hasattr(self, '_params_physical'):
+
+            [concentration, rt] = self.profile_args
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
+
+        return self._params_physical
+
+    @property
     def lenstronomy_params(self):
 
         if not hasattr(self, '_kwargs_lenstronomy'):
@@ -39,6 +65,11 @@ class TNFWFieldHalo(Halo):
         return self._kwargs_lenstronomy, None
 
     @property
+    def z_eval(self):
+
+        return self.z
+
+    @property
     def profile_args(self):
 
         if not hasattr(self, '_profile_args'):
@@ -46,78 +77,58 @@ class TNFWFieldHalo(Halo):
             truncation_radius = self._lens_cosmo.LOS_truncation_rN(self.mass, self.z,
                                                              self._args['LOS_truncation_factor'])
 
-            concentration = self._concentration.NFW_concentration(self.mass,
-                                                                  self.z,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scale'],
-                                                                  self._args['c_power'],
-                                                                  self._args['c_scatter_dex'])
-
-            self._profile_args = (concentration, truncation_radius)
+            self._profile_args = (self.c, truncation_radius)
 
         return self._profile_args
 
-class TNFWSubhalo(Halo):
-
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
-
-        self._lens_cosmo = lens_cosmo_instance
-        self._concentration = Concentration(lens_cosmo_instance)
-
-        super(TNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                          lens_cosmo_instance, args, unique_tag)
+class TNFWSubhalo(TNFWFieldHalo):
 
     @property
-    def lenstronomy_ID(self):
-        return 'TNFW'
+    def z_eval(self):
+
+        if not hasattr(self, '_zeval'):
+
+            if self._args['evaluate_mc_at_zlens']:
+                self._zeval = self.z
+            else:
+                self._zeval = self.z_infall
+
+        return self._zeval
 
     @property
-    def lenstronomy_params(self):
+    def params_physical(self):
 
-        if not hasattr(self, '_kwargs_lenstronomy'):
+        if not hasattr(self, '_params_physical'):
+            [concentration, rt] = self.profile_args
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc': rt}
 
-            (concentration, rt) = self.profile_args
-            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+        return self._params_physical
 
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
+    @property
+    def c(self):
 
-            Rs_angle = np.round(Rs_angle, 10)
-            theta_Rs = np.round(theta_Rs, 10)
-            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-
-            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
-
-            self._kwargs_lenstronomy = kwargs
-
-        return self._kwargs_lenstronomy, None
+        if not hasattr(self, '_c'):
+            self._c = self._concentration.NFW_concentration(self.mass,
+                                                                        self.z_eval,
+                                                                        self._args['mc_model'],
+                                                                        self._args['mc_mdef'],
+                                                                        self._args['log_mc'],
+                                                                        self._args['c_scatter'],
+                                                                        self._args['c_scale'],
+                                                                        self._args['c_power'],
+                                                                        self._args['c_scatter_dex'])
+        return self._c
 
     @property
     def profile_args(self):
 
         if not hasattr(self, '_profile_args'):
 
-            if self._args['evaluate_mc_at_zlens']:
-                z_eval = self.z
-            else:
-                z_eval = self.z_infall
+            truncation_radius = self._lens_cosmo.truncation_roche(self.mass, self.r3d,
+                                                                  self._args['RocheNorm'], self._args['RocheNu'])
 
-            truncation_radius = self._lens_cosmo.truncation_roche(self.mass, self.r3d, self._args['RocheNorm'], self._args['RocheNu'])
-            concentration = self._concentration.NFW_concentration(self.mass,
-                                                                  z_eval,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scale'],
-                                                                  self._args['c_power'],
-                                                                  self._args['c_scatter_dex'])
-
-            self._profile_args = (concentration, truncation_radius)
+            self._profile_args = (self.c, truncation_radius)
 
         return self._profile_args
 

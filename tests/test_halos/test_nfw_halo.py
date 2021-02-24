@@ -93,7 +93,7 @@ class TestNFWHalos(object):
             names = ['center_x', 'center_y', 'alpha_Rs', 'Rs']
             values = [prof.x, prof.y, theta_rs, rs]
             for name, value in zip(names, values):
-                npt.assert_almost_equal(kwargs[name], value)
+                npt.assert_almost_equal(kwargs[name]/value, 1, 5)
 
     def test_profile_args(self):
 

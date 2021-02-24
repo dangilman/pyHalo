@@ -98,7 +98,7 @@ class TestLensCosmo(object):
             M, c = 10**8, 17.5
             rho_crit_z = self.cosmo.rho_crit(z)
 
-            rhos, rs, r200 = self.lens_cosmo._nfwParam_physical_Mpc(M, c, z)
+            rhos, rs, r200 = self.lens_cosmo.nfwParam_physical_Mpc(M, c, z)
 
             h = self.cosmo.h
             _rhos, _rs = self._colossus_nfw.fundamentalParameters(M * h, c, z, '200c')
@@ -142,7 +142,12 @@ class TestLensCosmo(object):
         for (x, y) in zip(out, out2):
             npt.assert_almost_equal(x, y)
 
-
+        rhos_kpc, rs_kpc, _ = self.lens_cosmo.NFW_params_physical(10**8, c, 0.5)
+        rhos_mpc = rhos_kpc * 1000 ** 3
+        rs_mpc = rs_kpc * 1e-3
+        rs, theta_rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc, rs_mpc, 0.5)
+        npt.assert_almost_equal(rs, out[0])
+        npt.assert_almost_equal(theta_rs, out[1])
 
 if __name__ == '__main__':
     pytest.main()
