@@ -1,6 +1,8 @@
 from pyHalo.Halos.halo_base import Halo
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
+import numpy as np
+
 
 class coreTNFWBase(Halo):
 
@@ -59,29 +61,32 @@ class coreTNFWBase(Halo):
 
         if not hasattr(self, '_kwargs_lenstronomy'):
 
-            lenstronomy_kwargs_tnfw = self._tnfw.lenstronomy_params[0]
-            [concentration, _, rho_central] = self.profile_args
+            [concentration, rt, rho_central] = self.profile_args
+            rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
 
-            rhos, _, _ = self.lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            rc_over_rs = min(1., rhos / rho_central)
-            r_core = rc_over_rs * lenstronomy_kwargs_tnfw['Rs']
+            rhos_mpc, rs_mpc = rhos * 1000 ** 3, rs / 1000
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc, rs_mpc, self.z)
 
             numerical_deflection_class = self._args['numerical_deflection_angle_class']
 
-            rs = lenstronomy_kwargs_tnfw['Rs']
-            beta = 0.0025 * lenstronomy_kwargs_tnfw['Rs']
-            r_trunc = lenstronomy_kwargs_tnfw['r_trunc']
-            alpha_norm = numerical_deflection_class(10 * rs, 0., rs, beta, r_trunc, norm=1.)
-            alpha_tnfw, _ = self._tnfw_lenstronomy.derivatives(10 * rs, 0., Rs=rs,
-                                                               alpha_Rs=lenstronomy_kwargs_tnfw['alpha_Rs'],
-                                                               r_trunc=r_trunc)
+            beta_norm = 0.0025 * Rs_angle
+            x_match = 10.
+            r_trunc_norm = x_match * Rs_angle
+            alpha_norm, _ = numerical_deflection_class(x_match * Rs_angle, 0., Rs_angle, beta_norm, r_trunc_norm, norm=1.)
+            alpha_tnfw, _ = self._tnfw_lenstronomy.derivatives(x_match * Rs_angle, 0., Rs=Rs_angle,
+                                                               alpha_Rs=theta_Rs,
+                                                               r_trunc=r_trunc_norm)
 
             norm = alpha_tnfw / alpha_norm
-            lenstronomy_kwargs_tnfw['r_core'] = r_core
-            lenstronomy_kwargs_tnfw['norm'] = norm
-            del lenstronomy_kwargs_tnfw['alpha_Rs']
+            Rs_angle = np.round(Rs_angle, 10)
 
-            self._kwargs_lenstronomy = lenstronomy_kwargs_tnfw
+            beta = min(1., rhos / rho_central)
+
+            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+
+            self._kwargs_lenstronomy = {'Rs': Rs_angle, 'r_core': beta * Rs_angle,
+                                       'center_x': self.x, 'center_y': self.y, 'norm': norm,
+                                        'r_trunc': r_trunc_arcsec}
 
         return self._kwargs_lenstronomy, self._args['numerical_deflection_angle_class']
 

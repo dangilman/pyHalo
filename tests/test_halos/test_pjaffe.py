@@ -54,6 +54,8 @@ class TestPjaffeHalo(object):
                             sub_flag, self.lens_cosmo,
                             profile_args, unique_tag=np.random.rand())
 
+        self._model_lenstronomy = PJaffe()
+
 
     def test_lenstronomy_ID(self):
         id = self.subhalo.lenstronomy_ID
@@ -69,19 +71,21 @@ class TestPjaffeHalo(object):
 
     def test_total_mass(self):
 
-        prof = PJaffe()
-        z_infall = self.subhalo.z_infall
-        c = self.lens_cosmo.NFW_concentration(self.subhalo.mass, z_infall)
-        _, _, r200 = self.lens_cosmo.NFW_params_physical(self.subhalo.mass, c, self.z)
+        c = float(self.subhalo.profile_args)
+        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.subhalo.mass, c, self.z)
+        fc = np.log(1 + c) - c / (1 + c)
+        m_nfw = 4 * np.pi * rs ** 3 * rhos * fc
+
         lenstronomy_kwargs, _ = self.subhalo.lenstronomy_params
-        arcsec_to_kpc = self.lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-        sigma_crit = self.lens_cosmo.get_sigma_crit_lensing(self.subhalo.z, 2.) / 1000**2
         sigma0, ra, rs = lenstronomy_kwargs['sigma0'], lenstronomy_kwargs['Ra'], lenstronomy_kwargs['Rs']
-        sigma0 *= sigma_crit
-        ra *= arcsec_to_kpc
-        rs *= arcsec_to_kpc
-        m3d = prof.mass_3d_lens(r200, sigma0, ra, rs)
-        npt.assert_almost_equal(np.log10(m3d), 8.)
+
+        arcsec_to_kpc = self.lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        ra *= arcsec_to_kpc ** -1
+        rs *= arcsec_to_kpc ** -1
+        rho = self.subhalo._rho(m_nfw, rs, ra, c*rs)
+
+        m3d = self._model_lenstronomy.mass_3d(c*rs, rho, ra, rs)
+        npt.assert_almost_equal(np.log10(m3d), np.log10(m_nfw))
 
     def test_profile_args(self):
 

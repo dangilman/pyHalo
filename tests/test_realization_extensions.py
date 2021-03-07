@@ -10,9 +10,9 @@ class TestRealizationExtensions(object):
 
         single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 100, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
         ext = RealizationExtensions(single_halo)
-        new = ext.add_core_collapsed_halos([0])
+        new = ext.add_core_collapsed_halos([0], log_slope_halo=3., x_core_halo=0.05)
         lens_model_list = new.lensing_quantities()[0]
-        npt.assert_string_equal(lens_model_list[0], 'PJAFFE')
+        npt.assert_string_equal(lens_model_list[0], 'SPL_CORE')
 
     def core_collapsed_halos(self):
 

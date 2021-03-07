@@ -64,7 +64,7 @@ class TestcoreTNFWHalos(object):
 
         tnfw = TNFW()
 
-        return tnfw.derivatives(x, y, rs, norm, r_trunc)[0]
+        return tnfw.derivatives(x, y, rs, norm, r_trunc)
 
     def _rho_function(self, m, z, delta_c_dex, cross_section_type, kwargs_cross_section):
 

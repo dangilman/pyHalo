@@ -38,27 +38,27 @@ class PJaffeSubhalo(Halo):
             kpc_to_arcsec = 1 / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             (concentration) = self.profile_args
             rhos_kpc, rs_kpc, r200_kpc = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            ra_kpc = 0.001 * rs_kpc
-
-            rs_arcsec = rs_kpc * kpc_to_arcsec
+            ra_kpc = 0.01 * rs_kpc
             ra_arcsec = ra_kpc * kpc_to_arcsec
-            r200_arcsec = r200_kpc * kpc_to_arcsec
-            # fc = np.log(2) - 1/2
-            # m_inside_rs = 4 * np.pi * rs_kpc ** 3 * rhos_kpc * fc
-            #
-            rho = self._rho(self.mass, rs_arcsec, ra_arcsec, r200_arcsec)
+            rs_arcsec = rs_kpc * kpc_to_arcsec
 
+            rmatch = r200_kpc
+            rmatch_arcsec = rmatch * kpc_to_arcsec
+
+            xmatch = rmatch/rs_kpc
+            fx = np.log(1+xmatch) - xmatch / (1 + xmatch)
+            m_nfw = 4 * np.pi * rs_kpc ** 3 * rhos_kpc * fx
+
+            rho = self._rho(m_nfw, rs_arcsec, ra_arcsec, rmatch_arcsec)
             sigma0 = self._prof.rho2sigma(rho, ra_arcsec, rs_arcsec)
-
-            sigma_crit_Mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
-            sigma_crit = sigma_crit_Mpc * (0.001/kpc_to_arcsec) ** 2
-            sigma_0 = sigma0/sigma_crit
+            sigma_crit_kpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source) * 0.001 ** 2
+            sigma0 *= (sigma_crit_kpc/kpc_to_arcsec**2) ** -1
 
             self._lenstronomy_args = {'center_x': self.x,
                                       'center_y': self.y,
                                       'Ra': ra_arcsec,
                                       'Rs': rs_arcsec,
-                                      'sigma0': sigma_0}
+                                      'sigma0': sigma0}
 
         return self._lenstronomy_args, None
 
@@ -74,6 +74,8 @@ class PJaffeSubhalo(Halo):
         f = (ra * np.arctan(r_match / ra) - rs * np.arctan(r_match / rs)) / (ra ** 2 - rs ** 2)
         rho = m / (4 * np.pi * ra ** 2 * rs ** 2 * f)
         return rho
+
+
 
     @property
     def lenstronomy_ID(self):
@@ -123,3 +125,7 @@ class PJaffeFieldhalo(PJaffeSubhalo):
             self._profile_args = (concentration)
 
         return self._profile_args
+
+
+
+
