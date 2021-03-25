@@ -6,11 +6,11 @@ pyHalo
 .. image:: https://img.shields.io/pypi/v/pyhalo.svg
         :target: https://pypi.python.org/pypi/pyhalo
 
-.. image:: https://travis-ci.org/dangilman/pyHalo.png?branch=master
+.. image:: https://travis-ci.org/dangilman/pyHalo.png?branch=main
         :target: https://travis-ci.org/dangilman/pyHalo
 
-.. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
-        :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
+.. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=main
+        :target: https://coveralls.io/github/dangilman/pyHalo?branch=main
 
 
 
