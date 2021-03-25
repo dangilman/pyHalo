@@ -10,6 +10,6 @@ twine==1.10.0
 numpy>=1.13
 astropy>=2.0
 scipy>=0.19.1
-colossus==1.2.17
-lenstronomy>=1.7.0
+colossus>=1.2.17
+lenstronomy>=1.8.0
 mpmath

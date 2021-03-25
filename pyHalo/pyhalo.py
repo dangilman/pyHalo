@@ -10,7 +10,7 @@ class pyHalo(pyHaloBase):
     """
     The main class used for generating realizations (see example notebook)
     """
-    
+
     def __init__(self, zlens, zsource, cosmology_kwargs={},
                  kwargs_halo_mass_function={}):
 
