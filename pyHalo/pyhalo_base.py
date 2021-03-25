@@ -6,6 +6,9 @@ from scipy.interpolate import interp1d
 
 class pyHaloBase(object):
 
+    """
+    The base class for generating realizations. See example notebook "example_generating_realizations"
+    """
     def __init__(self, zlens, zsource, cosmology_kwargs,
                  kwargs_halo_mass_function):
 
