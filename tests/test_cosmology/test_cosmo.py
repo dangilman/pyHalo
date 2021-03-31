@@ -61,9 +61,9 @@ class TestCosmology(object):
         rho_Mpc = rho_pc.value * self.cosmo.Mpc ** 3
         npt.assert_almost_equal(rho_crit / rho_Mpc, 1, 3)
 
-        rho_crit_dark_matter = self.cosmo.rho_dark_matter_crit(0.25)
-        rho_crit_DM_astropy = self.cosmo.astropy.critical_density(0.25).value * \
-                              self.cosmo.density_to_MsunperMpc * self.cosmo.astropy.Odm(0.25)
+        rho_crit_dark_matter = self.cosmo.rho_dark_matter_crit
+        rho_crit_DM_astropy = self.cosmo.astropy.critical_density(0.).value * \
+                              self.cosmo.density_to_MsunperMpc * self.cosmo.astropy.Odm(0.)
         npt.assert_almost_equal(rho_crit_DM_astropy, rho_crit_dark_matter)
 
         rho_crit = self.cosmo.rho_crit(0.3)

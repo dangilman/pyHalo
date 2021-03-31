@@ -90,13 +90,14 @@ class Cosmology(object):
 
         return self.astropy.critical_density(z).value * self.density_to_MsunperMpc
 
-    def rho_dark_matter_crit(self, z):
+    @property
+    def rho_dark_matter_crit(self):
         """
         :param z: redshift
-        :return: dark matter density of the universe at redshift z in solar mass / Mpc^3
+        :return: comoving dark matter density of the universe at redshift z in solar mass / Mpc^3
         """
 
-        return self.astropy.Odm(z) * self.rho_crit(z)
+        return self.astropy.Odm(0.) * self.rho_crit(0.)
 
     def _interp_kpc_per_asec(self):
 

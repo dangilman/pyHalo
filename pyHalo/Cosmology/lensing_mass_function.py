@@ -99,16 +99,17 @@ class LensingMassFunction(object):
 
         return dndM_comoving
 
-    def component_density(self, z, component_fraction):
+    def component_density(self, component_fraction):
 
         """
 
-        :param z: redshift
-        :param component_fraction: density parameter; fraction of the matter density (not fraction of critical density!)
-        :return: the dark matter density at redshift z times component_fraction [M * Mpc^-3]
+        :param component_fraction: fraction of the comoving matter density
+        :return: the comoving dark matter density times component_fraction in comoving units [M * Mpc^-3]
+        
+        rho_returned = f * rho_DM
         """
 
-        rho_dV = component_fraction * self.cosmo.rho_dark_matter_crit(z)
+        rho_dV = component_fraction * self.cosmo.rho_dark_matter_crit
 
         return rho_dV
 

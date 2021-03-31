@@ -82,10 +82,9 @@ class TestLensingMassFunction(object):
 
     def test_component_density(self):
 
-        z = 0.6
         f = 1.
-        rho = self.lmf_no_lookup_ShethTormen.component_density(z, f)
-        rho_dm = self.cosmo.astropy.Odm(z) * self.cosmo.astropy.critical_density(z).value
+        rho = self.lmf_no_lookup_ShethTormen.component_density(f)
+        rho_dm = self.cosmo.astropy.Odm(0.) * self.cosmo.astropy.critical_density(0.).value
         rho_dm *= self.cosmo.density_to_MsunperMpc
         npt.assert_almost_equal(rho, rho_dm, 4)
 
