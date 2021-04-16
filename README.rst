@@ -18,7 +18,7 @@ pyHalo
 
 pyHalo is a tool for rendering full substructure mass distributions for gravitational lensing simulations. It is intended for use with the open source gravitational lensing software package lenstronomy (https://github.com/sibirrer/lenstronomy). 
 
-This code is under active development, but the core functionality expressed in the example notebook is stable and well tested. 
+The core functionality illustrated in the example notebook is stable and well tested.  
 
 If you would like to use this package and have questions, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
 
