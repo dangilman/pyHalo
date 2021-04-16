@@ -22,7 +22,6 @@ This code is under active development, but the core functionality expressed in t
 
 If you would like to use this package and have questions, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
 
-* Free software: MIT license
 Installation
 ------------
 Clone the repository, navigate into the main pyHalo directory and run python3 setup.py develop --user. (in the process of making this pip-installable) 
