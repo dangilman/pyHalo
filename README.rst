@@ -26,6 +26,8 @@ Installation
 ------------
 Clone the repository, navigate into the main pyHalo directory and run python3 setup.py develop --user. (in the process of making this pip-installable) 
 
+In order to use this package you'll need to install colossus http://www.benediktdiemer.com/code/colossus/ 
+
 
 Features
 --------
