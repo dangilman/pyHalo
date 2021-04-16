@@ -1,8 +1,6 @@
-from pyHalo.preset_models import WDMLovell2020, CDM
+from pyHalo.preset_models import WDMLovell2020, CDM, WDMGeneral
 import numpy.testing as npt
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import WDM_suppression
 import pytest
-import numpy as np
 
 class TestPresetModels(object):
 
@@ -14,6 +12,11 @@ class TestPresetModels(object):
     def test_WDMLovell20(self):
 
         realization_wdm = WDMLovell2020(0.5, 1.5, 8.)
+        npt.assert_equal(len(realization_wdm.rendering_classes), 3)
+
+    def test_WDMGeneral(self):
+
+        realization_wdm = WDMGeneral(0.5, 1.5, 8.)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
 
 if __name__ == '__main__':

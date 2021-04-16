@@ -105,7 +105,7 @@ class LensingMassFunction(object):
 
         :param component_fraction: fraction of the comoving matter density
         :return: the comoving dark matter density times component_fraction in comoving units [M * Mpc^-3]
-        
+
         rho_returned = f * rho_DM
         """
 
