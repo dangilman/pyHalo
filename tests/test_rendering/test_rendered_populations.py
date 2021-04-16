@@ -31,7 +31,7 @@ class TestRenderedPopulations(object):
         delta_power_law_index_coupling = 0.7
         cone_opening_angle = 6.
         m_pivot = 10 ** 8
-        sigma_sub = 0.4
+        sigma_sub = 0.6
         power_law_index = -1.8
         subhalo_spatial_distribution = 'HOST_NFW'
 
