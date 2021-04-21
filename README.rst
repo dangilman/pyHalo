@@ -2,7 +2,8 @@
 pyHalo
 ======
 
-[![Build Status](https://travis-ci.com/dangilman/pyHalo.svg?branch=master)](https://travis-ci.com/dangilman/pyHalo)
+.. image:: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
+        :target: https://travis-ci.com/dangilman/pyHalo
 
 .. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
         :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
