@@ -9,8 +9,9 @@ pyHalo
 .. image:: https://travis-ci.org/dangilman/pyHalo.png?branch=main
         :target: https://travis-ci.org/dangilman/pyHalo
 
-.. image:: https://https://coveralls.io/github/dangilman/pyHalo/badge.svg?branch=main
-        :target: https://coveralls.io/github/dangilman/pyHalo?branch=main
+.. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
+        :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
+
 
 
 
