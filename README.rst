@@ -2,12 +2,7 @@
 pyHalo
 ======
 
-
-#.. image:: https://img.shields.io/pypi/v/pyhalo.svg
-#        :target: https://pypi.python.org/pypi/pyhalo
-
-.. image:: https://travis-ci.org/dangilman/pyHalo.png?branch=main
-        :target: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
+[![Build Status](https://travis-ci.com/dangilman/pyHalo.svg?branch=master)](https://travis-ci.com/dangilman/pyHalo)
 
 .. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
         :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
