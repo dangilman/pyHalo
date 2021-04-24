@@ -68,7 +68,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     return cdm_realization
 
 def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
-                  a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, c_scale=60., c_power=-0.17, cone_opening_angle=6.,
+                  a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   **kwargs_other):
 
@@ -128,13 +128,13 @@ def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_lo
     mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle, 'mdef_los': mass_definition,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
                           'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
                           }
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
 
     kwargs_model_field.update(kwargs_other)
@@ -152,7 +152,7 @@ def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_lo
 
 
 def WDMGeneral(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm=2.3, b_wdm=0.8, c_wdm=-1.,
-               c_scale=60., c_power=-0.17, cone_opening_angle=6., sigma_sub=0.025, LOS_normalization=1.,
+               c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6., sigma_sub=0.025, LOS_normalization=1.,
                log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', **kwargs_other):
 
     """
@@ -180,6 +180,6 @@ def WDMGeneral(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm=2.3, 
     :return: a realization of WDM halos
     """
     return WDMLovell2020(z_lens, z_source, log_mc, log_mlow, log_mhigh, a_wdm, b_wdm, c_wdm,
-                         a_wdm, b_wdm, c_wdm, c_scale, c_power, cone_opening_angle, sigma_sub, LOS_normalization,
+                         a_wdm, b_wdm, c_wdm, c_scale, c_power, cone_opening_angle_arcsec, sigma_sub, LOS_normalization,
                          log_m_host, power_law_index, r_tidal, **kwargs_other)
 

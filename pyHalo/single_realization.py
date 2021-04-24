@@ -659,6 +659,7 @@ class Realization(object):
                 model = coreTNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
                                   lens_cosmo_instance, args, unique_tag)
 
+
         else:
             raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
 
