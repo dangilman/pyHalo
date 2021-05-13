@@ -146,10 +146,10 @@ class RealizationExtensions(object):
 
                 halo._args.update(kwargs_halo)
                 if halo.is_subhalo:
-                    new_halo = collapsed_subhalo_profile(halo.mass, halo.x, halo.y, halo.r3d, collapsed_subhalo_profile,
+                    new_halo = collapsed_subhalo_profile(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
                                                  halo.z, True, halo.lens_cosmo, halo._args, halo.unique_tag)
                 else:
-                    new_halo = collapsed_field_profile(halo.mass, halo.x, halo.y, halo.r3d, collapsed_field_profile,
+                    new_halo = collapsed_field_profile(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
                                                  halo.z, False, halo.lens_cosmo, halo._args, halo.unique_tag)
                 new_halos.append(new_halo)
 
