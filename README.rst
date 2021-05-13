@@ -30,7 +30,7 @@ Features
 
 Citation
 -------
-If you use of pyHalo, please cite `Gilman et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210505259G/abstract>`_.
+If you use pyHalo, please cite `Gilman et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210505259G/abstract>`_.
 
 Credits
 -------
