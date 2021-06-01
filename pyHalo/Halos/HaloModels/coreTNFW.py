@@ -5,10 +5,19 @@ import numpy as np
 
 
 class coreTNFWBase(Halo):
+    """
+    The main class for a cored NFW field halo profile
+
+    See the base class in Halos/halo_base.py for the required routines for any instance of a Halo class
+    """
 
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag, tnfw_class):
 
+        """
+        See documentation in base class (Halos/halo_base.py)
+
+        """
         self._tnfw_lenstronomy = TNFW()
         self._tnfw = tnfw_class
         self._lens_cosmo = lens_cosmo_instance
@@ -18,11 +27,16 @@ class coreTNFWBase(Halo):
 
     @property
     def lenstronomy_ID(self):
-        return 'NumericalAlpha'
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['NumericalAlpha']
 
     @property
     def params_physical(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_params_physical'):
             [concentration, rt, core_density] = self.profile_args
             rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
@@ -33,7 +47,9 @@ class coreTNFWBase(Halo):
 
     @property
     def central_density(self):
-
+        """
+        Computes the central density of the cored profile using the user-specified class "SIDM_rhocentral_function"
+        """
         z_eval = self._tnfw.z_eval
         profile_args_tnfw = self._tnfw.profile_args
         median_concentration = self._concentration.NFW_concentration(self.mass,
@@ -58,7 +74,9 @@ class coreTNFWBase(Halo):
 
     @property
     def lenstronomy_params(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_kwargs_lenstronomy'):
 
             [concentration, rt, rho_central] = self.profile_args
@@ -92,7 +110,9 @@ class coreTNFWBase(Halo):
 
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
             profile_args_tnfw = self._tnfw.profile_args
             core_density = self.central_density
@@ -101,7 +121,9 @@ class coreTNFWBase(Halo):
         return self._profile_args
 
 class coreTNFWFieldHalo(coreTNFWBase):
-
+    """
+    Describes a cored TNFW profile in the field
+    """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
 
@@ -112,7 +134,12 @@ class coreTNFWFieldHalo(coreTNFWBase):
 
     @classmethod
     def fromTNFW(cls, tnfw_halo, kwargs_new):
-
+        """
+        Creates the profile class from an instance of a TNFWSubhalo
+        :param tnfw_halo: an instance of TNFWSubhalo
+        :param kwargs_new: new keyword arguments required to constrct the coreTNFW profile
+        :return: instance of coreTNFW
+        """
         new_halo = coreTNFWFieldHalo(tnfw_halo.mass, tnfw_halo.x, tnfw_halo.y, tnfw_halo.r3d, 'coreTNFW',
                                  tnfw_halo.z, False, tnfw_halo.lens_cosmo, kwargs_new, tnfw_halo.unique_tag)
         profile_args = tnfw_halo.profile_args
@@ -121,7 +148,9 @@ class coreTNFWFieldHalo(coreTNFWBase):
         return new_halo
 
 class coreTNFWSubhalo(coreTNFWBase):
-
+    """
+    Describes a cored TNFW subhalo
+    """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
 
@@ -132,7 +161,12 @@ class coreTNFWSubhalo(coreTNFWBase):
 
     @classmethod
     def fromTNFW(cls, tnfw_halo, kwargs_new):
-
+        """
+        Creates the profile class from an instance of a TNFWFieldHalo
+        :param tnfw_halo: an instance of TNFWFieldHalo
+        :param kwargs_new: new keyword arguments required to constrct the coreTNFW profile
+        :return: instance of coreTNFW
+        """
         new_halo = coreTNFWSubhalo(tnfw_halo.mass, tnfw_halo.x, tnfw_halo.y, tnfw_halo.r3d, 'coreTNFW',
                                      tnfw_halo.z, True, tnfw_halo.lens_cosmo, kwargs_new, tnfw_halo.unique_tag)
         profile_args = tnfw_halo.profile_args
