@@ -87,11 +87,6 @@ class RealizationExtensions(object):
             if halo.mdef not in ['NFW', 'TNFW', 'coreTNFW']:
                 continue
 
-            # fit calibrated from the NFW velocity dispersion inside rs between 10^6 and 10^10
-            # coeffs = [0.31575757, -1.74259129]
-            # log_vrms = coeffs[0] * np.log10(halo.mass) + coeffs[1]
-            # v_rms = 10 ** log_vrms
-
             concentration = halo.profile_args[0]
             rhos, rs = halo.params_physical['rhos'], halo.params_physical['rs']
             median_concentration = self._realization.lens_cosmo.NFW_concentration(halo.mass, halo.z, scatter=False)

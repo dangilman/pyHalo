@@ -76,7 +76,7 @@ class TestNFWHalos(object):
     def test_lenstronomy_ID(self):
 
         id = self.subhalo_custom.lenstronomy_ID
-        npt.assert_string_equal(id, 'NFW')
+        npt.assert_string_equal(id[0], 'NFW')
 
     def test_z_infall(self):
 

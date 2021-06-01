@@ -4,9 +4,14 @@ import numpy as np
 
 class TNFWFieldHalo(Halo):
 
+    """
+    The base class for a truncated NFW halo
+    """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = Concentration(lens_cosmo_instance)
 
@@ -15,11 +20,17 @@ class TNFWFieldHalo(Halo):
 
     @property
     def lenstronomy_ID(self):
-        return 'TNFW'
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+
+        return ['TNFW']
 
     @property
     def c(self):
-
+        """
+        Computes the halo concentration (once)
+        """
         if not hasattr(self, '_c'):
             self._c = self._concentration.NFW_concentration(self.mass,
                                                                   self.z_eval,
@@ -34,6 +45,9 @@ class TNFWFieldHalo(Halo):
 
     @property
     def params_physical(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
 
         if not hasattr(self, '_params_physical'):
 
@@ -45,7 +59,9 @@ class TNFWFieldHalo(Halo):
 
     @property
     def lenstronomy_params(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_kwargs_lenstronomy'):
 
             [concentration, rt] = self.profile_args
@@ -66,12 +82,16 @@ class TNFWFieldHalo(Halo):
 
     @property
     def z_eval(self):
-
+        """
+        Returns the halo redshift
+        """
         return self.z
 
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
 
             truncation_radius = self._lens_cosmo.LOS_truncation_rN(self.mass, self.z,
@@ -82,10 +102,14 @@ class TNFWFieldHalo(Halo):
         return self._profile_args
 
 class TNFWSubhalo(TNFWFieldHalo):
-
+    """
+    Defines a truncated NFW halo that is a subhalo of the host dark matter halo
+    """
     @property
     def z_eval(self):
-
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
         if not hasattr(self, '_zeval'):
 
             if self._args['evaluate_mc_at_zlens']:
@@ -97,7 +121,9 @@ class TNFWSubhalo(TNFWFieldHalo):
 
     @property
     def params_physical(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_params_physical'):
             [concentration, rt] = self.profile_args
             rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
@@ -106,23 +132,10 @@ class TNFWSubhalo(TNFWFieldHalo):
         return self._params_physical
 
     @property
-    def c(self):
-
-        if not hasattr(self, '_c'):
-            self._c = self._concentration.NFW_concentration(self.mass,
-                                                                        self.z_eval,
-                                                                        self._args['mc_model'],
-                                                                        self._args['mc_mdef'],
-                                                                        self._args['log_mc'],
-                                                                        self._args['c_scatter'],
-                                                                        self._args['c_scale'],
-                                                                        self._args['c_power'],
-                                                                        self._args['c_scatter_dex'])
-        return self._c
-
-    @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
 
             truncation_radius = self._lens_cosmo.truncation_roche(self.mass, self.r3d,

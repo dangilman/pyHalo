@@ -39,7 +39,7 @@ class TestPTMass(object):
     def test_lenstronomy_ID(self):
 
         id = self.ptmass.lenstronomy_ID
-        npt.assert_string_equal(id, 'POINT_MASS')
+        npt.assert_string_equal(id[0], 'POINT_MASS')
 
     def test_profile_args(self):
 

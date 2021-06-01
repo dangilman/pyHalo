@@ -2,10 +2,14 @@ import numpy as np
 from pyHalo.Halos.halo_base import Halo
 
 class PTMass(Halo):
-
+    """
+    Class that defines a point mass object in the lens model
+    """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         self._lens_cosmo = lens_cosmo_instance
 
         super(PTMass, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
@@ -13,11 +17,16 @@ class PTMass(Halo):
 
     @property
     def lenstronomy_ID(self):
-        return 'POINT_MASS'
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['POINT_MASS']
 
     @property
     def lenstronomy_params(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_lenstronomy_params'):
 
             factor = self._lens_cosmo.point_mass_factor_z(self.z)
@@ -33,5 +42,7 @@ class PTMass(Halo):
 
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         return ()

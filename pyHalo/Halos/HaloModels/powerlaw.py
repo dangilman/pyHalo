@@ -6,11 +6,13 @@ import numpy as np
 class PowerLawSubhalo(Halo):
 
     """
-    This class acts as the base class for a mass profile that is a cored power law in radius
+    The base class for a halo modeled as a power law profile
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         self._prof = SPLCORE()
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = Concentration(lens_cosmo_instance)
@@ -19,7 +21,9 @@ class PowerLawSubhalo(Halo):
 
     @property
     def lenstronomy_params(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_lenstronomy_args'):
 
             (concentration, gamma, x_core_halo) = self.profile_args
@@ -45,11 +49,16 @@ class PowerLawSubhalo(Halo):
 
     @property
     def lenstronomy_ID(self):
-        return 'SPL_CORE'
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['SPL_CORE']
 
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
 
             if self._args['evaluate_mc_at_zlens']:
@@ -75,10 +84,14 @@ class PowerLawSubhalo(Halo):
 
 
 class PowerLawFieldHalo(PowerLawSubhalo):
-
+    """
+    Class that defines a power law halo in the field
+    """
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
 
             concentration = self._concentration.NFW_concentration(self.mass,

@@ -4,10 +4,18 @@ import numpy as np
 from lenstronomy.LensModel.Profiles.p_jaffe import PJaffe
 
 class PJaffeSubhalo(Halo):
+    """
+    Class that defines a halo modeled as a Psuedo-Jaffe profile.
 
+    The profile is normalized such that the Psuedo-Jaffe profile has the same mass within r200 as an NFW profile with mass
+    M200. The scale radius of the Psuedo-Jafee profile is the same as the NFW profile
+
+    """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = Concentration(lens_cosmo_instance)
         self._prof = PJaffe()
@@ -16,7 +24,9 @@ class PJaffeSubhalo(Halo):
 
     @property
     def params_physical(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_params_physical'):
 
             [concentration] = self.profile_args
@@ -32,7 +42,9 @@ class PJaffeSubhalo(Halo):
 
     @property
     def lenstronomy_params(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_lenstronomy_args'):
 
             kpc_to_arcsec = 1 / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
@@ -79,11 +91,16 @@ class PJaffeSubhalo(Halo):
 
     @property
     def lenstronomy_ID(self):
-        return 'PJAFFE'
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['PJAFFE']
 
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
 
             if self._args['evaluate_mc_at_zlens']:
@@ -106,7 +123,9 @@ class PJaffeSubhalo(Halo):
         return self._profile_args
 
 class PJaffeFieldhalo(PJaffeSubhalo):
-
+    """
+    Defines a field halo modeled as a Psuedo-Jaffe profile
+    """
     @property
     def profile_args(self):
 

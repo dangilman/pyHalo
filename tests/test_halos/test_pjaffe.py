@@ -59,10 +59,10 @@ class TestPjaffeHalo(object):
 
     def test_lenstronomy_ID(self):
         id = self.subhalo.lenstronomy_ID
-        npt.assert_string_equal(id, 'PJAFFE')
+        npt.assert_string_equal(id[0], 'PJAFFE')
 
         id = self.field_halo.lenstronomy_ID
-        npt.assert_string_equal(id, 'PJAFFE')
+        npt.assert_string_equal(id[0], 'PJAFFE')
 
     def test_z_infall(self):
 

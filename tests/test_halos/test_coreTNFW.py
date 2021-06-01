@@ -92,9 +92,9 @@ class TestcoreTNFWHalos(object):
     def test_lenstronomy_ID(self):
 
         id = self.subhalo.lenstronomy_ID
-        npt.assert_string_equal(id, 'NumericalAlpha')
+        npt.assert_string_equal(id[0], 'NumericalAlpha')
         id = self.field_halo.lenstronomy_ID
-        npt.assert_string_equal(id, 'NumericalAlpha')
+        npt.assert_string_equal(id[0], 'NumericalAlpha')
 
     def test_z_infall(self):
 
