@@ -59,7 +59,7 @@ class ULDMFieldHalo(Halo):
         theta_Rs = np.round(theta_Rs, 10)
         r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-        kwargs_nfw_temp = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+        kwargs_nfw_temporary = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
                   'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
 
         # need to specify the keyword arguments for the ULDM profile and renormalize NFW profile
