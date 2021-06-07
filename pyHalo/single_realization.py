@@ -404,8 +404,8 @@ class Realization(object):
             kwargs_halo, interp_class = halo.lenstronomy_params
 
             lens_model_list += lens_model_name
-            kwargs_lens.append(kwargs_halo)
-            redshift_array += [halo.z]
+            kwargs_lens += kwargs_halo
+            redshift_array += [halo.z] * len(lens_model_name)
 
             if interp_class is not None:
                 numerical_interp = interp_class

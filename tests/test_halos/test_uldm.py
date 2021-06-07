@@ -1,4 +1,5 @@
 import numpy as np
+from pyHalo.single_realization import SingleHalo
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
@@ -6,7 +7,7 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
 
-class TestTNFWHalos(object):
+class TestULDMHalo(object):
 
     def setup(self):
 
@@ -32,7 +33,7 @@ class TestTNFWHalos(object):
         self.lens_cosmo = LensCosmo(self.z, 2., cosmo)
 
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
-                        'evaluate_mc_at_zlens': True,
+                        'evaluate_mc_at_zlens': False,
                         'log_mc': None, 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
@@ -48,6 +49,7 @@ class TestTNFWHalos(object):
     def test_lenstronomy_ID(self):
 
         ID = self.fieldhalo.lenstronomy_ID
+        print(ID)
         npt.assert_string_equal(ID[0], 'TNFW')
         npt.assert_string_equal(ID[1], 'ULDM')
         ID = self.subhalo.lenstronomy_ID
@@ -62,10 +64,22 @@ class TestTNFWHalos(object):
         # because the concentration is evaluated at infall, and z_infall > z
         npt.assert_equal(True, z_subhalo > z_field)
 
+    def test_profile_load(self):
+
+        single_halo = SingleHalo(10**8, 0.5, 0.5, 100, 'ULDM', 0.5, 0.5, 1.5, True)
+        lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
+            lensing_quantities(add_mass_sheet_correction=False)
+        npt.assert_string_equal(lens_model_list[1], 'ULDM')
+        npt.assert_string_equal(lens_model_list[0], 'TNFW')
+        print(kwargs_lens)
+        npt.assert_equal(True, len(kwargs_lens)==2)
+        npt.assert_equal(True, len(redshift_array)==2)
+
     def test_profile_normalization(self):
 
         """
         Test that the mass enclosed within r200 (or whatever radius) of the composite profile is what it should be
         """
-        
 
+if __name__ == '__main__':
+   pytest.main()

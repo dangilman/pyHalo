@@ -42,8 +42,8 @@ class PowerLawSubhalo(Halo):
             rho0 = m/self._prof.mass_3d(r_match_arcsec, sigma_crit_arcsec, r_core_arcsec, gamma)
             sigma0 = rho0 * r_core_arcsec
 
-            self._lenstronomy_args = {'sigma0': sigma0, 'gamma': gamma, 'center_x': self.x, 'center_y': self.y,
-                                      'r_core': r_core_arcsec}
+            self._lenstronomy_args = [{'sigma0': sigma0, 'gamma': gamma, 'center_x': self.x, 'center_y': self.y,
+                                      'r_core': r_core_arcsec}]
 
         return self._lenstronomy_args, None
 

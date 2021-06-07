@@ -33,7 +33,7 @@ class PTMass(Halo):
 
             theta_E = factor * np.sqrt(self.mass)
 
-            kwargs = {'center_x': self.x, 'center_y': self.y, 'theta_E': theta_E}
+            kwargs = [{'center_x': self.x, 'center_y': self.y, 'theta_E': theta_E}]
 
             self._lenstronomy_params = kwargs
 

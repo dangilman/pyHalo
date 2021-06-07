@@ -67,8 +67,8 @@ class NFWFieldHalo(Halo):
         Rs_angle = np.round(Rs_angle, 10)
         theta_Rs = np.round(theta_Rs, 10)
 
-        kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                  'center_x': x, 'center_y': y}
+        kwargs = [{'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                  'center_x': x, 'center_y': y}]
 
         return kwargs, None
 

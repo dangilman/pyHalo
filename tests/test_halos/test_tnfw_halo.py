@@ -113,7 +113,7 @@ class TestTNFWHalos(object):
             rtrunc_angle = rtrunc_kpc / self.lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             values = [prof.x, prof.y, theta_rs, rs, rtrunc_angle]
             for name, value in zip(names, values):
-                npt.assert_almost_equal(kwargs[name], value)
+                npt.assert_almost_equal(kwargs[0][name], value)
 
 
     def test_lenstronomy_ID(self):

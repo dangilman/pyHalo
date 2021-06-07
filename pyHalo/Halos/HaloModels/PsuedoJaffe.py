@@ -66,11 +66,11 @@ class PJaffeSubhalo(Halo):
             sigma_crit_kpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source) * 0.001 ** 2
             sigma0 *= (sigma_crit_kpc/kpc_to_arcsec**2) ** -1
 
-            self._lenstronomy_args = {'center_x': self.x,
+            self._lenstronomy_args = [{'center_x': self.x,
                                       'center_y': self.y,
                                       'Ra': ra_arcsec,
                                       'Rs': rs_arcsec,
-                                      'sigma0': sigma0}
+                                      'sigma0': sigma0}]
 
         return self._lenstronomy_args, None
 

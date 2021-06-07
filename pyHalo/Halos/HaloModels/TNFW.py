@@ -73,8 +73,8 @@ class TNFWFieldHalo(Halo):
             theta_Rs = np.round(theta_Rs, 10)
             r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
+            kwargs = [{'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
 
             self._kwargs_lenstronomy = kwargs
 
