@@ -25,7 +25,7 @@ In order to use this package you'll need to install colossus http://www.benedikt
 Features
 --------
 
-- Quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. Implemented models currently include Cold and Warm Dark Matter, custom mass-concentration relations, and more.
+- Quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. Implemented models currently include Cold and Warm Dark Matter, custom mass-concentration relations, self-interacting dark matter, and more.
 - Translte halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy
 
 Citation
