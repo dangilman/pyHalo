@@ -53,7 +53,6 @@ class RealizationExtensions(object):
                                       self._realization.geometry)
 
 
-
     def find_core_collapsed_halos(self, time_scale_function, velocity_dispersion_function,
                                   cross_section, t_sub=10., t_field=100., t_sub_range=2, t_field_range=2.,
                                   model_type='TCHANNEL'):

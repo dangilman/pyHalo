@@ -150,7 +150,7 @@ class TestcoreTNFWHalos(object):
 
         lenstronomy_params_tnfw, _ = tnfw.lenstronomy_params
         lenstronomy_params_coretnfw, _ = coreTNFW.lenstronomy_params
-        
+
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['Rs'], lenstronomy_params_coretnfw[0]['Rs'])
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['r_trunc'], lenstronomy_params_coretnfw[0]['r_trunc'])
 
