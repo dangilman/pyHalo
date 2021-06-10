@@ -103,6 +103,15 @@ class RealizationDefaults(object):
 
         self.kappa_scale = 1
 
+class ULDMHaloDefaults(object):
+
+    def __init__(self):
+
+        self.m_uldm = 10 ** (-21.) 
+        self.M_uldm = 10 ** 7
+        self.R_max = 10
+        self.uldm_power_law = 1
+
 ####################################################################################
 
 cosmo_default = CosmoDefaults()
@@ -110,6 +119,7 @@ lenscone_default = LensConeDefaults()
 truncation_default = TruncationDefaults()
 halo_default = DMHaloDefaults()
 realization_default = RealizationDefaults()
+uldm_default = ULDMHaloDefaults()
 print_defaults = False
 
 def set_default_kwargs(profile_params, zsource):
@@ -235,6 +245,15 @@ def set_default_kwargs(profile_params, zsource):
         profile_params.update({'log_mass_sheet_min': profile_params['log_mlow']})
     if 'log_mass_sheet_max' not in profile_params.keys():
         profile_params.update({'log_mass_sheet_max': profile_params['log_mhigh']})
+
+    if 'm_uldm' not in profile_params.keys():
+        profile_params.update({'m_uldm': uldm_default.m_uldm})
+    if 'M_uldm' not in profile_params.keys():
+        profile_params.update({'M_uldm': uldm_default.M_uldm})
+    if 'R_max' not in profile_params.keys():
+        profile_params.update({'R_max': uldm_default.R_max})
+    if 'uldm_power_law' not in profile_params.keys():
+        profile_params.update({'uldm_power_law': uldm_default.uldm_power_law})
 
     return profile_params
 
