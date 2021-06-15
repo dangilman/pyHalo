@@ -68,7 +68,7 @@ class ULDMFieldHalo(Halo):
         # need to specify the keyword arguments for the ULDM profile and renormalize NFW profile
         kwargs_uldm = {'theta_c': theta_c, 'kappa_0': kappa_0,
                 'center_x': x, 'center_y': y}
-        kwargs_nfw = self._rescaled_nfw_params(kwargs_nfw_temporary, kwargs_uldm)
+        kwargs_nfw = self._rescaled_tnfw_params(kwargs_nfw_temporary, kwargs_uldm)
         kwargs = [kwargs_nfw, kwargs_uldm]
 
         return kwargs, None
@@ -91,42 +91,69 @@ class ULDMFieldHalo(Halo):
                                                              self._args['LOS_truncation_factor'])
 
             # using 'mass' as the ULDM virial mass
-            [theta_c, kappa_0] = self._uldm_args(self._args['m_uldm'], self.mass, self._args['uldm_plaw'])
+            [theta_c, kappa_0] = self._uldm_args(self._args['log10_m_uldm'], self.mass, self._args['uldm_plaw'])
 
             self._profile_args = (self.c, truncation_radius, theta_c, kappa_0)
 
         return self._profile_args
     
-    def _uldm_args(self, m, M, plaw):
+    def _uldm_args(self, m_log10, M, plaw):
         """
-        Returns core radius and density in arcsec units. See eqns. (3) and (7) for the core radius
-        and core density, respectively, from Schive et al. 2014 [1407.7762v2].
+        :param m_log10: ULDM particle mass in log10 units
+        :param M: ULDM virial mass, same as TNFW virial mass 
+        :param plaw: power law exponent for core radius - virial mass relationship
+
+        :return: core radius 'theta_c' and core density 'kappa_0' in lensing units.
         """
-        m_log10 = np.log10(m)
-        M_log10 = np.log10(M)
+        r_c = self._core_radius(m_log10, M, plaw)
+        rho_c = self._central_density(m_log10, r_c)
 
-        a = 1/(1+self.z)
-        m22 = 10**(m_log10 + 22)
-        M9 = 10**(M_log10 - 9)
-
-        Sigma_crit = self._lens_cosmo.sigma_crit_lensing * 1e-12
-        D_lens = self._lens_cosmo.D_d * 1e6
-
-        r_c = 160 * m22**(-1) * a**(0.5) * m22**(-1) * M9**(-plaw) 
-        rho_c = 190 * a**(-1) * m22**(-2) * (r_c/100)**(-4)
+        Sigma_crit = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source) * 1e-12
+        D_lens = self._lens_cosmo.D_d * 1e3
 
         theta_c = r_c / D_lens / const.arcsec 
-        kappa_0 = 429 * np.pi * rho_c * r_c / (2048 * np.sqrt(0.091) * Sigma_crit)
+        kappa_0 = 429 * np.pi * rho_c * (r_c * 1e3) / (2048 * np.sqrt(0.091) * Sigma_crit)
 
         return [theta_c, kappa_0]
     
-    def _rescaled_nfw_params(self, nfw_params, uldm_params):
+    def _core_radius(self, m_log10, M, plaw):
         """
-        Returns rescaled NFW params. Rescaling is computed within r200.
+        :param m_log10: ULDM particle mass in log10 units
+        :param M: ULDM virial mass, same as TNFW virial mass 
+        :param plaw: power law exponent for core radius - virial mass relationship
+
+        :return: core radius in kpc, numerator of equation (3) in Schive et al. 2014 [1407.7762v2]
         """
-        r200 = self.c * nfw_params['Rs'] 
-        rho0 = nfw_params['alpha_Rs'] / (4. * nfw_params['Rs'] ** 2 * (1. + np.log(1. / 2.)))
-        M_nfw = TNFW().mass_3d(r200, nfw_params['Rs'], rho0, nfw_params['r_trunc'])
+        m22 = 10**(m_log10 + 22)
+        a = 1/(1+self.z)
+        M9 = 10**(np.log10(M) - 9)
+
+        return 1.6 * m22**(-1) * a**(1/2) * M9**(-plaw)
+    
+    def _central_density(self, m_log10, r_c):
+        """
+        :param m_log10: ULDM particle mass in log10 units
+        :param r_c: core radius in kpc
+
+        :return: central density in M_solar/pc^3, equation (7) in Schive et al. 2014 [1407.7762v2]
+        """
+        m23 = 10**(m_log10 + 23)
+        a = 1/(1+self.z)
+        x_c = r_c/a
+
+        return 1.9 * a**(-1) * m23**(-2) * x_c**(-4)
+
+    def _rescaled_tnfw_params(self, tnfw_params, uldm_params):
+        """
+        :param tnfw_params: truncated NFW halo lensing params
+        :param uldm_params: ULDM halo lensing params
+
+        :return: rescaled truncated NFW params to fill up the remainder of the mass budget such that
+        the composite profile has equivalent to the truncated NFW halo, within r200.
+        """
+        r200 = self.c * tnfw_params['Rs'] 
+        rho0 = tnfw_params['alpha_Rs'] / (4. * tnfw_params['Rs'] ** 2 * (1. + np.log(1. / 2.)))
+        M_nfw = TNFW().mass_3d(r200, tnfw_params['Rs'], rho0, tnfw_params['r_trunc'])
         M_uldm = Uldm().mass_3d(r200, uldm_params['kappa_0'], uldm_params['theta_c'])
 
         factor = (M_nfw - M_uldm) / M_nfw
