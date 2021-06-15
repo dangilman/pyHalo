@@ -165,8 +165,8 @@ class ULDMFieldHalo(Halo):
         else:
             pass
 
-        nfw_params['alpha_Rs'] *= factor
-        return nfw_params
+        tnfw_params['alpha_Rs'] *= factor
+        return tnfw_params
 
 class ULDMSubhalo(ULDMFieldHalo):
     """
