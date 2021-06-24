@@ -68,11 +68,10 @@ class Subhalos(RenderingClassBase):
 
         norm, slope = self._norm_slope()
 
-        mfunc = GeneralPowerLaw(self._rendering_kwargs['log_mlow'],
-                                                           self._rendering_kwargs['log_mhigh'],
-                                                           slope,
-                                                           self._rendering_kwargs['draw_poisson'],
-                                                           norm,
+        log_mlow, log_mhigh = self._redshift_dependent_mass_range(self._zlens, self._rendering_kwargs['log_mlow'],
+                                                                  self._rendering_kwargs['log_mhigh'])
+
+        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'], norm,
                                                            self._rendering_kwargs['log_mc'],
                                                            self._rendering_kwargs['a_wdm'],
                                                            self._rendering_kwargs['b_wdm'],
@@ -145,6 +144,9 @@ class Subhalos(RenderingClassBase):
 
         log_mass_sheet_correction_min, log_mass_sheet_correction_max = \
             kw_mass_sheets['log_mass_sheet_min'], kw_mass_sheets['log_mass_sheet_max']
+        log_mass_sheet_correction_min, log_mass_sheet_correction_max = self._redshift_dependent_mass_range(
+            self._zlens, log_mass_sheet_correction_min, log_mass_sheet_correction_max
+        )
 
         kappa_scale = kw_mass_sheets['subhalo_mass_sheet_scale']
 
