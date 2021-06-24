@@ -22,6 +22,31 @@ class RenderingClassBase(ABC):
     sheet correction
 
     """
+
+    @staticmethod
+    def _redshift_dependent_mass_range(z, log_mlow_object, log_mhigh_object):
+        """
+        Evaluates a possibly redshift-dependent minimum/maximum halo mass
+        :param z: redshift
+        :param log_mlow_object: either a number representing the minimum halo mass, or a callable function that returns
+        log10(M_min) as a function z
+        :param log_mhigh_object: either a number representing the maximum halo mass, or a callable function that returns
+        log10(M_max) as a function z
+        :return: the minimum and maximum halo mass (in log10)
+        """
+
+        if callable(log_mlow_object):
+            log_mlow = log_mlow_object(z)
+        else:
+            log_mlow = log_mlow_object
+
+        if callable(log_mhigh_object):
+            log_mhigh = log_mhigh_object(z)
+        else:
+            log_mhigh = log_mhigh_object
+
+        return log_mlow, log_mhigh
+
     @abstractmethod
     def render(self, *args, **kwargs):
         ...

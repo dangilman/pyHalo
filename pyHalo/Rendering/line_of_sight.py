@@ -104,7 +104,9 @@ class LineOfSight(RenderingClassBase):
         args.update({'normalization': norm})
         args.update({'power_law_index': plaw_index})
 
-        mfunc = GeneralPowerLaw(args['log_mlow'], args['log_mhigh'], plaw_index, args['draw_poisson'],
+        log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
+
+        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, plaw_index, args['draw_poisson'],
                                 norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
                                 args['c_wdm'])
 
@@ -196,6 +198,9 @@ class LineOfSight(RenderingClassBase):
             if z > kw_mass_sheets['zmax']:
                 continue
 
+            log_mass_sheet_correction_min, log_mass_sheet_correction_max = self._redshift_dependent_mass_range(
+                z, log_mass_sheet_correction_min, log_mass_sheet_correction_max
+            )
             kappa = self._convergence_at_z(z, delta_z, log_mass_sheet_correction_min, log_mass_sheet_correction_max,
                                            kappa_scale)
 
