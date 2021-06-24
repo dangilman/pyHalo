@@ -163,9 +163,9 @@ def WDMGeneral(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm=2.3, 
     :param log_mc: log10(half mode mass) in units M_sun (no little h)
     :param log_mlow: log10(minimum halo mass) rendered
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density
-    :param a_wdm: describes the line of sight WDM halo mass function (see documention in WDMLovell2020)
-    :param b_wdm: describes the line of sight WDM halo mass function (see documention in WDMLovell2020)
-    :param c_wdm: describes the line of sight WDM halo mass function (see documention in WDMLovell2020)
+    :param a_wdm: describes the line of sight WDM halo mass function (see documentation in WDMLovell2020)
+    :param b_wdm: describes the line of sight WDM halo mass function (see documentation in WDMLovell2020)
+    :param c_wdm: describes the line of sight WDM halo mass function (see documentation in WDMLovell2020)
     :param c_scale: scale where concentrations in WDM deviate from CDM
     :param c_power: modification to logarithmic slope of mass-concentration relation
     :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
