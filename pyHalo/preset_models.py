@@ -6,6 +6,7 @@ presented here show what each keyword argument accepted by pyHalo does.
 """
 from pyHalo.pyhalo import pyHalo
 from pyHalo.realization_extensions import RealizationExtensions
+import numpy as np
 
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
         log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs', mass_definition='TNFW', **kwargs_other):
@@ -238,4 +239,103 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
+def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+                  c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6.,
+                  sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
+                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, **kwargs_other):
+
+    """
+
+    This specifies keywords for a ULDM halo mass function model. Similarly to WDMGeneral, the functional form of the
+    subhalo mass function is the same as the field halo mass function. However, this model differs from WDMGeneral 
+    by creating halos which are composite ULDM + NFW density profiles. The ULDM particle mass and core radius-halo mass 
+    power law exponent must now be specified. For details regarding ULDM halos, see Schive et al. 2014 
+    (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the solition density profile and core radius, respectively.
+
+    The differential halo mass function is described by three parameters, see Schive et al. 2016 
+    (https://arxiv.org/pdf/1508.04621.pdf):
+
+    1) log_m0 - the log10 value of the characteristic mass, or the scale where the ULDM mass function begins 
+    to deviate from CDM. Schive et al. 2016 found that 
+        
+        m0 = (1.6*10**10) * (m22)**(-4/3)   [solar masses],
+
+    where
+
+        m22 = m_uldm / 10**22 eV.
+
+    2) b_uldm - modifies the log slope of the ULDM mass function, analogous to b_wdm (see WDMLovell2020)
+
+    3) c_uldm - modifies the log slope of the ULDM mass function, analogous to c_wdm (see WDMLovell2020)
+
+    The parametrization for the mass function is:
+
+        n_uldm / n_cdm = (1 + (m / m_0)^b_uldm) ^ c_uldm
+
+    Schive et al. 2016 determined that 
+
+        (m_0,    b_uldm,    c_uldm) = ( (1.6*10**10) * (m22)**(-4/3),    1.1,    2.2)
+
+    where m22 = m_uldm / 10**22 eV and [m_0] = solar masses. 
+
+    As for the concentration relative to CDM, Du et al. 2016 (https://arxiv.org/pdf/1608.02575.pdf) found that
+    the same fitting function as Lovell 2020 is a good estimation of the ULDM concentration,
+    i.e. simply c_wdm = c_uldm. Note that the fitting parameters have been updated to the Lovell 2020 values
+    rather than the Schneider et al. 2012 values.
+    
+    :param z_lens: the lens redshift
+    :param z_source: the source redshift
+    :param log_M0: log10(characterstic mass) in units M_sun (no little h)
+    :param log_mlow: log10(minimum halo mass) rendered
+    :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
+    :param b_uldm: defines the ULDM mass function (see above)
+    :param c_uldm: defines the ULDM mass function (see above)
+    :param c_scale: scale where concentrations in ULDM deviate from CDM (see WDMLovell2020)
+    :param c_power: modification to logarithmic slope of mass-concentration relation (see WDMLovell2020)
+    :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
+    :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param power_law_index: logarithmic slope of the subhalo mass function
+    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
+    to account for tidal stripping of halos that pass close to the central galaxy
+    :param mass_definition: mass profile model for halos
+    :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
+    :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
+    :param kwargs_other: any other optional keyword arguments
+    :return: a realization of ULDM halos
+    """
+    m22 = 10**(log10_m_uldm + 22)
+    log_m0 = np.log10(1.6e10 * m22**(-4/3))
+
+    a_uldm = 1 # set to unity since Schive et al. 2016 do not have an analogous parameter
+
+    kwargs_model_field = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
+                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
+                          }
+
+    kwargs_model_subhalos = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
+                             'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
+    
+    kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw}
+
+    kwargs_model_field.update(kwargs_uldm)
+    kwargs_model_subhalos.update(kwargs_uldm)
+
+    kwargs_model_field.update(kwargs_other)
+    kwargs_model_subhalos.update(kwargs_other)
+
+    # this will use the default cosmology. parameters can be found in defaults.py
+    pyhalo = pyHalo(z_lens, z_source)
+    # Using the render method will result a list of realizations
+    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
+    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
+
+    uldm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
+
+    return uldm_realization
 
