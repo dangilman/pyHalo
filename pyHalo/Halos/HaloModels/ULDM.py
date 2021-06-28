@@ -1,5 +1,6 @@
 from pyHalo.Halos.halo_base import Halo
 from pyHalo.Halos.concentration import Concentration
+from pyHalo.Cosmology.cosmology import Cosmology
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 from lenstronomy.LensModel.Profiles.uldm import Uldm 
 import lenstronomy.Util.constants as const
@@ -127,8 +128,9 @@ class ULDMFieldHalo(Halo):
         m22 = 10**(m_log10 + 22)
         a = 1/(1+self.z)
         M9 = 10**(np.log10(M) - 9)
+        Zeta = (self._zeta(self.z) / self._zeta(0))
 
-        return 1.6 * m22**(-1) * a**(1/2) * M9**(-plaw)
+        return 1.6 * m22**(-1) * a**(1/2) * Zeta**(-1/6) * M9**(-plaw)
     
     def _central_density(self, m_log10, r_c):
         """
@@ -159,7 +161,6 @@ class ULDMFieldHalo(Halo):
         factor = (M_nfw - M_uldm) / M_nfw
 
         if factor < 0:
-            print(factor)
             raise ValueError('The resulting composite NFW profile mass is negative, tweak your parameters, factor = ' + str(factor)
                             + ', M_uldm = ' + str(M_uldm) + ', M_nfw = ' + str(M_nfw))
         else:
@@ -167,6 +168,10 @@ class ULDMFieldHalo(Halo):
 
         tnfw_params['alpha_Rs'] *= factor
         return tnfw_params
+    
+    def _zeta(self,z):
+        Om_z = Cosmology().astropy.Om(z)
+        return (18*np.pi**2 + 82*(Om_z-1) - 39*(Om_z-1)**2) / Om_z
 
 class ULDMSubhalo(ULDMFieldHalo):
     """
