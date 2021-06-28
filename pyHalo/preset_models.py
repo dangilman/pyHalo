@@ -6,6 +6,7 @@ presented here show what each keyword argument accepted by pyHalo does.
 """
 from pyHalo.pyhalo import pyHalo
 from pyHalo.realization_extensions import RealizationExtensions
+from pyHalo.Cosmology.cosmology import Cosmology
 import numpy as np
 
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
@@ -240,8 +241,8 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
-def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
-                  c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6.,
+def ULDM(z_lens, z_source, log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+                  c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, **kwargs_other):
 
@@ -257,7 +258,7 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     (https://arxiv.org/pdf/1508.04621.pdf):
 
     1) log_m0 - the log10 value of the characteristic mass, or the scale where the ULDM mass function begins 
-    to deviate from CDM. Schive et al. 2016 found that 
+    to deviate from CDM:
         
         m0 = (1.6*10**10) * (m22)**(-4/3)   [solar masses],
 
@@ -271,23 +272,33 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
 
     The parametrization for the mass function is:
 
-        n_uldm / n_cdm = (1 + (m / m_0)^b_uldm) ^ c_uldm
+        n_uldm / n_cdm = (1 + (m / m_0)^b_uldm) ^ c_uldm,
 
-    Schive et al. 2016 determined that 
+    where Schive et al. 2016 determined that 
 
         (m_0,    b_uldm,    c_uldm) = ( (1.6*10**10) * (m22)**(-4/3),    1.1,    2.2)
 
-    where m22 = m_uldm / 10**22 eV and [m_0] = solar masses. 
-
     As for the concentration relative to CDM, Du et al. 2016 (https://arxiv.org/pdf/1608.02575.pdf) found that
     the same fitting function as Lovell 2020 is a good estimation of the ULDM concentration,
-    i.e. simply c_wdm = c_uldm. Note that the fitting parameters have been updated to the Lovell 2020 values
-    rather than the Schneider et al. 2012 values.
+    i.e. simply c_wdm = c_uldm, with (c_scale, c_power) = (15, -0.3).
+
+    Furthermore, Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf) found a redshift-dependent minimum ULDM halo mass
+    given by
+
+        M_min(z) = a^(-3/4) * (Zeta(z)/Zeta(0))^(1/4) * M_min,0     [solar masses]
+    
+    where a is the cosmic scale factor, 
+
+        M_min,0 = 4.4*10^7 * m22^(-3/2)     [solar masses]
+    
+    and
+
+        Zeta(z) = (18*pi^2 + 82(Om(z) - 1) - 39(Om(z) - 1)^2) / Om(z),
+    
+    where Om(z) is the matter density parameter.
     
     :param z_lens: the lens redshift
     :param z_source: the source redshift
-    :param log_M0: log10(characterstic mass) in units M_sun (no little h)
-    :param log_mlow: log10(minimum halo mass) rendered
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
     :param b_uldm: defines the ULDM mass function (see above)
     :param c_uldm: defines the ULDM mass function (see above)
@@ -306,10 +317,19 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
+    # constants
     m22 = 10**(log10_m_uldm + 22)
     log_m0 = np.log10(1.6e10 * m22**(-4/3))
+    M_min0 = 4.4e7 * m22**(-3/2) # M_solar
 
     a_uldm = 1 # set to unity since Schive et al. 2016 do not have an analogous parameter
+
+    #compute M_min as described in documentation
+    a = lambda z: (1+z)**(-1)
+    O_m = lambda z: Cosmology().astropy.Om(z)
+    zeta = lambda z: (18*np.pi**2 + 82*(O_m(z)-1) - 39*(O_m(z)-1)**2) / O_m(z)
+    m_min = lambda z: a(z)**(-3/4) * (zeta(z)/zeta(0))**(1/4) * M_min0
+    log_mlow = lambda z: np.log10(m_min(z))
 
     kwargs_model_field = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
