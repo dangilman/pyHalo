@@ -170,7 +170,7 @@ class ULDMFieldHalo(Halo):
         return tnfw_params
     
     def _zeta(self,z):
-        Om_z = self._lens_cosmo.astropy.Om(z)
+        Om_z = self._lens_cosmo.cosmo.astropy.Om(z)
         return (18*np.pi**2 + 82*(Om_z-1) - 39*(Om_z-1)**2) / Om_z
 
 class ULDMSubhalo(ULDMFieldHalo):
