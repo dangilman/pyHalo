@@ -11,7 +11,7 @@ class TestULDMHalo(object):
 
     def setup(self):
 
-        mass = 1e8
+        mass = 1e9
         x = 0.5
         y = 1.
         r3d = np.sqrt(1 + 0.5 ** 2 + 70**2)
@@ -68,7 +68,7 @@ class TestULDMHalo(object):
 
         profile_args = {'log10_m_uldm': -22.1, 'uldm_plaw': 1/3}
 
-        single_halo = SingleHalo(8e9, 0.5, 0.5, 100, 'ULDM', 0.5, 0.5, 1.5, True, profile_args)
+        single_halo = SingleHalo(1e9, 0.5, 0.5, 100, 'ULDM', 0.5, 0.5, 1.5, True, profile_args)
         lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
             lensing_quantities(add_mass_sheet_correction=False)
         npt.assert_string_equal(lens_model_list[1], 'ULDM')
