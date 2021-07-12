@@ -365,7 +365,7 @@ class TestSingleRealization(object):
 
     def test_single_halo(self):
 
-        single_halo = SingleHalo(10**8, 0.5, -0.1, 100, 'TNFW', 0.5, 0.5, 1.5)
+        single_halo = SingleHalo(10**8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5)
         lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = single_halo.lensing_quantities()
         npt.assert_equal(len(lens_model_list), 1)
         npt.assert_string_equal(lens_model_list[0], 'TNFW')
