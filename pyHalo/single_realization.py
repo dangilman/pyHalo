@@ -743,14 +743,25 @@ class Realization(object):
 
 class SingleHalo(Realization):
 
-    """
-    Useful for generating a realization with a single or a few
-    user-specified halos.
-    """
-
-    def __init__(self, halo_mass, x, y, r3d, mdef, z, zlens, zsource, subhalo_flag=False,
+    def __init__(self, halo_mass, x, y, mdef, z, zlens, zsource, r3d=None, subhalo_flag=False,
                  kwargs_halo={}, cosmo=None):
 
+        """
+       Useful for generating a realization with a single or a few
+        user-specified halos.
+        :param halo_mass: mass of the halo in M_sun
+        :param x: halo x coordinate in arcsec
+        :param y: halo y coordinate in arcsec
+        :param mdef: halo mass definition
+        :param z: halo redshift
+        :param zlens: main deflector redshift
+        :param zsource: source redshift
+        :param r3d: three dimensional coordinate of halo inside the host in kpc
+        (only relevant for tidally-truncated subhalos, for field halos this can be None)
+        :param subhalo_flag: bool, sets whether or not a halo is a subhalo
+        :param kwargs_halo: keyword arguments for the halo
+        :param cosmo: an instance of Cosmology(); if none is provided a default cosmology will be used
+        """
         if cosmo is None:
             cosmo = Cosmology()
 
