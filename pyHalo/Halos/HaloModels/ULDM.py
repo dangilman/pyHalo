@@ -2,8 +2,11 @@ from pyHalo.Halos.halo_base import Halo
 from pyHalo.Halos.concentration import Concentration
 from pyHalo.Cosmology.cosmology import Cosmology
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
+from lenstronomy.LensModel.Profiles.cnfw import CNFW
 from lenstronomy.LensModel.Profiles.uldm import Uldm 
+from scipy.optimize import minimize
 import lenstronomy.Util.constants as const
+from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
 
 class ULDMFieldHalo(Halo):
@@ -28,7 +31,7 @@ class ULDMFieldHalo(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
 
-        return ['TNFW', 'ULDM']
+        return [self._args['nfw_mdef'], 'ULDM']
 
     @property
     def c(self):
@@ -52,27 +55,54 @@ class ULDMFieldHalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
+        if self._args['nfw_mdef'] == 'TNFW':
 
-        # Copied from the TNFW class
-        [concentration, rt, theta_c, kappa_0] = self.profile_args
-        Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+            # Copied from the TNFW class
+            [concentration, rt, theta_c, kappa_0] = self.profile_args
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
 
-        x, y = np.round(self.x, 4), np.round(self.y, 4)
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
 
-        Rs_angle = np.round(Rs_angle, 10)
-        theta_Rs = np.round(theta_Rs, 10)
-        r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            Rs_angle = np.round(Rs_angle, 10)
+            theta_Rs = np.round(theta_Rs, 10)
+            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-        kwargs_nfw_temporary = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                  'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
+            kwargs_nfw_temporary = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}
 
-        # need to specify the keyword arguments for the ULDM profile and renormalize NFW profile
-        kwargs_uldm = {'theta_c': theta_c, 'kappa_0': kappa_0,
+            # need to specify the keyword arguments for the ULDM profile and renormalize NFW profile
+            kwargs_uldm = {'theta_c': theta_c, 'kappa_0': kappa_0,
                 'center_x': x, 'center_y': y}
-        kwargs_nfw = self._rescaled_tnfw_params(kwargs_nfw_temporary, kwargs_uldm)
-        kwargs = [kwargs_nfw, kwargs_uldm]
+            kwargs_nfw = self._rescaled_tnfw_params(kwargs_nfw_temporary, kwargs_uldm)
+            kwargs = [kwargs_nfw, kwargs_uldm]
 
-        return kwargs, None
+            return kwargs, None
+        
+        elif self._args['nfw_mdef'] == 'CNFW':
+
+            [concentration, theta_c, kappa_0] = self.profile_args
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
+
+            Rs_angle = np.round(Rs_angle, 10)
+            theta_Rs = np.round(theta_Rs, 10)
+
+            kwargs_nfw_temporary = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                'center_x': x, 'center_y': y, 'r_core': theta_c}
+
+            kwargs_uldm_temporary = {'theta_c': theta_c, 'kappa_0': kappa_0,
+                'center_x': x, 'center_y': y}
+
+            kwargs = self._rescaled_cnfw_params(kwargs_nfw_temporary,
+                                                kwargs_uldm_temporary)
+
+            return kwargs, None
+        
+        else:
+            raise ValueError('Choose TNFW (truncated) or CNFW (cored) for nfw_type.')
+
+
 
     @property
     def z_eval(self):
@@ -88,13 +118,21 @@ class ULDMFieldHalo(Halo):
         """
         if not hasattr(self, '_profile_args'):
 
-            truncation_radius = self._lens_cosmo.LOS_truncation_rN(self.mass, self.z,
+            if self._args['nfw_mdef'] == 'TNFW':
+
+                truncation_radius = self._lens_cosmo.LOS_truncation_rN(self.mass, self.z,
                                                              self._args['LOS_truncation_factor'])
 
-            # using 'mass' as the ULDM virial mass
-            [theta_c, kappa_0] = self._uldm_args(self._args['log10_m_uldm'], self.mass, self._args['uldm_plaw'])
+                # using 'mass' as the ULDM virial mass
+                [theta_c, kappa_0] = self._uldm_args(self._args['log10_m_uldm'], self.mass, self._args['uldm_plaw'])
 
-            self._profile_args = (self.c, truncation_radius, theta_c, kappa_0)
+                self._profile_args = (self.c, truncation_radius, theta_c, kappa_0)
+            
+            elif self._args['nfw_mdef'] == 'CNFW':
+
+                [theta_c, kappa_0] = self._uldm_args(self._args['log10_m_uldm'], self.mass, self._args['uldm_plaw'])
+                
+                self._profile_args = (self.c, theta_c, kappa_0)
 
         return self._profile_args
     
@@ -151,7 +189,7 @@ class ULDMFieldHalo(Halo):
         :param uldm_params: ULDM halo lensing params
 
         :return: rescaled truncated NFW params to fill up the remainder of the mass budget such that
-        the composite profile has equivalent to the truncated NFW halo, within r200.
+        the composite profile has the inputted virial mass.
         """
         r200 = self.c * tnfw_params['Rs'] 
         rho0 = tnfw_params['alpha_Rs'] / (4. * tnfw_params['Rs'] ** 2 * (1. + np.log(1. / 2.)))
@@ -161,17 +199,78 @@ class ULDMFieldHalo(Halo):
         factor = (M_nfw - M_uldm) / M_nfw
 
         if factor < 0:
-            raise ValueError('The resulting composite NFW profile mass is negative, tweak your parameters, factor = ' + str(factor)
-                            + ', M_uldm = ' + str(M_uldm) + ', M_nfw = ' + str(M_nfw))
+            raise ValueError('Negative NFW profile mass, tweaky your parameters.')
         else:
             pass
 
         tnfw_params['alpha_Rs'] *= factor
         return tnfw_params
     
+    def _rescaled_cnfw_params(self, cnfw_params, uldm_params):
+        """
+        :param tnfw_params: cored NFW halo lensing params
+        :param uldm_params: ULDM halo lensing params
+
+        :return: rescaled cored NFW params to fill up the remainder of the mass budget such that
+        the composite profile has the inputted virial mass.
+        """
+        r200 = self.c * cnfw_params['Rs'] 
+        initial_guess = np.array([0.5,0.5])
+        rho0 = Uldm().density_lens(0,uldm_params['kappa_0'],
+                                    uldm_params['theta_c'])
+        rhos = CNFW().density_lens(0,cnfw_params['Rs'],
+                                    cnfw_params['alpha_Rs'],
+                                    cnfw_params['r_core'])
+
+        args = (r200, self.mass, cnfw_params['Rs'], cnfw_params['alpha_Rs'], 
+                        uldm_params['kappa_0'], uldm_params['theta_c'],
+                        rho0, rhos)
+        
+        beta,q = minimize(self._function_to_minimize, initial_guess, 
+                                args, method='Nelder-Mead')['x']
+
+        cnfw_params['r_core'] *= beta
+        uldm_params['kappa_0'] *= q
+
+        return [cnfw_params, uldm_params]
+    
     def _zeta(self,z):
         Om_z = self._lens_cosmo.cosmo.astropy.Om(z)
         return (18*np.pi**2 + 82*(Om_z-1) - 39*(Om_z-1)**2) / Om_z
+    
+    def _constraint_mass(self, beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c):
+        """
+        Evaluate the mass constraint equation for CNFW component profile
+        """
+        r_core = beta * rs
+        args_nfw = (r, rs, alpha_rs, r_core)
+        args_uldm = (r, kappa_0, theta_c)
+        
+        m_nfw = CNFW().mass_3d_lens(*args_nfw) / m_target
+        m_uldm = q * Uldm().mass_3d_lens(*args_uldm) / m_target
+        
+        # penalize if not equal to zero
+        return np.absolute(m_nfw + m_uldm - 1)
+    
+    def _constraint_density(self, beta, q, rho_target, rhos):
+        """
+        Evaluate the density constraint equation for CNFW component profile
+        """
+        
+        # penalize if not equal to zero
+        return np.absolute(rhos - beta * rho_target * (q - 1))
+    
+    def _function_to_minimize(self, beta_q_args, r, m_target, rs, alpha_rs, kappa_0, theta_c, rho0, rhos):
+        """
+        Add the two constraints for CNFW component profile
+        """
+        
+        # minimize will work with an array of arguments, so need to pass in an array and unpack it
+        (beta, q) = beta_q_args
+        
+        constraint1 = self._constraint_mass(beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c)
+        constraint2 = self._constraint_density(beta, q, rho0, rhos)
+        return constraint1 + constraint2
 
 class ULDMSubhalo(ULDMFieldHalo):
     """

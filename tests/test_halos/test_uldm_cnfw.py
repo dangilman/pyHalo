@@ -7,7 +7,7 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
 
-class TestULDMHalo(object):
+class TestULDMHalo_cored(object):
 
     def setup(self):
 
@@ -16,7 +16,7 @@ class TestULDMHalo(object):
         y = 1.
         r3d = np.sqrt(1 + 0.5 ** 2 + 70**2)
         self.r3d = r3d
-        mdef = 'TNFW'
+        mdef = 'CNFW'
         self.z = 0.25
         sub_flag = True
 
@@ -37,7 +37,8 @@ class TestULDMHalo(object):
                         'log_mc': None, 'c_scale': 60.,
                         'c_power': -0.17, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
-                        'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
+                        'c_scatter_dex': 0.1, 'mc_mdef': '200c',
+                        'nfw_mdef':mdef}
 
         self.subhalo = ULDMSubhalo(mass, x, y, r3d, mdef, self.z,
                                    sub_flag, self.lens_cosmo,
@@ -50,10 +51,10 @@ class TestULDMHalo(object):
 
         ID = self.fieldhalo.lenstronomy_ID
         print(ID)
-        npt.assert_string_equal(ID[0], 'TNFW')
+        npt.assert_string_equal(ID[0], 'CNFW')
         npt.assert_string_equal(ID[1], 'ULDM')
         ID = self.subhalo.lenstronomy_ID
-        npt.assert_string_equal(ID[0], 'TNFW')
+        npt.assert_string_equal(ID[0], 'CNFW')
         npt.assert_string_equal(ID[1], 'ULDM')
 
     def test_redshift_eval(self):
@@ -66,13 +67,15 @@ class TestULDMHalo(object):
 
     def test_profile_load(self):
 
-        profile_args = {'log10_m_uldm': -22.1, 'uldm_plaw': 1/3}
+        # test truncated composite profile
+
+        profile_args = {'log10_m_uldm': -22.1, 'uldm_plaw': 1/3, 'nfw_mdef': 'CNFW'}
 
         single_halo = SingleHalo(1e9, 0.5, 0.5, 100, 'ULDM', 0.5, 0.5, 1.5, True, profile_args)
         lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
             lensing_quantities(add_mass_sheet_correction=False)
         npt.assert_string_equal(lens_model_list[1], 'ULDM')
-        npt.assert_string_equal(lens_model_list[0], 'TNFW')
+        npt.assert_string_equal(lens_model_list[0], 'CNFW')
         print(kwargs_lens)
         npt.assert_equal(True, len(kwargs_lens)==2)
         npt.assert_equal(True, len(redshift_array)==2)
