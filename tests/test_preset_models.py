@@ -27,7 +27,7 @@ class TestPresetModels(object):
     
     def test_ULDM_trunc(self):
 
-        realization_ULDM = ULDM(0.5,1.5,nfw_mdef='CNFW')
+        realization_ULDM = ULDM(0.5,1.5,nfw_mdef='TNFW')
         npt.assert_equal(len(realization_ULDM.rendering_classes), 3)
     
     def test_ULDM_cored(self):
