@@ -8,7 +8,7 @@ class TestRealizationExtensions(object):
 
     def test_core_collapsed_halo(self):
 
-        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 100, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
+        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
         ext = RealizationExtensions(single_halo)
         new = ext.add_core_collapsed_halos([0], log_slope_halo=3., x_core_halo=0.05)
         lens_model_list = new.lensing_quantities()[0]
@@ -21,7 +21,7 @@ class TestRealizationExtensions(object):
         def timescalefunction_long(rhos, rs, v):
             return 1e9
 
-        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 100, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
+        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
         ext = RealizationExtensions(single_halo)
         vfunc = lambda x: 4 / np.sqrt(3.1459)
 

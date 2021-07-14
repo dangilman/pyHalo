@@ -69,14 +69,18 @@ class TestULDMHalo_trunc(object):
 
         # test truncated composite profile
 
+<<<<<<< HEAD:tests/test_halos/test_uldm_tnfw.py
         profile_args = {'log10_m_uldm': -22.1, 'uldm_plaw': 1/3, 'nfw_mdef': 'TNFW'}
 
         single_halo = SingleHalo(1e9, 0.5, 0.5, 100, 'ULDM', 0.5, 0.5, 1.5, True, profile_args)
+=======
+        single_halo = SingleHalo(1e9, 0.5, 0.5, 'ULDM', 0.5, 0.5, 1.5, subhalo_flag=True, kwargs_halo=profile_args)
+>>>>>>> 02ff2dfdcf328fb6e4e6f8f36025e99d1ebfbfb3:tests/test_halos/test_uldm.py
         lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
             lensing_quantities(add_mass_sheet_correction=False)
         npt.assert_string_equal(lens_model_list[1], 'ULDM')
         npt.assert_string_equal(lens_model_list[0], 'TNFW')
-        print(kwargs_lens)
+
         npt.assert_equal(True, len(kwargs_lens)==2)
         npt.assert_equal(True, len(redshift_array)==2)
 

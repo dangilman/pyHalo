@@ -199,13 +199,19 @@ class ULDMFieldHalo(Halo):
         factor = (M_nfw - M_uldm) / M_nfw
 
         if factor < 0:
+<<<<<<< HEAD
             raise ValueError('Negative NFW profile mass, tweaky your parameters.')
+=======
+            raise ValueError('The resulting composite NFW profile mass is negative, tweak your parameters, factor = ' + str(factor)
+                            + ', M_uldm = ' + str(M_uldm) + ', M_nfw = ' + str(M_nfw))
+>>>>>>> 02ff2dfdcf328fb6e4e6f8f36025e99d1ebfbfb3
         else:
             pass
 
         tnfw_params['alpha_Rs'] *= factor
         return tnfw_params
     
+<<<<<<< HEAD
     def _rescaled_cnfw_params(self, cnfw_params, uldm_params):
         """
         :param tnfw_params: cored NFW halo lensing params
@@ -271,6 +277,11 @@ class ULDMFieldHalo(Halo):
         constraint1 = self._constraint_mass(beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c)
         constraint2 = self._constraint_density(beta, q, rho0, rhos)
         return constraint1 + constraint2
+=======
+    def _zeta(self,z):
+        Om_z = self._lens_cosmo.cosmo.astropy.Om(z)
+        return (18*np.pi**2 + 82*(Om_z-1) - 39*(Om_z-1)**2) / Om_z
+>>>>>>> 02ff2dfdcf328fb6e4e6f8f36025e99d1ebfbfb3
 
 class ULDMSubhalo(ULDMFieldHalo):
     """
