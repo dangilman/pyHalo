@@ -104,11 +104,16 @@ class Concentration(object):
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, 0)
 
-        assert kwargs_model['beta'] >= 0, 'beta values < 0 are unphysical.'
-        assert kwargs_model['c0'] > 0, 'negative normalizations are unphysical.'
-        assert kwargs_model['zeta']<=0, 'positive values of zeta are unphysical'
+        if 'c0' in kwargs_model.keys():
+            assert kwargs_model['c0'] > 0, 'negative normalizations are unphysical.'
+        assert kwargs_model['zeta'] <= 0, 'positive values of zeta are unphysical'
 
-        c = kwargs_model['c0'] * (1 + z) ** (kwargs_model['zeta']) * (nu / nu_ref) ** (-kwargs_model['beta'])
+        if 'log10c0' in kwargs_model.keys():
+            c0 = 10 ** kwargs_model['log10c0']
+        else:
+            c0 = kwargs_model['c0']
+
+        c = c0 * (1 + z) ** (kwargs_model['zeta']) * (nu / nu_ref) ** (-kwargs_model['beta'])
 
         return c
 

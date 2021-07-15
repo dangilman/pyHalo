@@ -16,6 +16,7 @@ class TestConcentration(object):
 
     def test_concentration(self):
 
+
         m = 10 ** 8
         z = 0.5
         c = self.concentration.NFW_concentration(m, z, 'diemer19', '200c', None, False,
@@ -46,6 +47,12 @@ class TestConcentration(object):
         cwdm = self.concentration.NFW_concentration(m, z, 'diemer19', '200c', 8., False, 60., -0.26, 0.1)
         fac = WDM_concentration_suppresion_factor(m, z, 8., 60, -0.26)
         npt.assert_equal(cwdm, c * fac)
+
+        model1 = {'custom': True, 'log10c0': 1., 'beta': 0.9, 'zeta': -0.1}
+        model2 = {'custom': True, 'c0': 10., 'beta': 0.9, 'zeta': -0.1}
+        ccdm1 = self.concentration.NFW_concentration(m, z, model1, None, None, False, None, None, None)
+        ccdm2 = self.concentration.NFW_concentration(m, z, model2, None, None, False, None, None, None)
+        npt.assert_almost_equal(ccdm1, ccdm2)
 
         model = {'custom': True, 'c0': 2., 'beta': 0.9, 'zeta': -0.1}
         ccdm = self.concentration.NFW_concentration(m, z, model, None, None, False, None, None, None)
