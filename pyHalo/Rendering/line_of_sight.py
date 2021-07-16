@@ -206,7 +206,7 @@ class LineOfSight(RenderingClassBase):
 
             if kappa > 0:
 
-                kwargs_out.append({'kappa_ext': -kappa})
+                kwargs_out.append({'kappa': -kappa})
                 profile_names_out += ['CONVERGENCE']
                 redshifts.append(z)
 

@@ -147,11 +147,11 @@ class TestLOS(object):
         name = profile_names_out[idx]
 
         npt.assert_equal(True, name=='CONVERGENCE')
-        kappa_generated = -kw['kappa_ext']
-        kappa_generated_2 = -kw2['kappa_ext']
+        kappa_generated = -kw['kappa']
+        kappa_generated_2 = -kw2['kappa']
         npt.assert_almost_equal(kappa_theory, kappa_generated)
         npt.assert_almost_equal(kappa_theory_2, kappa_generated_2)
-        npt.assert_equal(True, kw['kappa_ext'] < 0.)
+        npt.assert_equal(True, kw['kappa'] < 0.)
 
     def test_keys_convergence_sheets(self):
 

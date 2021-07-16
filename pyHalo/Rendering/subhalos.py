@@ -172,7 +172,7 @@ class Subhalos(RenderingClassBase):
 
             negative_kappa = -1 * kappa_scale * kappa
 
-            kwargs_out = [{'kappa_ext': negative_kappa}]
+            kwargs_out = [{'kappa': negative_kappa}]
             profile_name_out = ['CONVERGENCE']
             redshifts_out = [self._zlens]
 

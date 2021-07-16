@@ -149,7 +149,7 @@ class TestSubhalos(object):
         name = profile_names_out[0]
 
         npt.assert_equal(True, name=='CONVERGENCE')
-        kappa_generated = -kw['kappa_ext']
+        kappa_generated = -kw['kappa']
         npt.assert_array_less(abs(kappa_theory/kappa_generated - 1), 0.05)
 
     def test_keys_convergence_sheets(self):
