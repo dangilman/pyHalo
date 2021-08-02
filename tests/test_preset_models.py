@@ -25,14 +25,9 @@ class TestPresetModels(object):
                                 None, None, None, sigma_sub=0., LOS_normalization=0.)
         npt.assert_equal(len(realization_SIDM.rendering_classes), 3)
     
-    def test_ULDM_trunc(self):
+    def test_ULDM(self):
 
-        realization_ULDM = ULDM(0.5,1.5,nfw_mdef='TNFW')
-        npt.assert_equal(len(realization_ULDM.rendering_classes), 3)
-    
-    def test_ULDM_cored(self):
-
-        realization_ULDM = ULDM(0.5,1.5,nfw_mdef='CNFW')
+        realization_ULDM = ULDM(0.5,1.5)
         npt.assert_equal(len(realization_ULDM.rendering_classes), 3)
 
 if __name__ == '__main__':

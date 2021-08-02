@@ -244,7 +244,7 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 def ULDM(z_lens, z_source, log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, nfw_mdef='CNFW', **kwargs_other):
+                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, **kwargs_other):
 
     """
 
@@ -314,7 +314,6 @@ def ULDM(z_lens, z_source, log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     :param mass_definition: mass profile model for halos
     :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
     :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
-    :param nfw_mdef: String specifying the NFW component of the composite density profile, either 'CNFW' (default) or 'TNFW'
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
@@ -343,7 +342,7 @@ def ULDM(z_lens, z_source, log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
     
-    kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw, 'nfw_mdef': nfw_mdef}
+    kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw}
 
     kwargs_model_field.update(kwargs_uldm)
     kwargs_model_subhalos.update(kwargs_uldm)
