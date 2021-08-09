@@ -72,7 +72,7 @@ class TestULDMHalo(object):
 
         # test cored composite profile
 
-        profile_args = {'log10_m_uldm': -22, 'uldm_plaw': 1/3}
+        profile_args = {'log10_m_uldm': -22, 'uldm_plaw': 1/3, 'scale_nfw':False}
 
         single_halo = SingleHalo(1e8, 0.5, 0.5, 'ULDM', 0.5, 0.5, 1.5, None, True, profile_args, None)
         lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
@@ -87,7 +87,7 @@ class TestULDMHalo(object):
         Test that the mass enclosed within r200 of the composite profile is correct 
         and check that the ULDM core density is correct.
         """
-        profile_args = {'log10_m_uldm': -21, 'uldm_plaw': 1/3}
+        profile_args = {'log10_m_uldm': -21, 'uldm_plaw': 1/3, 'scale_nfw':True}
         mass = 1e10
         zl = 0.5
         zs = 1.5

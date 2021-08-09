@@ -399,4 +399,3 @@ class LensCosmo(object):
 l = LensCosmo(0.5, 1.5)
 m = 10**14
 c = l.NFW_concentration(m, 0., scatter=False)
-print(numpy.log10(l.NFW_params_physical(m, c, 0.)[0]))

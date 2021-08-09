@@ -62,7 +62,6 @@ class ULDMFieldHalo(Halo):
             'center_x': x, 'center_y': y, 'r_core': 3*theta_c}
         kwargs_uldm_temporary = {'theta_c': theta_c, 'kappa_0': kappa_0,
             'center_x': x, 'center_y': y}
-
         kwargs = self._rescaled_cnfw_params(kwargs_cnfw_temporary,
                                                 kwargs_uldm_temporary) 
         return kwargs, None
@@ -148,7 +147,6 @@ class ULDMFieldHalo(Halo):
         """
 
         r200 = self._c * cnfw_params['Rs']
-        _,theta_c,kappa_0 = self.profile_args
         rho0 = Uldm().density_lens(0,uldm_params['kappa_0'],
                                     uldm_params['theta_c'])
         rhos = CNFW().density_lens(0,cnfw_params['Rs'],
@@ -159,7 +157,7 @@ class ULDMFieldHalo(Halo):
                         uldm_params['kappa_0'], uldm_params['theta_c'],
                         rho0, rhos)
         initial_guess = np.array([1,1])
-        bounds = [(0, np.inf), (0, np.inf)]
+        bounds = ((0.5, 10), (0.5, 1.5))
         method = 'SLSQP'
         beta,q = minimize(self._function_to_minimize, initial_guess, 
                                 args, method=method, bounds=bounds)['x']                
@@ -179,9 +177,8 @@ class ULDMFieldHalo(Halo):
         M_uldm = Uldm().mass_3d_lens(r200, 
                     uldm_params['kappa_0']*self._lens_cosmo.sigmacrit, uldm_params['theta_c'])
 
-        if (np.abs(1-(M_nfw+M_uldm)/self.mass) > 0.01):
-            # When the minimization functions work suboptimally (towards the lower end of the halo mass function),
-            # manually tune scale radius deflection angle to improve mass conservation
+        if (self._args['scale_nfw']):
+            # When scale_nfw is True rescale alpha_Rs to improve mass accuracy
             scale = self.mass / (M_nfw+M_uldm) 
             cnfw_params['alpha_Rs'] *= scale
 
@@ -243,7 +240,7 @@ class ULDMFieldHalo(Halo):
         
         constraint1 = self._constraint_mass(beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c)
         constraint2 = self._constraint_density(beta, q, rho0, rhos)
-        return constraint1 + constraint2
+        return constraint1 + 8*constraint2
         
 class ULDMSubhalo(ULDMFieldHalo):
     """
