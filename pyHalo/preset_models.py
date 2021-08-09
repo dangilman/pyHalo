@@ -241,10 +241,10 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
-def ULDM(z_lens, z_source, log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, **kwargs_other):
+                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, scale_nfw=False, **kwargs_other):
 
     """
 
@@ -314,6 +314,7 @@ def ULDM(z_lens, z_source, log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     :param mass_definition: mass profile model for halos
     :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
     :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
+    :param scale_nfw: boolean specifiying whether or not to scale the NFW component (can improve mass accuracy)
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
@@ -329,20 +330,21 @@ def ULDM(z_lens, z_source, log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     O_m = lambda z: Cosmology().astropy.Om(z)
     zeta = lambda z: (18*np.pi**2 + 82*(O_m(z)-1) - 39*(O_m(z)-1)**2) / O_m(z)
     m_min = lambda z: a(z)**(-3/4) * (zeta(z)/zeta(0))**(1/4) * M_min0
-    log_mlow = lambda z: np.log10(m_min(z))
+    log_m_min = lambda z: np.log10(m_min(z))
 
+    if log_m_min(z_lens) >= log_mlow:
+        log_mlow = log_m_min(z_lens) # only use M_min for minimum halo mass if it is above input 'log_mlow'
     kwargs_model_field = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
-                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
-                          }
+                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
 
     kwargs_model_subhalos = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
                           'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
     
-    kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw}
+    kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw, 'scale_nfw':scale_nfw}
 
     kwargs_model_field.update(kwargs_uldm)
     kwargs_model_subhalos.update(kwargs_uldm)
