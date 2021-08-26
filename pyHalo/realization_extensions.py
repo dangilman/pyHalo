@@ -56,7 +56,6 @@ class RealizationExtensions(object):
                                       self._realization.geometry)
 
 
-
     def find_core_collapsed_halos(self, time_scale_function, velocity_dispersion_function,
                                   cross_section, t_sub=10., t_field=100., t_sub_range=2, t_field_range=2.,
                                   model_type='TCHANNEL'):
@@ -82,18 +81,13 @@ class RealizationExtensions(object):
         are core collapsed by t = t_field + t_field_range (probability = 1)
         :param model_type: specifies the cross section model to use when computing the solution to the velocity
         dispersion of the halo
-        :return: indexes of halos that are core collapsed given
+        :return: indexes of halos that are core collapsed
         """
         inds = []
         for i, halo in enumerate(self._realization.halos):
 
             if halo.mdef not in ['NFW', 'TNFW', 'coreTNFW']:
                 continue
-
-            # fit calibrated from the NFW velocity dispersion inside rs between 10^6 and 10^10
-            # coeffs = [0.31575757, -1.74259129]
-            # log_vrms = coeffs[0] * np.log10(halo.mass) + coeffs[1]
-            # v_rms = 10 ** log_vrms
 
             concentration = halo.profile_args[0]
             rhos, rs = halo.params_physical['rhos'], halo.params_physical['rs']
@@ -149,10 +143,10 @@ class RealizationExtensions(object):
 
                 halo._args.update(kwargs_halo)
                 if halo.is_subhalo:
-                    new_halo = collapsed_subhalo_profile(halo.mass, halo.x, halo.y, halo.r3d, collapsed_subhalo_profile,
+                    new_halo = collapsed_subhalo_profile(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
                                                  halo.z, True, halo.lens_cosmo, halo._args, halo.unique_tag)
                 else:
-                    new_halo = collapsed_field_profile(halo.mass, halo.x, halo.y, halo.r3d, collapsed_field_profile,
+                    new_halo = collapsed_field_profile(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
                                                  halo.z, False, halo.lens_cosmo, halo._args, halo.unique_tag)
                 new_halos.append(new_halo)
 
@@ -169,6 +163,7 @@ class RealizationExtensions(object):
                                       msheet_correction, rendering_classes,
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
+<<<<<<< HEAD
     
     def _sample_projmass(self, probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax): 
         
@@ -341,3 +336,6 @@ class RealizationExtensions(object):
         black_hole_realization = self._realization(pbh_masses, pbh_x_coordinates, pbh_y_coordinates, r3d,  mdefs, pbh_redshifts, sub_flags,
                                             lens_cosmo, mass_sheet_correction=False, kwargs_realization=profile_args)
         return black_hole_realization
+=======
+
+>>>>>>> a64c695a69aec0e6a8e383795c3bd6c3e5e6cc20

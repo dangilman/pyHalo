@@ -7,6 +7,7 @@ from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
 from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWFieldHalo, coreTNFWSubhalo
+from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
 import numpy as np
 from copy import deepcopy
 
@@ -401,10 +402,9 @@ class Realization(object):
 
             lens_model_name = halo.lenstronomy_ID
             kwargs_halo, interp_class = halo.lenstronomy_params
-
-            lens_model_list.append(lens_model_name)
-            kwargs_lens.append(kwargs_halo)
-            redshift_array += [halo.z]
+            lens_model_list += lens_model_name
+            kwargs_lens += kwargs_halo
+            redshift_array += [halo.z] * len(lens_model_name)
 
             if interp_class is not None:
                 numerical_interp = interp_class
@@ -659,6 +659,15 @@ class Realization(object):
                 model = coreTNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
                                   lens_cosmo_instance, args, unique_tag)
 
+        elif mdef == 'ULDM':
+
+            if is_subhalo:
+                model = ULDMSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
+            else:
+                model = ULDMFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
+
 
         else:
             raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
@@ -733,14 +742,25 @@ class Realization(object):
 
 class SingleHalo(Realization):
 
-    """
-    Useful for generating a realization with a single or a few
-    user-specified halos.
-    """
-
-    def __init__(self, halo_mass, x, y, r3d, mdef, z, zlens, zsource, subhalo_flag=False,
+    def __init__(self, halo_mass, x, y, mdef, z, zlens, zsource, r3d=None, subhalo_flag=False,
                  kwargs_halo={}, cosmo=None):
 
+        """
+       Useful for generating a realization with a single or a few
+        user-specified halos.
+        :param halo_mass: mass of the halo in M_sun
+        :param x: halo x coordinate in arcsec
+        :param y: halo y coordinate in arcsec
+        :param mdef: halo mass definition
+        :param z: halo redshift
+        :param zlens: main deflector redshift
+        :param zsource: source redshift
+        :param r3d: three dimensional coordinate of halo inside the host in kpc
+        (only relevant for tidally-truncated subhalos, for field halos this can be None)
+        :param subhalo_flag: bool, sets whether or not a halo is a subhalo
+        :param kwargs_halo: keyword arguments for the halo
+        :param cosmo: an instance of Cosmology(); if none is provided a default cosmology will be used
+        """
         if cosmo is None:
             cosmo = Cosmology()
 

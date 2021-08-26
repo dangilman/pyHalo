@@ -4,9 +4,18 @@ import numpy as np
 
 class NFWFieldHalo(Halo):
 
+    """
+    The main class for an NFW field halo profile without truncation
+
+    See the base class in Halos/halo_base.py for the required routines for any instance of a Halo class
+    """
+
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
 
+        """
+
+        """
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = Concentration(lens_cosmo_instance)
 
@@ -38,10 +47,17 @@ class NFWFieldHalo(Halo):
 
     @property
     def lenstronomy_ID(self):
-        return 'NFW'
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+
+        return ['NFW']
 
     @property
     def lenstronomy_params(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
 
         (concentration) = self.profile_args
         Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
@@ -51,14 +67,16 @@ class NFWFieldHalo(Halo):
         Rs_angle = np.round(Rs_angle, 10)
         theta_Rs = np.round(theta_Rs, 10)
 
-        kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                  'center_x': x, 'center_y': y}
+        kwargs = [{'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+                  'center_x': x, 'center_y': y}]
 
         return kwargs, None
 
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
             concentration = self._concentration.NFW_concentration(self.mass,
                                                                   self.z,
@@ -74,43 +92,19 @@ class NFWFieldHalo(Halo):
 
         return self._profile_args
 
-class NFWSubhhalo(Halo):
+class NFWSubhhalo(NFWFieldHalo):
 
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+    """
+    The main class for an NFW subhalo profile without truncation
 
-        self._lens_cosmo = lens_cosmo_instance
-        self._concentration = Concentration(lens_cosmo_instance)
-
-        super(NFWSubhhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                           lens_cosmo_instance, args, unique_tag)
-
-    @property
-    def lenstronomy_ID(self):
-        return 'NFW'
-
-    @property
-    def lenstronomy_params(self):
-
-        if not hasattr(self, '_kwargs_lenstronomy'):
-
-            (concentration) = self.profile_args
-            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
-
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
-
-            Rs_angle = np.round(Rs_angle, 10)
-            theta_Rs = np.round(theta_Rs, 10)
-
-            kwargs = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
-                      'center_x': x, 'center_y': y}
-
-            self._kwargs_lenstronomy = kwargs
-
-        return self._kwargs_lenstronomy, None
+    See the base class in Halos/halo_base.py for the required routines for any instance of a Halo class
+    """
 
     @property
     def profile_args(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
 
         if not hasattr(self, '_profile_args'):
             if self._args['evaluate_mc_at_zlens']:

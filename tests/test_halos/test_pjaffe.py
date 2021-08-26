@@ -59,10 +59,10 @@ class TestPjaffeHalo(object):
 
     def test_lenstronomy_ID(self):
         id = self.subhalo.lenstronomy_ID
-        npt.assert_string_equal(id, 'PJAFFE')
+        npt.assert_string_equal(id[0], 'PJAFFE')
 
         id = self.field_halo.lenstronomy_ID
-        npt.assert_string_equal(id, 'PJAFFE')
+        npt.assert_string_equal(id[0], 'PJAFFE')
 
     def test_z_infall(self):
 
@@ -77,7 +77,7 @@ class TestPjaffeHalo(object):
         m_nfw = 4 * np.pi * rs ** 3 * rhos * fc
 
         lenstronomy_kwargs, _ = self.subhalo.lenstronomy_params
-        sigma0, ra, rs = lenstronomy_kwargs['sigma0'], lenstronomy_kwargs['Ra'], lenstronomy_kwargs['Rs']
+        sigma0, ra, rs = lenstronomy_kwargs[0]['sigma0'], lenstronomy_kwargs[0]['Ra'], lenstronomy_kwargs[0]['Rs']
 
         arcsec_to_kpc = self.lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
         ra *= arcsec_to_kpc ** -1

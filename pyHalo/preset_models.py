@@ -5,13 +5,14 @@ act as a how-to guide if one wants to explore more complicated descriptions of t
 presented here show what each keyword argument accepted by pyHalo does.
 """
 from pyHalo.pyhalo import pyHalo
+from pyHalo.realization_extensions import RealizationExtensions
+from pyHalo.Cosmology.cosmology import Cosmology
+import numpy as np
 
-
-def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6,
-        log_mhigh=10, LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs', mass_definition='TNFW', **kwargs_other):
+def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
+        log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs', mass_definition='TNFW', **kwargs_other):
 
     """
-
     This specifies the keywords for a CDM halo mass function model with a subhalo mass function described by a power law
     and a line of sight halo mass function described by Sheth-Tormen.
 
@@ -34,8 +35,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     :param sigma_sub: normalization of the subhalo mass function
     :param shmf_log_slope: logarithmic slope of the subhalo mass function
     :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
-    :param log_mlow: log10(minimum halo mass) rendered
-    :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density
+    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
     :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
     :param log_m_host: log10 host halo mass in M_sun
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
@@ -104,8 +105,8 @@ def WDMLovell2020(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_lo
     :param z_lens: the lens redshift
     :param z_source: the source redshift
     :param log_mc: log10(half mode mass) in units M_sun (no little h)
-    :param log_mlow: log10(minimum halo mass) rendered
-    :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density
+    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
     :param a_wdm_los: describes the line of sight WDM halo mass function (see above)
     :param b_wdm_los: describes the line of sight WDM halo mass function (see above)
     :param c_wdm_los: describes the line of sight WDM halo mass function (see above)
@@ -157,15 +158,17 @@ def WDMGeneral(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm=2.3, 
 
     """
     This is a more restricted form for the warm dark matter halo mass function than WDMLovell2020 because
-    the subhalo mass function and field halo mass function share the same functional form
+    the subhalo mass function and field halo mass function share the same functional form. For other keyword arguments
+    and their descriptions see WDMLovell2020
+
     :param z_lens: the lens redshift
     :param z_source: the source redshift
     :param log_mc: log10(half mode mass) in units M_sun (no little h)
     :param log_mlow: log10(minimum halo mass) rendered
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density
-    :param a_wdm: describes the line of sight WDM halo mass function (see documention in WDMLovell2020)
-    :param b_wdm: describes the line of sight WDM halo mass function (see documention in WDMLovell2020)
-    :param c_wdm: describes the line of sight WDM halo mass function (see documention in WDMLovell2020)
+    :param a_wdm: describes the line of sight WDM halo mass function (see documentation in WDMLovell2020)
+    :param b_wdm: describes the line of sight WDM halo mass function (see documentation in WDMLovell2020)
+    :param c_wdm: describes the line of sight WDM halo mass function (see documentation in WDMLovell2020)
     :param c_scale: scale where concentrations in WDM deviate from CDM
     :param c_power: modification to logarithmic slope of mass-concentration relation
     :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
@@ -182,4 +185,180 @@ def WDMGeneral(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm=2.3, 
     return WDMLovell2020(z_lens, z_source, log_mc, log_mlow, log_mhigh, a_wdm, b_wdm, c_wdm,
                          a_wdm, b_wdm, c_wdm, c_scale, c_power, cone_opening_angle_arcsec, sigma_sub, LOS_normalization,
                          log_m_host, power_law_index, r_tidal, **kwargs_other)
+
+def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross_section,
+         logarithmic_core_collapse_slope, core_collapsed_core_size,
+         deflection_angle_function, central_density_function, evolution_timescale_function,
+         velocity_dispersion_function, t_sub=10, t_field=100, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
+         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', **kwargs_other):
+
+    """
+    This generates realizations of self-interacting dark matter (SIDM) halos, inluding both cored and core-collapsed
+    objects.
+
+    :param z_lens: the lens redshift
+    :param z_source: the source redshift
+    :param cross_section_name: the name of the cross section implemented in SIDMpy
+    :param cross_section_class: the class defined in SIDMpy for the SIDM cross section
+    :param kwargs_cross_section: keyword arguments for the SIDM cross section class
+    :param logarithmic_core_collapse_slope: logarithmic slope of core collapsed halos
+    :param core_collapsed_core_size: central core size of core collapsed halos (in units of Rs)
+    :param deflection_angle_function: a function that returns the deflection angles, to be passed into lenstronomy
+    :param central_density_function: a function that computes the central density of cored halos
+    :param evolution_timescale_function: a function that computes the evolution timescale t_0 for a given cross section
+    (for example, Equation 9 in Gilman et al. 2021)
+    :param velocity_dispersion_function: a function that computes the central velocity dispersion of an SIDM halo
+    :param t_sub: core collapse timescale for subhalos
+    :param t_field: core collapse timescale for field halos
+    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
+    :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param power_law_index: logarithmic slope of the subhalo mass function
+    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
+    to account for tidal stripping of halos that pass close to the central galaxy
+    :param kwargs_other: any addition keyword arguments
+    :return: an instance of Realization that contains cored and core collapsed halos
+    """
+
+    kwargs_sidm =  {'cross_section_type': cross_section_name, 'kwargs_cross_section': kwargs_cross_section,
+                       'SIDM_rhocentral_function': central_density_function,
+                       'numerical_deflection_angle_class': deflection_angle_function}
+    kwargs_sidm.update(kwargs_other)
+
+    realization_no_core_collapse = CDM(z_lens, z_source, sigma_sub, power_law_index, cone_opening_angle_arcsec, log_mlow,
+                              log_mhigh, LOS_normalization, log_m_host, r_tidal, 'coreTNFW', **kwargs_sidm)
+
+    ext = RealizationExtensions(realization_no_core_collapse)
+
+    inds = ext.find_core_collapsed_halos(evolution_timescale_function, velocity_dispersion_function,
+                                         cross_section_class, t_sub=t_sub, t_field=t_field)
+
+    realization = ext.add_core_collapsed_halos(inds, log_slope_halo=logarithmic_core_collapse_slope,
+                                                       x_core_halo=core_collapsed_core_size)
+
+    return realization
+
+def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+                  c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
+                  sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
+                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, scale_nfw=False, **kwargs_other):
+
+    """
+
+    This specifies keywords for a ULDM halo mass function model. Similarly to WDMGeneral, the functional form of the
+    subhalo mass function is the same as the field halo mass function. However, this model differs from WDMGeneral 
+    by creating halos which are composite ULDM + NFW density profiles. The ULDM particle mass and core radius-halo mass 
+    power law exponent must now be specified. For details regarding ULDM halos, see Schive et al. 2014 
+    (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the solition density profile and core radius, respectively.
+
+    The differential halo mass function is described by three parameters, see Schive et al. 2016 
+    (https://arxiv.org/pdf/1508.04621.pdf):
+
+    1) log_m0 - the log10 value of the characteristic mass, or the scale where the ULDM mass function begins 
+    to deviate from CDM:
+        
+        m0 = (1.6*10**10) * (m22)**(-4/3)   [solar masses],
+
+    where
+
+        m22 = m_uldm / 10**22 eV.
+
+    2) b_uldm - modifies the log slope of the ULDM mass function, analogous to b_wdm (see WDMLovell2020)
+
+    3) c_uldm - modifies the log slope of the ULDM mass function, analogous to c_wdm (see WDMLovell2020)
+
+    The parametrization for the mass function is:
+
+        n_uldm / n_cdm = (1 + (m / m_0)^b_uldm) ^ c_uldm,
+
+    where Schive et al. 2016 determined that 
+
+        (m_0,    b_uldm,    c_uldm) = ( (1.6*10**10) * (m22)**(-4/3),    1.1,    2.2)
+
+    As for the concentration relative to CDM, Du et al. 2016 (https://arxiv.org/pdf/1608.02575.pdf) found that
+    the same fitting function as Lovell 2020 is a good estimation of the ULDM concentration,
+    i.e. simply c_wdm = c_uldm, with (c_scale, c_power) = (15, -0.3).
+
+    Furthermore, Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf) found a redshift-dependent minimum ULDM halo mass
+    given by
+
+        M_min(z) = a^(-3/4) * (Zeta(z)/Zeta(0))^(1/4) * M_min,0     [solar masses]
+    
+    where a is the cosmic scale factor, 
+
+        M_min,0 = 4.4*10^7 * m22^(-3/2)     [solar masses]
+    
+    and
+
+        Zeta(z) = (18*pi^2 + 82(Om(z) - 1) - 39(Om(z) - 1)^2) / Om(z),
+    
+    where Om(z) is the matter density parameter.
+    
+    :param z_lens: the lens redshift
+    :param z_source: the source redshift
+    :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
+    :param b_uldm: defines the ULDM mass function (see above)
+    :param c_uldm: defines the ULDM mass function (see above)
+    :param c_scale: scale where concentrations in ULDM deviate from CDM (see WDMLovell2020)
+    :param c_power: modification to logarithmic slope of mass-concentration relation (see WDMLovell2020)
+    :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
+    :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param power_law_index: logarithmic slope of the subhalo mass function
+    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
+    to account for tidal stripping of halos that pass close to the central galaxy
+    :param mass_definition: mass profile model for halos
+    :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
+    :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
+    :param scale_nfw: boolean specifiying whether or not to scale the NFW component (can improve mass accuracy)
+    :param kwargs_other: any other optional keyword arguments
+    :return: a realization of ULDM halos
+    """
+    # constants
+    m22 = 10**(log10_m_uldm + 22)
+    log_m0 = np.log10(1.6e10 * m22**(-4/3))
+    M_min0 = 4.4e7 * m22**(-3/2) # M_solar
+
+    a_uldm = 1 # set to unity since Schive et al. 2016 do not have an analogous parameter
+
+    #compute M_min as described in documentation
+    a = lambda z: (1+z)**(-1)
+    O_m = lambda z: Cosmology().astropy.Om(z)
+    zeta = lambda z: (18*np.pi**2 + 82*(O_m(z)-1) - 39*(O_m(z)-1)**2) / O_m(z)
+    m_min = lambda z: a(z)**(-3/4) * (zeta(z)/zeta(0))**(1/4) * M_min0
+    log_m_min = lambda z: np.log10(m_min(z))
+
+    if log_m_min(z_lens) >= log_mlow:
+        log_mlow = log_m_min(z_lens) # only use M_min for minimum halo mass if it is above input 'log_mlow'
+    kwargs_model_field = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
+                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
+
+    kwargs_model_subhalos = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
+                             'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
+    
+    kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw, 'scale_nfw':scale_nfw}
+
+    kwargs_model_field.update(kwargs_uldm)
+    kwargs_model_subhalos.update(kwargs_uldm)
+
+    kwargs_model_field.update(kwargs_other)
+    kwargs_model_subhalos.update(kwargs_other)
+
+    # this will use the default cosmology. parameters can be found in defaults.py
+    pyhalo = pyHalo(z_lens, z_source)
+    # Using the render method will result a list of realizations
+    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
+    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
+
+    uldm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
+
+    return uldm_realization
 

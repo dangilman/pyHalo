@@ -78,12 +78,11 @@ class TestcoreTNFWHalos(object):
         rs_angle, theta_rs = self.lens_cosmo.nfw_physical2angle(prof.mass, c, prof.z)
         rtrunc_angle = rtrunc_kpc / self.lens_cosmo.cosmo.kpc_proper_per_asec(prof.z)
         rhos_kpc, rs_kpc, _ = self.subhalo.lens_cosmo.NFW_params_physical(prof.mass, c, prof._tnfw.z_eval)
-        r_core = rhos_kpc / rho_central * rs_angle
 
-        npt.assert_almost_equal(prof.x, kwargs['center_x'])
-        npt.assert_almost_equal(prof.y, kwargs['center_y'])
-        npt.assert_almost_equal(rtrunc_angle, kwargs['r_trunc'])
-        npt.assert_almost_equal(rs_angle, kwargs['Rs'])
+        npt.assert_almost_equal(prof.x, kwargs[0]['center_x'])
+        npt.assert_almost_equal(prof.y, kwargs[0]['center_y'])
+        npt.assert_almost_equal(rtrunc_angle, kwargs[0]['r_trunc'])
+        npt.assert_almost_equal(rs_angle, kwargs[0]['Rs'])
 
         x, y, rs, r_core, r_trunc, norm = 0.1, 0.1, 1., 1., 0.5, 1.
         out = func(x, y, rs, r_core, r_trunc, norm)
@@ -92,9 +91,9 @@ class TestcoreTNFWHalos(object):
     def test_lenstronomy_ID(self):
 
         id = self.subhalo.lenstronomy_ID
-        npt.assert_string_equal(id, 'NumericalAlpha')
+        npt.assert_string_equal(id[0], 'NumericalAlpha')
         id = self.field_halo.lenstronomy_ID
-        npt.assert_string_equal(id, 'NumericalAlpha')
+        npt.assert_string_equal(id[0], 'NumericalAlpha')
 
     def test_z_infall(self):
 
@@ -149,8 +148,9 @@ class TestcoreTNFWHalos(object):
         for i in range(0, len(prof_params)-1):
             npt.assert_almost_equal(prof_params[i], prof_params_core[i])
 
-        lenstronomy_params_tnfw = tnfw.lenstronomy_params
-        lenstronomy_params_coretnfw = coreTNFW.lenstronomy_params
+        lenstronomy_params_tnfw, _ = tnfw.lenstronomy_params
+        lenstronomy_params_coretnfw, _ = coreTNFW.lenstronomy_params
+
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['Rs'], lenstronomy_params_coretnfw[0]['Rs'])
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['r_trunc'], lenstronomy_params_coretnfw[0]['r_trunc'])
 

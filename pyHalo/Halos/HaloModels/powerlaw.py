@@ -6,11 +6,13 @@ import numpy as np
 class PowerLawSubhalo(Halo):
 
     """
-    This class acts as the base class for a mass profile that is a cored power law in radius
+    The base class for a halo modeled as a power law profile
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         self._prof = SPLCORE()
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = Concentration(lens_cosmo_instance)
@@ -19,14 +21,21 @@ class PowerLawSubhalo(Halo):
 
     @property
     def lenstronomy_params(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_lenstronomy_args'):
 
             (concentration, gamma, x_core_halo) = self.profile_args
             rhos, rs, _ = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-            x_match = 2.16
+            if 'x_match' in self._args.keys():
+                x_match = self._args['x_match']
+            else:
+                # r_vmax = 2.16 * rs
+                x_match = 2.16
+
             r_match_arcsec = x_match * rs / kpc_per_arcsec
             fx = np.log(1+x_match) - x_match/(1 + x_match)
             m = 4 * np.pi * rs ** 3 * rhos * fx
@@ -38,18 +47,23 @@ class PowerLawSubhalo(Halo):
             rho0 = m/self._prof.mass_3d(r_match_arcsec, sigma_crit_arcsec, r_core_arcsec, gamma)
             sigma0 = rho0 * r_core_arcsec
 
-            self._lenstronomy_args = {'sigma0': sigma0, 'gamma': gamma, 'center_x': self.x, 'center_y': self.y,
-                                      'r_core': r_core_arcsec}
+            self._lenstronomy_args = [{'sigma0': sigma0, 'gamma': gamma, 'center_x': self.x, 'center_y': self.y,
+                                      'r_core': r_core_arcsec}]
 
         return self._lenstronomy_args, None
 
     @property
     def lenstronomy_ID(self):
-        return 'SPL_CORE'
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['SPL_CORE']
 
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
 
             if self._args['evaluate_mc_at_zlens']:
@@ -75,10 +89,14 @@ class PowerLawSubhalo(Halo):
 
 
 class PowerLawFieldHalo(PowerLawSubhalo):
-
+    """
+    Class that defines a power law halo in the field
+    """
     @property
     def profile_args(self):
-
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
         if not hasattr(self, '_profile_args'):
 
             concentration = self._concentration.NFW_concentration(self.mass,

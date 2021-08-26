@@ -53,8 +53,8 @@ class TwoHaloContribution(RenderingClassBase):
 
         norm, slope = self._norm_slope(z, delta_z)
         args = deepcopy(self._rendering_kwargs)
-
-        mfunc = GeneralPowerLaw(args['log_mlow'], args['log_mhigh'], slope, args['draw_poisson'],
+        log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
+        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, args['draw_poisson'],
                                 norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
                                 args['c_wdm'])
         m = mfunc.draw()

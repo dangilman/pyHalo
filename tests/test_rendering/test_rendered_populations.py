@@ -138,7 +138,7 @@ class TestRenderedPopulations(object):
             if halo.is_subhalo:
                 m_subs += halo.mass
         ratio = mtheory / m_subs
-        npt.assert_array_less(1 - ratio, 0.05)
+        npt.assert_array_less(1 - ratio, 0.1)
 
     def test_mass_rendered_line_of_sight(self):
 

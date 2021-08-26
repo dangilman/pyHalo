@@ -395,4 +395,3 @@ class LensCosmo(object):
 
         idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
         return idx
-

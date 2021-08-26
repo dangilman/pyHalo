@@ -13,8 +13,8 @@ class Halo(ABC):
         :param x: angular coordinate x in arcsec
         :param y: angular coordinate y in arcsec
         :param r3d: three dimensional position of halo in kpc (used to compute the truncation radius for subhalos)
-        For field halos this is not relevant
-        :param mdef: mass definition for the halo (see recognized mass definitions above)
+        For field halos this is not relevant and is set to None
+        :param mdef: mass definition for the halo
         :param z: halo redshift
         :param sub_flag: bool; if True, the halo is treated as a main deflector subhalo
         :param lens_cosmo_instance: an instance of LensCosmo
@@ -35,17 +35,37 @@ class Halo(ABC):
         self.unique_tag = unique_tag
 
     @property
+    @abstractmethod
+    def profile_args(self):
+        """
+        This routine computes properties of the halo required to specify it
+        """
+        ...
+
+    @property
     def params_physical(self):
         raise Exception('this halo class does not have attribute params_physical')
 
     @property
     @abstractmethod
     def lenstronomy_ID(self):
+        """
+        Returns a list of profile names recognized by lenstronomy
+
+        Example:
+            a truncated NFW profile would return ['TNFW']
+            a hybrid NFW and point mass profile would return ['NFW', 'POINT_MASS']
+
+        """
         ...
 
     @property
     @abstractmethod
     def lenstronomy_params(self):
+        """
+        Returns a list of keyword arguments for the profile, must be the same length as lenstronomy_ID
+        :return:
+        """
         ...
 
     @property

@@ -172,58 +172,36 @@ class TestPopulationModel(object):
             npt.assert_equal(len(prof) == len(zprof), True)
             npt.assert_equal(len(zprof) == len(kw), True)
 
-    #
-    # def test_mass_sheets(self):
-    #
-    #     kwargs_out, profile_names_out, zout = self.func.negative_kappa_sheets_theory()
-    #     kwargs_out_wdm, profile_names_out, zout = self.func.negative_kappa_sheets_theory()
-    #
-    #     redshifts = self.func.lens_plane_redshifts[0::2]
-    #     delta_z = 2 * self.func.delta_zs[0::2]
-    #     kappa_scale = self.kwargs['kappa_scale']
-    #     for i, (zi, dzi) in enumerate(zip(redshifts, delta_z)):
-    #
-    #         plaw_index = self.halo_mass_function.plaw_index_z(zi) + self.kwargs['delta_power_law_index']
-    #         norm = self.halo_mass_function.norm_at_z(zi, plaw_index, dzi, 10 ** 8) * self.kwargs['LOS_normalization']
-    #         mtheory = integrate_power_law_analytic(norm, 10 ** self.kwargs['log_mass_sheet_min'],
-    #                                                10 ** self.kwargs['log_mass_sheet_max'],
-    #                                                1, plaw_index)
-    #
-    #         kappa = self.func._convergence_at_z(zi, dzi, self.kwargs['log_mass_sheet_min'],
-    #                                                             self.kwargs['log_mass_sheet_max'], self.kwargs['kappa_scale'])
-    #
-    #         area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, zi)
-    #         sigma_crit_mass = self.func.lens_cosmo.sigma_crit_mass(zi, area)
-    #
-    #         npt.assert_almost_equal(kappa_scale * mtheory / sigma_crit_mass, kappa)
-    #         npt.assert_almost_equal(-kwargs_out[i]['kappa_ext'], kappa)
-    #         npt.assert_string_equal(profile_names_out[i], 'CONVERGENCE')
-    #         npt.assert_almost_equal(zout[i], zi)
-    #
-    #     kwargs_out_wdm, profile_names_out, zout = self.func_wdm.negative_kappa_sheets_theory()
-    #     redshifts = self.func_wdm.lens_plane_redshifts[0::2]
-    #     delta_z = 2 * self.func_wdm.delta_zs[0::2]
-    #     kappa_scale = self.kwargs_wdm['kappa_scale']
-    #     for i, (zi, dzi) in enumerate(zip(redshifts, delta_z)):
-    #
-    #         plaw_index = self.halo_mass_function.plaw_index_z(zi) + self.kwargs_wdm['delta_power_law_index']
-    #         norm = self.halo_mass_function.norm_at_z(zi, plaw_index, dzi, 10 ** 8) * self.kwargs_wdm['LOS_normalization']
-    #         mtheory = integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mass_sheet_min'],
-    #                                            10 ** self.kwargs_wdm['log_mass_sheet_max'],
-    #                                            self.kwargs_wdm['log_mc'],
-    #                                            1, plaw_index, self.kwargs_wdm['a_wdm'],
-    #                                            self.kwargs_wdm['b_wdm'], self.kwargs_wdm['c_wdm'])
-    #
-    #         kappa = self.func_wdm._convergence_at_z(zi, dzi, self.kwargs_wdm['log_mass_sheet_min'],
-    #                                             self.kwargs_wdm['log_mass_sheet_max'], self.kwargs_wdm['kappa_scale'])
-    #
-    #         area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, zi)
-    #         sigma_crit_mass = self.func_wdm.lens_cosmo.sigma_crit_mass(zi, area)
-    #
-    #         npt.assert_almost_equal(kappa_scale * mtheory / sigma_crit_mass, kappa)
-    #         npt.assert_almost_equal(-kwargs_out_wdm[i]['kappa_ext'], kappa)
-    #         npt.assert_string_equal(profile_names_out[i], 'CONVERGENCE')
-    #         npt.assert_almost_equal(zout[i], zi)
+    def test_redshift_dependent_mass(self):
+
+        def log_mlow_func(z):
+
+            if z > 0.5:
+                return 6.
+            else:
+                return 7.
+
+        def log_mhigh_func(z):
+
+            if z > 0.5:
+                return 9.
+            else:
+                return 9.5
+
+        pop_model = HaloPopulation(['LINE_OF_SIGHT'], self.kwargs_cdm, self.lens_cosmo, self.geometry,
+                                              self.halo_mass_function, self.lens_plane_redshifts,
+                                              self.delta_zs)
+        ml, mh = pop_model.rendering_classes[0]._redshift_dependent_mass_range(1., log_mlow_func, log_mhigh_func)
+        npt.assert_equal(ml, 6)
+        npt.assert_equal(mh, 9)
+
+        ml, mh = pop_model.rendering_classes[0]._redshift_dependent_mass_range(0.1, log_mlow_func, log_mhigh_func)
+        npt.assert_equal(ml, 7)
+        npt.assert_equal(mh, 9.5)
+
+        ml, mh = pop_model.rendering_classes[0]._redshift_dependent_mass_range(0.1, 7.5, log_mhigh_func)
+        npt.assert_equal(ml, 7.5)
+        npt.assert_equal(mh, 9.5)
 
 
 if __name__ == '__main__':
