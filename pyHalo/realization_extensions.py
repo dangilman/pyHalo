@@ -1,9 +1,10 @@
 import numpy as np
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
 from pyHalo.single_realization import Realization
-from lenstronomy.LensModel.lens_model import LensModel
 from pyHalo.single_realization import realization_at_z
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
+from pyHalo.utilities import sample_circle
+from pyHalo.utilities import sample_clustered
 
 
 class RealizationExtensions(object):
@@ -164,6 +165,7 @@ class RealizationExtensions(object):
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
 <<<<<<< HEAD
+<<<<<<< Updated upstream
     
     def _sample_projmass(self, probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax): 
         
@@ -245,9 +247,41 @@ class RealizationExtensions(object):
             masses_clumpy = np.array([M] * len(coord_x_clumpy))
             z_shifts_clumpy = [zi] * len(masses_clumpy)
             return coord_x_clumpy, coord_y_clumpy, z_shifts_clumpy, masses_clumpy
+=======
+>>>>>>> Stashed changes
     
     def _pbh_in_lensplane (self, lens_plane_redshifts, cosmology, cosmo_geometry, max_rendering_range_base, 
                        x_interp_list, y_interp_list, image_index, LMF, mlow, mhigh, rho_DM, npix, M, realization):
+        """
+        This function generates primordial black hole parameters at each lensing plane.
+
+        Parameters
+        ----------
+        lens_plane_redshifts : redshifts at which to render lensing          
+        cosmology : pyhalo cosmology model    
+        cosmo_geometry : pyhalo cosmo_geometry instance      
+        max_rendering_range_base : radius of rendering area to be scaled by cosmology (arcsec)          
+        x_interp_list : from pyhalo.utilities interpolate_ray_paths
+        y_interp_list : from pyhalo.utilities interpolate_ray_paths
+        image_index : which lens image is being modeled  
+        LMF : pyhalo lensing mass function instance          
+        mlow : lowest halo mass to render       
+        mhigh : highest halo mass to render
+        rho_DM : density of dark matter         
+        npix : number of pixels on one axis   
+        M : mass of PBH (solar masses)
+        realization : the input pyhalo realization model
+            
+
+        Returns
+        -------
+        pbh_x_coordinates : primordial black hole x-coordinates (arcsec)
+        pbh_y_coordinates : primordial black hole y-coordinates (arcsec)
+        pbh_redshifts : redshift of each primordial black hole
+        pbh_masses : mass of each primordial black hole
+            
+
+        """
         # intializing storage arrays
         pbh_masses = np.array([])
         pbh_x_coordinates = np.array([])
@@ -289,7 +323,9 @@ class RealizationExtensions(object):
             
     
             if Nsmooth > 0:
-                coord_x_smooth, coord_y_smooth,  z_shifts_smooth, masses_smooth = self._smooth_pbh (max_rendering_range, Nsmooth, center_x, center_y, zi, M)
+                coord_x_smooth, coord_y_smooth = sample_circle (max_rendering_range, Nsmooth, center_x, center_y)
+                z_shifts_smooth = [zi] * len(coord_x_smooth)
+                masses_smooth = np.array([M] * len(coord_x_smooth))
                 pbh_x_coordinates = np.append(pbh_x_coordinates, coord_x_smooth)
                 pbh_y_coordinates = np.append(pbh_y_coordinates, coord_y_smooth)
                 pbh_redshifts += z_shifts_smooth
@@ -297,8 +333,10 @@ class RealizationExtensions(object):
             
             # we can only generate PBH around halos if there are halos, hence the second condition
             if Nclumpy > 0 and len(lens_model_list_at_plane): 
-                coord_x_clumpy, coord_y_clumpy, z_shifts_clumpy, masses_clumpy = self._clumpy_pbh (lens_model_list_at_plane, center_x, center_y, 
-                     kwargs_lens_at_plane, Nclumpy, max_rendering_range, npix, zi, M)
+                coord_x_clumpy, coord_y_clumpy = sample_clustered (lens_model_list_at_plane, center_x, center_y, 
+                     kwargs_lens_at_plane, Nclumpy, max_rendering_range, npix)
+                masses_clumpy = np.array([M] * len(coord_x_clumpy))
+                z_shifts_clumpy = [zi] * len(masses_clumpy)
                 pbh_x_coordinates = np.append(pbh_x_coordinates, coord_x_clumpy)
                 pbh_y_coordinates = np.append(pbh_y_coordinates, coord_y_clumpy)
                 pbh_redshifts += z_shifts_clumpy
@@ -307,19 +345,42 @@ class RealizationExtensions(object):
         return pbh_x_coordinates, pbh_y_coordinates, pbh_redshifts, pbh_masses
     
     def pbh_around_image(self, compfrac, M, image_index, realization, cosmology, lens_cosmo, cosmo_geometry, 
-                     zlens, zsource, x_interp_list, y_interp_list):
-    
+                     zlens, zsource, x_interp_list, y_interp_list, max_rendering_range_base, npix):
+        """
+        This function creates a realization with primordial black holes.
+
+        Parameters
+        ----------
+        compfrac : component fraction (mass fraction) of pbh in dark matter
+        M : mass of primordial black hole (solar masses)
+        image_index : which lens image is being modeled       
+        realization : the input pyhalo realization model
+        cosmology : pyhalo cosmology model
+        lens_cosmo : pyhalo lens_cosmo instance          
+        cosmo_geometry : pyhalo cosmo_geometry instance
+        zlens : redshift of lens
+        zsource : redshift of source  
+        x_interp_list : from pyhalo.utilities interpolate_ray_paths    
+        y_interp_list : from pyhalo.utilities interpolate_ray_paths 
+        max_rendering_range_base : radius of rendering area to be scaled by cosmology (arcsec)           
+        npix : number of pixels on one axis
+            
+
+        Returns
+        -------
+        black_hole_realization : Instance of Realization with primordial black hole parameters included
+
+        """
     
         lens_plane_redshifts = self._realization.unique_redshifts
         
-        max_rendering_range_base = 0.25 # arcsec
-        npix = 300
         
         # defining things for later
-        conangle = cosmo_geometry.cone_opening_angle #arcsec 
+        profile_args = self._realization._prof_params
+        conangle = profile_args['cone_opening_angle'] #arcsec 
         LMF = LensingMassFunction(cosmology, zlens, zsource, cone_opening_angle=conangle)
-        mlow = 1e6
-        mhigh = 1e10 
+        mlow = 10**profile_args['log_mlow']
+        mhigh = 10**profile_args['log_mhigh']
         rho_DM = LMF.component_density(compfrac)
     
         pbh_x_coordinates, pbh_y_coordinates, pbh_redshifts, pbh_masses = self._pbh_in_lensplane (lens_plane_redshifts, 
@@ -332,7 +393,6 @@ class RealizationExtensions(object):
         mdefs = ['PT_MASS'] * len(pbh_masses)
         sub_flags = [False]*len(pbh_masses)
     #    print('realization ' +str(image_index)+' contains '+str(len(pbh_masses))+ ' black holes')
-        profile_args = self._realization._prof_params
         black_hole_realization = self._realization(pbh_masses, pbh_x_coordinates, pbh_y_coordinates, r3d,  mdefs, pbh_redshifts, sub_flags,
                                             lens_cosmo, mass_sheet_correction=False, kwargs_realization=profile_args)
         return black_hole_realization
