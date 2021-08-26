@@ -30,7 +30,12 @@ class PowerLawSubhalo(Halo):
             rhos, rs, _ = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-            x_match = 2.16
+            if 'x_match' in self._args.keys():
+                x_match = self._args['x_match']
+            else:
+                # r_vmax = 2.16 * rs
+                x_match = 2.16
+
             r_match_arcsec = x_match * rs / kpc_per_arcsec
             fx = np.log(1+x_match) - x_match/(1 + x_match)
             m = 4 * np.pi * rs ** 3 * rhos * fx

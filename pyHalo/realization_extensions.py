@@ -78,7 +78,7 @@ class RealizationExtensions(object):
         are core collapsed by t = t_field + t_field_range (probability = 1)
         :param model_type: specifies the cross section model to use when computing the solution to the velocity
         dispersion of the halo
-        :return: indexes of halos that are core collapsed given
+        :return: indexes of halos that are core collapsed
         """
         inds = []
         for i, halo in enumerate(self._realization.halos):
@@ -160,3 +160,4 @@ class RealizationExtensions(object):
                                       msheet_correction, rendering_classes,
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
+
