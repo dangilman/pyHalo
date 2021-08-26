@@ -402,7 +402,6 @@ class Realization(object):
 
             lens_model_name = halo.lenstronomy_ID
             kwargs_halo, interp_class = halo.lenstronomy_params
-
             lens_model_list += lens_model_name
             kwargs_lens += kwargs_halo
             redshift_array += [halo.z] * len(lens_model_name)
