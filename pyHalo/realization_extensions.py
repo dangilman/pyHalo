@@ -164,91 +164,6 @@ class RealizationExtensions(object):
                                       msheet_correction, rendering_classes,
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-    
-    def _sample_projmass(self, probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax): 
-        
-        # pixel_scale = window size in arcseconds / number of pixels
-        # x_0, y_0 = center of window in arcsec
-        # Rmax = maximum radius in which to keep points in arcsec
-        
-        probnorm = probability_density/probability_density.sum()
-        
-        s = probnorm.shape[0]
-        p = probnorm.ravel()
-    
-        values = np.arange(s**2)
-    
-        # I think we need to sample with replacement, even if point masses end up on top of each other. 
-        # Otherwise we might not correctly populate the very high density regions i.e. the central parts of halos
-        # And we need to have some overlap if Nsamples > s ** 2 
-        
-        x_out, y_out = np.array([]), np.array([])
-    
-        ndraw = Nsamples
-        
-        # Put this in since cutting off the corners to maintin circular sym. can remove some halos and the number of
-        # objects returned doesn't always equal Nsamples
-        while ndraw > 0:
-            
-            ndraw = Nsamples - len(x_out)
-            
-            inds=np.random.choice(values,p=p,size=ndraw,replace=True)
-    
-            pairs=np.indices(dimensions=(s,s)).T 
-    
-            locations = pairs.reshape(-1,2)[inds]
-            x_sample_pixel, y_sample_pixel = locations[:,0], locations[:,1]
-    
-            # transform to arcsec
-            x_sample_arcsec = (x_sample_pixel - s/2) * pixel_scale
-            y_sample_arcsec = (y_sample_pixel - s/2) * pixel_scale
-    
-            # smooth on sub-pixel scale
-            pixel_smoothing_kernel = pixel_scale/4
-            # apply smoothing to remove artificial tiling
-            x_sample_arcsec += np.random.normal(0, pixel_smoothing_kernel, ndraw)
-            y_sample_arcsec += np.random.normal(0, pixel_smoothing_kernel, ndraw)
-    
-            # keep circular symmetry
-            r = np.sqrt(x_sample_arcsec ** 2 + y_sample_arcsec ** 2)
-            keep = np.where(r <= Rmax)
-            x_out = np.append(x_out, x_sample_arcsec[keep])
-            y_out = np.append(y_out, y_sample_arcsec[keep])
-            
-        return x_out + x_0, y_out + y_0
-    
-        
-    def _smooth_pbh(self, max_rendering_range, Nsmooth, center_x, center_y, zi, M):
-            # SAMPLE UNIFORM POINTS IN A CIRCLE
-            radii = np.random.uniform(0, max_rendering_range ** 2, Nsmooth) 
-            # note you have to sample out to r^2 and then take sqrt
-            angles = np.random.uniform(0, 2 * np.pi, Nsmooth)
-            coord_x_smooth = radii ** 0.5 * np.cos(angles) + center_x
-            coord_y_smooth = radii ** 0.5 * np.sin(angles) + center_y
-            z_shifts_smooth = [zi] * len(coord_x_smooth)
-            masses_smooth = np.array([M] * len(coord_x_smooth))
-            return coord_x_smooth, coord_y_smooth,  z_shifts_smooth, masses_smooth
-        
-    def _clumpy_pbh(self, lens_model_list_at_plane, center_x, center_y, 
-                     kwargs_lens_at_plane, Nclumpy, max_rendering_range, npix, zi, M):
-            grid_x_base = np.linspace(-max_rendering_range, max_rendering_range, npix)
-            grid_y_base = np.linspace(-max_rendering_range, max_rendering_range, npix)
-            pixel_scale = 2*max_rendering_range/npix
-            xx_base, yy_base = np.meshgrid(grid_x_base, grid_y_base)
-            shape0 = xx_base.shape
-            lens_model_at_plane = LensModel(lens_model_list_at_plane)
-            xcoords, ycoords = xx_base + center_x, yy_base + center_y
-            projected_mass = lens_model_at_plane.kappa(xcoords.ravel(), ycoords.ravel(), kwargs_lens_at_plane)
-            probability_density = projected_mass.reshape(shape0)
-            coord_x_clumpy, coord_y_clumpy = self._sample_projmass(probability_density, Nclumpy, pixel_scale, 
-                                                   center_x, center_y, max_rendering_range)
-            masses_clumpy = np.array([M] * len(coord_x_clumpy))
-            z_shifts_clumpy = [zi] * len(masses_clumpy)
-            return coord_x_clumpy, coord_y_clumpy, z_shifts_clumpy, masses_clumpy
-=======
->>>>>>> Stashed changes
     
     def _pbh_in_lensplane (self, lens_plane_redshifts, cosmology, cosmo_geometry, max_rendering_range_base, 
                        x_interp_list, y_interp_list, image_index, LMF, mlow, mhigh, rho_DM, npix, M, realization):
@@ -393,9 +308,6 @@ class RealizationExtensions(object):
         mdefs = ['PT_MASS'] * len(pbh_masses)
         sub_flags = [False]*len(pbh_masses)
     #    print('realization ' +str(image_index)+' contains '+str(len(pbh_masses))+ ' black holes')
-        black_hole_realization = self._realization(pbh_masses, pbh_x_coordinates, pbh_y_coordinates, r3d,  mdefs, pbh_redshifts, sub_flags,
+        black_hole_realization = Realization(pbh_masses, pbh_x_coordinates, pbh_y_coordinates, r3d,  mdefs, pbh_redshifts, sub_flags,
                                             lens_cosmo, mass_sheet_correction=False, kwargs_realization=profile_args)
         return black_hole_realization
-=======
-
->>>>>>> a64c695a69aec0e6a8e383795c3bd6c3e5e6cc20
