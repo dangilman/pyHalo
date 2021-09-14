@@ -1,6 +1,7 @@
 import pytest
 from pyHalo.single_realization import SingleHalo
 from pyHalo.realization_extensions import RealizationExtensions
+from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
 import numpy as np
 
@@ -30,5 +31,62 @@ class TestRealizationExtensions(object):
         indexes = ext.find_core_collapsed_halos(timescalefunction_long, vfunc)
         npt.assert_equal(False, 0 in indexes)
 
+    def test_collapse_by_mass(self):
+
+        cosmo = Cosmology()
+        m_list = 10**np.random.uniform(6, 10, 1000)
+        realization = SingleHalo(m_list[0], 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True,
+                                 cosmo=cosmo)
+        for mi in m_list[1:]:
+            single_halo = SingleHalo(mi, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True, cosmo=cosmo)
+            realization = realization.join(single_halo)
+            single_halo = SingleHalo(mi, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=False, cosmo=cosmo)
+            realization = realization.join(single_halo)
+
+        ext = RealizationExtensions(realization)
+
+        mass_range_subs = [[6, 8], [8, 10]]
+        mass_range_field = [[6, 8], [8, 10]]
+        p_subs = [0.3, 0.9]
+        p_field = [0.8, 0.25]
+        kwargs_halo = {'log_slope_halo': -3, 'x_core_halo': 0.05}
+        realization_collapsed = ext.core_collapse_by_mass(mass_range_subs, mass_range_field,
+                              p_subs, p_field, kwargs_halo)
+
+
+        i_subs_collapsed_1 = 0
+        i_subs_1 = 0
+        i_field_collapsed_1 = 0
+        i_field_1 = 0
+        i_subs_collapsed_2 = 0
+        i_subs_2 = 0
+        i_field_collapsed_2 = 0
+        i_field_2 = 0
+        for halo in realization_collapsed.halos:
+            print(halo.mdef)
+            if halo.is_subhalo:
+                if halo.mass < 10 ** 8:
+                    i_subs_1 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_subs_collapsed_1 += 1
+                else:
+                    i_subs_2 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_subs_collapsed_2 += 1
+            else:
+                if halo.mass < 10 ** 8:
+                    i_field_1 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_field_collapsed_1 += 1
+                else:
+                    i_field_2 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_field_collapsed_2 += 1
+
+        npt.assert_almost_equal(abs(p_subs[0] - i_subs_collapsed_1 / i_subs_1), 0, 1)
+        npt.assert_almost_equal(abs(p_subs[1] - i_subs_collapsed_2 / i_subs_2), 0, 1)
+        npt.assert_almost_equal(abs(p_field[0] - i_field_collapsed_1 / i_field_1), 0, 1)
+        npt.assert_almost_equal(abs(p_field[1] - i_field_collapsed_2 / i_field_2), 0, 1)
+
 if __name__ == '__main__':
-    pytest.main()
+     pytest.main()

@@ -1,7 +1,7 @@
 import numpy as np
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
 from pyHalo.single_realization import Realization
-
+import random
 
 class RealizationExtensions(object):
 
@@ -52,6 +52,48 @@ class RealizationExtensions(object):
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
 
+    def core_collapse_by_mass(self, mass_ranges_subhalos, mass_ranges_field_halos,
+                              probabilities_subhalos, probabilities_field_halos, kwargs_halo={}):
+
+        """
+        This routine transforms some fraction of subhalos and field halos into core collapsed profiles
+        in the specified mass ranges
+
+        :param mass_ranges_subhalos: a list of lists specifying the log10 halo mass ranges for subhalos
+        e.g. mass_ranges_subhalos = [[6, 8], [8, 10]]
+        :param mass_ranges_field_halos: a list of lists specifying the halo mass ranges for field halos
+        e.g. mass_ranges_subhalos = [[6, 8], [8, 10]]
+        :param probabilities_subhalos: a list of lists specifying the fraction of subhalos in each mass
+        range that core collapse
+        e.g. probabilities_subhalos = [0.5, 1.] makes half of subhalos with mass 10^6 - 10^8 collapse, and
+        100% of subhalos with mass between 10^8 and 10^10 collapse
+        :param probabilities_field_halos: same as probabilities subhalos, but for the population of field halos
+        :param kwargs_halo: the keyword arguments for the collapsed halo profile
+        :return: a new instance of Realization that includes the collapsed profiles
+        """
+
+        assert len(mass_ranges_subhalos) == len(probabilities_subhalos)
+        assert len(mass_ranges_field_halos) == len(probabilities_field_halos)
+
+        indexes = []
+
+        for i_halo, halo in enumerate(self._realization.halos):
+            u = np.random.rand()
+            if halo.is_subhalo:
+                for i, mrange in enumerate(mass_ranges_subhalos):
+                    if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
+                        if u <= probabilities_subhalos[i]:
+                            indexes.append(i_halo)
+                        break
+
+            else:
+                for i, mrange in enumerate(mass_ranges_field_halos):
+                    if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
+                        if u <= probabilities_field_halos[i]:
+                            indexes.append(i_halo)
+                        break
+
+        return self.add_core_collapsed_halos(indexes, **kwargs_halo)
 
     def find_core_collapsed_halos(self, time_scale_function, velocity_dispersion_function,
                                   cross_section, t_sub=10., t_field=100., t_sub_range=2, t_field_range=2.,
@@ -60,16 +102,16 @@ class RealizationExtensions(object):
         """
         :param time_scale_function: a function that computes the characteristic timescale for SIDM halos. This function
         must take as an input the NFW halo density normalization, velocity dispersion, and cross section class,
-        and it must return a timescale (t_scale)
+
+        t_scale = time_scale_function(rhos, v_rms, cross_section_class)
+
         :param velocity_dispersion_function: a function that computes the central velocity disperion of the halo
 
         It must be callable as:
         v = velocity_dispersion_function(halo_mass, redshift, delta_c_over_c, model_type, additional_keyword_arguments)
 
         where model_type is a string (see for example the function solve_sigmav_with_interpolation in sidmpy.py)
-
-        :param velocity_averaged_cross_section_function: a function that returns the velocity averaged interaction
-        cross section [cm^2 / gram * km/sec]
+        :param cross_section: the cross section class (see SIDMpy for examples)
         :param t_sub: sets the timescale for subhalo core collapse; subhalos collapse at t_sub * t_scale
         :param t_field: sets the timescale for field halo core collapse; field halos collapse at t_field * t_scale
         :param t_sub_range: halos begin to core collapse (probability = 0) at t_sub - t_sub_range, and all are core
@@ -123,7 +165,7 @@ class RealizationExtensions(object):
         profile.
 
         :param indexes: the indexes of halos in the realization to transform into PsuedoJaffe profiles
-        :param log_slope_halo: the logarithmic slope of the collapsed halos
+        :param kwargs_halo: the keyword arguments for the collapsed halo profile
         :return: A new instance of Realization where the halos indexed by indexes
         in the original realization have their mass definitions changed to PsuedoJaffe
         """
@@ -131,19 +173,16 @@ class RealizationExtensions(object):
         halos = self._realization.halos
         new_halos = []
 
-        collapsed_subhalo_profile = PowerLawSubhalo
-        collapsed_field_profile = PowerLawFieldHalo
-
         for i, halo in enumerate(halos):
 
             if i in indexes:
 
                 halo._args.update(kwargs_halo)
                 if halo.is_subhalo:
-                    new_halo = collapsed_subhalo_profile(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
+                    new_halo = PowerLawSubhalo(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
                                                  halo.z, True, halo.lens_cosmo, halo._args, halo.unique_tag)
                 else:
-                    new_halo = collapsed_field_profile(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
+                    new_halo = PowerLawFieldHalo(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
                                                  halo.z, False, halo.lens_cosmo, halo._args, halo.unique_tag)
                 new_halos.append(new_halo)
 
