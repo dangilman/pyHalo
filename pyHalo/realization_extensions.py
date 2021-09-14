@@ -53,7 +53,7 @@ class RealizationExtensions(object):
                                       self._realization.geometry)
 
     def core_collapse_by_mass(self, mass_ranges_subhalos, mass_ranges_field_halos,
-                              probabilities_subhalos, probabilities_field_halos, kwargs_halo={}):
+                              probabilities_subhalos, probabilities_field_halos):
 
         """
         This routine transforms some fraction of subhalos and field halos into core collapsed profiles
@@ -68,8 +68,7 @@ class RealizationExtensions(object):
         e.g. probabilities_subhalos = [0.5, 1.] makes half of subhalos with mass 10^6 - 10^8 collapse, and
         100% of subhalos with mass between 10^8 and 10^10 collapse
         :param probabilities_field_halos: same as probabilities subhalos, but for the population of field halos
-        :param kwargs_halo: the keyword arguments for the collapsed halo profile
-        :return: a new instance of Realization that includes the collapsed profiles
+        :return: indexes of core collapsed halos
         """
 
         assert len(mass_ranges_subhalos) == len(probabilities_subhalos)
@@ -93,7 +92,7 @@ class RealizationExtensions(object):
                             indexes.append(i_halo)
                         break
 
-        return self.add_core_collapsed_halos(indexes, **kwargs_halo)
+        return indexes
 
     def find_core_collapsed_halos(self, time_scale_function, velocity_dispersion_function,
                                   cross_section, t_sub=10., t_field=100., t_sub_range=2, t_field_range=2.,

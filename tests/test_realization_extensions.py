@@ -50,8 +50,9 @@ class TestRealizationExtensions(object):
         p_subs = [0.3, 0.9]
         p_field = [0.8, 0.25]
         kwargs_halo = {'log_slope_halo': -3, 'x_core_halo': 0.05}
-        realization_collapsed = ext.core_collapse_by_mass(mass_range_subs, mass_range_field,
-                              p_subs, p_field, kwargs_halo)
+        inds_collapsed = ext.core_collapse_by_mass(mass_range_subs, mass_range_field,
+                              p_subs, p_field)
+        realization_collapsed = ext.add_core_collapsed_halos(inds_collapsed, **kwargs_halo)
 
 
         i_subs_collapsed_1 = 0
