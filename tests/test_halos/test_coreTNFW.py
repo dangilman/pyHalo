@@ -36,10 +36,12 @@ class TestcoreTNFWHalos(object):
         cross_section_type = 'POWER_LAW'
         self._cross_norm = 5
         cross_section_kwargs = {'norm': self._cross_norm, 'v_dep': 0.5, 'v_ref': 30.}
+        kwargs_suppression = {'c_scale': 10.5, 'c_power': -0.2}
+        suppression_model = 'polynomial'
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
                         'evaluate_mc_at_zlens': True,
-                        'log_mc': None, 'c_scale': 60.,
-                        'c_power': -0.17, 'c_scatter': False,
+                        'log_mc': None, 'kwargs_suppression': kwargs_suppression,
+                        'suppression_model': suppression_model, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
                         'c_scatter_dex': 0.1, 'mc_mdef': '200c',
                         'cross_section_type': cross_section_type,

@@ -21,7 +21,7 @@ class coreTNFWBase(Halo):
         self._tnfw_lenstronomy = TNFW()
         self._tnfw = tnfw_class
         self._lens_cosmo = lens_cosmo_instance
-        self._concentration = self._tnfw._concentration
+
         super(coreTNFWBase, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                                 lens_cosmo_instance, args, unique_tag)
 
@@ -52,15 +52,15 @@ class coreTNFWBase(Halo):
         """
         z_eval = self._tnfw.z_eval
         profile_args_tnfw = self._tnfw.profile_args
-        median_concentration = self._concentration.NFW_concentration(self.mass,
+        median_concentration = self._lens_cosmo.NFW_concentration(self.mass,
                                                                      z_eval,
                                                                      self._args['mc_model'],
                                                                      self._args['mc_mdef'],
                                                                      self._args['log_mc'],
                                                                      False,
-                                                                     self._args['c_scale'],
-                                                                     self._args['c_power'],
-                                                                     0.)
+                                                                     0.,
+                                                                self._args['kwargs_suppression'],
+                                                                self._args['suppression_model'])
 
         c = profile_args_tnfw[0]
         delta_c_over_c = (c - median_concentration)/c

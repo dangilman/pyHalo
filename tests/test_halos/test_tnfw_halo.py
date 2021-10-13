@@ -32,18 +32,23 @@ class TestTNFWHalos(object):
         cosmo = Cosmology(cosmo_kwargs=cosmo_params)
         self.lens_cosmo = LensCosmo(self.z, 2., cosmo)
 
+        kwargs_suppression = {'a_mc': 0.5, 'b_mc': 1.9}
+        suppression_model = 'hyperbolic'
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_mc': None, 'c_scale': 60.,
-                        'c_power': -0.17, 'c_scatter': False,
+                        'log_mc': None, 'kwargs_suppression': kwargs_suppression,
+                        'suppression_model': suppression_model,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
+                        'c_scatter': False,
                         'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
 
         self.profile_args_WDM = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
                         'evaluate_mc_at_zlens': True,
-                        'log_mc': 7.6, 'c_scale': 60.,
-                        'c_power': -0.17, 'c_scatter': False,
+                        'log_mc': 7.6,
+                        'kwargs_suppression': kwargs_suppression,
+                        'suppression_model': suppression_model,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
+                                 'c_scatter': False,
                         'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
 
         self._profile_args = profile_args
@@ -68,8 +73,9 @@ class TestTNFWHalos(object):
 
         self.profile_args_custom = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,
-                        'log_mc': None, 'c_scale': 60.,
-                        'c_power': -0.17, 'c_scatter': False,
+                        'log_mc': None, 'c_scatter': False,
+                                    'kwargs_suppression': kwargs_suppression,
+                                    'suppression_model': suppression_model,
                         'mc_model': {'custom': True, 'c0': 6., 'beta': 0.2, 'zeta': -0.3},
                                'LOS_truncation_factor': 40,
                                     'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
@@ -87,8 +93,8 @@ class TestTNFWHalos(object):
 
         self.profile_args_WDM_custom = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
                                     'evaluate_mc_at_zlens': True,
-                                    'log_mc': 8., 'c_scale': 40.,
-                                    'c_power': -0.3, 'c_scatter': False,
+                                    'log_mc': 8., 'kwargs_suppression': kwargs_suppression,
+                        'suppression_model': suppression_model, 'c_scatter': False,
                                     'mc_model': {'custom': True, 'c0': 6., 'beta': 0.2, 'zeta': -0.3},
                                     'LOS_truncation_factor': 40,
                                     'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
@@ -140,9 +146,12 @@ class TestTNFWHalos(object):
         (c, rt) = profile_args
         con = concentration(self.lens_cosmo.cosmo.h * self.mass_subhalo, '200c', self.z,
                             model='diemer19')
-        c_scale, c_power = self.profile_args_WDM['c_scale'], self.profile_args_WDM['c_power']
-        wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 + c_scale * 10 ** self.profile_args_WDM['log_mc'] /
-                          self.subhalo.mass) ** c_power
+        amc, bmc = self.profile_args_WDM['kwargs_suppression']['a_mc'], \
+                   self.profile_args_WDM['kwargs_suppression']['b_mc']
+        u = self.mass_subhalo/10**self.profile_args_WDM['log_mc']
+        argument = (np.log10(u) - amc) / (2 * bmc)
+
+        wdm_suppresion = 0.5 * (1 + np.tanh(argument))
         npt.assert_almost_equal(con * wdm_suppresion, c)
 
         profile_args = self.field_halo.profile_args
@@ -160,9 +169,11 @@ class TestTNFWHalos(object):
         (c, rt) = profile_args
         con = concentration(self.lens_cosmo.cosmo.h * self.mass_field_halo, '200c', self.z,
                             model='diemer19')
-        c_scale, c_power = self.profile_args_WDM['c_scale'], self.profile_args_WDM['c_power']
-        wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 + c_scale * 10 ** self.profile_args_WDM['log_mc'] /
-                          self.field_halo_WDM.mass) ** c_power
+        amc, bmc = self.profile_args_WDM['kwargs_suppression']['a_mc'], \
+                   self.profile_args_WDM['kwargs_suppression']['b_mc']
+        u = self.mass_field_halo / 10 ** self.profile_args_WDM['log_mc']
+        argument = (np.log10(u) - amc) / (2 * bmc)
+        wdm_suppresion = 0.5 * (1 + np.tanh(argument))
         npt.assert_almost_equal(con * wdm_suppresion, c)
 
         profile_args = self.subhalo_custom.profile_args
@@ -196,18 +207,16 @@ class TestTNFWHalos(object):
         c0 = self.profile_args_custom['mc_model']['c0']
         beta = self.profile_args_custom['mc_model']['beta']
         zeta = self.profile_args_custom['mc_model']['zeta']
-        c_scale, c_power = self.profile_args_WDM_custom['c_scale'], self.profile_args_WDM_custom['c_power']
-        wdm_suppresion = (1 + self.z) ** (0.026 * self.z - 0.04) * (1 +
-                          c_scale * 10 ** self.profile_args_WDM_custom['log_mc'] /
-                          self.field_halo_custom_WDM.mass) ** c_power
+        u = self.mass_field_halo / 10**self.profile_args_WDM_custom['log_mc']
+        argument = (np.log10(u) - amc) / (2 * bmc)
+        wdm_suppresion = 0.5 * (1 + np.tanh(argument))
 
         h = self.lens_cosmo.cosmo.h
-        mh_sub = self.mass_field_halo * h
-        nu = peaks.peakHeight(mh_sub, self.z)
+        mh_field = self.mass_field_halo * h
+        nu = peaks.peakHeight(mh_field, self.z)
         nu_ref = peaks.peakHeight(h * 10 ** 8, 0.)
         con_field_halo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
         npt.assert_almost_equal(wdm_suppresion * con_field_halo, c)
-
 
 if __name__ == '__main__':
     pytest.main()

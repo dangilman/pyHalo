@@ -31,13 +31,14 @@ class TestPopulationModel(object):
         sigma_sub = 0.1
         power_law_index = -1.9
         subhalo_spatial_distribution = 'HOST_NFW'
-
+        kwargs_suppression = {'c_scale': 10.5, 'c_power': -0.2}
+        suppression_model = 'polynomial'
         kwargs_cdm = {'zmin': zmin,
                       'zmax': zmax,
                       'log_mc': None,
                       'log_mlow': log_mlow,
                       'sigma_sub': sigma_sub,
-                      'c_scale': None, 'c_power': None,
+                      'kwargs_suppression': kwargs_suppression, 'suppression_model': suppression_model,
                       'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
                       'c_scatter_dex': 0.2,
                       'log_mhigh': log_mhigh,
@@ -66,8 +67,8 @@ class TestPopulationModel(object):
         kwargs_wdm['a_wdm'] = a_wdm
         kwargs_wdm['b_wdm'] = b_wdm
         kwargs_wdm['c_wdm'] = c_wdm
-        kwargs_wdm['c_scale'] = 60.
-        kwargs_wdm['c_power'] = -0.17
+        kwargs_wdm['kwargs_suppression'] = kwargs_suppression
+        kwargs_wdm['suppression_model'] = suppression_model
 
         lens_plane_redshifts = np.append(np.arange(0.01, 0.5, 0.02), np.arange(0.5, 1.5, 0.02))
         delta_zs = []

@@ -84,7 +84,7 @@ class LensCosmo(object):
         return rN_physical_kpc
 
     def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=None,
-                          scatter=True, c_scale=60., c_power=-0.17, scatter_amplitude=0.13):
+                          scatter=True, scatter_amplitude=0.13, kwargs_suppresion=None, suppression_model=None):
 
         """
         Returns the concentration of an NFW halo (see method in the class Concentration)
@@ -99,15 +99,15 @@ class LensCosmo(object):
         This parameter defaults to 0. in the code, which leaves observables unaffected for the mass scales of interest ~10^7
         :param scatter: bool; if True will induce lognormal scatter in the MC relation with amplitude
         scatter_amplitude in dex
-        :param c_scale: modifies the mass-concentration relation in warm dark matter models (see below)
-        :param c_power: modifies the mass-concentration relation in warm dark matter models (see below)
+        :param kwargs_suppresion: keyword arguments for the suppression function
+        :param suppression_model: the type of suppression, either 'polynomial' or 'hyperbolic'
         :param scatter_amplitude: the amplitude of the scatter in the mass-concentration relation in dex
         :return: the concentration of the NFW halo
 
         """
 
-        return self._concentration.NFW_concentration(M, z, model, mdef, logmhm,
-                                                     scatter, c_scale, c_power, scatter_amplitude)
+        return self._concentration.nfw_concentration(M, z, model, mdef, logmhm,
+                                                     scatter,scatter_amplitude, kwargs_suppresion, suppression_model)
 
     ###############################################################
     """ROUTINES BASED ON CERTAIN COSMOLOGICAL MODELS (E.G. WDM)"""

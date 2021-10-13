@@ -1,5 +1,4 @@
 from pyHalo.Halos.halo_base import Halo
-from pyHalo.Halos.concentration import Concentration
 import numpy as np
 
 class NFWFieldHalo(Halo):
@@ -17,7 +16,6 @@ class NFWFieldHalo(Halo):
 
         """
         self._lens_cosmo = lens_cosmo_instance
-        self._concentration = Concentration(lens_cosmo_instance)
 
         super(NFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
@@ -78,15 +76,15 @@ class NFWFieldHalo(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_profile_args'):
-            concentration = self._concentration.NFW_concentration(self.mass,
+            concentration = self._lens_cosmo.NFW_concentration(self.mass,
                                                                   self.z,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],
                                                                   self._args['log_mc'],
                                                                   self._args['c_scatter'],
-                                                                  self._args['c_scale'],
-                                                                  self._args['c_power'],
-                                                                  self._args['c_scatter_dex'])
+                                                                  self._args['c_scatter_dex'],
+                                                                self._args['kwargs_suppression'],
+                                                                self._args['suppression_model'])
 
             self._profile_args = (concentration)
 
@@ -112,15 +110,15 @@ class NFWSubhhalo(NFWFieldHalo):
             else:
                 z_eval = self.z_infall
 
-            concentration = self._concentration.NFW_concentration(self.mass,
+            concentration = self._lens_cosmo.NFW_concentration(self.mass,
                                                                   z_eval,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],
                                                                   self._args['log_mc'],
                                                                   self._args['c_scatter'],
-                                                                  self._args['c_scale'],
-                                                                  self._args['c_power'],
-                                                                  self._args['c_scatter_dex'])
+                                                                  self._args['c_scatter_dex'],
+                                                                self._args['kwargs_suppression'],
+                                                                self._args['suppression_model'])
 
             self._profile_args = (concentration)
 

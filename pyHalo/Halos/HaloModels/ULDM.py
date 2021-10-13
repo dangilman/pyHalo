@@ -1,12 +1,8 @@
 from pyHalo.Halos.halo_base import Halo
-from pyHalo.Halos.concentration import Concentration
-from pyHalo.Cosmology.cosmology import Cosmology
 from lenstronomy.LensModel.Profiles.cnfw import CNFW
-from lenstronomy.LensModel.Profiles.nfw import NFW
-from lenstronomy.LensModel.Profiles.uldm import Uldm 
+from lenstronomy.LensModel.Profiles.uldm import Uldm
 from scipy.optimize import minimize
 import lenstronomy.Util.constants as const
-from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
 
 class ULDMFieldHalo(Halo):
@@ -20,7 +16,6 @@ class ULDMFieldHalo(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         self._lens_cosmo = lens_cosmo_instance
-        self._concentration = Concentration(lens_cosmo_instance)
 
         super(ULDMFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
@@ -38,15 +33,15 @@ class ULDMFieldHalo(Halo):
         Computes the NFW halo concentration (once)
         """
         if not hasattr(self, '_c'):
-            self._c = self._concentration.NFW_concentration(self.mass,
+            self._c = self._lens_cosmo.NFW_concentration(self.mass,
                                                                   self.z_eval,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],
                                                                   self._args['log_mc'],
                                                                   self._args['c_scatter'],
-                                                                  self._args['c_scale'],
-                                                                  self._args['c_power'],
-                                                                  self._args['c_scatter_dex'])
+                                                                  self._args['c_scatter_dex'],
+                                                                self._args['kwargs_suppression'],
+                                                                self._args['suppression_model'])
         return self._c
 
     @property
@@ -54,8 +49,9 @@ class ULDMFieldHalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        
+
         [concentration, theta_c, kappa_0] = self.profile_args
+
         x, y = np.round(self.x, 4), np.round(self.y, 4)
         Rs_angle, alpha_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
         kwargs_cnfw_temporary = {'alpha_Rs': alpha_Rs, 'Rs': Rs_angle,
@@ -63,7 +59,7 @@ class ULDMFieldHalo(Halo):
         kwargs_uldm_temporary = {'theta_c': theta_c, 'kappa_0': kappa_0,
             'center_x': x, 'center_y': y}
         kwargs = self._rescaled_cnfw_params(kwargs_cnfw_temporary,
-                                                kwargs_uldm_temporary) 
+                                                kwargs_uldm_temporary)
         return kwargs, None
 
     @property
@@ -84,7 +80,7 @@ class ULDMFieldHalo(Halo):
             self._profile_args = (self.c, theta_c, kappa_0)
 
         return self._profile_args
-    
+
     def _uldm_args(self, m_log10, M, plaw):
         """
         :param m_log10: ULDM particle mass in log10 units
@@ -101,7 +97,7 @@ class ULDMFieldHalo(Halo):
         theta_c = r_c / D_lens / const.arcsec # in arcsec
         kappa_0 = 429 * np.pi * rho_c * r_c / (2048 * np.sqrt(0.091) * Sigma_crit) # lensing units
         return [theta_c, kappa_0]
-    
+
     def _core_radius(self, m_log10, M, plaw):
         """
         :param m_log10: ULDM particle mass in log10 units
@@ -114,8 +110,8 @@ class ULDMFieldHalo(Halo):
         a = 1/(1+self.z)
         M9 = 10**(np.log10(M) - 9)
         Zeta = (self._zeta(self.z) / self._zeta(0))
-        return 1.6 * m22**(-1) * a**(1/2) * Zeta**(-1/6) * M9**(-plaw) 
-    
+        return 1.6 * m22**(-1) * a**(1/2) * Zeta**(-1/6) * M9**(-plaw)
+
     def _central_density(self, m_log10, r_c):
         """
         :param m_log10: ULDM particle mass in log10 units
@@ -126,7 +122,7 @@ class ULDMFieldHalo(Halo):
         m23 = 10**(m_log10 + 23)
         a = 1/(1+self.z)
         x_c = r_c/a
-        return 1.9 * a**(-1) * m23**(-2) * x_c**(-4) 
+        return 1.9 * a**(-1) * m23**(-2) * x_c**(-4)
 
     def _zeta(self,z):
         """
@@ -136,7 +132,7 @@ class ULDMFieldHalo(Halo):
         """
         Om_z = self._lens_cosmo.cosmo.astropy.Om(z)
         return (18*np.pi**2 + 82*(Om_z-1) - 39*(Om_z-1)**2) / Om_z
-    
+
     def _rescaled_cnfw_params(self, cnfw_params, uldm_params):
         """
         :param cnfw_params: cored NFW halo lensing params
@@ -152,16 +148,16 @@ class ULDMFieldHalo(Halo):
         rhos = CNFW().density_lens(0,cnfw_params['Rs'],
                                  cnfw_params['alpha_Rs'],
                                  cnfw_params['r_core'])
-        
-        args = (r200, self.mass, cnfw_params['Rs'], cnfw_params['alpha_Rs'], 
+
+        args = (r200, self.mass, cnfw_params['Rs'], cnfw_params['alpha_Rs'],
                         uldm_params['kappa_0'], uldm_params['theta_c'],
                         rho0, rhos)
-        initial_guess = np.array([1,1])
+        initial_guess = np.array([0.9,1.1])
         bounds = ((0.5, 10), (0.5, 1.5))
         method = 'SLSQP'
-        beta,q = minimize(self._function_to_minimize, initial_guess, 
-                                args, method=method, bounds=bounds)['x']                
-        
+        beta,q = minimize(self._function_to_minimize, initial_guess,
+                                args, method=method, bounds=bounds)['x']
+
         if beta<0:
             raise ValueError('Negative CNFW core radius, tweak your parameters.')
         elif q<0:
@@ -172,18 +168,18 @@ class ULDMFieldHalo(Halo):
         cnfw_params['r_core'] /= beta
         uldm_params['kappa_0'] /= q
 
-        M_nfw = CNFW().mass_3d_lens(r200, cnfw_params['Rs'], 
+        M_nfw = CNFW().mass_3d_lens(r200, cnfw_params['Rs'],
                     cnfw_params['alpha_Rs']*self._lens_cosmo.sigmacrit, cnfw_params['r_core'])
-        M_uldm = Uldm().mass_3d_lens(r200, 
+        M_uldm = Uldm().mass_3d_lens(r200,
                     uldm_params['kappa_0']*self._lens_cosmo.sigmacrit, uldm_params['theta_c'])
 
         if (self._args['scale_nfw']):
             # When scale_nfw is True rescale alpha_Rs to improve mass accuracy
-            scale = self.mass / (M_nfw+M_uldm) 
+            scale = self.mass / (M_nfw+M_uldm)
             cnfw_params['alpha_Rs'] *= scale
 
         return [cnfw_params, uldm_params]
-    
+
     def _constraint_mass(self, beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c):
         """
         :param beta: CNFW core radius ('r_core') rescaling parameter
@@ -204,9 +200,14 @@ class ULDMFieldHalo(Halo):
 
         m_nfw = CNFW().mass_3d_lens(*args_nfw) / m_target
         m_uldm = q * Uldm().mass_3d_lens(*args_uldm) / m_target
+
+        penalty = np.absolute(m_nfw + m_uldm - 1)
+        if np.isnan(penalty):
+            return 1e+12
+
         # penalize if not equal to zero
-        return np.absolute(m_nfw + m_uldm - 1)
-    
+        return penalty
+
     def _constraint_density(self, beta, q, rho_target, rhos):
         """
         :param beta: CNFW core radius ('r_core') rescaling parameter
@@ -216,10 +217,10 @@ class ULDMFieldHalo(Halo):
 
         :return: Evaluated density constraint equation for CNFW component profile
         """
-        
+
         # penalize if not equal to zero
         return np.absolute(rhos - beta * rho_target * (q - 1))
-    
+
     def _function_to_minimize(self, beta_q_args, r, m_target, rs, alpha_rs, kappa_0, theta_c, rho0, rhos):
         """
         :param beta_q_args: array containing beta, q parameters, see _constraint_mass and _constraint_density
@@ -234,14 +235,15 @@ class ULDMFieldHalo(Halo):
 
         :return: Addition of mass and density constraints for CNFW component profile
         """
-        
+
         # minimize will work with an array of arguments, so need to pass in an array and unpack it
         (beta, q) = beta_q_args
-        
+
         constraint1 = self._constraint_mass(beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c)
         constraint2 = self._constraint_density(beta, q, rho0, rhos)
+
         return constraint1 + 8*constraint2
-        
+
 class ULDMSubhalo(ULDMFieldHalo):
     """
     Defines a composite ULDM+NFW halo that is a subhalo of the host dark matter halo. The only difference

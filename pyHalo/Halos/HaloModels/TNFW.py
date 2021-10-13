@@ -32,15 +32,15 @@ class TNFWFieldHalo(Halo):
         Computes the halo concentration (once)
         """
         if not hasattr(self, '_c'):
-            self._c = self._concentration.NFW_concentration(self.mass,
+            self._c = self._lens_cosmo.NFW_concentration(self.mass,
                                                                   self.z_eval,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],
                                                                   self._args['log_mc'],
                                                                   self._args['c_scatter'],
-                                                                  self._args['c_scale'],
-                                                                  self._args['c_power'],
-                                                                  self._args['c_scatter_dex'])
+                                                                  self._args['c_scatter_dex'],
+                                                                self._args['kwargs_suppression'],
+                                                                self._args['suppression_model'])
         return self._c
 
     @property

@@ -65,12 +65,14 @@ class ProjectedNFW(object):
 
         if 'host_m200' in keywords_master.keys():
             # EVERYTHING EXPRESSED IN KPC
+
             if 'host_c' not in keywords_master.keys():
                 keywords_master['host_c'] = lenscosmo.NFW_concentration(keywords_master['host_m200'], zlens,
                                                                         model='diemer19', mdef='200c', logmhm=keywords_master['log_mc'],
                                                                         scatter=True,
-                                                                        c_scale=keywords_master['c_scale'], c_power=keywords_master['c_power'],
-                                                                        scatter_amplitude=keywords_master['c_scatter_dex'])
+                                                                        scatter_amplitude=keywords_master['c_scatter_dex'],
+                                                                        suppression_model=keywords_master['suppression_model'],
+                                                                        kwargs_suppresion=keywords_master['kwargs_suppression'])
 
             if 'host_Rs' not in keywords_master.keys():
                 host_Rs = lenscosmo.NFW_params_physical(keywords_master['host_m200'],

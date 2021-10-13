@@ -74,10 +74,19 @@ class TestLensCosmo(object):
         npt.assert_raises(AssertionError, npt.assert_array_equal, c, c2)
 
         logmhm = 8.
+        kwargs_suppression, suppression_model = {'c_scale': 60., 'c_power': -0.17}, 'polynomial'
         c_wdm = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=False, logmhm=logmhm,
-                                                  c_scale=100, c_power=-0.4)
+                                                  kwargs_suppresion=kwargs_suppression, suppression_model=suppression_model)
 
-        suppresion = WDM_concentration_suppresion_factor(10**9, 0.2, logmhm, 100, -0.4)
+        suppresion = WDM_concentration_suppresion_factor(10**9, 0.2, logmhm, suppression_model, kwargs_suppression)
+        npt.assert_almost_equal(suppresion * c, c_wdm)
+
+        kwargs_suppression, suppression_model = {'a_mc': 0.5, 'b_mc': 0.17}, 'hyperbolic'
+        c_wdm = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=False, logmhm=logmhm,
+                                                  kwargs_suppresion=kwargs_suppression,
+                                                  suppression_model=suppression_model)
+
+        suppresion = WDM_concentration_suppresion_factor(10 ** 9, 0.2, logmhm, suppression_model, kwargs_suppression)
         npt.assert_almost_equal(suppresion * c, c_wdm)
 
     def test_subhalo_accretion(self):

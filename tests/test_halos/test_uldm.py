@@ -8,7 +8,7 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from lenstronomy.LensModel.Profiles.cnfw import CNFW
 from lenstronomy.LensModel.Profiles.nfw import NFW
-from lenstronomy.LensModel.Profiles.uldm import Uldm 
+from lenstronomy.LensModel.Profiles.uldm import Uldm
 import pytest
 
 class TestULDMHalo(object):
@@ -35,10 +35,12 @@ class TestULDMHalo(object):
         cosmo = Cosmology(cosmo_kwargs=cosmo_params)
         self.lens_cosmo = LensCosmo(self.z, 2., cosmo)
 
+        kwargs_suppression = {'c_scale': 60., 'c_power': -0.17}
+        suppression_model = 'polynomial'
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': False,
-                        'log_mc': None, 'c_scale': 60.,
-                        'c_power': -0.17, 'c_scatter': False,
+                        'log_mc': None, 'kwargs_suppression': kwargs_suppression,
+                        'suppression_model': suppression_model, 'c_scatter': False,
                         'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
                         'c_scatter_dex': 0.1, 'mc_mdef': '200c',
                         'log10_m_uldm':-22, 'uldm_plaw':1/3}
@@ -84,7 +86,7 @@ class TestULDMHalo(object):
 
     def test_profile_normalization(self):
         """
-        Test that the mass enclosed within r200 of the composite profile is correct 
+        Test that the mass enclosed within r200 of the composite profile is correct
         and check that the ULDM core density is correct.
         """
         profile_args = {'log10_m_uldm': -21, 'uldm_plaw': 1/3, 'scale_nfw':True}
@@ -97,8 +99,10 @@ class TestULDMHalo(object):
         sigma_crit = single_halo.halos[0].lens_cosmo.sigmacrit
         r200 = single_halo.halos[0].c * Rs_angle
         cnfw_kwargs, uldm_kwargs = kwargs_lens
+
         M_nfw = CNFW().mass_3d_lens(r200, cnfw_kwargs['Rs'], cnfw_kwargs['alpha_Rs']*sigma_crit, cnfw_kwargs['r_core'])
         M_uldm = Uldm().mass_3d_lens(r200, uldm_kwargs['kappa_0']*sigma_crit, uldm_kwargs['theta_c'])
+
         npt.assert_almost_equal((M_uldm+M_nfw)/mass,1,decimal=2) # less than 1% error
         _,theta_c,kappa_0 = single_halo.halos[0].profile_args
         rho0 = Uldm().density_lens(0,uldm_kwargs['kappa_0'],

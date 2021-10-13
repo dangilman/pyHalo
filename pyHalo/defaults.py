@@ -63,8 +63,8 @@ class DMHaloDefaults(object):
         self.c_scatter_dex = 0.2
 
         # From Bose et al 2016
-        self.c_scale = 60
-        self.c_power = -0.17
+        self.suppression_model = 'polynomial'
+        self.kwargs_suppression = {'c_scale': 60., 'c_power': -0.17}
 
 class RealizationDefaults(object):
 
@@ -165,19 +165,14 @@ def set_default_kwargs(profile_params, zsource):
                               'b_wdm': None,
                                'c_wdm': None})
 
-    if 'c_power' in profile_params.keys():
-        profile_params.update({'c_power': profile_params['c_power']})
-    else:
+    if 'suppression_model' not in profile_params.keys():
         if print_defaults:
-            print('c_power not specified, assuming -0.17 (only applies if log_mc is specified)')
-        profile_params.update({'c_power': halo_default.c_power})
-
-    if 'c_scale' in profile_params.keys():
-        profile_params.update({'c_scale': profile_params['c_scale']})
-    else:
+            print('suppression_model not specified, assuming ', halo_default.suppression_model)
+        profile_params['suppression_model'] = halo_default.suppression_model
+    if 'kwargs_suppression' not in profile_params.keys():
         if print_defaults:
-            print('c_scale not specified, assuming 60')
-        profile_params.update({'c_scale': halo_default.c_scale})
+            print('kwargs_suppression not specified, assuming ', halo_default.kwargs_suppression)
+        profile_params.update({'kwargs_suppression': halo_default.kwargs_suppression})
 
     if 'host_m200' in profile_params.keys():
         profile_params.update({'host_m200': profile_params['host_m200']})

@@ -15,8 +15,8 @@ class Concentration(object):
 
         self._lens_cosmo = lens_cosmo
 
-    def NFW_concentration(self, M, z, model, mdef, logmhm,
-                          scatter, c_scale, c_power, scatter_amplitude):
+    def nfw_concentration(self, M, z, model, mdef, logmhm,
+                          scatter, scatter_amplitude, kwargs_suppresion, suppression_model):
 
         """
         :param M: mass in units M_solar (no little h)
@@ -30,9 +30,9 @@ class Concentration(object):
         This parameter defaults to 0. in the code, which leaves observables unaffected for the mass scales of interest ~10^7
         :param scatter: bool; if True will induce lognormal scatter in the MC relation with amplitude
         scatter_amplitude in dex
-        :param c_scale: modifies the mass-concentration relation in warm dark matter models (see below)
-        :param c_power: modifies the mass-concentration relation in warm dark matter models (see below)
         :param scatter_amplitude: the amplitude of the scatter in the mass-concentration relation in dex
+        :param kwargs_suppresion: keyword arguments for the suppression function
+        :param suppression_model: the type of suppression, either 'polynomial' or 'hyperbolic'
         :return: the concentration of the NFW halo
         """
 
@@ -81,7 +81,7 @@ class Concentration(object):
             c = numpy.random.lognormal(_log_c, scatter_amplitude)
 
         if logmhm is not None:
-            rescale = WDM_concentration_suppresion_factor(M, z, logmhm, c_scale, c_power)
+            rescale = WDM_concentration_suppresion_factor(M, z, logmhm, suppression_model, kwargs_suppresion)
         else:
             rescale = 1.
 
@@ -117,7 +117,7 @@ class Concentration(object):
 
         return c
 
-def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, c_scale, c_power):
+def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppression_model, kwargs_suppresion):
 
     """
 
@@ -125,8 +125,55 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, c_scal
     (note that the exact units don't mass as long as the half mode mass is in the same units)
     :param z: redshift
     :param log_half_mode_mass: log10 of the half mode mass in a WDM model
-    :param c_scale: coefficient that multiplies the mass ratio M_hm / M
-    :param c_power: exponent of the suppression factor
+    :param suppression_model: the type of suppression, either 'polynomial' or 'hyperbolic'
+    :param kwargs_suppresion: keyword arguments for the suppression function
+    :return: the ratio c_wdm over c_cdm
+    """
+
+    if suppression_model == 'polynomial':
+        return _suppression_polynomial(halo_mass, z, log_half_mode_mass, kwargs_suppresion['c_scale'],
+                                       kwargs_suppresion['c_power'])
+    elif suppression_model == 'hyperbolic':
+        return _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, kwargs_suppresion['a_mc'],
+                                       kwargs_suppresion['b_mc'])
+    else:
+        raise Exception('suppression model '+str(suppression_model)+' not recognized.')
+
+
+def _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, a, b):
+
+    """
+    :param halo_mass: halo mass
+    :param z: halo redshift
+    :param log_half_mode_mass: log10 of half-mode mass
+    :param a: the scale where the relation turns over
+    :param b: the steepness of the turnover
+
+    The functional form is:
+    c_wdm / c_cdm = 0.5 * (1 + tanh((log10(u) - a) / 2b))
+    where u = halo_mass / half_mode_mass
+
+    :return: the ratio c_wdm over c_cdm
+    """
+    if b < 0:
+        raise Exception('b parameters < 0 are unphysical')
+
+    mhm = 10 ** log_half_mode_mass
+
+    log10u = numpy.log10(halo_mass / mhm)
+
+    argument = (log10u - a) / (2 * b)
+
+    return 0.5 * (1 + numpy.tanh(argument))
+
+def _suppression_polynomial(halo_mass, z, log_half_mode_mass, c_scale, c_power):
+
+    """
+    :param halo_mass: halo mass
+    :param z: halo redshift
+    :param log_half_mode_mass: log10 of half-mode mass
+    :param c_scale: the scale where the relation turns over
+    :param c_power: the steepness of the turnover
 
     The functional form is:
     c_wdm / c_cdm = (1 + c_scale * mhm / m)^c_power * redshift_factor
@@ -136,7 +183,6 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, c_scal
 
     :return: the ratio c_wdm over c_cdm
     """
-
     if c_power > 0:
         raise Exception('c_power parameters > 0 are unphysical')
     if c_scale < 0:
