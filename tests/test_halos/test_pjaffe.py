@@ -119,7 +119,7 @@ class TestPjaffeHalo(object):
     def test_params_physical(self):
 
         params_physical = self.subhalo.params_physical
-        npt.assert_equal(len(params_physical), 3)
+        npt.assert_equal(len(params_physical), 4)
 
 
 if __name__ == '__main__':
