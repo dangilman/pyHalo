@@ -87,8 +87,9 @@ class GeneralPowerLaw(object):
 
         factor = WDM_suppression(m, 10 ** self._log_mc, self._a_wdm, self._b_wdm, self._c_wdm)
         u = np.random.rand(int(len(m)))
+        inds = np.where(u < factor)
 
-        return m[np.where(u < factor)]
+        return m[inds]
 
     def _sample(self, draw_poisson, index, mH, mL, n_draw):
 

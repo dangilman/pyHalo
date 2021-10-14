@@ -51,8 +51,9 @@ def WDM_suppression(m, m_c, a_wdm, b_wdm, c_wdm):
 
     dN/dm (WDM) = dN/dm (CDM) * WDM_suppression
 
-    where WDM suppression is (1 + (a_wdm * m_c / m)^b_wdm)^c_wdm
+    where WDM suppression is (1 + a_wdm * (m_c / m)^b_wdm)^c_wdm
     """
-    ratio = a_wdm * m_c / m
-    factor = 1 + ratio ** b_wdm
+    r = a_wdm * (m_c / m) ** b_wdm
+    factor = 1 + r
+
     return factor ** c_wdm

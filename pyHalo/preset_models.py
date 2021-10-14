@@ -71,7 +71,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
                   a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                    kwargs_suppresion_field=None, suppression_model_field=None, kwargs_suppresion_sub=None,
+                    kwargs_suppression_field=None, suppression_model_field=None, kwargs_suppression_sub=None,
                   suppression_model_sub=None, **kwargs_other):
 
     """
@@ -121,9 +121,9 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     :param power_law_index: logarithmic slope of the subhalo mass function
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
-    :param kwargs_suppresion_field: keyword arguments for the suppression function for field halos
+    :param kwargs_suppression_field: keyword arguments for the suppression function for field halos
     :param suppression_model_field: the type of suppression, either 'polynomial' or 'hyperbolic'
-    :param kwargs_suppresion_sub: keyword arguments for the suppression function for subhalos
+    :param kwargs_suppression_sub: keyword arguments for the suppression function for subhalos
     :param suppression_model_sub: the type of suppression, either 'polynomial' or 'hyperbolic'
     :param kwargs_other: any other optional keyword arguments
 
@@ -137,15 +137,15 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
                           }
     if suppression_model_field is not None:
         kwargs_model_field.update({'suppression_model': suppression_model_field})
-        kwargs_model_field.update({'kwargs_suppresion': kwargs_suppresion_field})
+        kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_field})
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
                            'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
     if suppression_model_sub is not None:
-        kwargs_model_field.update({'suppression_model': suppression_model_sub})
-        kwargs_model_field.update({'kwargs_suppresion': kwargs_suppresion_sub})
+        kwargs_model_subhalos.update({'suppression_model': suppression_model_sub})
+        kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_sub})
 
     kwargs_model_field.update(kwargs_other)
     kwargs_model_subhalos.update(kwargs_other)
