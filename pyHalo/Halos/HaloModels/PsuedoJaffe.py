@@ -27,7 +27,7 @@ class PJaffeSubhalo(Halo):
         """
         if not hasattr(self, '_params_physical'):
 
-            [concentration] = self.profile_args
+            concentration = self.profile_args
             rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
             _, rs_kpc, r200_kpc = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
             ra_kpc = 0.01 * rs_kpc
@@ -85,8 +85,6 @@ class PJaffeSubhalo(Halo):
         rho = m / (4 * np.pi * ra ** 2 * rs ** 2 * f)
         return rho
 
-
-
     @property
     def lenstronomy_ID(self):
         """
@@ -129,7 +127,7 @@ class PJaffeFieldhalo(PJaffeSubhalo):
 
         if not hasattr(self, '_profile_args'):
 
-            concentration = self._concentration.NFW_concentration(self.mass,
+            concentration = self._lens_cosmo.NFW_concentration(self.mass,
                                                                   self.z,
                                                                   self._args['mc_model'],
                                                                   self._args['mc_mdef'],

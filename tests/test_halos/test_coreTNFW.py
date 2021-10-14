@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWFieldHalo, coreTNFWSubhalo
-from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
+from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo, TNFWFieldHalo
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from colossus.halo.concentration import concentration
@@ -152,7 +152,7 @@ class TestcoreTNFWHalos(object):
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['Rs'], lenstronomy_params_coretnfw[0]['Rs'])
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['r_trunc'], lenstronomy_params_coretnfw[0]['r_trunc'])
 
-        tnfw = TNFW(self.subhalo.mass, self.subhalo.x, self.subhalo.y, self.subhalo.r3d, 'TNFW', self.subhalo.z,
+        tnfw = TNFWFieldHalo(self.subhalo.mass, self.subhalo.x, self.subhalo.y, self.subhalo.r3d, 'TNFW', self.subhalo.z,
                            True,
                            self.subhalo.lens_cosmo, self.profile_args, unique_tag=1.23)
 
