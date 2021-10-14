@@ -139,20 +139,34 @@ class TestcoreTNFWHalos(object):
                            self.subhalo.lens_cosmo, self.profile_args, unique_tag=1.23)
 
         coreTNFW = coreTNFWSubhalo.fromTNFW(tnfw, kwargs_new=self.profile_args)
-
         npt.assert_almost_equal(coreTNFW.mass, tnfw.mass)
         npt.assert_almost_equal(coreTNFW.x, tnfw.x)
         npt.assert_almost_equal(coreTNFW.y, tnfw.y)
         npt.assert_almost_equal(coreTNFW.r3d, tnfw.r3d)
-
         prof_params = tnfw.profile_args
         prof_params_core = coreTNFW.profile_args
         for i in range(0, len(prof_params)-1):
             npt.assert_almost_equal(prof_params[i], prof_params_core[i])
-
         lenstronomy_params_tnfw, _ = tnfw.lenstronomy_params
         lenstronomy_params_coretnfw, _ = coreTNFW.lenstronomy_params
+        npt.assert_almost_equal(lenstronomy_params_tnfw[0]['Rs'], lenstronomy_params_coretnfw[0]['Rs'])
+        npt.assert_almost_equal(lenstronomy_params_tnfw[0]['r_trunc'], lenstronomy_params_coretnfw[0]['r_trunc'])
 
+        tnfw = TNFW(self.subhalo.mass, self.subhalo.x, self.subhalo.y, self.subhalo.r3d, 'TNFW', self.subhalo.z,
+                           True,
+                           self.subhalo.lens_cosmo, self.profile_args, unique_tag=1.23)
+
+        coreTNFW = coreTNFWFieldHalo.fromTNFW(tnfw, kwargs_new=self.profile_args)
+        npt.assert_almost_equal(coreTNFW.mass, tnfw.mass)
+        npt.assert_almost_equal(coreTNFW.x, tnfw.x)
+        npt.assert_almost_equal(coreTNFW.y, tnfw.y)
+        npt.assert_almost_equal(coreTNFW.r3d, tnfw.r3d)
+        prof_params = tnfw.profile_args
+        prof_params_core = coreTNFW.profile_args
+        for i in range(0, len(prof_params) - 1):
+            npt.assert_almost_equal(prof_params[i], prof_params_core[i])
+        lenstronomy_params_tnfw, _ = tnfw.lenstronomy_params
+        lenstronomy_params_coretnfw, _ = coreTNFW.lenstronomy_params
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['Rs'], lenstronomy_params_coretnfw[0]['Rs'])
         npt.assert_almost_equal(lenstronomy_params_tnfw[0]['r_trunc'], lenstronomy_params_coretnfw[0]['r_trunc'])
 

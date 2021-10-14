@@ -11,7 +11,7 @@ class TestPjaffeHalo(object):
 
     def setup(self):
 
-        mass = 10**8.
+        mass = 10**7.
         x = 0.5
         y = 1.
         r3d = np.sqrt(1 + 0.5 ** 2 + 70**2)
@@ -102,6 +102,24 @@ class TestPjaffeHalo(object):
         con = concentration(self.lens_cosmo.cosmo.h * self.mass_field_halo, '200c', self.z,
                             model='diemer19')
         npt.assert_almost_equal(c / con, 1, 2)
+
+        profile_args = self.field_halo.profile_args
+
+        (c) = profile_args
+        con = concentration(self.lens_cosmo.cosmo.h * self.mass_subhalo, '200c', self.z,
+                            model='diemer19')
+        npt.assert_almost_equal(c / con, 1, 2)
+
+        profile_args = self.field_halo.profile_args
+        (c) = profile_args
+        con = concentration(self.lens_cosmo.cosmo.h * self.mass_field_halo, '200c', self.z,
+                            model='diemer19')
+        npt.assert_almost_equal(c / con, 1, 2)
+
+    def test_params_physical(self):
+
+        params_physical = self.subhalo.params_physical
+        npt.assert_equal(len(params_physical), 3)
 
 
 if __name__ == '__main__':
