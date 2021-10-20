@@ -154,10 +154,10 @@ class ULDMFieldHalo(Halo):
                         rho0, rhos)
         initial_guess = np.array([0.9,1.1])
         bounds = ((0.5, 10), (0.5, 1.5))
-        method = 'SLSQP'
+        method = 'nelder-mead'
         beta,q = minimize(self._function_to_minimize, initial_guess,
-                                args, method=method, bounds=bounds)['x']
-
+                                args, method=method, bounds=bounds, tol=0.1)['x']
+ 
         if beta<0:
             raise ValueError('Negative CNFW core radius, tweak your parameters.')
         elif q<0:
@@ -242,7 +242,7 @@ class ULDMFieldHalo(Halo):
         constraint1 = self._constraint_mass(beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c)
         constraint2 = self._constraint_density(beta, q, rho0, rhos)
 
-        return constraint1 + 8*constraint2
+        return constraint1 + 20*constraint2
 
 class ULDMSubhalo(ULDMFieldHalo):
     """
