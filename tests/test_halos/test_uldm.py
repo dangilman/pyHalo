@@ -1,7 +1,5 @@
 from astropy.cosmology.funcs import z_at_value
 import numpy as np
-import sys
-sys.path.append('/Users/alexlaroche/Desktop/PHYS 479/pyhalo')
 from pyHalo.single_realization import SingleHalo
 import numpy.testing as npt
 import numpy as np
