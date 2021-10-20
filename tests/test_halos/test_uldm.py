@@ -1,5 +1,7 @@
 from astropy.cosmology.funcs import z_at_value
 import numpy as np
+import sys
+sys.path.append('/Users/alexlaroche/Desktop/PHYS 479/pyhalo')
 from pyHalo.single_realization import SingleHalo
 import numpy.testing as npt
 import numpy as np
@@ -111,7 +113,8 @@ class TestULDMHalo(object):
                                  cnfw_kwargs['alpha_Rs'],
                                  cnfw_kwargs['r_core'])
         rho_goal = Uldm().density_lens(0,kappa_0,theta_c)
-        npt.assert_array_less(np.array([1-(rho0+rhos)/rho_goal]),np.array([0.05])) # less than 5% error
+        print((M_uldm+M_nfw)/mass,1-(rho0+rhos)/rho_goal)
+        npt.assert_array_less(np.array([1-(rho0+rhos)/rho_goal]),np.array([0.03])) # less than 3% error
 
 if __name__ == '__main__':
    pytest.main()
