@@ -111,7 +111,7 @@ class TestULDMHalo(object):
                                  cnfw_kwargs['alpha_Rs'],
                                  cnfw_kwargs['r_core'])
         rho_goal = Uldm().density_lens(0,kappa_0,theta_c)
-        npt.assert_array_less(np.array([1-(rho0+rhos)/rho_goal]),np.array([0.02])) # less than 2% error
+        npt.assert_array_less(np.array([1-(rho0+rhos)/rho_goal]),np.array([0.03])) # less than 3% error
 
 if __name__ == '__main__':
    pytest.main()
