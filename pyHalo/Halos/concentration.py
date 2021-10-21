@@ -139,7 +139,6 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppre
     else:
         raise Exception('suppression model '+str(suppression_model)+' not recognized.')
 
-
 def _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, a, b):
 
     """

@@ -127,3 +127,117 @@ def compute_comoving_ray_path(x_coordinate, y_coordinate, lens_model, kwargs_len
             y_list[-1] = source_y * d_src
 
         return np.array(x_list), np.array(y_list), np.array(distances)
+
+def sample_density(probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax, smoothing_scale=4):
+    """
+
+    :param probability_density:
+    :param Nsamples:
+    :param pixel_scale:
+    :param x_0:
+    :param y_0:
+    :param Rmax:
+    :param smoothing_scale:
+    :return:
+    """
+
+    probnorm = probability_density / probability_density.sum()
+
+    s = probnorm.shape[0]
+    p = probnorm.ravel()
+
+    values = np.arange(s ** 2)
+
+    x_out, y_out = np.array([]), np.array([])
+
+    ndraw = Nsamples
+
+    while ndraw > 0:
+        ndraw = Nsamples - len(x_out)
+
+        inds = np.random.choice(values, p=p, size=ndraw, replace=True)
+
+        pairs = np.indices(dimensions=(s, s)).T
+
+        locations = pairs.reshape(-1, 2)[inds]
+        x_sample_pixel, y_sample_pixel = locations[:, 0], locations[:, 1]
+
+        # transform to arcsec
+        x_sample_arcsec = (x_sample_pixel - s / 2) * pixel_scale
+        y_sample_arcsec = (y_sample_pixel - s / 2) * pixel_scale
+
+        # smooth on sub-pixel scale
+        pixel_smoothing_kernel = pixel_scale / smoothing_scale
+        # apply smoothing to remove artificial tiling
+        x_sample_arcsec += np.random.normal(0, pixel_smoothing_kernel, ndraw)
+        y_sample_arcsec += np.random.normal(0, pixel_smoothing_kernel, ndraw)
+
+        # keep circular symmetry
+        r = np.sqrt(x_sample_arcsec ** 2 + y_sample_arcsec ** 2)
+        keep = np.where(r <= Rmax)
+        x_out = np.append(x_out, x_sample_arcsec[keep])
+        y_out = np.append(y_out, y_sample_arcsec[keep])
+
+    # originally this returned coord_x and coord_y, shouldn't it return x_out and y_out?
+    return x_out, y_out
+
+def sample_circle(max_rendering_range, Nsmooth, center_x, center_y):
+    """
+    This function distributes points smoothly accross a plane.
+
+    Parameters
+    ----------
+    max_rendering_range : radius of rendering area (already scaled) (arcsec)
+    Nsmooth : number of points to render
+    center_x : center x coordinate of image
+    center_y : center y coordinate of image
+
+
+    Returns
+    -------
+    coord_x_smooth : x-coordinate of point (arcsec)
+    coord_y_smooth : y-coordinate of point (arcsec)
+
+
+    """
+    # SAMPLE UNIFORM POINTS IN A CIRCLE
+    radii = np.random.uniform(0, max_rendering_range ** 2, Nsmooth)
+    # note you have to sample out to r^2 and then take sqrt
+    angles = np.random.uniform(0, 2 * np.pi, Nsmooth)
+    coord_x_smooth = radii ** 0.5 * np.cos(angles) + center_x
+    coord_y_smooth = radii ** 0.5 * np.sin(angles) + center_y
+    return coord_x_smooth, coord_y_smooth
+
+def sample_clustered(lens_model, kwargs_lens, center_x, center_y, n_samples, max_rendering_range, npix):
+    """
+    This function distributes points to cluster in areas of higher mass.
+
+    Parameters
+    ----------
+    lens_model_list_at_plane : model at lensing plane
+    center_x : center x coordinate of image
+    center_y : center y coordinate of image
+    kwargs_lens_at_plane : arguments from realization instance
+    Nclumpy : number of points to render
+    max_rendering_range : radius of rendering area (already scaled) (arcsec)
+    npix : number of pixels on one axis
+
+
+    Returns
+    -------
+    coord_x_clumpy : x-coordinate of point (arcsec)
+    coord_y_clumpy : y-coordinate of point (arcsec)
+
+    """
+    grid_x_base = np.linspace(-max_rendering_range, max_rendering_range, npix)
+    grid_y_base = np.linspace(-max_rendering_range, max_rendering_range, npix)
+    pixel_scale = 2 * max_rendering_range / npix
+    xx_base, yy_base = np.meshgrid(grid_x_base, grid_y_base)
+    shape0 = xx_base.shape
+
+    xcoords, ycoords = xx_base + center_x, yy_base + center_y
+    projected_mass = lens_model.kappa(xcoords.ravel() + center_x, ycoords.ravel() + center_y, kwargs_lens).reshape(shape0)
+    coord_x, coord_y = sample_density(projected_mass, n_samples, pixel_scale,
+                                                     center_x, center_y, max_rendering_range)
+    return coord_x, coord_y
+

@@ -1,7 +1,15 @@
 import numpy as np
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
 from pyHalo.single_realization import Realization
-import random
+from pyHalo.Rendering.correlated_structure import CorrelatedStructure
+from pyHalo.Cosmology.geometry import Geometry
+
+from pyHalo.Rendering.MassFunctions.delta import BackgroundDensityDelta
+from pyHalo.Rendering.SpatialDistributions.correlated import Correlated2D
+from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
+from pyHalo.single_realization import realization_at_z
+from lenstronomy.LensModel.lens_model import LensModel
+
 
 class RealizationExtensions(object):
 
@@ -28,18 +36,19 @@ class RealizationExtensions(object):
 
         if new_mdef == 'coreTNFW':
             from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWSubhalo, coreTNFWFieldHalo
+
+            for halo in halos:
+                if halo.mdef == mdef:
+                    if halo.is_subhalo:
+                        new_halo = coreTNFWSubhalo.fromTNFW(halo, kwargs_realization)
+                    else:
+                        new_halo = coreTNFWFieldHalo.fromTNFW(halo, kwargs_realization)
+                    new_halos.append(new_halo)
+                else:
+                    new_halos.append(halo)
+
         else:
             raise Exception('changing to mass definition '+new_mdef + ' not implemented')
-
-        for halo in halos:
-            if halo.mdef == mdef:
-                if halo.is_subhalo:
-                    new_halo = coreTNFWSubhalo.fromTNFW(halo, kwargs_realization)
-                else:
-                    new_halo = coreTNFWFieldHalo.fromTNFW(halo, kwargs_realization)
-                new_halos.append(new_halo)
-            else:
-                new_halos.append(halo)
 
         lens_cosmo = self._realization.lens_cosmo
         prof_params = self._realization._prof_params
@@ -198,4 +207,124 @@ class RealizationExtensions(object):
                                       msheet_correction, rendering_classes,
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
+
+    def add_correlated_structure(self, kwargs_mass_function,
+                                 mass_definition,
+                                   x_image_interp_list,
+                                   y_image_interp_list,
+                                   r_max_arcsec, arcsec_per_pixel):
+
+        """
+        Adds structure along the line of sight with a spatial distribution that tracks the dark matter density at each
+        lens plane
+        :param kwargs_mass_function: keyword arguments for the mass function
+        :param mass_definition: the mass definition for the objects to be rendered
+        :param x_image_interp_list: a list of interp1d functions that return the angular x coordinate of a light ray
+        given a comoving distance
+        :param y_image_interp_list: a list of interp1d functions that return the angular y coordinate of a light ray
+        given a comoving distance
+        :param r_max_arcsec: the radius of the rendering region in arcsec
+        :param arcsec_per_pixel: the resolution of the grid used to compute the population of PBH whose spatial
+        distribution tracks the dark matter density along the LOS specific by the instance of Realization used to
+        instantiate the class
+        :return: a new realization that includes correlated structure along the line of sight
+        """
+        plane_redshifts = self._realization.unique_redshifts
+        delta_z = []
+        for i, zi in enumerate(plane_redshifts[0:-1]):
+            delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
+
+        correlated_structure = CorrelatedStructure(kwargs_mass_function, self._realization, r_max_arcsec)
+
+        masses, x, y, r3d, redshifts, subhalo_flag = correlated_structure.render(x_image_interp_list, y_image_interp_list,
+                                                                                 arcsec_per_pixel)
+
+        mdefs = [mass_definition] * len(masses)
+        new = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
+                                           self._realization.lens_cosmo,
+                               kwargs_realization=self._realization._prof_params)
+
+        realization_pbh = self._realization.join(new)
+
+        return realization_pbh
+
+    def add_primordial_black_holes(self, pbh_mass_fraction, kwargs_pbh_mass_function, mass_fraction_in_halos,
+                                   x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005):
+
+        """
+        This routine renders populations of primordial black holes modeled as point masses along the line of sight.
+        The population of objects includes a smoothly distributed component, and a component that is clustered according
+        to the population of halos generated in the instance of Realization used to instantiate the class.
+
+        :param pbh_mass_fraction: the mass fraction of dark matter contained in primordial black holes
+        :param kwargs_pbh_mass_function: keyword arguments for the PBH mass function
+        :param mass_fraction_in_halos: the fraction of dark matter mass contained in halos in the mass range
+        used to generate the instance of realization used to instantiate the class
+        :param x_image_interp_list: a list of interp1d functions that return the angular x coordinate of a light ray
+        given a comoving distance
+        :param y_image_interp_list: a list of interp1d functions that return the angular y coordinate of a light ray
+        given a comoving distance
+        :param r_max_arcsec: the radius of the rendering region in arcsec
+        :param arcsec_per_pixel: the resolution of the grid used to compute the population of PBH whose spatial
+        distribution tracks the dark matter density along the LOS specific by the instance of Realization used to
+        instantiate the class
+        :return: a new instance of Realization that contains primordial black holes modeled as point masses
+        """
+        mass_definition = 'PT_MASS'
+        plane_redshifts = self._realization.unique_redshifts
+        delta_z = []
+        for i, zi in enumerate(plane_redshifts[0:-1]):
+            delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
+        geometry = Geometry(self._realization.lens_cosmo.cosmo,
+                                                     self._realization.lens_cosmo.z_lens,
+                                                     self._realization.lens_cosmo.z_source,
+                                                     2 * r_max_arcsec,
+                                                     'DOUBLE_CONE_CYLINDER')
+
+        mass_fraction_smooth = (1 - mass_fraction_in_halos) * pbh_mass_fraction
+        mass_fraction_clumpy = pbh_mass_fraction * mass_fraction_in_halos
+
+        masses = np.array([])
+        xcoords = np.array([])
+        ycoords = np.array([])
+        redshifts = np.array([])
+
+        for x_image_interp, y_image_interp in zip(x_image_interp_list, y_image_interp_list):
+            for zi, delta_zi in zip(plane_redshifts, delta_z):
+
+                d = geometry._cosmo.D_C_transverse(zi)
+                angle_x, angle_y = x_image_interp(d), y_image_interp(d)
+                rendering_radius = r_max_arcsec * geometry.rendering_scale(zi)
+                spatial_distribution_model_smooth = Uniform(rendering_radius, geometry)
+
+                if kwargs_pbh_mass_function['mass_function_type'] == 'DELTA':
+                    rho_smooth = mass_fraction_smooth * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
+                    volume = geometry.volume_element_comoving(zi, delta_zi)
+                    mass_function_smooth = BackgroundDensityDelta(10 ** kwargs_pbh_mass_function['logM'],
+                                                               volume, rho_smooth)
+                else:
+                    raise Exception('no mass function type for PBH currently implemented besides DELTA')
+
+                m_smooth = mass_function_smooth.draw()
+                if len(m_smooth) > 0:
+                    kpc_per_asec = geometry.kpc_per_arcsec(zi)
+                    x_kpc, y_kpc = spatial_distribution_model_smooth.draw(len(m_smooth), zi,
+                                                                          center_x=angle_x, center_y=angle_y)
+                    x_arcsec, y_arcsec = x_kpc / kpc_per_asec, y_kpc / kpc_per_asec
+                    masses = np.append(masses, m_smooth)
+                    xcoords = np.append(xcoords, x_arcsec)
+                    ycoords = np.append(ycoords, y_arcsec)
+                    redshifts = np.append(redshifts, np.array([zi] * len(m_smooth)))
+
+        mdefs = [mass_definition] * len(masses)
+        r3d = np.array([None] * len(masses))
+        subhalo_flag = [False] * len(masses)
+        realization_smooth = Realization(masses, xcoords, ycoords, r3d, mdefs, redshifts, subhalo_flag,
+                                          self._realization.lens_cosmo, kwargs_realization=self._realization._prof_params)
+
+        kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
+        realization_clustered = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list, y_image_interp_list,
+                                                        r_max_arcsec, arcsec_per_pixel)
+
+        return self._realization.join(realization_clustered).join(realization_smooth)
 

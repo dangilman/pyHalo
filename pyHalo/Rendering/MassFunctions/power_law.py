@@ -59,7 +59,6 @@ class GeneralPowerLaw(object):
         self._mL = 10 ** log_mlow
         self._mH = 10 ** log_mhigh
 
-
         self._nhalos_mean_unbroken = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10 ** log_mhigh, 0,
                                                                   power_law_index)
 
