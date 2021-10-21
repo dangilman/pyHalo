@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 class Correlated2D(object):
 
@@ -32,11 +31,7 @@ class Correlated2D(object):
         y_sample_arcsec += np.random.normal(0., smoothing, len(y_sample_arcsec))
 
         kpc_per_asec = self._geo.kpc_per_arcsec(z_plane)
-        #
-        # plt.imshow(density.reshape(s, s), cmap='bwr')
-        # plt.scatter(x_sample_pixel, y_sample_pixel, marker='+', color='k')
-        # plt.show()
-
+        
         x_sample_arcsec += shift_x
         y_sample_arcsec += shift_y
 
