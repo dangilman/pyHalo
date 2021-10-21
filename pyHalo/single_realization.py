@@ -21,7 +21,7 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
     :param angular_coordinate_y:
     :param max_range: radius in arcseconds where we want to keep halos. If None, will return a new realization class
      that contains all halos at redshift z contained in the input realization class
-    :return: a new instance of Realization
+    :return: a new instance of Realization, and the indexes of halos that were kept from the original realization
     """
 
     _halos, _indexes = realization.halos_at_z(z)

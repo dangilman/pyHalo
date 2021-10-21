@@ -77,6 +77,38 @@ class TestLOS(object):
         self.rendering_class = LineOfSight(kwargs_cdm, self.halo_mass_function, self.geometry, self.lens_cosmo,
                                            self.lens_plane_redshifts, self.delta_zs)
 
+        self.logdelta_mass = 5.
+        kwargs_delta = {'zmin': zmin,
+                      'zmax': zmax,
+                      'log_mc': None,
+                      'log_mlow': log_mlow,
+                      'sigma_sub': sigma_sub,
+                      'c_scale': None, 'c_power': None,
+                      'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
+                      'c_scatter_dex': 0.2,
+                      'log_mhigh': log_mhigh,
+                      'mdef_los': 'TNFW',
+                      'host_m200': host_m200,
+                      'LOS_normalization': LOS_normalization,
+                      'draw_poisson': draw_poisson,
+                      'subhalo_spatial_distribution': subhalo_spatial_distribution,
+                      'log_mass_sheet_min': log_mass_sheet_min, 'log_mass_sheet_max': log_mass_sheet_max,
+                      'kappa_scale': kappa_scale,
+                      'power_law_index': power_law_index,
+                      'delta_power_law_index': delta_power_law_index,
+                      'delta_power_law_index_coupling': delta_power_law_index_coupling,
+                      'm_pivot': m_pivot,
+                        'logM': self.logdelta_mass,
+                        'mass_fraction': 0.1,
+                      'cone_opening_angle': cone_opening_angle,
+                      'subhalo_mass_sheet_scale': 1.,
+                      'subhalo_convergence_correction_profile': 'NFW',
+                      'r_tidal': '0.5Rs',
+                        'mass_function_LOS_type': 'DELTA'}
+
+        self.rendering_class_delta = LineOfSight(kwargs_delta, self.halo_mass_function, self.geometry, self.lens_cosmo,
+                                           self.lens_plane_redshifts, self.delta_zs)
+
     def test_norm_slope(self):
 
         test_index = [10, 20]
@@ -181,5 +213,15 @@ class TestLOS(object):
         npt.assert_equal(keywords_out['b_wdm'] is None, True)
         npt.assert_equal(keywords_out['c_wdm'] is None, True)
 
+    def test_delta_function_rendering(self):
+
+        m = self.rendering_class_delta.render_masses_at_z(0.5, 0.01)
+        for mi in m:
+            npt.assert_equal(np.log10(mi), self.logdelta_mass)
+
+
+t = TestLOS()
+t.setup()
+t.test_delta_function_rendering()
 if __name__ == '__main__':
     pytest.main()

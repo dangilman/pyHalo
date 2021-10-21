@@ -55,7 +55,8 @@ class TestPopulationModel(object):
                       'cone_opening_angle': cone_opening_angle,
                       'subhalo_mass_sheet_scale': 1.,
                       'subhalo_convergence_correction_profile': 'NFW',
-                      'r_tidal': '0.5Rs'}
+                      'r_tidal': '0.5Rs',
+                      'mass_function_LOS_type': 'POWER_LAW'}
 
         kwargs_wdm = deepcopy(kwargs_cdm)
 
@@ -69,6 +70,11 @@ class TestPopulationModel(object):
         kwargs_wdm['c_wdm'] = c_wdm
         kwargs_wdm['kwargs_suppression'] = kwargs_suppression
         kwargs_wdm['suppression_model'] = suppression_model
+
+        kwargs_no_sheet = deepcopy(kwargs_cdm)
+        kwargs_no_sheet['mass_function_LOS_type'] = 'DELTA'
+        kwargs_no_sheet['mass_fraction'] = 0.1
+        kwargs_no_sheet['logM'] = 6.
 
         lens_plane_redshifts = np.append(np.arange(0.01, 0.5, 0.02), np.arange(0.5, 1.5, 0.02))
         delta_zs = []
@@ -87,6 +93,7 @@ class TestPopulationModel(object):
 
         self.kwargs_cdm = kwargs_cdm
         self.kwargs_wdm = kwargs_wdm
+        self.kwargs_no_sheet = kwargs_no_sheet
 
     def test_line_of_sight(self):
 
@@ -109,6 +116,26 @@ class TestPopulationModel(object):
             npt.assert_equal(len(redshifts) == len(sub_flag), True)
             npt.assert_equal(len(prof) == len(zprof), True)
             npt.assert_equal(len(zprof) == len(kw), True)
+
+    def test_line_of_sight_nosheet(self):
+
+        population_model = HaloPopulation(['LINE_OF_SIGHT_NOSHEET'], self.kwargs_no_sheet, self.lens_cosmo, self.geometry,
+                                          self.halo_mass_function, self.lens_plane_redshifts,
+                                          self.delta_zs)
+
+        m, x, y, r3, redshifts, sub_flag = population_model.render()
+        prof, zprof, kw = population_model.convergence_sheet_correction()
+
+        for flag in sub_flag:
+            npt.assert_equal(True, flag is False)
+
+        npt.assert_equal(len(m)==len(x), True)
+        npt.assert_equal(len(x) == len(y), True)
+        npt.assert_equal(len(y) == len(r3), True)
+        npt.assert_equal(len(r3) == len(redshifts), True)
+        npt.assert_equal(len(redshifts) == len(sub_flag), True)
+        npt.assert_equal(len(prof) == len(zprof), True)
+        npt.assert_equal(len(zprof) == 0, True)
 
     def test_subhalos(self):
 
@@ -203,7 +230,6 @@ class TestPopulationModel(object):
         ml, mh = pop_model.rendering_classes[0]._redshift_dependent_mass_range(0.1, 7.5, log_mhigh_func)
         npt.assert_equal(ml, 7.5)
         npt.assert_equal(mh, 9.5)
-
 
 if __name__ == '__main__':
 

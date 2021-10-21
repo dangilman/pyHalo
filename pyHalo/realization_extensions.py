@@ -1,7 +1,16 @@
 import numpy as np
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
 from pyHalo.single_realization import Realization
-import random
+from pyHalo.Rendering.correlated_structure import CorrelatedStructure
+from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
+from pyHalo.Cosmology.geometry import Geometry
+
+from pyHalo.Rendering.MassFunctions.delta import BackgroundDensityDelta
+from pyHalo.Rendering.SpatialDistributions.correlated import Correlated2D
+from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
+from pyHalo.single_realization import realization_at_z
+from lenstronomy.LensModel.lens_model import LensModel
+
 
 class RealizationExtensions(object):
 
@@ -28,18 +37,19 @@ class RealizationExtensions(object):
 
         if new_mdef == 'coreTNFW':
             from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWSubhalo, coreTNFWFieldHalo
+
+            for halo in halos:
+                if halo.mdef == mdef:
+                    if halo.is_subhalo:
+                        new_halo = coreTNFWSubhalo.fromTNFW(halo, kwargs_realization)
+                    else:
+                        new_halo = coreTNFWFieldHalo.fromTNFW(halo, kwargs_realization)
+                    new_halos.append(new_halo)
+                else:
+                    new_halos.append(halo)
+
         else:
             raise Exception('changing to mass definition '+new_mdef + ' not implemented')
-
-        for halo in halos:
-            if halo.mdef == mdef:
-                if halo.is_subhalo:
-                    new_halo = coreTNFWSubhalo.fromTNFW(halo, kwargs_realization)
-                else:
-                    new_halo = coreTNFWFieldHalo.fromTNFW(halo, kwargs_realization)
-                new_halos.append(new_halo)
-            else:
-                new_halos.append(halo)
 
         lens_cosmo = self._realization.lens_cosmo
         prof_params = self._realization._prof_params
@@ -199,3 +209,132 @@ class RealizationExtensions(object):
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
 
+    def add_primordial_black_holes(self, pbh_mass_fraction, mass_fraction_in_halos, kwargs_mass_function,
+                                  x_image_interp_list, y_image_interp_list, r_max, arcsec_per_pixel):
+
+        # halo_mass_function = LensingMassFunction(self._realization.lens_cosmo.cosmo, self._realization.lens_cosmo.z_lens,
+        #                                          self._realization.lens_cosmo.z_source, None, None, 6.)
+        # mlow, mhigh = 10 ** self._realization._prof_params['log_mlow'], 10 ** self._realization._prof_params['log_mhigh']
+        # mass_fraction_in_halos = halo_mass_function.mass_fraction_in_halos(
+        #     self._realization.lens_cosmo.z_lens, mlow, mhigh)
+        # kwargs_mass_function['mass_fraction'] = pbh_mass_fraction * mass_fraction_in_halos
+        #
+        # return self.add_correlated_structure(x_image_interp_list, y_image_interp_list, kwargs_mass_function,
+        #                                            'PT_MASS', r_max, arcsec_per_pixel)
+
+        plane_redshifts = self._realization.unique_redshifts
+        delta_z = []
+        for i, zi in enumerate(plane_redshifts[0:-1]):
+            delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
+
+        geometry = self.cylinder_geometry = Geometry(self._realization.lens_cosmo.cosmo,
+                                                     self._realization.lens_cosmo.z_lens,
+                                                     self._realization.lens_cosmo.z_source,
+                                                     2 * r_max,
+                                                     'DOUBLE_CONE_CYLINDER')
+
+        spatial_distribution_model_clumpy = Correlated2D(geometry)
+
+        masses, xcoords, ycoords, redshifts = np.array([]), np.array([]), np.array([]), np.array([])
+        pbh_realizations = []
+
+        for x_image_interp, y_image_interp in zip(x_image_interp_list, y_image_interp_list):
+            for zi, delta_zi in zip(plane_redshifts, delta_z):
+
+                d = self.cylinder_geometry._cosmo.D_C_transverse(zi)
+                angle_x, angle_y = x_image_interp(d), y_image_interp(d)
+                rendering_radius = r_max * geometry.rendering_scale(zi)
+                spatial_distribution_model_smooth = Uniform(rendering_radius, geometry)
+
+                npix = int(2 * rendering_radius / arcsec_per_pixel)
+                _r = np.linspace(-rendering_radius, rendering_radius, 2 * npix)
+                xx, yy = np.meshgrid(_r, _r)
+                shape0 = xx.shape
+                xx, yy = xx.ravel(), yy.ravel()
+                rr = np.sqrt(xx ** 2 + yy ** 2)
+                inds_zero = np.where(rr > r_max)[0].ravel()
+                kpc_per_asec = geometry.kpc_per_arcsec(zi)
+
+                mass_fraction_smooth = (1 - mass_fraction_in_halos) * pbh_mass_fraction
+                rho_smooth = mass_fraction_smooth * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
+                volume = geometry.volume_element_comoving(zi, delta_zi)
+                mass_function_smooth = BackgroundDensityDelta(10 ** kwargs_mass_function['logM'],
+                                                              volume, rho_smooth)
+
+                m_smooth = mass_function_smooth.draw()
+                if len(m_smooth) > 0:
+                    x_kpc, y_kpc = spatial_distribution_model_smooth.draw(len(m_smooth), zi,
+                                                                          center_x=angle_x, center_y=angle_y)
+                    x_arcsec, y_arcsec = x_kpc / kpc_per_asec, y_kpc / kpc_per_asec
+                    masses = np.append(masses, m_smooth)
+                    xcoords = np.append(xcoords, x_arcsec)
+                    ycoords = np.append(ycoords, y_arcsec)
+                    redshifts = np.append(redshifts, np.array([zi] * len(m_smooth)))
+
+                mass_fraction_clumpy = mass_fraction_in_halos * pbh_mass_fraction
+                rho_clumpy = mass_fraction_clumpy * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
+                mass_function_clumpy = BackgroundDensityDelta(10 ** kwargs_mass_function['logM'],
+                                                              volume, rho_clumpy)
+                realization_at_plane, _ = realization_at_z(self._realization, zi,
+                                                           angle_x, angle_y, 1.5 * rendering_radius)
+                lens_model_list, _, kwargs_lens, numerical_interp = realization_at_plane.lensing_quantities(
+                    add_mass_sheet_correction=False)
+
+                if len(lens_model_list) == 0:
+                    continue
+
+                lens_model = LensModel(lens_model_list, numerical_alpha_class=numerical_interp)
+
+                pdf = lens_model.kappa(xx + angle_x, yy + angle_y, kwargs_lens)
+                pdf[inds_zero] = 0.
+
+                m_clumpy = mass_function_clumpy.draw()
+                if len(m_clumpy) > 0:
+                    x_kpc, y_kpc = spatial_distribution_model_clumpy.draw(len(m_clumpy), rendering_radius, pdf.reshape(shape0), zi,
+                                                                    angle_x, angle_y)
+                    x_arcsec, y_arcsec = x_kpc/kpc_per_asec, y_kpc/kpc_per_asec
+                    masses = np.append(masses, m_clumpy)
+                    xcoords = np.append(xcoords, x_arcsec)
+                    ycoords = np.append(ycoords, y_arcsec)
+                    redshifts = np.append(redshifts, np.array([zi] * len(m_clumpy)))
+
+            r3d = np.array([None] * len(masses))
+            mdefs = ['PT_MASS'] * len(masses)
+            subhalo_flag = [False] * len(masses)
+            new = Realization(masses, xcoords, ycoords, r3d, mdefs, redshifts, subhalo_flag,
+                                          self._realization.lens_cosmo,
+                              kwargs_realization=self._realization._prof_params)
+            pbh_realizations.append(new)
+
+        for real in pbh_realizations:
+            realization_pbh = self._realization.join(real)
+
+        return realization_pbh
+
+    def add_correlated_structure(self, x_image_interp_list, y_image_interp_list, keywords, mass_definition,
+                                 r_max, arcsec_per_pixel):
+
+        rendering_class = CorrelatedStructure(keywords, self._realization, r_max)
+
+        masses = np.array([])
+        x = np.array([])
+        y = np.array([])
+        r3d = np.array([])
+        redshifts = np.array([])
+        subhalo_flag = []
+
+        for x_image_interp, y_image_interp in zip(x_image_interp_list, y_image_interp_list):
+            _m, _x, _y, _r3d, _redshifts, _subhalo_flag = rendering_class.render(x_image_interp, y_image_interp,
+                                                                            arcsec_per_pixel)
+            masses = np.append(masses, _m)
+            x = np.append(x, _x)
+            y = np.append(y, _y)
+            r3d = np.append(r3d, _r3d)
+            redshifts = np.append(redshifts, _redshifts)
+            subhalo_flag += _subhalo_flag
+
+        mdefs = [mass_definition] * len(masses)
+        realization_correlated = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
+                                             self._realization.lens_cosmo, kwargs_realization=self._realization._prof_params)
+
+        return self._realization.join(realization_correlated)

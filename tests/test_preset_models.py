@@ -13,13 +13,17 @@ class TestPresetModels(object):
 
         realization_wdm = WDM(0.5, 1.5, 8.)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
-
+        kwargs_suppression_polynomial = {'c_power': -0.17, 'c_scale': 60.}
+        kwargs_suppression_hyperbolic = {'a_mc': 1., 'b_mc': 1.}
         realization_wdm = WDM(0.5, 1.5, 8., suppression_model_field='polynomial',
-                              suppression_model_sub='hyperbolic')
+                              suppression_model_sub='hyperbolic', kwargs_suppression_field=kwargs_suppression_polynomial,
+                              kwargs_suppression_sub=kwargs_suppression_hyperbolic)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
 
         realization_wdm = WDM(0.5, 1.5, 8., suppression_model_field='hyperbolic',
-                              suppression_model_sub='polynomial')
+                              suppression_model_sub='polynomial',
+                              kwargs_suppression_field=kwargs_suppression_hyperbolic,
+                              kwargs_suppression_sub=kwargs_suppression_polynomial)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
 
     def test_SIDM(self):
