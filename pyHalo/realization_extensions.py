@@ -5,10 +5,7 @@ from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Cosmology.geometry import Geometry
 
 from pyHalo.Rendering.MassFunctions.delta import BackgroundDensityDelta
-from pyHalo.Rendering.SpatialDistributions.correlated import Correlated2D
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
-from pyHalo.single_realization import realization_at_z
-from lenstronomy.LensModel.lens_model import LensModel
 
 
 class RealizationExtensions(object):
@@ -240,13 +237,11 @@ class RealizationExtensions(object):
                                                                                  arcsec_per_pixel)
 
         mdefs = [mass_definition] * len(masses)
-        new = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
+        realization_pbh = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
                                            self._realization.lens_cosmo,
                                kwargs_realization=self._realization._prof_params)
 
-        realization_pbh = self._realization.join(new)
-
-        return realization_pbh
+        return self._realization.join(realization_pbh)
 
     def add_primordial_black_holes(self, pbh_mass_fraction, kwargs_pbh_mass_function, mass_fraction_in_halos,
                                    x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005):
@@ -323,8 +318,8 @@ class RealizationExtensions(object):
                                           self._realization.lens_cosmo, kwargs_realization=self._realization._prof_params)
 
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
-        realization_clustered = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list, y_image_interp_list,
+        realization_with_clustering = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list, y_image_interp_list,
                                                         r_max_arcsec, arcsec_per_pixel)
 
-        return self._realization.join(realization_clustered).join(realization_smooth)
+        return realization_with_clustering.join(realization_smooth)
 
