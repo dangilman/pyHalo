@@ -214,6 +214,21 @@ class RealizationExtensions(object):
                                    y_image_interp_list,
                                    r_max_arcsec, arcsec_per_pixel):
 
+        """
+        Adds structure along the line of sight with a spatial distribution that tracks the dark matter density at each
+        lens plane
+        :param kwargs_mass_function: keyword arguments for the mass function
+        :param mass_definition: the mass definition for the objects to be rendered
+        :param x_image_interp_list: a list of interp1d functions that return the angular x coordinate of a light ray
+        given a comoving distance
+        :param y_image_interp_list: a list of interp1d functions that return the angular y coordinate of a light ray
+        given a comoving distance
+        :param r_max_arcsec: the radius of the rendering region in arcsec
+        :param arcsec_per_pixel: the resolution of the grid used to compute the population of PBH whose spatial
+        distribution tracks the dark matter density along the LOS specific by the instance of Realization used to
+        instantiate the class
+        :return: a new realization that includes correlated structure along the line of sight
+        """
         plane_redshifts = self._realization.unique_redshifts
         delta_z = []
         for i, zi in enumerate(plane_redshifts[0:-1]):
@@ -236,6 +251,25 @@ class RealizationExtensions(object):
     def add_primordial_black_holes(self, pbh_mass_fraction, kwargs_pbh_mass_function, mass_fraction_in_halos,
                                    x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005):
 
+        """
+        This routine renders populations of primordial black holes modeled as point masses along the line of sight.
+        The population of objects includes a smoothly distributed component, and a component that is clustered according
+        to the population of halos generated in the instance of Realization used to instantiate the class.
+
+        :param pbh_mass_fraction: the mass fraction of dark matter contained in primordial black holes
+        :param kwargs_pbh_mass_function: keyword arguments for the PBH mass function
+        :param mass_fraction_in_halos: the fraction of dark matter mass contained in halos in the mass range
+        used to generate the instance of realization used to instantiate the class
+        :param x_image_interp_list: a list of interp1d functions that return the angular x coordinate of a light ray
+        given a comoving distance
+        :param y_image_interp_list: a list of interp1d functions that return the angular y coordinate of a light ray
+        given a comoving distance
+        :param r_max_arcsec: the radius of the rendering region in arcsec
+        :param arcsec_per_pixel: the resolution of the grid used to compute the population of PBH whose spatial
+        distribution tracks the dark matter density along the LOS specific by the instance of Realization used to
+        instantiate the class
+        :return: a new instance of Realization that contains primordial black holes modeled as point masses
+        """
         mass_definition = 'PT_MASS'
         plane_redshifts = self._realization.unique_redshifts
         delta_z = []
