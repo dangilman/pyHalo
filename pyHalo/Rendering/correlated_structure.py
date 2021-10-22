@@ -126,6 +126,9 @@ class CorrelatedStructure(RenderingClassBase):
 
         pdf = lens_model.kappa(xx + angular_coordinate_x, yy + angular_coordinate_y, kwargs_lens)
         pdf[inds_zero] = 0.
+        inds_nan = np.where(np.isnan(pdf))
+        pdf[inds_nan] = 0.
+
         x_kpc, y_kpc = self.spatial_distribution_model.draw(n, rendering_radius, pdf.reshape(shape0), z,
                                                             angular_coordinate_x, angular_coordinate_y)
 

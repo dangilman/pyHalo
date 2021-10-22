@@ -9,6 +9,10 @@ class Correlated2D(object):
 
     def draw(self, n, r_max, density, z_plane, shift_x=0., shift_y=0.):
 
+        norm = np.sum(density)
+        if norm == 0:
+            raise Exception('2D probability distribution not normalizable')
+
         density = density / np.sum(density)
         s = density.shape[0]
         p = density.reshape(-1)

@@ -92,7 +92,7 @@ class TestRealizationExtensions(object):
 
     def test_add_pbh(self):
 
-        realization = SingleHalo(10 ** 8, 0., -0.1, 'PT_MASS', 0.02, 0.5, 1.5, subhalo_flag=True)
+        realization = SingleHalo(10 ** 8, 0., -0.1, 'TNFW', 0.02, 0.5, 1.5, subhalo_flag=False)
         zlist = np.arange(0.02, 1., 0.02)
         rmax = 0.3
         for i, zi in enumerate(zlist):
@@ -100,7 +100,7 @@ class TestRealizationExtensions(object):
             r = np.random.uniform(0, rmax**2)**0.5
             xi, yi = np.cos(theta) *r, np.sin(theta) * r
             mi = np.random.uniform(7,  8)
-            single_halo = SingleHalo(10 ** mi, xi, yi, 'PT_MASS', zi, 0.5, 1.5, subhalo_flag=False)
+            single_halo = SingleHalo(10 ** mi, xi, yi, 'TNFW', zi, 0.5, 1.5, subhalo_flag=False)
             realization = realization.join(single_halo)
 
         ext = RealizationExtensions(realization)
@@ -124,7 +124,9 @@ class TestRealizationExtensions(object):
         for i, halo in enumerate(pbh_realization.halos):
             r2d = np.hypot(halo.x, halo.y)
             npt.assert_equal(r2d <= np.sqrt(2) * rmax, True)
-            npt.assert_string_equal('PT_MASS', halo.mdef)
+            condition1 = 'PT_MASS' == halo.mdef
+            condition2 = 'TNFW' == halo.mdef
+            npt.assert_equal(np.logical_or(condition1, condition2), True)
 
 if __name__ == '__main__':
-    pytest.main()
+     pytest.main()
