@@ -68,6 +68,9 @@ class CorrelatedStructure(RenderingClassBase):
                 m = self.render_masses_at_z(z, dz)
                 nhalos = len(m)
 
+                if nhalos == 0:
+                    continue
+
                 rendering_radius = self._rmax * self.cylinder_geometry.rendering_scale(z)
 
                 d = self.cylinder_geometry._cosmo.D_C_transverse(z)
@@ -78,12 +81,11 @@ class CorrelatedStructure(RenderingClassBase):
                 _x, _y = self.render_positions_at_z(nhalos, z, x_angle, y_angle,
                                                     rendering_radius, arcsec_per_pixel)
 
-                if len(_x) > 0:
-                    _z = np.array([z] * len(_x))
-                    masses = np.append(masses, m)
-                    x = np.append(x, _x)
-                    y = np.append(y, _y)
-                    redshifts = np.append(redshifts, _z)
+                _z = np.array([z] * len(_x))
+                masses = np.append(masses, m)
+                x = np.append(x, _x)
+                y = np.append(y, _y)
+                redshifts = np.append(redshifts, _z)
 
         subhalo_flag = [False] * len(masses)
         r3d = np.array([None] * len(masses))
@@ -125,6 +127,10 @@ class CorrelatedStructure(RenderingClassBase):
         kpc_per_asec = self.cylinder_geometry.kpc_per_arcsec(z)
 
         pdf = lens_model.kappa(xx + angular_coordinate_x, yy + angular_coordinate_y, kwargs_lens)
+        
+        if np.sum(pdf) == 0:
+            return np.array([]), np.array([])
+
         pdf[inds_zero] = 0.
         inds_nan = np.where(np.isnan(pdf))
         pdf[inds_nan] = 0.
@@ -132,13 +138,10 @@ class CorrelatedStructure(RenderingClassBase):
         x_kpc, y_kpc = self.spatial_distribution_model.draw(n, rendering_radius, pdf.reshape(shape0), z,
                                                             angular_coordinate_x, angular_coordinate_y)
 
-        if len(x_kpc) > 0:
-            x_arcsec = x_kpc / kpc_per_asec
-            y_arcsec = y_kpc / kpc_per_asec
-            return x_arcsec, y_arcsec
 
-        else:
-            return np.array([]), np.array([])
+        x_arcsec = x_kpc / kpc_per_asec
+        y_arcsec = y_kpc / kpc_per_asec
+        return x_arcsec, y_arcsec
 
     def render_masses_at_z(self, z, delta_z):
 
