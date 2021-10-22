@@ -81,11 +81,12 @@ class CorrelatedStructure(RenderingClassBase):
                 _x, _y = self.render_positions_at_z(nhalos, z, x_angle, y_angle,
                                                     rendering_radius, arcsec_per_pixel)
 
-                _z = np.array([z] * len(_x))
-                masses = np.append(masses, m)
-                x = np.append(x, _x)
-                y = np.append(y, _y)
-                redshifts = np.append(redshifts, _z)
+                if len(_x) > 0:
+                    _z = np.array([z] * len(_x))
+                    masses = np.append(masses, m)
+                    x = np.append(x, _x)
+                    y = np.append(y, _y)
+                    redshifts = np.append(redshifts, _z)
 
         subhalo_flag = [False] * len(masses)
         r3d = np.array([None] * len(masses))
@@ -127,7 +128,7 @@ class CorrelatedStructure(RenderingClassBase):
         kpc_per_asec = self.cylinder_geometry.kpc_per_arcsec(z)
 
         pdf = lens_model.kappa(xx + angular_coordinate_x, yy + angular_coordinate_y, kwargs_lens)
-        
+
         if np.sum(pdf) == 0:
             return np.array([]), np.array([])
 

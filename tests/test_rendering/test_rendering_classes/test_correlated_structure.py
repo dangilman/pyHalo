@@ -41,14 +41,13 @@ class TestCorrelated(object):
                                                                        self.y_image_interp_list,
                                                                        0.002)
 
+        npt.assert_equal(len(masses), len(x))
+        npt.assert_equal(len(masses), len(y))
+
         for i in range(0, len(masses)):
             npt.assert_equal(np.log10(masses), 5.)
             npt.assert_equal(np.hypot(x[i], y[i]) <= self.rmax, True)
             npt.assert_equal(True, r3d[i] is None)
 
-t = TestCorrelated()
-t.setup()
-t.test_delta_function()
-
-#if __name__ == '__main__':
-#    pytest.main()
+if __name__ == '__main__':
+   pytest.main()
