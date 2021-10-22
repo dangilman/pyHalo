@@ -2,6 +2,7 @@ import pytest
 from pyHalo.single_realization import SingleHalo
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
+from scipy.interpolate import interp1d
 import numpy.testing as npt
 import numpy as np
 
@@ -89,5 +90,41 @@ class TestRealizationExtensions(object):
         npt.assert_almost_equal(abs(p_field[0] - i_field_collapsed_1 / i_field_1), 0, 1)
         npt.assert_almost_equal(abs(p_field[1] - i_field_collapsed_2 / i_field_2), 0, 1)
 
+    def test_add_pbh(self):
+
+        realization = SingleHalo(10 ** 8, 0., -0.1, 'PT_MASS', 0.02, 0.5, 1.5, subhalo_flag=True)
+        zlist = np.arange(0.02, 1., 0.02)
+        rmax = 0.3
+        for i, zi in enumerate(zlist):
+            theta = np.random.uniform(0., 2*np.pi)
+            r = np.random.uniform(0, rmax**2)**0.5
+            xi, yi = np.cos(theta) *r, np.sin(theta) * r
+            mi = np.random.uniform(7,  8)
+            single_halo = SingleHalo(10 ** mi, xi, yi, 'PT_MASS', zi, 0.5, 1.5, subhalo_flag=False)
+            realization = realization.join(single_halo)
+
+        ext = RealizationExtensions(realization)
+        mass_fraction = 0.1
+        kwargs_mass_function = {'mass_function_type': 'DELTA', 'logM': 5., 'mass_fraction': 0.5}
+        fraction_in_halos = 0.5
+
+        zlist = np.arange(0.00, 1.02, 0.02)
+        x_image = [0.] * len(zlist)
+        y_image = [0.] * len(zlist)
+        cosmo = Cosmology()
+        dlist = [cosmo.D_C_transverse(zi) for zi in zlist]
+        x_image_interp_list = [interp1d(dlist, x_image)]
+        y_image_interp_list = [interp1d(dlist, y_image)]
+
+        pbh_realization = ext.add_primordial_black_holes(mass_fraction, kwargs_mass_function,
+                                                         fraction_in_halos,
+                                                         x_image_interp_list,
+                                                         y_image_interp_list,
+                                                         rmax)
+        for i, halo in enumerate(pbh_realization.halos):
+            r2d = np.hypot(halo.x, halo.y)
+            npt.assert_equal(r2d <= np.sqrt(2) * rmax, True)
+            npt.assert_string_equal('PT_MASS', halo.mdef)
+
 if __name__ == '__main__':
-     pytest.main()
+    pytest.main()

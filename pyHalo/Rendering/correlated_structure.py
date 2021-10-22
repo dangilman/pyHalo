@@ -8,15 +8,27 @@ from pyHalo.single_realization import realization_at_z
 
 class CorrelatedStructure(RenderingClassBase):
 
+    """
+    This class generates a population of halos with a spatial distribution that tracks the dark matter density in halos
+    at each lens plane
+    """
+
     def __init__(self, kwargs_rendering, realization, r_max_arcsec):
+
+        """
+
+        :param kwargs_rendering: keyword arguments that specify the mass function model
+        :param realization: an instance of Realization used to compute the convergence at each lens plane
+        :param r_max_arcsec: the radius of area at which the halos are rendered
+        """
 
         self.kwargs_rendering = kwargs_rendering
         self._realization = realization
-        self.cylinder_geometry = self.cylinder_geometry = Geometry(self._realization.lens_cosmo.cosmo,
+        self.cylinder_geometry = Geometry(self._realization.lens_cosmo.cosmo,
                                                      self._realization.lens_cosmo.z_lens,
                                                      self._realization.lens_cosmo.z_source,
                                                      2 * r_max_arcsec,
-                                                     'DOUBLE_CONE_CYLINDER')
+                                                     'DOUBLE_CONE')
 
         self.spatial_distribution_model = Correlated2D(self.cylinder_geometry)
         self._rmax = r_max_arcsec
@@ -24,7 +36,14 @@ class CorrelatedStructure(RenderingClassBase):
     def render(self, x_center_interp_list, y_center_interp_list, arcsec_per_pixel):
 
         """
-        Generates halo masses and positions for correlated structure along the line of sight
+        Generates halo masses and positions for correlated structure along the line of sight around
+        the angular coordinate of each light ray
+
+        :param x_center_interp_list: a list of interp1d functions that return the x angular position of a
+        ray given a comoving distance
+        :param y_center_interp_list: a list of interp1d functions that return the y angular position of a
+        ray given a comoving distance
+        :param arcsec_per_pixel: sets the spatial resolution for the rendering of correlated structure
         :return: mass (in Msun), x (arcsec), y (arcsec), r3d (kpc), redshift
         """
 
@@ -48,9 +67,15 @@ class CorrelatedStructure(RenderingClassBase):
 
                 m = self.render_masses_at_z(z, dz)
                 nhalos = len(m)
+
                 rendering_radius = self._rmax * self.cylinder_geometry.rendering_scale(z)
+
                 d = self.cylinder_geometry._cosmo.D_C_transverse(z)
-                _x, _y = self.render_positions_at_z(nhalos, z, x_image_interp(d), y_image_interp(d),
+
+                x_angle = x_image_interp(d)
+                y_angle = y_image_interp(d)
+
+                _x, _y = self.render_positions_at_z(nhalos, z, x_angle, y_angle,
                                                     rendering_radius, arcsec_per_pixel)
 
                 if len(_x) > 0:
@@ -67,6 +92,16 @@ class CorrelatedStructure(RenderingClassBase):
 
     def render_positions_at_z(self, n, z, angular_coordinate_x, angular_coordinate_y, rendering_radius, arcsec_per_pixel):
 
+        """
+
+        :param n: number of objects to render
+        :param z: redshift
+        :param angular_coordinate_x: the angular coordinate in arcsec of a light ray at redshift z
+        :param angular_coordinate_y: the angular coordinate in arcsec of a light ray at redshift z
+        :param rendering_radius: the angular radius inside which to render objects
+        :param arcsec_per_pixel: sets the spatial resolution for the rendering of correlated structure
+        :return: the positions in arcsec of the rendered objects
+        """
         realization_at_plane, _ = realization_at_z(self._realization,
                                                    z,
                                                    angular_coordinate_x,

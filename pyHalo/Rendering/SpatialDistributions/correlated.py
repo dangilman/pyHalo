@@ -15,9 +15,9 @@ class Correlated2D(object):
 
         values = np.arange(len(p))
         pairs = np.indices(dimensions=(s, s)).T
-
-        x_coordinates_arcsec = np.linspace(-r_max, r_max, s)
-        y_coordinates_arcsec = np.linspace(-r_max, r_max, s)
+        root_2 = np.sqrt(2)
+        x_coordinates_arcsec = np.linspace(-r_max/root_2, r_max/root_2, s)
+        y_coordinates_arcsec = np.linspace(-r_max/root_2, r_max/root_2, s)
 
         inds = np.random.choice(values, p=p, size=n, replace=True)
         locations = pairs.reshape(-1, 2)[inds]

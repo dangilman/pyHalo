@@ -274,7 +274,7 @@ class RealizationExtensions(object):
                                                      self._realization.lens_cosmo.z_lens,
                                                      self._realization.lens_cosmo.z_source,
                                                      2 * r_max_arcsec,
-                                                     'DOUBLE_CONE_CYLINDER')
+                                                     'DOUBLE_CONE')
 
         mass_fraction_smooth = (1 - mass_fraction_in_halos) * pbh_mass_fraction
         mass_fraction_clumpy = pbh_mass_fraction * mass_fraction_in_halos

@@ -219,9 +219,5 @@ class TestLOS(object):
         for mi in m:
             npt.assert_equal(np.log10(mi), self.logdelta_mass)
 
-
-t = TestLOS()
-t.setup()
-t.test_delta_function_rendering()
 if __name__ == '__main__':
     pytest.main()
