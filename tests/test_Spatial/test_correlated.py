@@ -55,9 +55,10 @@ class TestCorrelated(object):
             theory.append(n_theory / rad)
 
         residuals = np.absolute(1-np.array(theory)/np.array(rendered))
+        mean_error = np.mean(residuals)
         npt.assert_equal(len(x), len(y))
         npt.assert_equal(len(x), n_points)
-        npt.assert_equal(True, residuals < 0.1)
+        npt.assert_equal(True, mean_error < 0.05)
 
 
 if __name__ == '__main__':
