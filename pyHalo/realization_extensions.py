@@ -4,7 +4,7 @@ from pyHalo.single_realization import Realization
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Cosmology.geometry import Geometry
 
-from pyHalo.Rendering.MassFunctions.delta import BackgroundDensityDelta
+from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
 
 
@@ -295,8 +295,8 @@ class RealizationExtensions(object):
                 if kwargs_pbh_mass_function['mass_function_type'] == 'DELTA':
                     rho_smooth = mass_fraction_smooth * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
                     volume = geometry.volume_element_comoving(zi, delta_zi)
-                    mass_function_smooth = BackgroundDensityDelta(10 ** kwargs_pbh_mass_function['logM'],
-                                                               volume, rho_smooth)
+                    mass_function_smooth = DeltaFunction(10 ** kwargs_pbh_mass_function['logM'],
+                                                         volume, rho_smooth)
                 else:
                     raise Exception('no mass function type for PBH currently implemented besides DELTA')
 

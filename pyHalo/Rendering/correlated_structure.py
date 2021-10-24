@@ -2,7 +2,7 @@ import numpy as np
 from lenstronomy.LensModel.lens_model import LensModel
 from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 from pyHalo.Rendering.SpatialDistributions.correlated import Correlated2D
-from pyHalo.Rendering.MassFunctions.delta import BackgroundDensityDelta
+from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.single_realization import realization_at_z
 
@@ -155,8 +155,8 @@ class CorrelatedStructure(RenderingClassBase):
         if self.kwargs_rendering['mass_function_type'] == 'DELTA':
             rho = self.kwargs_rendering['mass_fraction'] * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
             volume = self.cylinder_geometry.volume_element_comoving(z, delta_z)
-            mass_function = BackgroundDensityDelta(10 ** self.kwargs_rendering['logM'],
-                                                   volume, rho)
+            mass_function = DeltaFunction(10 ** self.kwargs_rendering['logM'],
+                                          volume, rho)
         else:
             raise Exception('no other mass function for correlated structure currently implemented')
 

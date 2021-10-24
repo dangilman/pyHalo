@@ -1,27 +1,50 @@
 import numpy as np
 
-class Correlated2D(object):
 
+class Correlated2D(object):
+    """
+    This class generates points from an arbitrary 2D probability distribution
+    """
     def __init__(self, geometry, smooth_scale=1.):
 
+        """
+        :param geometry: an instance of Geometry
+        :param smooth_scale: a smoothing scale that removes the regular grid
+        pattern in the rendered points
+        """
         self._geo = geometry
         self._smooth_scale = smooth_scale
 
     def draw(self, n, r_max, density, z_plane, shift_x=0., shift_y=0.):
 
+        """
+
+        :param n: the number of points to draw
+        :param r_max: the radius in arcsec of the rendering area, should correspond to
+        the angular size of density
+        :param density: the 2D probability density to sample from
+        :param z_plane: the redshift of the lens plane
+        :param shift_x: moves the center of rendered points
+        from (0, 0) to (shift_x, shift_y)
+        :param shift_y: moves the center of rendered points
+        from (0, 0) to (shift_x, shift_y)
+        :return: x and y samples
+        """
         norm = np.sum(density)
         if norm == 0:
             raise Exception('2D probability distribution not normalizable')
 
+        density += np.min(density)
         density = density / np.sum(density)
+
         s = density.shape[0]
         p = density.reshape(-1)
 
         values = np.arange(len(p))
         pairs = np.indices(dimensions=(s, s)).T
-        root_2 = np.sqrt(2)
-        x_coordinates_arcsec = np.linspace(-r_max/root_2, r_max/root_2, s)
-        y_coordinates_arcsec = np.linspace(-r_max/root_2, r_max/root_2, s)
+
+        x_coordinates_arcsec = np.linspace(-r_max, r_max, s)
+        y_coordinates_arcsec = np.linspace(-r_max, r_max, s)
 
         inds = np.random.choice(values, p=p, size=n, replace=True)
         locations = pairs.reshape(-1, 2)[inds]

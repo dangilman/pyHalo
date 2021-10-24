@@ -22,26 +22,42 @@ class TestCorrelated(object):
 
     def test_correlated(self):
 
-        r_max = 1.5
-        sigma = 0.5
-        z_plane = 1.
-        n_points = 20000
-        nbins = 50
-        r_gaussian = np.random.normal(0., sigma, n_points)
-        theta = np.random.uniform(0, 2*np.pi, len(r_gaussian))
-        x_gaussian, y_guassian = r_gaussian * np.cos(theta), r_gaussian * np.sin(theta)
-        density, _,  _ = np.histogram2d(x_gaussian, y_guassian, bins=nbins,
+        sigma = 0.8
+        r_max = 3. * sigma
+        n_points = 500000
+        nbins = 200
+
+        mean = [0., 0.]
+        cov = [[sigma**2, 0], [0, sigma**2]]
+        out = np.random.multivariate_normal(mean, cov, n_points)
+        x_gaussian, y_gaussian = out[:,0], out[:, 1]
+        r_theory = np.hypot(x_gaussian, y_gaussian)
+        density, _,  _ = np.histogram2d(x_gaussian, y_gaussian, bins=nbins,
                                         range=((-r_max, r_max), (-r_max, r_max)))
 
-        n_sample = n_points * 10
-        x, y = self.correlated.draw(n_points * 10, r_max, density, z_plane)
+        x, y = self.correlated.draw(n_points, r_max, density, 1.)
+        r = np.hypot(x, y)
+        h, _, _ = np.histogram2d(x, y, bins=100, range=((-r_max, r_max), (-r_max, r_max)))
+        h_theory, _, _ = np.histogram2d(x_gaussian, y_gaussian, bins=100, range=((-r_max, r_max), (-r_max, r_max)))
 
+        radii = np.linspace(0, 1. * r_max, 50)
+        rendered = []
+        theory = []
+        for i in range(0, len(radii)-1):
+            rad = radii[i + 1]**2 - radii[i]**2
+
+            condition = np.logical_and(r >= radii[i], r < radii[i+1])
+            n_rendered = np.sum(np.where(condition))
+            rendered.append(n_rendered/rad)
+
+            condition = np.logical_and(r_theory >= radii[i], r_theory < radii[i + 1])
+            n_theory = np.sum(np.where(condition))
+            theory.append(n_theory / rad)
+
+        residuals = np.absolute(1-np.array(theory)/np.array(rendered))
         npt.assert_equal(len(x), len(y))
-        npt.assert_equal(len(x), n_sample)
-        #
-        # density_sampled, _, _ = np.histogram2d(x, y,
-        #                                        bins=nbins,
-        #                                        range=((-r_max, r_max), (-r_max, r_max)))
+        npt.assert_equal(len(x), n_points)
+        npt.assert_equal(True, residuals < 0.1)
 
 
 if __name__ == '__main__':

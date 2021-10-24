@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
-from pyHalo.Rendering.MassFunctions.delta import BackgroundDensityDelta
+from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 from pyHalo.Rendering.rendering_class_base import RenderingClassBase
@@ -115,7 +115,7 @@ class LineOfSightNoSheet(RenderingClassBase):
 
             volume = self.geometry.volume_element_comoving(z, delta_z)
             rho = self._rendering_kwargs['mass_fraction'] * self.lens_cosmo.cosmo.rho_dark_matter_crit
-            mfunc = BackgroundDensityDelta(10 ** self._rendering_kwargs['logM'], volume, rho)
+            mfunc = DeltaFunction(10 ** self._rendering_kwargs['logM'], volume, rho)
 
         else:
             raise Exception(

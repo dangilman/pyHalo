@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import pytest
 import numpy as np
-from pyHalo.Rendering.MassFunctions.delta import BackgroundDensityDelta
+from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 
 class TestBackgroundDensityDelta(object):
 
@@ -10,9 +10,9 @@ class TestBackgroundDensityDelta(object):
         self.mass = 0.01
         self.volume = 10
         self.rho = 10
-        self.mfunc = BackgroundDensityDelta(self.mass, self.volume, self.rho, False)
-        self.mfunc_poisson = BackgroundDensityDelta(self.mass, self.volume, self.rho, True)
-        self.mfunc_empty = BackgroundDensityDelta(100000 * self.volume * self.rho, self.volume, self.rho, False)
+        self.mfunc = DeltaFunction(self.mass, self.volume, self.rho, False)
+        self.mfunc_poisson = DeltaFunction(self.mass, self.volume, self.rho, True)
+        self.mfunc_empty = DeltaFunction(100000 * self.volume * self.rho, self.volume, self.rho, False)
 
     def test_density_delta(self):
 
