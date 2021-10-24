@@ -46,7 +46,7 @@ class TestCorrelated(object):
 
         for i in range(0, len(masses)):
             npt.assert_equal(np.log10(masses), 5.)
-            npt.assert_equal(np.hypot(x[i], y[i]) <= self.rmax, True)
+            npt.assert_equal(np.hypot(x[i], y[i]) <= self.rmax * np.sqrt(2), True)
             npt.assert_equal(True, r3d[i] is None)
 
 if __name__ == '__main__':
