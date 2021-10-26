@@ -1,9 +1,11 @@
 import numpy.testing as npt
 import numpy as np
+from pyHalo.single_realization import SingleHalo
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from colossus.halo.concentration import concentration, peaks
+from copy import deepcopy
 import pytest
 
 
@@ -131,6 +133,25 @@ class TestTNFWHalos(object):
         z_infall = self.subhalo.z_infall
         npt.assert_equal(True, self.z <= z_infall)
 
+    def test_rescale_norm(self):
+
+        kwargs_halo = {'c_scatter': True}
+        realization = SingleHalo(10 ** 9, 0., 0., 'TNFW', 0.6, 0.5, 1.5,
+                                 subhalo_flag=False, kwargs_halo=kwargs_halo)
+
+        lens_model_list, zlist, kwargs_init, _ = realization.lensing_quantities(False)
+        realization_copy = deepcopy(realization)
+        lens_model_list, zlist, kwargs_copy, _ = realization_copy.lensing_quantities(False)
+        npt.assert_equal(kwargs_init[0]['alpha_Rs'], kwargs_copy[0]['alpha_Rs'])
+
+        rescale = 0.7
+        realization.halos[0].rescale_normalization(rescale)
+        realization_copy.halos[0].rescale_normalization(rescale)
+        lens_model_list, zlist, kwargs, _ = realization.lensing_quantities(False)
+        lens_model_list, zlist, kwargs_copy, _ = realization.lensing_quantities(False)
+        npt.assert_equal(kwargs_init[0]['alpha_Rs'] * rescale, kwargs[0]['alpha_Rs'])
+        npt.assert_equal(kwargs_init[0]['alpha_Rs'] * rescale, kwargs_copy[0]['alpha_Rs'])
+
     def test_profile_args(self):
 
         profile_args = self.subhalo.profile_args
@@ -218,6 +239,10 @@ class TestTNFWHalos(object):
         con_field_halo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
         npt.assert_almost_equal(wdm_suppresion * con_field_halo, c)
 
-if __name__ == '__main__':
-    pytest.main()
+t = TestTNFWHalos()
+t.setup()
+t.test_rescale_norm()
 
+# if __name__ == '__main__':
+#     pytest.main()
+#

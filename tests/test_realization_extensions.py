@@ -92,17 +92,19 @@ class TestRealizationExtensions(object):
 
     def test_add_pbh(self):
 
-        realization = SingleHalo(10 ** 8, 0., -0.1, 'TNFW', 0.02, 0.5, 1.5, subhalo_flag=False)
-        zlist = np.arange(0.02, 1., 0.02)
+        kwargs_halo = {'c_scatter': False}
+        realization = SingleHalo(10 ** 9, 0., 0., 'TNFW', 0.1, 0.5, 1.5, subhalo_flag=False, kwargs_halo=kwargs_halo)
+        zlist = [0.2, 0.4, 0.6]
         rmax = 0.3
         for i, zi in enumerate(zlist):
             theta = np.random.uniform(0., 2*np.pi)
             r = np.random.uniform(0, rmax**2)**0.5
             xi, yi = np.cos(theta) *r, np.sin(theta) * r
-            mi = np.random.uniform(7,  8)
-            single_halo = SingleHalo(10 ** mi, xi, yi, 'TNFW', zi, 0.5, 1.5, subhalo_flag=False)
+            mi = np.random.uniform(8,  9)
+            single_halo = SingleHalo(10 ** mi, xi, yi, 'TNFW', zi, 0.5, 1.5, subhalo_flag=False, kwargs_halo=kwargs_halo)
             realization = realization.join(single_halo)
 
+        lens_model_list_init, _, kwargs_init, _ = realization.lensing_quantities()
         ext = RealizationExtensions(realization)
         mass_fraction = 0.1
         kwargs_mass_function = {'mass_function_type': 'DELTA', 'logM': 5., 'mass_fraction': 0.5}
@@ -121,6 +123,9 @@ class TestRealizationExtensions(object):
                                                          x_image_interp_list,
                                                          y_image_interp_list,
                                                          rmax)
+
+        lens_model_list, _, kwargs, _ = pbh_realization.lensing_quantities()
+
         for i, halo in enumerate(pbh_realization.halos):
             r2d = np.hypot(halo.x, halo.y)
             npt.assert_equal(r2d <= np.sqrt(2) * rmax, True)

@@ -7,6 +7,7 @@ from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
 
+from copy import deepcopy
 
 class RealizationExtensions(object):
 
@@ -226,22 +227,25 @@ class RealizationExtensions(object):
         instantiate the class
         :return: a new realization that includes correlated structure along the line of sight
         """
-        plane_redshifts = self._realization.unique_redshifts
-        delta_z = []
-        for i, zi in enumerate(plane_redshifts[0:-1]):
-            delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
+
+        realization_copy = deepcopy(self._realization)
 
         correlated_structure = CorrelatedStructure(kwargs_mass_function, self._realization, r_max_arcsec)
 
-        masses, x, y, r3d, redshifts, subhalo_flag = correlated_structure.render(x_image_interp_list, y_image_interp_list,
+        masses, x, y, r3d, redshifts, subhalo_flag, rescale_indicies, rescale_factor = correlated_structure.render(x_image_interp_list, y_image_interp_list,
                                                                                  arcsec_per_pixel)
+
+        for index in np.unique(rescale_indicies):
+            realization_copy.halos[index].rescale_normalization(rescale_factor)
 
         mdefs = [mass_definition] * len(masses)
         realization_pbh = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
                                            self._realization.lens_cosmo,
                                kwargs_realization=self._realization._prof_params)
 
-        return self._realization.join(realization_pbh)
+        new_realization = realization_copy.join(realization_pbh)
+
+        return new_realization
 
     def add_primordial_black_holes(self, pbh_mass_fraction, kwargs_pbh_mass_function, mass_fraction_in_halos,
                                    x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005):
@@ -270,6 +274,8 @@ class RealizationExtensions(object):
         delta_z = []
         for i, zi in enumerate(plane_redshifts[0:-1]):
             delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
+        delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
+
         geometry = Geometry(self._realization.lens_cosmo.cosmo,
                                                      self._realization.lens_cosmo.z_lens,
                                                      self._realization.lens_cosmo.z_source,

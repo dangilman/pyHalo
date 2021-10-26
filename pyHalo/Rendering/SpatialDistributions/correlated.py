@@ -34,7 +34,6 @@ class Correlated2D(object):
         if norm == 0:
             raise Exception('2D probability distribution not normalizable')
 
-        density += np.min(density)
         density = density / np.sum(density)
 
         s = density.shape[0]

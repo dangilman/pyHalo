@@ -13,10 +13,9 @@ class NFWFieldHalo(Halo):
                  sub_flag, lens_cosmo_instance, args, unique_tag):
 
         """
-
+        See documentation in base class (Halos/halo_base.py)
         """
         self._lens_cosmo = lens_cosmo_instance
-
         super(NFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
@@ -42,7 +41,7 @@ class NFWFieldHalo(Halo):
         Rs_angle = np.round(Rs_angle, 10)
         theta_Rs = np.round(theta_Rs, 10)
 
-        kwargs = [{'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+        kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle,
                   'center_x': x, 'center_y': y}]
 
         return kwargs, None

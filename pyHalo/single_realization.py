@@ -12,7 +12,8 @@ import numpy as np
 from copy import deepcopy
 
 
-def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordinate_y=None, max_range=None):
+def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordinate_y=None, max_range=None,
+                     mass_sheet_correction=True):
     """
     :param realization: an instance of Realization
     :param z: the redshift where we want to extract halos
@@ -21,6 +22,7 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
     :param angular_coordinate_y:
     :param max_range: radius in arcseconds where we want to keep halos. If None, will return a new realization class
      that contains all halos at redshift z contained in the input realization class
+    :param mass_sheet_correction: whether or not to include convergence sheet correction in returned realization
     :return: a new instance of Realization, and the indexes of halos that were kept from the original realization
     """
 
@@ -34,7 +36,7 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
             dr = (dx ** 2 + dy ** 2) ** 0.5
             if dr < max_range:
                 halos.append(halo)
-                indexes.append(i)
+                indexes.append(_indexes[i])
     else:
         halos = _halos
         indexes = _indexes
@@ -43,7 +45,7 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
 
     return Realization.from_halos(halos, realization.lens_cosmo,
                                   realization._prof_params,
-                                  realization._mass_sheet_correction,
+                                  mass_sheet_correction,
                                   realization.rendering_classes,
                                   centerx, centery), indexes
 
@@ -723,7 +725,7 @@ class Realization(object):
         self.r3d = np.array(self.r3d)
         self.redshifts = np.array(self.redshifts)
 
-        self.unique_redshifts = np.unique(self.redshifts)
+        self.unique_redshifts = np.sort(np.unique(self.redshifts))
 
     def __eq__(self, other_reealization):
 

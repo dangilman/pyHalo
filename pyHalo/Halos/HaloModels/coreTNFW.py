@@ -102,7 +102,7 @@ class coreTNFWBase(Halo):
 
             r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-            self._kwargs_lenstronomy = [{'Rs': Rs_angle, 'r_core': beta * Rs_angle,
+            self._kwargs_lenstronomy = [{'Rs': self._rescale_norm * Rs_angle, 'r_core': beta * Rs_angle,
                                        'center_x': self.x, 'center_y': self.y, 'norm': norm,
                                         'r_trunc': r_trunc_arcsec}]
 
