@@ -89,5 +89,11 @@ class TestRealizationExtensions(object):
         npt.assert_almost_equal(abs(p_field[0] - i_field_collapsed_1 / i_field_1), 0, 1)
         npt.assert_almost_equal(abs(p_field[1] - i_field_collapsed_2 / i_field_2), 0, 1)
 
+    def test_add_ULDM_fluctuations(self):
+
+        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
+        ext = RealizationExtensions(single_halo)
+        new = ext.add_ULDM_fluctuations(0.6)
+
 if __name__ == '__main__':
      pytest.main()
