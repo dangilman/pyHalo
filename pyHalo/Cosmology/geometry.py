@@ -15,6 +15,8 @@ class Geometry(object):
         elif geometry_type == 'CYLINDER':
             self._geometrytype = Cylinder(cosmology, z_lens, z_source, opening_angle)
             self.volume_type = 'CYLINDER'
+        #elif geometry_type == 'DOUBLE_CONE_CYLINDER':
+        #    self._geometrytype = DoubleConeCylindner(cosmology, z_lens, z_source, opening_angle, angle_pad)
         else:
             raise Exception('geometry type '+str(geometry_type) + ' not recognized.')
 
@@ -181,3 +183,19 @@ class DoubleCone(object):
             ratio = D_dz / D_z
 
             return 1 - self._angle_pad * self._reduced_to_phys * ratio
+
+# class DoubleConeCylindner(object):
+#
+#     def __init__(self, cosmology, z_lens, z_source, opening_angle, angle_pad):
+#
+#         self._cosmo = cosmology
+#         self._dlbcone = DoubleCone(cosmology, z_lens, z_source, opening_angle, angle_pad)
+#         self._cyl = Cylinder(cosmology, z_lens, z_source, opening_angle)
+#         self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
+#
+#     def rendering_scale(self, z):
+#
+#         scale_cone = self._dlbcone.rendering_scale(z)
+#         scale_cyl = self._cyl.rendering_scale(z)
+#         scale = min(scale_cone, scale_cyl)
+#         return scale

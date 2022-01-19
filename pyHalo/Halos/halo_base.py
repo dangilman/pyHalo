@@ -33,6 +33,19 @@ class Halo(ABC):
         self.is_subhalo = sub_flag
         self._args = args
         self.unique_tag = unique_tag
+        self._rescale_norm = 1.
+
+    def rescale_normalization(self, factor):
+        """
+        Sets the rescaling factor for the normalization
+        :param factor:
+        :return:
+        """
+        self._rescale_norm = factor
+        if hasattr(self, '_params_physical'):
+            delattr(self, '_params_physical')
+        if hasattr(self, '_kwargs_lenstronomy'):
+            delattr(self, '_kwargs_lenstronomy')
 
     @property
     @abstractmethod

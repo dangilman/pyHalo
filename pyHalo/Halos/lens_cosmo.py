@@ -63,7 +63,9 @@ class LensCosmo(object):
         :return: truncation radius in Kpc (physical)
         """
 
-        rtrunc_kpc = k * (M / 10 ** 7) ** (1. / 3) * (r3d / 50) ** nu
+        m_units_7 = M / 10 ** 7
+        radius_units_50 = r3d / 50
+        rtrunc_kpc = k * m_units_7 ** (1. / 3) * radius_units_50 ** nu
 
         return numpy.round(rtrunc_kpc, 3)
 
@@ -395,3 +397,4 @@ class LensCosmo(object):
 
         idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
         return idx
+

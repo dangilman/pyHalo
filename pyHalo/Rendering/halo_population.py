@@ -1,5 +1,5 @@
 from pyHalo.Rendering.subhalos import Subhalos
-from pyHalo.Rendering.line_of_sight import LineOfSight
+from pyHalo.Rendering.line_of_sight import LineOfSight, LineOfSightNoSheet
 from pyHalo.Rendering.two_halo import TwoHaloContribution
 import numpy as np
 
@@ -30,6 +30,9 @@ class HaloPopulation(object):
         for population_model in model_list:
             if population_model == 'LINE_OF_SIGHT':
                 model = LineOfSight(keywords_master, halo_mass_function, geometry, lens_cosmo,
+                                    lens_plane_redshift_list, redshift_spacings)
+            elif population_model == 'LINE_OF_SIGHT_NOSHEET':
+                model = LineOfSightNoSheet(keywords_master, halo_mass_function, geometry, lens_cosmo,
                                     lens_plane_redshift_list, redshift_spacings)
             elif population_model == 'SUBHALOS':
                 model = Subhalos(keywords_master, geometry, lens_cosmo)

@@ -2,6 +2,7 @@ import pytest
 from pyHalo.single_realization import SingleHalo
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
+from scipy.interpolate import interp1d
 import numpy.testing as npt
 import numpy as np
 
@@ -94,6 +95,49 @@ class TestRealizationExtensions(object):
         single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
         ext = RealizationExtensions(single_halo)
         new = ext.add_ULDM_fluctuations(0.6)
+        
+    def test_add_pbh(self):
+
+        kwargs_halo = {'c_scatter': False}
+        realization = SingleHalo(10 ** 9, 0., 0., 'TNFW', 0.1, 0.5, 1.5, subhalo_flag=False, kwargs_halo=kwargs_halo)
+        zlist = [0.2, 0.4, 0.6]
+        rmax = 0.3
+        for i, zi in enumerate(zlist):
+            theta = np.random.uniform(0., 2*np.pi)
+            r = np.random.uniform(0, rmax**2)**0.5
+            xi, yi = np.cos(theta) *r, np.sin(theta) * r
+            mi = np.random.uniform(8,  9)
+            single_halo = SingleHalo(10 ** mi, xi, yi, 'TNFW', zi, 0.5, 1.5, subhalo_flag=False, kwargs_halo=kwargs_halo)
+            realization = realization.join(single_halo)
+
+        lens_model_list_init, _, kwargs_init, _ = realization.lensing_quantities()
+        ext = RealizationExtensions(realization)
+        mass_fraction = 0.1
+        kwargs_mass_function = {'mass_function_type': 'DELTA', 'logM': 5., 'mass_fraction': 0.5}
+        fraction_in_halos = 0.5
+
+        zlist = np.arange(0.00, 1.02, 0.02)
+        x_image = [0.] * len(zlist)
+        y_image = [0.] * len(zlist)
+        cosmo = Cosmology()
+        dlist = [cosmo.D_C_transverse(zi) for zi in zlist]
+        x_image_interp_list = [interp1d(dlist, x_image)]
+        y_image_interp_list = [interp1d(dlist, y_image)]
+
+        pbh_realization = ext.add_primordial_black_holes(mass_fraction, kwargs_mass_function,
+                                                         fraction_in_halos,
+                                                         x_image_interp_list,
+                                                         y_image_interp_list,
+                                                         rmax)
+
+        lens_model_list, _, kwargs, _ = pbh_realization.lensing_quantities()
+
+        for i, halo in enumerate(pbh_realization.halos):
+            r2d = np.hypot(halo.x, halo.y)
+            npt.assert_equal(r2d <= np.sqrt(2) * rmax, True)
+            condition1 = 'PT_MASS' == halo.mdef
+            condition2 = 'TNFW' == halo.mdef
+            npt.assert_equal(np.logical_or(condition1, condition2), True)
 
 if __name__ == '__main__':
      pytest.main()

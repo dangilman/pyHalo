@@ -205,7 +205,6 @@ class LensingMassFunction(object):
     def mass_fraction_in_halos(self, z, mlow, mhigh, mlow_global=10**-6):
 
         """
-
         :param z: redshift
         :param mlow: the lowest halo mass rendered
         :param mhigh: the largest halo mass rendered

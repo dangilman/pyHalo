@@ -1,12 +1,12 @@
 import numpy as np
 from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
-class LineOfSight(RenderingClassBase):
-
+class LineOfSightNoSheet(RenderingClassBase):
     """
     This class generates line-of-sight halos, or more precisely objects between the observer and the source that are
     not associated with the host dark matter halo around the main deflector.
@@ -25,7 +25,7 @@ class LineOfSight(RenderingClassBase):
         :param delta_z_list: a list of redshift increments between each lens plane (should be the same length as
         lens_plane_redshifts)
         """
-        self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
+
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
 
         self.lens_cosmo = lens_cosmo
@@ -37,7 +37,7 @@ class LineOfSight(RenderingClassBase):
         self.geometry = geometry
         self._lens_plane_redshifts = lens_plane_redshifts
         self._delta_z_list = delta_z_list
-        super(LineOfSight, self).__init__()
+        super(LineOfSightNoSheet, self).__init__()
 
     def render(self):
 
@@ -53,7 +53,6 @@ class LineOfSight(RenderingClassBase):
         redshifts = np.array([])
 
         for z, dz in zip(self._lens_plane_redshifts, self._delta_z_list):
-
             m = self.render_masses_at_z(z, dz)
             nhalos = len(m)
             _x, _y = self.render_positions_at_z(z, nhalos)
@@ -97,22 +96,122 @@ class LineOfSight(RenderingClassBase):
         :return: halo masses at the desired redshift in units Msun
         """
 
-        norm, plaw_index = self._normalization_slope(z, delta_z)
+        if self._rendering_kwargs['mass_function_LOS_type'] == 'POWER_LAW':
 
-        args = deepcopy(self._rendering_kwargs)
+            norm, plaw_index = self._normalization_slope(z, delta_z)
 
-        args.update({'normalization': norm})
-        args.update({'power_law_index': plaw_index})
+            args = deepcopy(self._rendering_kwargs)
 
-        log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
+            args.update({'normalization': norm})
+            args.update({'power_law_index': plaw_index})
 
-        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, plaw_index, args['draw_poisson'],
-                                norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
-                                args['c_wdm'])
+            log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
+
+            mfunc = GeneralPowerLaw(log_mlow, log_mhigh, plaw_index, args['draw_poisson'],
+                                    norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
+                                    args['c_wdm'])
+
+        elif self._rendering_kwargs['mass_function_LOS_type'] == 'DELTA':
+
+            volume = self.geometry.volume_element_comoving(z, delta_z)
+            rho = self._rendering_kwargs['mass_fraction'] * self.lens_cosmo.cosmo.rho_dark_matter_crit
+            mfunc = DeltaFunction(10 ** self._rendering_kwargs['logM'], volume, rho)
+
+        else:
+            raise Exception(
+                'mass function type ' + str(self._rendering_kwargs['mass_function_type']) + ' not recognized')
 
         m = mfunc.draw()
 
         return m
+
+    @staticmethod
+    def keyword_parse_render(keywords_master):
+
+        args_mfunc = {}
+
+        required_keys = ['zmin', 'zmax',  'host_m200', 'LOS_normalization',
+                         'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
+                         'mass_function_LOS_type']
+
+        required_keys_power_law = ['a_wdm', 'b_wdm', 'c_wdm',
+                                   'delta_power_law_index', 'm_pivot', 'log_mc', 'log_mlow', 'log_mhigh']
+        required_keyes_delta = ['logM', 'mass_fraction']
+
+        for key in required_keys:
+
+            if key not in keywords_master:
+                raise Exception('Required keyword argument ' + str(key) + ' not specified.')
+            else:
+                args_mfunc[key] = keywords_master[key]
+
+        if keywords_master['mass_function_LOS_type'] == 'POWER_LAW':
+
+            if keywords_master['log_mc'] is None:
+                args_mfunc['a_wdm'] = None
+                args_mfunc['b_wdm'] = None
+                args_mfunc['c_wdm'] = None
+                args_mfunc['c_scale'] = None
+                args_mfunc['c_power'] = None
+                args_mfunc['a_mc'] = None
+                args_mfunc['b_mc'] = None
+                args_mfunc['log_mc'] = None
+
+            for key in required_keys_power_law:
+                if key not in keywords_master:
+                    raise Exception('Required keyword argument ' + str(key) + ' not specified.')
+                else:
+                    args_mfunc[key] = keywords_master[key]
+
+        elif keywords_master['mass_function_LOS_type'] == 'DELTA':
+            for key in required_keyes_delta:
+                if key not in keywords_master:
+                    raise Exception('Required keyword argument ' + str(key) + ' not specified.')
+                else:
+                    args_mfunc[key] = keywords_master[key]
+
+        return args_mfunc
+
+    def _normalization_slope(self, z, delta_z):
+
+        volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z)
+        plaw_index = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
+        norm_dv = self.halo_mass_function.norm_at_z_density(z, plaw_index, self._rendering_kwargs['m_pivot'])
+        norm = self._rendering_kwargs['LOS_normalization'] * norm_dv * volume_element_comoving
+        return norm, plaw_index
+
+    @staticmethod
+    def keys_convergence_sheets(keywords_master):
+        return {}
+
+    def convergence_sheet_correction(self, kwargs_mass_sheets=None):
+
+        return [{}], [], []
+
+
+class LineOfSight(LineOfSightNoSheet):
+
+    """
+    This class generates line-of-sight halos, or more precisely objects between the observer and the source that are
+    not associated with the host dark matter halo around the main deflector.
+    """
+
+    def __init__(self, keywords_master, halo_mass_function, geometry, lens_cosmo,
+                 lens_plane_redshifts, delta_z_list):
+
+        """
+
+        :param keywords_master: a dictionary of keyword arguments to be passed to each model class
+        :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
+        :param geometry: an instance of Geometry (see Cosmology.geometry)
+        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.lensing_mass_function)
+        :param lens_plane_redshifts: a list of redshifts at which to render halos
+        :param delta_z_list: a list of redshift increments between each lens plane (should be the same length as
+        lens_plane_redshifts)
+        """
+        self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
+        super(LineOfSight, self).__init__(keywords_master, halo_mass_function, geometry, lens_cosmo,
+                 lens_plane_redshifts, delta_z_list)
 
     @staticmethod
     def keys_convergence_sheets(keywords_master):
@@ -139,33 +238,6 @@ class LineOfSight(RenderingClassBase):
 
         return args_convergence_sheets
 
-    @staticmethod
-    def keyword_parse_render(keywords_master):
-
-        args_mfunc = {}
-
-        required_keys = ['zmin', 'zmax', 'log_mc', 'log_mlow',
-                         'log_mhigh', 'host_m200', 'LOS_normalization',
-                         'draw_poisson', 'log_mass_sheet_min', 'log_mass_sheet_max', 'kappa_scale',
-                         'a_wdm', 'b_wdm', 'c_wdm', 'delta_power_law_index',
-                         'm_pivot']
-
-        for key in required_keys:
-
-            if key not in keywords_master:
-                raise Exception('Required keyword argument ' + str(key) + ' not specified.')
-            else:
-                args_mfunc[key] = keywords_master[key]
-
-        if args_mfunc['log_mc'] is None:
-            args_mfunc['a_wdm'] = None
-            args_mfunc['b_wdm'] = None
-            args_mfunc['c_wdm'] = None
-            args_mfunc['c_scale'] = None
-            args_mfunc['c_power'] = None
-
-        return args_mfunc
-
     def convergence_sheet_correction(self, kwargs_mass_sheets=None):
 
         """
@@ -174,6 +246,7 @@ class LineOfSight(RenderingClassBase):
         sheet are - leave it as None for most applications
         :return:
         """
+
         kw_mass_sheets = self._convergence_sheet_kwargs
 
         if kwargs_mass_sheets is not None:
@@ -211,14 +284,6 @@ class LineOfSight(RenderingClassBase):
                 redshifts.append(z)
 
         return kwargs_out, profile_names_out, redshifts
-
-    def _normalization_slope(self, z, delta_z):
-
-        volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z)
-        plaw_index = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
-        norm_dv = self.halo_mass_function.norm_at_z_density(z, plaw_index, self._rendering_kwargs['m_pivot'])
-        norm = self._rendering_kwargs['LOS_normalization'] * norm_dv * volume_element_comoving
-        return norm, plaw_index
 
     def _convergence_at_z(self, z, delta_z, log_sheet_min,
                              log_sheet_max, kappa_scale):

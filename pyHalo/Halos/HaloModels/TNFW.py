@@ -14,7 +14,6 @@ class TNFWFieldHalo(Halo):
         """
         self._lens_cosmo = lens_cosmo_instance
         self._concentration = Concentration(lens_cosmo_instance)
-
         super(TNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
 
@@ -53,7 +52,7 @@ class TNFWFieldHalo(Halo):
 
             [concentration, rt] = self.profile_args
             rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
+            self._params_physical = {'rhos': rhos * self._rescale_norm, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
 
         return self._params_physical
 
@@ -73,7 +72,7 @@ class TNFWFieldHalo(Halo):
             theta_Rs = np.round(theta_Rs, 10)
             r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
-            kwargs = [{'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
+            kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle,
                       'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
 
             self._kwargs_lenstronomy = kwargs

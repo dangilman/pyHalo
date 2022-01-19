@@ -51,13 +51,14 @@ class TestSingleRealization(object):
                   'LOS_normalization_mass_sheet': 1.,
                   'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
                   'delta_power_law_index': 0., 'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
-                  'm_pivot': 10 ** 8, 'cone_opening_angle': 6.}
+                  'm_pivot': 10 ** 8, 'cone_opening_angle': 6., 'mass_function_LOS_type': 'POWER_LAW'}
         kwargs_cdm_2 = {'zmin': 0.01, 'zmax': 1.98, 'log_mc': None, 'log_mlow': 6.,
                       'log_mhigh': 9., 'host_m200': 10 ** 13, 'LOS_normalization': 2000.,
                       'LOS_normalization_mass_sheet': 1.,
                       'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
                       'delta_power_law_index': 0., 'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
-                      'm_pivot': 10 ** 8, 'cone_opening_angle': 6., 'subtract_exact_mass_sheets': True}
+                      'm_pivot': 10 ** 8, 'cone_opening_angle': 6., 'subtract_exact_mass_sheets': True,
+                        'mass_function_LOS_type': 'POWER_LAW'}
 
         kwargs_cdm.update(profile_args_TNFW)
         self.kwargs_cdm = kwargs_cdm

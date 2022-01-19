@@ -9,8 +9,27 @@ from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy as np
 
+def preset_model_from_name(name):
+    """
+    Retruns a preset_model function from a string
+    :param name: the name of the preset model, should be the name of a function in this file
+    :return: the function
+    """
+    if name == 'CDM':
+        return CDM
+    elif name == 'WDM':
+        return WDM
+    elif name == 'SIDM':
+        return SIDM
+    elif name == 'ULDM':
+        return ULDM
+    else:
+        raise Exception('preset model '+ str(name)+' not recognized!')
+
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
-        log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs', mass_definition='TNFW', **kwargs_other):
+        log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs',
+        mass_definition='TNFW', c0=None, log10c0=None,
+        beta=None, zeta=None, **kwargs_other):
 
     """
     This specifies the keywords for a CDM halo mass function model with a subhalo mass function described by a power law
@@ -43,6 +62,14 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     to account for tidal stripping of halos that pass close to the central galaxy
     :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
     :param mass_definition: mass profile model for halos (TNFW is truncated NFW)
+
+    The following optional keywords specify a concentration-mass relation parameterized as a power law in peak height.
+    If they are not set in the function call, pyHalo assumes a default concentration-mass relation from Diemer&Joyce
+    :param c0: amplitude of the mass-concentration relation at 10^8
+    :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
+    :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
+    :param zeta: modifies the redshift evolution of the mass-concentration-relation
+
     :return: a realization of CDM halos
     """
 
@@ -53,6 +80,20 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     kwargs_model_subhalos = {'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub,
                              'power_law_index': shmf_log_slope, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                              'mdef_subs': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
+
+    if any(x is not None for x in [c0, log10c0, beta, zeta]):
+
+        if c0 is None:
+            assert log10c0 is not None
+            c0 = 10 ** log10c0
+
+        assert beta is not None
+        assert zeta is not None
+        mc_model = {'custom': True,
+                       'c0': c0, 'beta': beta, 'zeta': zeta}
+        kwargs_mc_relation = {'mc_model': mc_model}
+        kwargs_model_field.update(kwargs_mc_relation)
+        kwargs_model_subhalos.update(kwargs_mc_relation)
 
     kwargs_model_field.update(kwargs_other)
     kwargs_model_subhalos.update(kwargs_other)

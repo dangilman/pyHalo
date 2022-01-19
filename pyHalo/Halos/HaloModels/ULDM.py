@@ -154,10 +154,10 @@ class ULDMFieldHalo(Halo):
                         rho0, rhos)
         initial_guess = np.array([0.9,1.1])
         bounds = ((0.5, 10), (0.5, 1.5))
-        method = 'nelder-mead'
-        beta,q = minimize(self._function_to_minimize, initial_guess,
-                                args, method=method, bounds=bounds, tol=0.1)['x']
- 
+        method = 'Nelder-Mead'
+        beta, q = minimize(self._function_to_minimize, initial_guess,
+                           args, method=method, bounds=bounds, tol=0.1)['x']
+
         if beta<0:
             raise ValueError('Negative CNFW core radius, tweak your parameters.')
         elif q<0:

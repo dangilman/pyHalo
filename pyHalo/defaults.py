@@ -231,6 +231,12 @@ def set_default_kwargs(profile_params, zsource):
     if 'log_mass_sheet_max' not in profile_params.keys():
         profile_params.update({'log_mass_sheet_max': profile_params['log_mhigh']})
 
+    if 'mass_function_LOS_type' not in profile_params.keys():
+        profile_params.update({'mass_function_LOS_type': 'POWER_LAW'})
+    if 'mass_function_SUB_type' not in profile_params.keys():
+        profile_params.update({'mass_function_SUB_type': 'POWER_LAW'})
+
+
     return profile_params
 
 
