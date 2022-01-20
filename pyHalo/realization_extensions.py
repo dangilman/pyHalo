@@ -224,8 +224,10 @@ class RealizationExtensions(object):
         :param args: properties of the given shape, must match
 
             'ring' : {'rmin': , 'rmax': } (radii within which to place fluctuations, rmin < rmax)
-            'ellipse; : {'amin': , 'amax': , 'bmin': , 'bmax': } (major and minor axes within which to place fluctuations, amin < amax, bmin < bmax)
+            'ellipse' : {'amin': , 'amax': , 'bmin': , 'bmax': , 'angle':} (major and minor axes within which to place fluctuations, amin < amax, bmin < bmax)
             'aperture' : {'x_images': , 'y_images':, 'aperture'} (list of x and y image coordinates and aperture radius)
+
+            Note that for 'ellipse' the 'angle' parameter is the angle in radians at which to orient the ellipse relative to the positive x-axis.
 
         :param num_cut: integer number of fluctuations above which to start Central Limit Theorem averaging approximation, if None no approximation
                         Warning: setting num_cut=None for a large number of fluctuations will take a while
@@ -235,10 +237,21 @@ class RealizationExtensions(object):
 
             raise Exception('shape must be ring or ellipse or aperture!')
         
-        # create n_flucs fluctuations
+        # get number of fluctuations
         n_flucs = _get_number_flucs(self._realization,de_Broglie_wavelength,shape,args)
+
+        # if zero fluctuations, return original realization
+        if shape!='aperture':
+            if n_flucs==0:
+                return self._realization
+        if shape=='aperture': 
+            if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
+                return self._realization
+
+        # create fluctuations
         fluctuations = _get_fluctuation_halos(self._realization,de_Broglie_wavelength,rho_mean,shape,n_flucs,args)
 
+        
         # realization args
         lens_cosmo = self._realization.lens_cosmo
         prof_params = self._realization._prof_params
@@ -397,13 +410,15 @@ def _get_number_flucs(realization,de_Broglie_wavelength,shape,args):
 
         rmin_kpc,rmax_kpc = args['rmin'] * to_kpc, args['rmax'] * to_kpc #args in kpc
         area_ring = np.pi*(rmax_kpc**2-rmin_kpc**2) # volume of ring
-        n_flucs=int(area_ring/fluc_area) # number of fluctuations in ring
+        n_flucs_expected=area_ring/fluc_area # number of fluctuations in ring
+        n_flucs = np.random.poisson(n_flucs_expected)
     
     if shape=='ellipse': # fluctuations in a elliptical slice (for visualization purposes)
         
         amin_kpc,bmin_kpc,amax_kpc,bmax_kpc=args['amin'] * to_kpc, args['bmin'] * to_kpc, args['amax'] * to_kpc, args['bmax'] * to_kpc #args in kpc
         area_ellipse=np.pi*(amax_kpc*bmax_kpc - amin_kpc*bmin_kpc) # volume of ellipse
-        n_flucs=int(area_ellipse/fluc_area) # number of fluctuations in ellipse
+        n_flucs_expected=area_ellipse/fluc_area # number of fluctuations in ellipse
+        n_flucs = np.random.poisson(n_flucs_expected)
 
     if shape=='aperture': # fluctuations around lensing images (for computation)
 
@@ -412,7 +427,7 @@ def _get_number_flucs(realization,de_Broglie_wavelength,shape,args):
         area_aperture = np.pi*r_kpc**2 # aperture area
         n_flucs_expected = area_aperture/fluc_area #number of expected fluctuations per aperture
         n_flucs = np.random.poisson(n_flucs_expected,n_images) #draw number of fluctuations from poisson distribution for each image
-        n_flucs[np.where(n_flucs == 0)] = 1 #avoid zero fluctuations
+        n_flucs = n_flucs[n_flucs!=0] #get rid of aperture if zero fluctuations within it
 
     return n_flucs
 
@@ -473,6 +488,7 @@ def _get_fluctuation_halos(realization,de_Broglie_wavelength,rho_bar,shape,n_flu
             amps,sigs,xs,ys=np.append(amps,amps_i),np.append(sigs,sigs_i),np.append(xs,xs_i),np.append(ys,ys_i)
 
     args_fluc=[{'amp': amps[i], 'sigma': sigs[i], 'center_x': xs[i], 'center_y': ys[i]} for i in range(len(amps))]
-    fluctuations = [Gaussian(5*sigs[i], xs[i], ys[i], None, None, realization._zlens, None, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
+    masses=[GaussianKappa().mass_3d_lens(5*arg_fluc['sigma'],arg_fluc['amp'],arg_fluc['sigma']) for arg_fluc in args_fluc] #calculate fluctuation masses
+    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, None, realization._zlens, None, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
     
     return fluctuations
