@@ -95,20 +95,23 @@ class TestRealizationExtensions(object):
         single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
         ext = RealizationExtensions(single_halo)
         wavelength=0.6 #kpc, correpsonds to m=10^-22 eV for ULDM
+        amplitude_std_dev = 1e8 #in M_solar/kpc^2
+        gaussian_std_dev = wavelength
 
         # apeture
         x_images = np.array([-0.347, -0.734, -1.096, 0.207])
         y_images = np.array([ 0.964,  0.649, -0.079, -0.148])
         args_aperture = {'x_images':x_images,'y_images':y_images,'aperture':0.25}
-        ext.add_ULDM_fluctuations(wavelength,shape='aperture',args=args_aperture)
+        
+        ext.add_ULDM_fluctuations(wavelength,amplitude_std_dev,gaussian_std_dev,shape='aperture',args=args_aperture)
 
         #ring
         args_ring = {'rmin':0.95,'rmax':1.05}
-        ext.add_ULDM_fluctuations(wavelength,shape='ring',args=args_ring)
+        ext.add_ULDM_fluctuations(wavelength,amplitude_std_dev,gaussian_std_dev,shape='ring',args=args_ring)
 
         #ellipse
         args_ellipse = {'amin':0.8,'amax':1.7,'bmin':0.4,'bmax':1.2,'angle':np.pi/4}
-        ext.add_ULDM_fluctuations(wavelength,shape='ellipse',args=args_ellipse)
+        ext.add_ULDM_fluctuations(wavelength,amplitude_std_dev,gaussian_std_dev,shape='ellipse',args=args_ellipse)
 
     def test_add_pbh(self):
 
