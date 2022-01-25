@@ -15,7 +15,7 @@ class TestNFWHalos(object):
         y = 1.
         r3d = np.sqrt(1 + 0.5 ** 2 + 70**2)
         self.r3d = r3d
-        mdef = 'GAUSSIAN_KAPPA'
+        mdef = 'TNFW'
         self.z = 1.2
         sub_flag = True
 
