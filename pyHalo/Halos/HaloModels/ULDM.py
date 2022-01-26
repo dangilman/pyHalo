@@ -59,7 +59,7 @@ class ULDMFieldHalo(Halo):
         kwargs_uldm_temporary = {'theta_c': theta_c, 'kappa_0': kappa_0,
             'center_x': x, 'center_y': y}
         kwargs = self._rescaled_cnfw_params(kwargs_cnfw_temporary,
-                                                kwargs_uldm_temporary)
+                                                kwargs_uldm_temporary)                   
         return kwargs, None
 
     @property
@@ -242,7 +242,7 @@ class ULDMFieldHalo(Halo):
         constraint1 = self._constraint_mass(beta, q, r, m_target, rs, alpha_rs, kappa_0, theta_c)
         constraint2 = self._constraint_density(beta, q, rho0, rhos)
 
-        return constraint1 + 8*constraint2
+        return constraint1 + 20*constraint2
 
 class ULDMSubhalo(ULDMFieldHalo):
     """

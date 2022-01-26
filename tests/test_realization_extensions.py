@@ -90,6 +90,29 @@ class TestRealizationExtensions(object):
         npt.assert_almost_equal(abs(p_field[0] - i_field_collapsed_1 / i_field_1), 0, 1)
         npt.assert_almost_equal(abs(p_field[1] - i_field_collapsed_2 / i_field_2), 0, 1)
 
+    def test_add_ULDM_fluctuations(self):
+
+        single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
+        ext = RealizationExtensions(single_halo)
+        wavelength=0.6 #kpc, correpsonds to m=10^-22 eV for ULDM
+        amp_var = 0.04 #in convergence units
+        fluc_var = wavelength
+
+        # apeture
+        x_images = np.array([-0.347, -0.734, -1.096, 0.207])
+        y_images = np.array([ 0.964,  0.649, -0.079, -0.148])
+        args_aperture = {'x_images':x_images,'y_images':y_images,'aperture':0.25}
+        
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='aperture',args=args_aperture)
+
+        #ring
+        args_ring = {'rmin':0.95,'rmax':1.05}
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ring',args=args_ring)
+
+        #ellipse
+        args_ellipse = {'amin':0.8,'amax':1.7,'bmin':0.4,'bmax':1.2,'angle':np.pi/4}
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ellipse',args=args_ellipse)
+
     def test_add_pbh(self):
 
         kwargs_halo = {'c_scatter': False}
