@@ -210,14 +210,14 @@ class RealizationExtensions(object):
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
 
-    def add_ULDM_fluctuations(self,de_Broglie_wavelength,amplitude_std_dev,gaussian_std_dev,shape='ring',args={'rmin':0.9,'rmax':1.1}):
+    def add_ULDM_fluctuations(self,de_Broglie_wavelength,fluctuation_amplitude_variance,fluctuation_size_variance,shape='ring',args={'rmin':0.9,'rmax':1.1}):
 
         """
         This function adds gaussian fluctuations of the given de Broglie wavelength to a realization.
         
         :param de_Broglie_wavelength: de Broglie wavelength of the DM particle in kpc
-        :param amplitude_variance: Standard deviation of amplitude distribution in solar mass/kpc^2
-        :param gaussian_std_dev: Mean of fluctuation variance in kpc
+        :param fluctuation_amplitude_variance: Standard deviation of amplitude distribution in convergence units
+        :param fluctuation_size_variance: Mean of fluctuation standard deviation in kpc
         :param rho_mean: typical convergence of a fluctuation at its peak
         :param shape: keyword argument for fluctuation geometry, can place fluctuations in a 
         
@@ -251,7 +251,7 @@ class RealizationExtensions(object):
                 return self._realization
 
         # create fluctuations
-        fluctuations = _get_fluctuation_halos(self._realization,amplitude_std_dev,gaussian_std_dev,shape,n_flucs,args)
+        fluctuations = _get_fluctuation_halos(self._realization,fluctuation_amplitude_variance,fluctuation_size_variance,shape,n_flucs,args)
 
         # realization args
         lens_cosmo = self._realization.lens_cosmo
@@ -432,14 +432,14 @@ def _get_number_flucs(realization,de_Broglie_wavelength,shape,args):
 
     return n_flucs
 
-def _get_fluctuation_halos(realization,amplitude_std_dev,gaussian_std_dev,shape,n_flucs,args):
+def _get_fluctuation_halos(realization,fluctuation_amplitude_variance,fluctuation_size_variance,shape,n_flucs,args):
     """
     This function creates 'n_flucs' Gaussian fluctuations and places them according to 'shape'.
 
     :param realization: the realization to which to add the fluctuations
     :param de_Broglie_wavelength: de Broglie wavelength of the DM particle in kpc
-    :param amplitude_variance: Standard deviation of amplitude distribution in solar mass/kpc^2
-    :param gaussian_std_dev: Mean of fluctuation standard deviation in kpc
+    :param fluctuation_amplitude_variance: Standard deviation of amplitude distribution in convergence units
+    :param fluctuation_size_variance: Mean of fluctuation standard deviation in kpc
     :param rho_bar: typical convergence of a fluctuation at its peak
     :param shape: keyword argument for fluctuation geometry, see 'add_ULDM_fluctuations'
     :param n_flucs: Number of fluctuations to make
@@ -448,13 +448,12 @@ def _get_fluctuation_halos(realization,amplitude_std_dev,gaussian_std_dev,shape,
 
     D_d = realization.lens_cosmo.cosmo.D_A_z(realization._zlens)
     arcsec = realization.lens_cosmo.cosmo.arcsec
-    gaussian_dev_angle = gaussian_std_dev / D_d / arcsec / 1e3 # gaussian variance in arcsec
-    sigma_crit = realization.lens_cosmo.get_sigma_crit_lensing(realization._zlens, realization._zsource) * (1e-3) ** 2 # sigma crit in solar mass/kpc^2
+    fluc_var_angle = fluctuation_size_variance / D_d / arcsec / 1e3 # gaussian variance in arcsec
 
     if shape!='aperture':
 
-        sigs = np.abs(np.random.normal(gaussian_dev_angle,gaussian_dev_angle/2,n_flucs)) #random widths
-        amps = np.random.normal(0,amplitude_std_dev,n_flucs)/sigma_crit*np.sqrt(2*np.pi*sigs**2) #random amplitudes
+        sigs = np.abs(np.random.normal(fluc_var_angle,fluc_var_angle/2,n_flucs)) #random widths
+        amps = np.random.normal(0,fluctuation_amplitude_variance,n_flucs)*np.sqrt(2*np.pi*sigs**2) #random amplitudes
 
     if shape=='ring':
 
@@ -477,8 +476,8 @@ def _get_fluctuation_halos(realization,amplitude_std_dev,gaussian_std_dev,shape,
 
         for i in range(len(n_flucs)): #loop through each image
 
-            sigs_i = np.abs(np.random.normal(gaussian_dev_angle,gaussian_dev_angle/2,n_flucs[i])) #random widths
-            amps_i = np.random.normal(0,amplitude_std_dev,n_flucs[i])/sigma_crit*np.sqrt(2*np.pi*sigs_i**2) #random amplitudes
+            sigs_i = np.abs(np.random.normal(fluc_var_angle,fluc_var_angle/2,n_flucs[i])) #random widths
+            amps_i = np.random.normal(0,fluctuation_amplitude_variance,n_flucs[i])*np.sqrt(2*np.pi*sigs_i**2) #random amplitudes
             angles_i = np.random.uniform(0,2*np.pi,n_flucs[i])  # random angles
             radii_i = np.sqrt(np.random.uniform(0,1,n_flucs[i]))*args['aperture'] #random radii
             xs_i = radii_i*np.cos(angles_i)+args['x_images'][i] #random x positions
