@@ -388,7 +388,6 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
         lambda_dB = _de_broglie_wavelength(log10_m_uldm) # de Broglie wavelength in kpc
         delta_kappa = _delta_sigma(z_lens,z_source,10**log_m_host,einstein_radius,lambda_dB) #amplitude of fluctuations
 
-        print(delta_kappa)
         if flucs_args=={}:
             raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
 
@@ -397,7 +396,6 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                                 fluctuation_size_variance=lambda_dB,
                                 shape=flucs_shape,
                                 args=flucs_args)
-        print('added fluctuation')
 
     return uldm_realization
 
