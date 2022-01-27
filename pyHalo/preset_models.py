@@ -7,7 +7,9 @@ presented here show what each keyword argument accepted by pyHalo does.
 from pyHalo.pyhalo import pyHalo
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
+from scipy.integrate import quad
 
 def preset_model_from_name(name):
     """
@@ -259,14 +261,18 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, scale_nfw=False,**kwargs_other):
+                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, scale_nfw=False, flucs=False, 
+                  flucs_shape='aperture',flucs_args={}, einstein_radius=6.,**kwargs_other):
 
     """
-    This specifies keywords for a ULDM halo mass function model. Similarly to WDMGeneral, the functional form of the
-    subhalo mass function is the same as the field halo mass function. However, this model differs from WDMGeneral
-    by creating halos which are composite ULDM + NFW density profiles. The ULDM particle mass and core radius-halo mass
-    power law exponent must now be specified. For details regarding ULDM halos, see Schive et al. 2014
-    (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the soliton density profile and core radius, respectively.
+    This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
+    as well as density fluctuations in the main deflector halo.
+    
+    Similarly to WDMGeneral, the functional form of the subhalo mass function is the same as the field halo mass function. 
+    However, this model differs from WDMGeneral by creating halos which are composite ULDM + NFW density profiles. 
+    The ULDM particle mass and core radius-halo mass power law exponent must now be specified. For details regarding ULDM halos,
+    see Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the soliton density profile 
+    and core radius, respectively.
 
     The differential halo mass function is described by three parameters, see Schive et al. 2016
     (https://arxiv.org/pdf/1508.04621.pdf):
@@ -329,6 +335,10 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
     :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
     :param scale_nfw: boolean specifiying whether or not to scale the NFW component (can improve mass accuracy)
+    :param flucs: Boolean specifying whether or not to include density fluctuations in the main deflector halo
+    :param flucs_shape: String specifying how to place fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
+    :param fluc_args: Keyword arguments for specifying the fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
+    :param einstein_radius: Einstein radius of main deflector halo in kpc
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
@@ -373,5 +383,65 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
     uldm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 
+    if flucs: # add fluctuations to realization
+        ext = RealizationExtensions(uldm_realization)
+        lambda_dB = _de_broglie_wavelength(log10_m_uldm) # de Broglie wavelength in kpc
+        delta_kappa = _delta_sigma(z_lens,z_source,10**log_m_host,einstein_radius,lambda_dB) #amplitude of fluctuations
+
+        print(delta_kappa)
+        if flucs_args=={}:
+            raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
+
+        uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
+                                fluctuation_amplitude_variance=delta_kappa,
+                                fluctuation_size_variance=lambda_dB,
+                                shape=flucs_shape,
+                                args=flucs_args)
+        print('added fluctuation')
+
     return uldm_realization
+
+def _de_broglie_wavelength(log10_m_uldm,v=200):
+    '''
+    Returns de Broglie wavelength of the ultra-light axion in kpc.
+
+    :param log10_m_uldm: log(axion mass) in eV
+    :param v: velocity in km/s
+    '''
+    m_axion=10**log10_m_uldm
+    return 1.2*(1e-22/m_axion)*(100/v)
+
+def _delta_sigma(z_lens,z_source,m,rein,de_Broglie_wavelength):
+    '''
+    Returns standard deviation of the density fluctuations in projection in convergence units
+
+    :param z_lens,z_source: lens and source redshifts
+    :param m: main deflector halo mass in M_solar
+    :param rein: Einstein radius in kpc
+    :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
+    '''
+    l = LensCosmo(z_lens,z_source)
+    c = l.NFW_concentration(m,z_lens,scatter=False)
+    rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
+    nfw_rho_squared = _projected_density_squared(rein, rhos, rs, c)
+    sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
+    return (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5 / sigma_crit
+
+def _projected_density_squared(R_ein, rhos, rs, concentration):
+    '''
+    Returns integral for computation of density fluctuation standard deviation
+
+    :param R_ein: Einstein radius in kpc
+    :param rhos: scale radius density of main deflector halo
+    :param rs: scale radius of main deflector halo
+    :param concentration: concentration of main deflector halo
+    '''
+
+    r200 = concentration * rs
+    zmax = np.sqrt(r200 ** 2 - R_ein**2)
+    
+    x = lambda z: np.sqrt(R_ein ** 2 + z ** 2)/rs
+    nfw_density_square = lambda z: rhos**2 / (x(z) * (1+x(z))**2)**2
+
+    return 2 * quad(nfw_density_square, 0, zmax)[0]
 
