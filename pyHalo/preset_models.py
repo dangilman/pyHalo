@@ -9,7 +9,7 @@ from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
-from scipy.integrate import quad
+from pyHalo.utilities import de_broglie_wavelength, delta_sigma
 
 def preset_model_from_name(name):
     """
@@ -258,10 +258,10 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
-def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, scale_nfw=False, flucs=False, 
+                  mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True, 
                   flucs_shape='aperture',flucs_args={}, einstein_radius=6.,**kwargs_other):
 
     """
@@ -319,6 +319,8 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
 
     :param z_lens: the lens redshift
     :param z_source: the source redshift
+    :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
+    :param velocity_scale: velocity for de Broglie wavelength calculation in km/s
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
     :param b_uldm: defines the ULDM mass function (see above)
     :param c_uldm: defines the ULDM mass function (see above)
@@ -332,7 +334,6 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
     :param mass_definition: mass profile model for halos
-    :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
     :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
     :param scale_nfw: boolean specifiying whether or not to scale the NFW component (can improve mass accuracy)
     :param flucs: Boolean specifying whether or not to include density fluctuations in the main deflector halo
@@ -385,8 +386,8 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
 
     if flucs: # add fluctuations to realization
         ext = RealizationExtensions(uldm_realization)
-        lambda_dB = _de_broglie_wavelength(log10_m_uldm) # de Broglie wavelength in kpc
-        delta_kappa = _delta_sigma(z_lens,z_source,10**log_m_host,einstein_radius,lambda_dB) #amplitude of fluctuations
+        lambda_dB = de_broglie_wavelength(log10_m_uldm,velocity_scale) # de Broglie wavelength in kpc
+        delta_kappa = delta_sigma(z_lens,z_source,10**log_m_host,einstein_radius,lambda_dB) #amplitude of fluctuations
 
         if flucs_args=={}:
             raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
@@ -398,48 +399,4 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                                 args=flucs_args)
 
     return uldm_realization
-
-def _de_broglie_wavelength(log10_m_uldm,v=200):
-    '''
-    Returns de Broglie wavelength of the ultra-light axion in kpc.
-
-    :param log10_m_uldm: log(axion mass) in eV
-    :param v: velocity in km/s
-    '''
-    m_axion=10**log10_m_uldm
-    return 1.2*(1e-22/m_axion)*(100/v)
-
-def _delta_sigma(z_lens,z_source,m,rein,de_Broglie_wavelength):
-    '''
-    Returns standard deviation of the density fluctuations in projection in convergence units
-
-    :param z_lens,z_source: lens and source redshifts
-    :param m: main deflector halo mass in M_solar
-    :param rein: Einstein radius in kpc
-    :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
-    '''
-    l = LensCosmo(z_lens,z_source)
-    c = l.NFW_concentration(m,z_lens,scatter=False)
-    rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
-    nfw_rho_squared = _projected_density_squared(rein, rhos, rs, c)
-    sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
-    return (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5 / sigma_crit
-
-def _projected_density_squared(R_ein, rhos, rs, concentration):
-    '''
-    Returns integral for computation of density fluctuation standard deviation
-
-    :param R_ein: Einstein radius in kpc
-    :param rhos: scale radius density of main deflector halo
-    :param rs: scale radius of main deflector halo
-    :param concentration: concentration of main deflector halo
-    '''
-
-    r200 = concentration * rs
-    zmax = np.sqrt(r200 ** 2 - R_ein**2)
-    
-    x = lambda z: np.sqrt(R_ein ** 2 + z ** 2)/rs
-    nfw_density_square = lambda z: rhos**2 / (x(z) * (1+x(z))**2)**2
-
-    return 2 * quad(nfw_density_square, 0, zmax)[0]
 

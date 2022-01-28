@@ -2,6 +2,8 @@ import numpy as np
 from pyHalo.defaults import lenscone_default
 from scipy.interpolate import interp1d
 from pyHalo.Cosmology.cosmology import Cosmology
+from scipy.integrate import quad
+from pyHalo.Halos.lens_cosmo import LensCosmo
 
 def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
                           terminate_at_source=False, source_x=None, source_y=None, evaluate_at_mean=False,
@@ -240,4 +242,48 @@ def sample_clustered(lens_model, kwargs_lens, center_x, center_y, n_samples, max
     coord_x, coord_y = sample_density(projected_mass, n_samples, pixel_scale,
                                                      center_x, center_y, max_rendering_range)
     return coord_x, coord_y
+
+def de_broglie_wavelength(log10_m_uldm,v):
+    '''
+    Returns de Broglie wavelength of the ultra-light axion in kpc.
+
+    :param log10_m_uldm: log(axion mass) in eV
+    :param v: velocity in km/s
+    '''
+    m_axion=10**log10_m_uldm
+    return 1.2*(1e-22/m_axion)*(100/v)
+
+def delta_sigma(z_lens,z_source,m,rein,de_Broglie_wavelength):
+    '''
+    Returns standard deviation of the density fluctuations in projection in convergence units
+
+    :param z_lens,z_source: lens and source redshifts
+    :param m: main deflector halo mass in M_solar
+    :param rein: Einstein radius in kpc
+    :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
+    '''
+    l = LensCosmo(z_lens,z_source)
+    c = l.NFW_concentration(m,z_lens,scatter=False)
+    rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
+    nfw_rho_squared = projected_density_squared(rein, rhos, rs, c)
+    sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
+    return (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5 / sigma_crit
+
+def projected_density_squared(R_ein, rhos, rs, concentration):
+    '''
+    Returns integral for computation of density fluctuation standard deviation
+
+    :param R_ein: Einstein radius in kpc
+    :param rhos: scale radius density of main deflector halo
+    :param rs: scale radius of main deflector halo
+    :param concentration: concentration of main deflector halo
+    '''
+
+    r200 = concentration * rs
+    zmax = np.sqrt(r200 ** 2 - R_ein**2)
+    
+    x = lambda z: np.sqrt(R_ein ** 2 + z ** 2)/rs
+    nfw_density_square = lambda z: rhos**2 / (x(z) * (1+x(z))**2)**2
+
+    return 2 * quad(nfw_density_square, 0, zmax)[0]
 

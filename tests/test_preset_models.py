@@ -51,11 +51,13 @@ class TestPresetModels(object):
 
     def test_ULDM(self):
 
+        log10_m_uldm=-22
+        
         #test without fluctuations
-        realization_ULDM = ULDM(0.5,1.5)
+        realization_ULDM = ULDM(0.5,1.5,log10_m_uldm,flucs=False)
         npt.assert_equal(len(realization_ULDM.rendering_classes), 3)
         uldm = preset_model_from_name('ULDM')
-        realization_ULDM = uldm(0.5, 1.5)
+        realization_ULDM = uldm(0.5, 1.5,log10_m_uldm,flucs=False)
         npt.assert_equal(len(realization_ULDM.rendering_classes), 3)
 
         #test with fluctuations
@@ -63,10 +65,10 @@ class TestPresetModels(object):
         y_images = np.array([ 0.964,  0.649, -0.079, -0.148])
         flucs_args= {'x_images':x_images,'y_images':y_images,'aperture':0.25}
 
-        realization_ULDM = ULDM(0.5,1.5,flucs=True,shape='aperture',flucs_args=flucs_args)
+        realization_ULDM = ULDM(0.5,1.5,log10_m_uldm,flucs=True,shape='aperture',flucs_args=flucs_args)
         npt.assert_equal(len(realization_ULDM.rendering_classes), 3)
         uldm = preset_model_from_name('ULDM')
-        realization_ULDM = uldm(0.5,1.5,flucs=True,shape='aperture',flucs_args=flucs_args)
+        realization_ULDM = uldm(0.5,1.5,log10_m_uldm,flucs=True,shape='aperture',flucs_args=flucs_args)
         npt.assert_equal(len(realization_ULDM.rendering_classes), 3)
 
 if __name__ == '__main__':
