@@ -1,7 +1,7 @@
 from lenstronomy.LensModel.lens_model import LensModel
 import numpy.testing as npt
 import numpy as np
-from pyHalo.utilities import interpolate_ray_paths
+from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma
 from pyHalo.Cosmology.cosmology import Cosmology
 
 
@@ -38,3 +38,16 @@ class TestUtilities(object):
                                                              evaluate_at_mean=True)
         npt.assert_almost_equal(interpx[0](dc[-1]), source_x)
         npt.assert_almost_equal(interpy[0](dc[-1]), source_y)
+
+    def test_uldm_functions(self):
+
+        log10_m_uldm=-22 # log(eV)
+        v=200 # km/s
+        z_lens,z_source=0.5,1.5
+        m=1e13 #M_solar
+        rein=6. #kpc
+
+        lambda_dB = de_broglie_wavelength(log10_m_uldm,v)
+        npt.assert_almost_equal(lambda_dB,0.6)
+        delta_kappa = delta_sigma(z_lens,z_source,m,rein,lambda_dB)
+        npt.assert_almost_equal(delta_kappa,0.034953053308752875)
