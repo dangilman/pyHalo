@@ -7,7 +7,9 @@ presented here show what each keyword argument accepted by pyHalo does.
 from pyHalo.pyhalo import pyHalo
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
+from pyHalo.utilities import de_broglie_wavelength, delta_sigma
 
 def preset_model_from_name(name):
     """
@@ -257,18 +259,21 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
-def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                  mass_definition='ULDM', log10_m_uldm=-22, uldm_plaw=1/3, scale_nfw=False, **kwargs_other):
+                  mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True, 
+                  flucs_shape='aperture',flucs_args={}, einstein_radius=6.,**kwargs_other):
 
     """
-
-    This specifies keywords for a ULDM halo mass function model. Similarly to WDMGeneral, the functional form of the
-    subhalo mass function is the same as the field halo mass function. However, this model differs from WDMGeneral
-    by creating halos which are composite ULDM + NFW density profiles. The ULDM particle mass and core radius-halo mass
-    power law exponent must now be specified. For details regarding ULDM halos, see Schive et al. 2014
-    (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the solition density profile and core radius, respectively.
+    This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
+    as well as density fluctuations in the main deflector halo.
+    
+    Similarly to WDMGeneral, the functional form of the subhalo mass function is the same as the field halo mass function. 
+    However, this model differs from WDMGeneral by creating halos which are composite ULDM + NFW density profiles. 
+    The ULDM particle mass and core radius-halo mass power law exponent must now be specified. For details regarding ULDM halos,
+    see Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the soliton density profile 
+    and core radius, respectively.
 
     The differential halo mass function is described by three parameters, see Schive et al. 2016
     (https://arxiv.org/pdf/1508.04621.pdf):
@@ -315,6 +320,8 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
 
     :param z_lens: the lens redshift
     :param z_source: the source redshift
+    :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
+    :param velocity_scale: velocity for de Broglie wavelength calculation in km/s
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
     :param b_uldm: defines the ULDM mass function (see above)
     :param c_uldm: defines the ULDM mass function (see above)
@@ -328,9 +335,12 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
     :param mass_definition: mass profile model for halos
-    :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
     :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
     :param scale_nfw: boolean specifiying whether or not to scale the NFW component (can improve mass accuracy)
+    :param flucs: Boolean specifying whether or not to include density fluctuations in the main deflector halo
+    :param flucs_shape: String specifying how to place fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
+    :param fluc_args: Keyword arguments for specifying the fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
+    :param einstein_radius: Einstein radius of main deflector halo in kpc
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
@@ -373,8 +383,21 @@ def ULDM(z_lens, z_source, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
     # Using the render method will result a list of realizations
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
     realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
-
     uldm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
+
+    if flucs: # add fluctuations to realization
+        ext = RealizationExtensions(uldm_realization)
+        lambda_dB = de_broglie_wavelength(log10_m_uldm,velocity_scale) # de Broglie wavelength in kpc
+        delta_kappa = delta_sigma(z_lens,z_source,10**log_m_host,einstein_radius,lambda_dB) #amplitude of fluctuations
+
+        if flucs_args=={}:
+            raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
+
+        uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
+                                fluctuation_amplitude_variance=delta_kappa,
+                                fluctuation_size_variance=lambda_dB,
+                                shape=flucs_shape,
+                                args=flucs_args)
 
     return uldm_realization
 

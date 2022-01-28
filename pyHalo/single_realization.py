@@ -8,6 +8,7 @@ from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
 from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWFieldHalo, coreTNFWSubhalo
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
+from pyHalo.Halos.HaloModels.gaussian import Gaussian
 import numpy as np
 from copy import deepcopy
 
@@ -668,6 +669,11 @@ class Realization(object):
                                   lens_cosmo_instance, args, unique_tag)
             else:
                 model = ULDMFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
+        
+        elif mdef == 'GAUSSIAN_KAPPA':
+
+            model = Gaussian(mass, x, y, r3d, mdef, z, is_subhalo,
                                   lens_cosmo_instance, args, unique_tag)
 
 
