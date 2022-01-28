@@ -268,7 +268,7 @@ def delta_sigma(z_lens,z_source,m,rein,de_Broglie_wavelength):
     nfw_rho_squared = projected_density_squared(rein, rhos, rs, c)
     sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
     delta_kappa = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5 / sigma_crit
-    print('DELTA KAPPA:', delta_kappa)
+
     return delta_kappa
 
 def projected_density_squared(R_ein, rhos, rs, concentration):

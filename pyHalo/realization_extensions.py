@@ -497,7 +497,10 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
             amps, sigs, xs, ys= np.append(amps, amps_i), np.append(sigs, sigs_i), np.append(xs, xs_i), np.append(ys, ys_i)
 
     args_fluc=[{'amp': amps[i], 'sigma': sigs[i], 'center_x': xs[i], 'center_y': ys[i]} for i in range(len(amps))]
-    masses=[GaussianKappa().mass_3d_lens(5*arg_fluc['sigma'],arg_fluc['amp'],arg_fluc['sigma']) for arg_fluc in args_fluc] #calculate fluctuation masses
+    # kappa(r) = kappa * exp(-0.5 * r^2/sigma^2)
+    sigma_crit = realization.lens_cosmo.sigmacrit # in units M_sun / arcsec^2
+    masses = 2 * np.pi * sigs ** 2 * amps * sigma_crit / (2*np.pi*sigs**2)
+ 
     fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, None, realization._zlens, None, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
 
     return fluctuations

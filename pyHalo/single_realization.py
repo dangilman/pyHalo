@@ -226,7 +226,7 @@ class Realization(object):
             inds_at_z = np.where(self.redshifts == zi)[0]
             x_at_z = self.x[inds_at_z]
             y_at_z = self.y[inds_at_z]
-            masses_at_z = self.masses[inds_at_z]
+            masses_at_z = np.absolute(self.masses[inds_at_z])
 
             if zi < zmin:
                 continue
@@ -276,7 +276,7 @@ class Realization(object):
 
             keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
-            tempmasses = masses_at_z[keep_inds]
+            tempmasses = np.absolute(masses_at_z[keep_inds])
 
             keep_inds = keep_inds[np.where(tempmasses >= 10 ** minimum_mass_in_window)[0]]
 
