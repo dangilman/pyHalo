@@ -204,7 +204,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross_section,
          kwargs_core_collapse_profile, deflection_angle_function, central_density_function, evolution_timescale_function,
          velocity_dispersion_function, t_sub=10, t_field=100, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
-         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', **kwargs_other):
+         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', **kwargs_other):
 
     """
     This generates realizations of self-interacting dark matter (SIDM) halos, inluding both cored and core-collapsed
@@ -236,6 +236,7 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
     :param kwargs_other: any addition keyword arguments
+    :param mdef: the halo mass definition
     :return: an instance of Realization that contains cored and core collapsed halos
     """
 
@@ -245,7 +246,7 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     kwargs_sidm.update(kwargs_other)
 
     realization_no_core_collapse = CDM(z_lens, z_source, sigma_sub, power_law_index, cone_opening_angle_arcsec, log_mlow,
-                              log_mhigh, LOS_normalization, log_m_host, r_tidal, 'coreTNFW', **kwargs_sidm)
+                              log_mhigh, LOS_normalization, log_m_host, r_tidal, mdef, **kwargs_sidm)
 
     ext = RealizationExtensions(realization_no_core_collapse)
 

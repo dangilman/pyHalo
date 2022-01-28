@@ -5,7 +5,7 @@ import pytest
 class TestPresetModels(object):
 
     def test_CDM(self):
-        
+
         realization_cdm = CDM(0.5, 1.5)
         npt.assert_equal(len(realization_cdm.rendering_classes), 3)
         realization_cdm = CDM(0.5, 1.5, c0=20.0, beta=0.9, zeta=-0.2)

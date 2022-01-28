@@ -129,6 +129,7 @@ class RealizationExtensions(object):
         :return: indexes of halos that are core collapsed
         """
         inds = []
+
         for i, halo in enumerate(self._realization.halos):
 
             if halo.mdef not in ['NFW', 'TNFW', 'coreTNFW']:

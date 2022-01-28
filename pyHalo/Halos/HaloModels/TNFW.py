@@ -30,6 +30,7 @@ class TNFWFieldHalo(Halo):
         """
         Computes the halo concentration (once)
         """
+
         if not hasattr(self, '_c'):
             self._c = self._lens_cosmo.NFW_concentration(self.mass,
                                                                   self.z_eval,
