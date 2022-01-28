@@ -5,6 +5,8 @@ import numpy as np
 class Gaussian(Halo):
     """
     The base class for a Gaussian fluctuation
+
+    # kappa0 = amp / (2 * np.pi * sigma ** 2)
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag):
@@ -15,7 +17,7 @@ class Gaussian(Halo):
 
         super(Gaussian, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
-                                            
+
     @property
     def profile_args(self):
         """
@@ -47,7 +49,7 @@ class Gaussian(Halo):
         kwargs[0]['amp'] = self._optimize_amplitude(self.mass,kwargs) #scale amplitude to enforce mass definition
 
         return kwargs,None
-    
+
     @property
     def z_eval(self):
         """
@@ -61,5 +63,5 @@ class Gaussian(Halo):
         """
         M_trial = GaussianKappa().mass_3d_lens(5*kwargs[0]['sigma'],kwargs[0]['amp'],kwargs[0]['sigma'])
         factor = M/M_trial
-        return factor*kwargs[0]['amp']
 
+        return factor*kwargs[0]['amp']

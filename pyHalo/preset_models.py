@@ -262,17 +262,17 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                  mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True, 
+                  mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
                   flucs_shape='aperture',flucs_args={}, einstein_radius=6.,**kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
     as well as density fluctuations in the main deflector halo.
-    
-    Similarly to WDMGeneral, the functional form of the subhalo mass function is the same as the field halo mass function. 
-    However, this model differs from WDMGeneral by creating halos which are composite ULDM + NFW density profiles. 
+
+    Similarly to WDMGeneral, the functional form of the subhalo mass function is the same as the field halo mass function.
+    However, this model differs from WDMGeneral by creating halos which are composite ULDM + NFW density profiles.
     The ULDM particle mass and core radius-halo mass power law exponent must now be specified. For details regarding ULDM halos,
-    see Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the soliton density profile 
+    see Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf). Equations (3) and (7) give the soliton density profile
     and core radius, respectively.
 
     The differential halo mass function is described by three parameters, see Schive et al. 2016

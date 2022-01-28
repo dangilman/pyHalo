@@ -211,17 +211,18 @@ class RealizationExtensions(object):
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
 
-    def add_ULDM_fluctuations(self,de_Broglie_wavelength,fluctuation_amplitude_variance,fluctuation_size_variance,shape='ring',args={'rmin':0.9,'rmax':1.1}):
+    def add_ULDM_fluctuations(self, de_Broglie_wavelength, fluctuation_amplitude_variance, fluctuation_size_variance,
+                              shape='ring', args={'rmin':0.9,'rmax':1.1}):
 
         """
         This function adds gaussian fluctuations of the given de Broglie wavelength to a realization.
-        
+
         :param de_Broglie_wavelength: de Broglie wavelength of the DM particle in kpc
         :param fluctuation_amplitude_variance: Standard deviation of amplitude distribution in convergence units
         :param fluctuation_size_variance: Mean of fluctuation standard deviation in kpc
         :param rho_mean: typical convergence of a fluctuation at its peak
-        :param shape: keyword argument for fluctuation geometry, can place fluctuations in a 
-        
+        :param shape: keyword argument for fluctuation geometry, can place fluctuations in a
+
             'ring', 'ellipse, or 'aperture' (centered about lensing images)
 
         :param args: properties of the given shape, must match
@@ -236,10 +237,10 @@ class RealizationExtensions(object):
                         Warning: setting num_cut=None for a large number of fluctuations will take a while
         """
 
-        if (shape != 'ring') and (shape != 'ellipse') and (shape != 'aperture'): # check shape keyword 
+        if (shape != 'ring') and (shape != 'ellipse') and (shape != 'aperture'): # check shape keyword
 
             raise Exception('shape must be ring or ellipse or aperture!')
-        
+
         # get number of fluctuations
         n_flucs = _get_number_flucs(self._realization,de_Broglie_wavelength,shape,args)
 
@@ -247,12 +248,17 @@ class RealizationExtensions(object):
         if shape!='aperture':
             if n_flucs==0:
                 return self._realization
-        if shape=='aperture': 
+        if shape=='aperture':
             if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
                 return self._realization
 
         # create fluctuations
-        fluctuations = _get_fluctuation_halos(self._realization,fluctuation_amplitude_variance,fluctuation_size_variance,shape,n_flucs,args)
+        fluctuations = _get_fluctuation_halos(self._realization,
+                                              fluctuation_amplitude_variance,
+                                              fluctuation_size_variance,
+                                              shape,
+                                              n_flucs,
+                                              args)
 
         # realization args
         lens_cosmo = self._realization.lens_cosmo
@@ -392,7 +398,7 @@ class RealizationExtensions(object):
                                                         r_max_arcsec, arcsec_per_pixel)
 
         return realization_with_clustering.join(realization_smooth)
-      
+
 def _get_number_flucs(realization,de_Broglie_wavelength,shape,args):
     """
     This function returns the number of fluctuations to place in the realization.
@@ -414,9 +420,9 @@ def _get_number_flucs(realization,de_Broglie_wavelength,shape,args):
         area_ring = np.pi*(rmax_kpc**2-rmin_kpc**2) # volume of ring
         n_flucs_expected=area_ring/fluc_area # number of fluctuations in ring
         n_flucs = np.random.poisson(n_flucs_expected)
-    
+
     if shape=='ellipse': # fluctuations in a elliptical slice (for visualization purposes)
-        
+
         amin_kpc,bmin_kpc,amax_kpc,bmax_kpc=args['amin'] * to_kpc, args['bmin'] * to_kpc, args['amax'] * to_kpc, args['bmax'] * to_kpc #args in kpc
         area_ellipse=np.pi*(amax_kpc*bmax_kpc - amin_kpc*bmin_kpc) # volume of ellipse
         n_flucs_expected=area_ellipse/fluc_area # number of fluctuations in ellipse
@@ -433,7 +439,7 @@ def _get_number_flucs(realization,de_Broglie_wavelength,shape,args):
 
     return n_flucs
 
-def _get_fluctuation_halos(realization,fluctuation_amplitude_variance,fluctuation_size_variance,shape,n_flucs,args):
+def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuation_size_variance, shape, n_flucs, args):
     """
     This function creates 'n_flucs' Gaussian fluctuations and places them according to 'shape'.
 
@@ -447,14 +453,15 @@ def _get_fluctuation_halos(realization,fluctuation_amplitude_variance,fluctuatio
     :param args: properties of the given shape, see 'add_ULDM_fluctuations'
     """
 
-    D_d = realization.lens_cosmo.cosmo.D_A_z(realization._zlens)
-    arcsec = realization.lens_cosmo.cosmo.arcsec
-    fluc_var_angle = fluctuation_size_variance / D_d / arcsec / 1e3 # gaussian variance in arcsec
+    kpc_per_arcsec = realization.lens_cosmo.cosmo.kpc_proper_per_asec(realization._zlens)
+    fluc_var_angle = fluctuation_size_variance / kpc_per_arcsec # gaussian variance in arcsec
 
-    if shape!='aperture':
+    if shape != 'aperture':
 
         sigs = np.abs(np.random.normal(fluc_var_angle,fluc_var_angle/2,n_flucs)) #random widths
-        amps = np.random.normal(0,fluctuation_amplitude_variance,n_flucs)*np.sqrt(2*np.pi*sigs**2) #random amplitudes
+        kappa0 = np.random.normal(0, fluctuation_amplitude_variance, n_flucs)
+        # kappa0 = amp / (2 * np.pi * sigma ** 2)
+        amps = kappa0 * 2 * np.pi * sigs ** 2
 
     if shape=='ring':
 
@@ -471,23 +478,26 @@ def _get_fluctuation_halos(realization,fluctuation_amplitude_variance,fluctuatio
         xs = aa*np.cos(angles)*np.cos(args['angle'])-bb*np.sin(angles)*np.sin(args['angle']) #random x positions
         ys = aa*np.cos(angles)*np.sin(args['angle'])+bb*np.sin(angles)*np.cos(args['angle']) #random y positions
 
-    if shape=='aperture':
-        
-        amps,sigs,xs,ys=np.array([]),np.array([]),np.array([]),np.array([])
+    if shape == 'aperture':
 
-        for i in range(len(n_flucs)): #loop through each image
+        amps, sigs, xs, ys = np.array([]), np.array([]), np.array([]), np.array([])
 
-            sigs_i = np.abs(np.random.normal(fluc_var_angle,fluc_var_angle/2,n_flucs[i])) #random widths
-            amps_i = np.random.normal(0,fluctuation_amplitude_variance,n_flucs[i])*np.sqrt(2*np.pi*sigs_i**2) #random amplitudes
-            angles_i = np.random.uniform(0,2*np.pi,n_flucs[i])  # random angles
-            radii_i = np.sqrt(np.random.uniform(0,1,n_flucs[i]))*args['aperture'] #random radii
-            xs_i = radii_i*np.cos(angles_i)+args['x_images'][i] #random x positions
-            ys_i = radii_i*np.sin(angles_i)+args['y_images'][i] #random y positions
+        for i in range(0, len(n_flucs)): #loop through each image
 
-            amps,sigs,xs,ys=np.append(amps,amps_i),np.append(sigs,sigs_i),np.append(xs,xs_i),np.append(ys,ys_i)
+            sigs_i = np.random.normal(fluc_var_angle,fluc_var_angle/2,n_flucs[i])
+            sigs_i = np.absolute(sigs_i)
+
+            kappa0 = np.random.normal(0, fluctuation_amplitude_variance, n_flucs[i])
+            amps_i = kappa0 * 2*np.pi*sigs_i**2
+
+            angles_i = np.random.uniform(0, 2*np.pi, n_flucs[i])  # random angles
+            r = np.random.uniform(0, args['aperture'] ** 2, int(n_flucs[i]))
+            xs_i = r ** 0.5 * np.sin(angles_i) + args['x_images'][i]
+            ys_i = r ** 0.5 * np.cos(angles_i) + args['y_images'][i]
+            amps, sigs, xs, ys= np.append(amps, amps_i), np.append(sigs, sigs_i), np.append(xs, xs_i), np.append(ys, ys_i)
 
     args_fluc=[{'amp': amps[i], 'sigma': sigs[i], 'center_x': xs[i], 'center_y': ys[i]} for i in range(len(amps))]
     masses=[GaussianKappa().mass_3d_lens(5*arg_fluc['sigma'],arg_fluc['amp'],arg_fluc['sigma']) for arg_fluc in args_fluc] #calculate fluctuation masses
     fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, None, realization._zlens, None, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
-    
+
     return fluctuations

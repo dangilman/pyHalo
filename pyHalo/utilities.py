@@ -267,7 +267,9 @@ def delta_sigma(z_lens,z_source,m,rein,de_Broglie_wavelength):
     rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
     nfw_rho_squared = projected_density_squared(rein, rhos, rs, c)
     sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
-    return (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5 / sigma_crit
+    delta_kappa = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5 / sigma_crit
+    print('DELTA KAPPA:', delta_kappa)
+    return delta_kappa
 
 def projected_density_squared(R_ein, rhos, rs, concentration):
     '''
@@ -281,7 +283,7 @@ def projected_density_squared(R_ein, rhos, rs, concentration):
 
     r200 = concentration * rs
     zmax = np.sqrt(r200 ** 2 - R_ein**2)
-    
+
     x = lambda z: np.sqrt(R_ein ** 2 + z ** 2)/rs
     nfw_density_square = lambda z: rhos**2 / (x(z) * (1+x(z))**2)**2
 

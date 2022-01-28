@@ -176,7 +176,7 @@ class Realization(object):
                log_mass_allowed_global_front,
                log_mass_allowed_global_back,
                interpolated_x_angle, interpolated_y_angle,
-               zmin=None, zmax=None, aperture_units='ANGLES'):
+               zmin=None, zmax=None, aperture_units='ANGLES', keep_all_profiles=None):
 
         """
 
@@ -222,6 +222,7 @@ class Realization(object):
         for plane_index, zi in enumerate(self.unique_redshifts):
 
             plane_halos, _ = self.halos_at_z(zi)
+
             inds_at_z = np.where(self.redshifts == zi)[0]
             x_at_z = self.x[inds_at_z]
             y_at_z = self.y[inds_at_z]
@@ -247,10 +248,10 @@ class Realization(object):
                 aperture_radius_arcsec = deepcopy(aperture_radius_back)
 
             keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
-
             inds_m_low = np.where(masses_at_z < 10 ** minimum_mass_everywhere)[0]
 
             keep_inds_dr = []
+
             for idx in inds_m_low:
                 for k, (interp_x, interp_y) in enumerate(zip(interpolated_x_angle, interpolated_y_angle)):
 
@@ -276,10 +277,12 @@ class Realization(object):
             keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
 
             tempmasses = masses_at_z[keep_inds]
+
             keep_inds = keep_inds[np.where(tempmasses >= 10 ** minimum_mass_in_window)[0]]
 
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
+
 
         return Realization.from_halos(halos, self.lens_cosmo, self._prof_params,
                                       self.apply_mass_sheet_correction, self.rendering_classes,
@@ -670,7 +673,7 @@ class Realization(object):
             else:
                 model = ULDMFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
                                   lens_cosmo_instance, args, unique_tag)
-        
+
         elif mdef == 'GAUSSIAN_KAPPA':
 
             model = Gaussian(mass, x, y, r3d, mdef, z, is_subhalo,
