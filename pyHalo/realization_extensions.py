@@ -500,7 +500,7 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
     # kappa(r) = kappa * exp(-0.5 * r^2/sigma^2)
     sigma_crit = realization.lens_cosmo.sigmacrit # in units M_sun / arcsec^2
     masses = 2 * np.pi * sigs ** 2 * amps * sigma_crit / (2*np.pi*sigs**2)
- 
-    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, None, realization._zlens, None, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
+
+    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, None, realization._zlens, True, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
 
     return fluctuations

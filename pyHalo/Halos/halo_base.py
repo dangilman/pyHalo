@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 class Halo(ABC):
 
     def __init__(self, mass=None, x=None, y=None, r3d=None, mdef=None, z=None,
-                 sub_flag=None, lens_cosmo_instance=None, args={}, unique_tag=None):
+                 sub_flag=None, lens_cosmo_instance=None, args={}, unique_tag=None, fixed_position=False):
 
         """
         This is the main class for objects rendered in the lens volume. It keeps track of stuff like the position,
@@ -20,6 +20,8 @@ class Halo(ABC):
         :param lens_cosmo_instance: an instance of LensCosmo
         :param args: keyword arguments that include default settings for the halo
         :param unique_tag: a random number with 16 decimal places that uniquely identifies each halo
+        :param fixed_position: determiens whether halos can be moved around when aligning a realization with
+        the rendering volume
         """
 
         self.lens_cosmo = lens_cosmo_instance
@@ -34,6 +36,7 @@ class Halo(ABC):
         self._args = args
         self.unique_tag = unique_tag
         self._rescale_norm = 1.
+        self.fixed_position = fixed_position
 
     def rescale_normalization(self, factor):
         """

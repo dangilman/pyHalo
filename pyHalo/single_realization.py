@@ -249,10 +249,10 @@ class Realization(object):
 
             keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
             inds_m_low = np.where(masses_at_z < 10 ** minimum_mass_everywhere)[0]
-
             keep_inds_dr = []
 
             for idx in inds_m_low:
+
                 for k, (interp_x, interp_y) in enumerate(zip(interpolated_x_angle, interpolated_y_angle)):
 
                     dx = x_at_z[idx] - interp_x(comoving_distance_z)
@@ -370,6 +370,10 @@ class Realization(object):
         halos = []
 
         for halo in self.halos:
+
+            if halo.fixed_position:
+                halos.append(halo)
+                continue
 
             comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(halo.z)
 

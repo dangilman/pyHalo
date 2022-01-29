@@ -16,7 +16,8 @@ class Gaussian(Halo):
         self._lens_cosmo = lens_cosmo_instance
 
         super(Gaussian, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                            lens_cosmo_instance, args, unique_tag)
+                                            lens_cosmo_instance, args, unique_tag,
+                                       fixed_position=True)
 
     @property
     def profile_args(self):
