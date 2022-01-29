@@ -18,7 +18,6 @@ class TestGaussianHalo(object):
         self.r3d = r3d
         mdef = 'GAUSSIAN_KAPPA'
         self.z = z
-        sub_flag = True
 
         self.H0 = 70
         self.omega_baryon = 0.03
@@ -57,19 +56,6 @@ class TestGaussianHalo(object):
         lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
             lensing_quantities(add_mass_sheet_correction=False)
         npt.assert_string_equal(lens_model_list[0], 'GAUSSIAN_KAPPA')
-
-    def test_mass(self):
-
-        'Check that mass definition of 5sigma'
-
-        mass = 1
-        profile_args = {'amp':0.1,'sigma':0.1,'center_x':0,'center_y':0}
-        single_halo = SingleHalo(mass, 0.5, 0.5, 'GAUSSIAN_KAPPA', 0.5, 0.5, 1.5, None, True, profile_args, None)
-        lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
-            lensing_quantities(add_mass_sheet_correction=False)
-
-        M_trial=GaussianKappa().mass_3d_lens(5*kwargs_lens[0]['sigma'],kwargs_lens[0]['amp'],kwargs_lens[0]['sigma'])
-        npt.assert_almost_equal(np.abs(mass-M_trial),0,decimal=5)
 
 if __name__ == '__main__':
    pytest.main()
