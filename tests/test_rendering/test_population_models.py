@@ -231,6 +231,25 @@ class TestPopulationModel(object):
         npt.assert_equal(ml, 7.5)
         npt.assert_equal(mh, 9.5)
 
+    def test_redshift_dependent_normalization(self):
+
+        def normalization_function(z):
+
+            if z > 0.5:
+                return 1.
+            else:
+                return 0.
+
+        self.kwargs_cdm['LOS_normalization'] = normalization_function
+        pop_model = HaloPopulation(['LINE_OF_SIGHT'], self.kwargs_cdm, self.lens_cosmo, self.geometry,
+                                              self.halo_mass_function, self.lens_plane_redshifts,
+                                              self.delta_zs)
+        norm = pop_model.rendering_classes[0]._redshift_dependent_normalization(1.0, normalization_function)
+        npt.assert_equal(norm, 1.0)
+        norm = pop_model.rendering_classes[0]._redshift_dependent_normalization(0.2, normalization_function)
+        npt.assert_equal(norm, 0.0)
+
+
 if __name__ == '__main__':
 
     pytest.main()

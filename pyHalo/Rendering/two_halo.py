@@ -105,11 +105,12 @@ class TwoHaloContribution(RenderingClassBase):
         if z != self.lens_cosmo.z_lens:
             raise Exception('this class must be evaluated at the main deflector redshift')
 
+        los_norm = self._redshift_dependent_normalization(z, self._rendering_kwargs['LOS_normalization'])
         volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z)
         plaw_index = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
         norm_per_unit_volume = self.halo_mass_function.norm_at_z_density(z, plaw_index,
                                                                          self._rendering_kwargs['m_pivot'])
-        norm_per_unit_volume *= self._rendering_kwargs['LOS_normalization']
+        norm_per_unit_volume *= los_norm
         reference_norm = norm_per_unit_volume * volume_element_comoving
 
         rmax = self.lens_cosmo.cosmo.D_C_transverse(z + delta_z) - self.lens_cosmo.cosmo.D_C_transverse(z)

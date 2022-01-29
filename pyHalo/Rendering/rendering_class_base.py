@@ -24,6 +24,20 @@ class RenderingClassBase(ABC):
     """
 
     @staticmethod
+    def _redshift_dependent_normalization(z, normalization):
+        """
+        Evaluates a possibly redshift-dependent line-of-sight mass function normalization
+        :param z: redshift
+        :param normalization: the normalization passed to create the realization
+        :return:
+        """
+        if callable(normalization):
+            norm = normalization(z)
+        else:
+            norm = normalization
+        return norm
+
+    @staticmethod
     def _redshift_dependent_mass_range(z, log_mlow_object, log_mhigh_object):
         """
         Evaluates a possibly redshift-dependent minimum/maximum halo mass

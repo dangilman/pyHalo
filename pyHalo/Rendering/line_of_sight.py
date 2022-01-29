@@ -174,10 +174,11 @@ class LineOfSightNoSheet(RenderingClassBase):
 
     def _normalization_slope(self, z, delta_z):
 
+        los_norm = self._redshift_dependent_normalization(z, self._rendering_kwargs['LOS_normalization'])
         volume_element_comoving = self.geometry.volume_element_comoving(z, delta_z)
         plaw_index = self.halo_mass_function.plaw_index_z(z) + self._rendering_kwargs['delta_power_law_index']
         norm_dv = self.halo_mass_function.norm_at_z_density(z, plaw_index, self._rendering_kwargs['m_pivot'])
-        norm = self._rendering_kwargs['LOS_normalization'] * norm_dv * volume_element_comoving
+        norm = los_norm * norm_dv * volume_element_comoving
         return norm, plaw_index
 
     @staticmethod
