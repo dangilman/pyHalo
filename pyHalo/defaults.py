@@ -11,13 +11,23 @@ class CosmoDefaults(object):
         self.default_mass_function = default_mass_function
 
         # default from WMAP9
-        self.H0 = 69.7
-        self.Ob0 = 0.0464
-        self.omega_DM = 0.235
+        # self.H0 = 69.7
+        # self.Ob0 = 0.0464
+        # self.omega_DM = 0.235
+        # self.Om0 = self.Ob0 + self.omega_DM
+        # self.sigma8 = 0.82
+        # self.curvature = 'flat'
+        # self.ns = 0.9608
+        # self.power_law = False
+
+        # default from PLANCK2018
+        self.H0 = 67.5
+        self.Ob0 = 0.049
+        self.omega_DM = 0.26
         self.Om0 = self.Ob0 + self.omega_DM
-        self.sigma8 = 0.82
+        self.sigma8 = 0.81
         self.curvature = 'flat'
-        self.ns = 0.9608
+        self.ns = 0.965
         self.power_law = False
 
         self._cosmo_param_dictionary = {'H0': self.H0, 'Ob0': self.Ob0, 'Om0': self.Om0,
@@ -238,8 +248,3 @@ def set_default_kwargs(profile_params, zsource):
 
 
     return profile_params
-
-
-
-
-

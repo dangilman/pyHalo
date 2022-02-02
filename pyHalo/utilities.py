@@ -253,7 +253,7 @@ def de_broglie_wavelength(log10_m_uldm,v):
     m_axion=10**log10_m_uldm
     return 1.2*(1e-22/m_axion)*(100/v)
 
-def delta_sigma(z_lens,z_source,m,rein,de_Broglie_wavelength):
+def delta_sigma(z_lens, z_source, m, rein, de_Broglie_wavelength):
     '''
     Returns standard deviation of the density fluctuations in projection in convergence units
 

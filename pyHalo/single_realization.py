@@ -176,7 +176,7 @@ class Realization(object):
                log_mass_allowed_global_front,
                log_mass_allowed_global_back,
                interpolated_x_angle, interpolated_y_angle,
-               zmin=None, zmax=None, aperture_units='ANGLES', keep_all_profiles=None):
+               zmin=None, zmax=None, aperture_units='ANGLES'):
 
         """
 
