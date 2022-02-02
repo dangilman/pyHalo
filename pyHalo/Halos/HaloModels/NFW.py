@@ -20,6 +20,14 @@ class NFWFieldHalo(Halo):
                                             lens_cosmo_instance, args, unique_tag)
 
     @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
+
+        return self.z
+
+    @property
     def lenstronomy_ID(self):
         """
         See documentation in base class (Halos/halo_base.py)
@@ -47,21 +55,30 @@ class NFWFieldHalo(Halo):
         return kwargs, None
 
     @property
+    def c(self):
+        """
+        Computes the halo concentration (once)
+        """
+
+        if not hasattr(self, '_c'):
+            self._c = self._lens_cosmo.NFW_concentration(self.mass,
+                                                         self.z_eval,
+                                                         self._args['mc_model'],
+                                                         self._args['mc_mdef'],
+                                                         self._args['log_mc'],
+                                                         self._args['c_scatter'],
+                                                         self._args['c_scatter_dex'],
+                                                         self._args['kwargs_suppression'],
+                                                         self._args['suppression_model'])
+        return self._c
+
+    @property
     def profile_args(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_profile_args'):
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  self.z,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
-
+            concentration = self.c
             self._profile_args = (concentration)
 
         return self._profile_args
@@ -75,28 +92,15 @@ class NFWSubhhalo(NFWFieldHalo):
     """
 
     @property
-    def profile_args(self):
+    def z_eval(self):
         """
-        See documentation in base class (Halos/halo_base.py)
+        Returns the redshift at which to evalate the concentration-mass relation
         """
+        if not hasattr(self, '_zeval'):
 
-        if not hasattr(self, '_profile_args'):
             if self._args['evaluate_mc_at_zlens']:
-                z_eval = self.z
+                self._zeval = self.z
             else:
-                z_eval = self.z_infall
+                self._zeval = self.z_infall
 
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  z_eval,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
-
-            self._profile_args = (concentration)
-
-        return self._profile_args
-
+        return self._zeval

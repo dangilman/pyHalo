@@ -81,7 +81,7 @@ class TestRenderedPopulations(object):
         self.delta_zs = delta_zs
         self.halo_mass_function = LensingMassFunction(cosmo, zlens, zsource, kwargs_cdm['log_mlow'], kwargs_cdm['log_mhigh'],
                                                       kwargs_cdm['cone_opening_angle'], m_pivot=kwargs_cdm['m_pivot'],
-                                                      geometry_type='DOUBLE_CONE')
+                                                      geometry_type='DOUBLE_CONE', use_lookup_table=True)
         self.geometry = Geometry(cosmo, zlens, zsource, kwargs_cdm['cone_opening_angle'], 'DOUBLE_CONE')
         self.lens_cosmo = LensCosmo(zlens, zsource, cosmo)
 

@@ -10,7 +10,7 @@ class CosmoDefaults(object):
 
         self.default_mass_function = default_mass_function
 
-        # default from WMAP9
+        # # default from WMAP9
         # self.H0 = 69.7
         # self.Ob0 = 0.0464
         # self.omega_DM = 0.235

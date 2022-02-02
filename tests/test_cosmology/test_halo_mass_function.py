@@ -51,7 +51,7 @@ class TestLensingMassFunction(object):
         dr = self.cosmo.D_C_transverse(z + dz) - self.cosmo.D_C_transverse(z)
         dv = A * dr
         rho_2 = dv * rho_dv
-        npt.assert_almost_equal(rho_2/rho, 1, 2)
+        npt.assert_almost_equal(rho_2/rho, 1.0, 3)
 
     def test_power_law_index(self):
 

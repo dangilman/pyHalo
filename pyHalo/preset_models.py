@@ -7,7 +7,6 @@ presented here show what each keyword argument accepted by pyHalo does.
 from pyHalo.pyhalo import pyHalo
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
 from pyHalo.utilities import de_broglie_wavelength, delta_sigma
 

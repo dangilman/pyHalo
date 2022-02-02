@@ -786,6 +786,3 @@ class SingleHalo(Realization):
         super(SingleHalo, self).__init__([halo_mass], [x], [y],
                                          [r3d], [mdef], [z], [subhalo_flag], lens_cosmo,
                                          kwargs_realization=kwargs_halo, mass_sheet_correction=False)
-
-
-

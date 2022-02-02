@@ -14,7 +14,7 @@ class LensingMassFunction(object):
     """
 
     def __init__(self, cosmology, zlens, zsource, mlow=None, mhigh=None, cone_opening_angle=None,
-                 m_pivot=10**8, mass_function_model='sheth99', use_lookup_table=False,
+                 m_pivot=10**8, mass_function_model='sheth99', use_lookup_table=True,
                  geometry_type=None):
 
         """
@@ -302,3 +302,4 @@ def write_lookup_table():
 
     with open(fname, 'a') as f:
         f.write('delta_z = '+str(np.round(l._delta_z,2))+'\n\n')
+
