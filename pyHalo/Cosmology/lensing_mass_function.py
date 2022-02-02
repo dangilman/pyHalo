@@ -14,9 +14,8 @@ class LensingMassFunction(object):
     """
 
     def __init__(self, cosmology, zlens, zsource, mlow=None, mhigh=None, cone_opening_angle=None,
-                 m_pivot=10**8, mass_function_model='sheth99', use_lookup_table=True,
+                 m_pivot=10**8, mass_function_model='sheth99', use_lookup_table=False,
                  geometry_type=None):
-
 
         """
 
