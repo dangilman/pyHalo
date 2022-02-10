@@ -97,21 +97,22 @@ class TestRealizationExtensions(object):
         wavelength=0.6 #kpc, correpsonds to m=10^-22 eV for ULDM
         amp_var = 0.04 #in convergence units
         fluc_var = wavelength
+        n_cut = 1e4
 
         # apeture
         x_images = np.array([-0.347, -0.734, -1.096, 0.207])
         y_images = np.array([ 0.964,  0.649, -0.079, -0.148])
         args_aperture = {'x_images':x_images,'y_images':y_images,'aperture':0.25}
         
-        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='aperture',args=args_aperture)
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='aperture',args=args_aperture, n_cut=n_cut)
 
         #ring
         args_ring = {'rmin':0.95,'rmax':1.05}
-        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ring',args=args_ring)
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ring',args=args_ring, n_cut=n_cut)
 
         #ellipse
         args_ellipse = {'amin':0.8,'amax':1.7,'bmin':0.4,'bmax':1.2,'angle':np.pi/4}
-        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ellipse',args=args_ellipse)
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ellipse',args=args_ellipse, n_cut=n_cut)
 
     def test_add_pbh(self):
 

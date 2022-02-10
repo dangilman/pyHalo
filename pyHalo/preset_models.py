@@ -262,7 +262,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mh
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture',flucs_args={}, einstein_radius=6.,**kwargs_other):
+                  flucs_shape='aperture',flucs_args={}, einstein_radius=6., n_cut=5e4, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -340,6 +340,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mh
     :param flucs_shape: String specifying how to place fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
     :param fluc_args: Keyword arguments for specifying the fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
     :param einstein_radius: Einstein radius of main deflector halo in kpc
+    :param n_cut: Number of fluctuations above which to start cancelling
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
@@ -396,7 +397,8 @@ def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mh
                                 fluctuation_amplitude_variance=delta_kappa,
                                 fluctuation_size_variance=lambda_dB,
                                 shape=flucs_shape,
-                                args=flucs_args)
+                                args=flucs_args,
+                                n_cut=n_cut)
 
     return uldm_realization
 
