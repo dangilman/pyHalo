@@ -242,15 +242,14 @@ class RealizationExtensions(object):
 
         # get number of fluctuations
         n_flucs = _get_number_flucs(self._realization,de_Broglie_wavelength,shape,args)
-        
-        print()
+
         # if zero fluctuations, return original realization
         if shape!='aperture':
             if n_flucs==0:
                 return self._realization
             if n_flucs > n_cut: #supress amplitudes by # of cancellations if above n_cut
                 fluctuation_amplitude_variance /= np.sqrt(n_flucs/n_cut) 
-                n_flucs = n_cut
+                n_flucs = int(n_cut)
         if shape=='aperture':
             if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
                 return self._realization
