@@ -212,7 +212,7 @@ class RealizationExtensions(object):
                                       self._realization.geometry)
 
     def add_ULDM_fluctuations(self, de_Broglie_wavelength, fluctuation_amplitude_variance, fluctuation_size_variance,
-                              shape='ring', args={'rmin':0.9,'rmax':1.1}):
+                              n_cut, shape='ring', args={'rmin':0.9,'rmax':1.1}):
 
         """
         This function adds gaussian fluctuations of the given de Broglie wavelength to a realization.
@@ -233,8 +233,7 @@ class RealizationExtensions(object):
 
             Note that for 'ellipse' the 'angle' parameter is the angle in radians at which to orient the ellipse relative to the positive x-axis.
 
-        :param num_cut: integer number of fluctuations above which to start Central Limit Theorem averaging approximation, if None no approximation
-                        Warning: setting num_cut=None for a large number of fluctuations will take a while
+        :param num_cut: integer number of fluctuations above which to start cancelling fluctuations
         """
 
         if (shape != 'ring') and (shape != 'ellipse') and (shape != 'aperture'): # check shape keyword
@@ -243,14 +242,21 @@ class RealizationExtensions(object):
 
         # get number of fluctuations
         n_flucs = _get_number_flucs(self._realization,de_Broglie_wavelength,shape,args)
-
+        
+        print()
         # if zero fluctuations, return original realization
         if shape!='aperture':
             if n_flucs==0:
                 return self._realization
+            if n_flucs > n_cut: #supress amplitudes by # of cancellations if above n_cut
+                fluctuation_amplitude_variance /= np.sqrt(n_flucs/n_cut) 
+                n_flucs = n_cut
         if shape=='aperture':
             if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
                 return self._realization
+            if np.mean(n_flucs) > n_cut: #supress amplitudes by # of cancellations if average above n_cut
+                fluctuation_amplitude_variance /= np.sqrt(np.mean(n_flucs)/n_cut) 
+                n_flucs = np.array([int(n_cut)]*4)
 
         # create fluctuations
         fluctuations = _get_fluctuation_halos(self._realization,
