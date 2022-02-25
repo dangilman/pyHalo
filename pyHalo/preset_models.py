@@ -8,7 +8,7 @@ from pyHalo.pyhalo import pyHalo
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy as np
-from pyHalo.utilities import de_broglie_wavelength, delta_sigma
+from pyHalo.utilities import de_broglie_wavelength
 
 def preset_model_from_name(name):
     """
@@ -258,11 +258,11 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
-def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture',flucs_args={}, einstein_radius=6., n_cut=5e4, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, einstein_radius=6., n_cut=5e4, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -320,6 +320,8 @@ def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mh
     :param z_lens: the lens redshift
     :param z_source: the source redshift
     :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
+    :param log10_fluc_amplitude: sets the amplitude of the fluctuations in the host dark matter halo.
+    fluctuations are generated from a Guassian distriubtion with mean 0 and variance 10^log10_fluc_amplitude
     :param velocity_scale: velocity for de Broglie wavelength calculation in km/s
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
     :param b_uldm: defines the ULDM mass function (see above)
@@ -388,13 +390,12 @@ def ULDM(z_lens, z_source, log10_m_uldm, velocity_scale=200, log_mlow=6., log_mh
     if flucs: # add fluctuations to realization
         ext = RealizationExtensions(uldm_realization)
         lambda_dB = de_broglie_wavelength(log10_m_uldm,velocity_scale) # de Broglie wavelength in kpc
-        delta_kappa = delta_sigma(z_lens,z_source,10**log_m_host,einstein_radius,lambda_dB) #amplitude of fluctuations
 
         if flucs_args=={}:
             raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
 
         uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
-                                fluctuation_amplitude_variance=delta_kappa,
+                                fluctuation_amplitude_variance=10**log10_fluc_amplitude,
                                 fluctuation_size_variance=lambda_dB,
                                 shape=flucs_shape,
                                 args=flucs_args,

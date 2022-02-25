@@ -271,9 +271,36 @@ def delta_sigma(z_lens, z_source, m, rein, de_Broglie_wavelength):
 
     return delta_kappa
 
+def delta_sigma_kawai(r, dm_fraction, lambda_dB, halo_mass, halo_redshift, mc_scatter=True):
+    """
+    Returns standard deviation of the density fluctuations in projection in convergence units
+    using Equation 30 in Kawai et al. (2021)
+    :param r: the radius at which to evaluate the fluctuation amplitude [units kpc]
+    :param f: the fraction of projected mass in dark matter at the radius r
+    :param lambda_dB: de Broglie wavelength in kpc
+    :param rhos: the density normalization of NFW proifle
+    :param rs: the scale radius of NFW profile
+    :param concentration:
+    :param mc_scatter:
+    :return:
+    """
+
+    l = LensCosmo()
+    c = l.NFW_concentration(halo_mass, halo_redshift, scatter=mc_scatter)
+    rhos, rs, _ = l.NFW_params_physical(halo_mass, c, halo_redshift)
+    halo_size = effective_halo_size(r, rhos, rs, c)
+
+    relative_length_scale = lambda_dB / halo_size
+    prefactor = 16 * np.pi ** 2 / 3 # extra 4pi from
+    # integrating over the exponential
+    delta_kappa_square = dm_fraction ** 2 * prefactor * relative_length_scale
+    return delta_kappa_square ** 0.5
+
 def projected_density_squared(R_ein, rhos, rs, concentration):
+
     '''
-    Returns integral for computation of density fluctuation standard deviation
+    Returns the integral along the line of sight of the square of the NFW profile
+    i.e. integral rho_nfw(z)^2 dz
 
     :param R_ein: Einstein radius in kpc
     :param rhos: scale radius density of main deflector halo
@@ -289,3 +316,44 @@ def projected_density_squared(R_ein, rhos, rs, concentration):
 
     return 2 * quad(nfw_density_square, 0, zmax)[0]
 
+def projected_squared_density(R_ein, rhos, rs, concentration):
+    '''
+    Returns integral along the line of sight of the NFW profile squared
+    i.e. (integral rho_nfw(z) dz)^2
+
+    :param R_ein: Einstein radius in kpc
+    :param rhos: scale radius density of main deflector halo
+    :param rs: scale radius of main deflector halo
+    :param concentration: concentration of main deflector halo
+    '''
+
+    r200 = concentration * rs
+    zmax = np.sqrt(r200 ** 2 - R_ein ** 2)
+
+    x = lambda z: np.sqrt(R_ein ** 2 + z ** 2) / rs
+    nfw_density = lambda z: rhos / (x(z) * (1 + x(z)) ** 2)
+    integral = 2 * quad(nfw_density, 0, zmax)[0]
+    return integral ** 2
+
+def effective_halo_size(r, rhos, rs, concentration):
+    """
+    Computes the effective halo size as defined in Equation 17 of Kawai et al. (2021)
+    :param r: the radius at which to evaluate the size
+    [can be any unit of length or an angle, as long the definition is
+    consistent also between rhos, and rs]
+    :param rhos: the density parameter the host NFW halo [units M_sun / length^3]
+    :param rs: the scale radius of host halo [in the same units as r]
+    :param concentration: host halo concentration
+    :return: the effective halo size in the same units as r
+    """
+    denom = projected_density_squared(r, rhos, rs, concentration)
+    num = projected_squared_density(r, rhos, rs, concentration)
+    return num/denom
+#
+# rein = 10.0
+# mhalo = 10**13
+# z = 0.5
+# mphi = 1e-21
+# dbw = 1.2 * (1e-22 / mphi) ** 0.5
+# ds = delta_sigma_kawai(rein, 0.5, dbw, mhalo, z, mc_scatter=False)
+# print(ds)
