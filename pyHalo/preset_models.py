@@ -393,9 +393,9 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
 
         if flucs_args=={}:
             raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
-        
+
         fluctuation_amplitude_norm = 10 ** log10_fluc_amplitude
-        fluctuation_amplitude = fluctuation_amplitude_norm * (10**log10_m_uldm / 1e-22) ** 0.5
+        fluctuation_amplitude = fluctuation_amplitude_norm * (10**log10_m_uldm / 1e-22) ** -0.5
         uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
                                 fluctuation_amplitude_variance=fluctuation_amplitude,
                                 fluctuation_size_variance=lambda_dB,
