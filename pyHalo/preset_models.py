@@ -389,13 +389,15 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
 
     if flucs: # add fluctuations to realization
         ext = RealizationExtensions(uldm_realization)
-        lambda_dB = de_broglie_wavelength(log10_m_uldm,velocity_scale) # de Broglie wavelength in kpc
+        lambda_dB = de_broglie_wavelength(log10_m_uldm, velocity_scale) # de Broglie wavelength in kpc
 
         if flucs_args=={}:
             raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
-
+        
+        fluctuation_amplitude_norm = 10 ** log10_fluc_amplitude
+        fluctuation_amplitude = fluctuation_amplitude_norm * (10**log10_m_uldm / 1e-22) ** 0.5
         uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
-                                fluctuation_amplitude_variance=10**log10_fluc_amplitude,
+                                fluctuation_amplitude_variance=fluctuation_amplitude,
                                 fluctuation_size_variance=lambda_dB,
                                 shape=flucs_shape,
                                 args=flucs_args,

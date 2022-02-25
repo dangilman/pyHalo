@@ -349,11 +349,3 @@ def effective_halo_size(r, rhos, rs, concentration):
     denom = projected_density_squared(r, rhos, rs, concentration)
     num = projected_squared_density(r, rhos, rs, concentration)
     return num/denom
-#
-# rein = 10.0
-# mhalo = 10**13
-# z = 0.5
-# mphi = 1e-21
-# dbw = 1.2 * (1e-22 / mphi) ** 0.5
-# ds = delta_sigma_kawai(rein, 0.5, dbw, mhalo, z, mc_scatter=False)
-# print(ds)
