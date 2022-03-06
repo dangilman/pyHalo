@@ -463,7 +463,7 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
 
     if shape != 'aperture':
 
-        sigs = np.abs(np.random.normal(fluc_var_angle,fluc_var_angle/2,n_flucs)) #random widths
+        sigs = np.abs(np.random.normal(1.3*fluc_var_angle,fluc_var_angle/20,n_flucs)) #random widths
         kappa0 = np.random.normal(0, fluctuation_amplitude_variance, n_flucs)
         # kappa0 = amp / (2 * np.pi * sigma ** 2)
         amps = kappa0 * 2 * np.pi * sigs ** 2
@@ -489,7 +489,7 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
 
         for i in range(0, len(n_flucs)): #loop through each image
 
-            sigs_i = np.random.normal(fluc_var_angle,fluc_var_angle/2,n_flucs[i])
+            sigs_i = np.random.normal(1.3*fluc_var_angle,fluc_var_angle/20,n_flucs[i])
             sigs_i = np.absolute(sigs_i)
 
             kappa0 = np.random.normal(0, fluctuation_amplitude_variance, n_flucs[i])
