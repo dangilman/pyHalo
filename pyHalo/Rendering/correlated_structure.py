@@ -58,7 +58,11 @@ class CorrelatedStructure(RenderingClassBase):
         rescale_factor = 1.
 
         for i, zi in enumerate(plane_redshifts[0:-1]):
-            delta_z.append(plane_redshifts[i+1] - plane_redshifts[i])
+            delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
+        delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
+
+        for i, zi in enumerate(plane_redshifts[0:-1]):
+            delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
         delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
 
         for x_image_interp, y_image_interp in zip(x_center_interp_list, y_center_interp_list):

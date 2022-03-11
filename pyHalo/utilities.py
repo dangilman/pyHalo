@@ -5,6 +5,7 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
 
+
 def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
                           terminate_at_source=False, source_x=None, source_y=None, evaluate_at_mean=False,
                           cosmo=None):
@@ -253,7 +254,7 @@ def de_broglie_wavelength(log10_m_uldm,v):
     m_axion=10**log10_m_uldm
     return 1.2*(1e-22/m_axion)*(100/v)
 
-def delta_sigma(z_lens, z_source, m, rein, de_Broglie_wavelength):
+def delta_kappa(z_lens, z_source, m, rein, de_Broglie_wavelength):
     '''
     Returns standard deviation of the density fluctuations in projection in convergence units
 
@@ -263,13 +264,45 @@ def delta_sigma(z_lens, z_source, m, rein, de_Broglie_wavelength):
     :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
     '''
     l = LensCosmo(z_lens,z_source)
-    c = l.NFW_concentration(m,z_lens,scatter=False)
-    rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
-    nfw_rho_squared = projected_density_squared(rein, rhos, rs, c)
     sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
-    delta_kappa = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5 / sigma_crit
+    ds = delta_sigma(m, z_lens, rein, de_Broglie_wavelength)
+    delta_kappa = ds / sigma_crit
 
     return delta_kappa
+
+def delta_sigmaNFW(z_lens, m, rein, de_Broglie_wavelength):
+    '''
+    Returns standard deviation of the density fluctuations in projection normalized by the projected
+    density of the host halo
+
+    :param z_lens,z_source: lens and source redshifts
+    :param m: main deflector halo mass in M_solar
+    :param rein: Einstein radius in kpc
+    :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
+    '''
+
+    l = LensCosmo(None, None)
+    c = l.NFW_concentration(m, z_lens, scatter=False)
+    rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
+    kappa_host = projected_squared_density(rein, rhos, rs, c) ** 0.5
+    ds = delta_sigma(m, z_lens, rein, de_Broglie_wavelength)
+    return ds/kappa_host
+
+def delta_sigma(m, z, rein, de_Broglie_wavelength):
+    """
+    Returns the mean ULDM fluctuation ampltiude of the host dark matter halo in units M_sun/kpc^2
+    :param m:
+    :param z:
+    :param rein:
+    :param de_Broglie_wavelength:
+    :return:
+    """
+    l = LensCosmo(None, None)
+    c = l.NFW_concentration(m, z, scatter=False)
+    rhos, rs, _ = l.NFW_params_physical(m, c, z)
+    nfw_rho_squared = projected_density_squared(rein, rhos, rs, c)
+    delta_sigma = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5
+    return delta_sigma
 
 def delta_sigma_kawai(r, dm_fraction, lambda_dB, halo_mass, halo_redshift, mc_scatter=True):
     """

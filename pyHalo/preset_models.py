@@ -131,11 +131,11 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 
     n_wdm / n_cdm = (1 + (a_wdm * m_c / m)^b_wdm) ^ c_wdm
 
-    where m_c = 10**log_mc and n_wdm and n_cdm are differential halo mass functions. Lovell 2020 find different fits
+    where m_c = 10**log_mc is the half-mode mass, and n_wdm and n_cdm are differential halo mass functions. Lovell 2020 find different fits
     to subhalos and field halos. For field halos, (a_wdm, b_wdm, c_wdm) = (2.3, 0.8, -1) while for subhalos
-    (a_wdm, b_wdm, c_wdm) = (4.2, 2.5, -0.2).
+    (a_wdm_sub, b_wdm_sub, c_wdm_sub) = (4.2, 2.5, -0.2).
 
-    WDM models also have reduced concentrations relative to CDM halos because WDM structure collapse later when the Universe
+    WDM models also have reduced concentrations relative to CDM halos because WDM structure collapse later, when the Universe
     is less dense. The default suppresion to halo concentrations is implemented using the fitting function (Eqn. 17) presented by
     Bose et al. (2016) (https://arxiv.org/pdf/1507.01998.pdf), where the concentration relative to CDM is given by
 
@@ -156,17 +156,31 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     :param a_wdm_sub: defines the WDM subhalo mass function (see above)
     :param b_wdm_sub: defines the WDM subhalo mass function (see above)
     :param c_wdm_sub: defines the WDM subhalo mass function (see above)
-    :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
+    :param cone_opening_angle: the opening angle in arcsec of the volume where halos are added
     :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
     :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
     :param log_m_host: log10 host halo mass in M_sun
     :param power_law_index: logarithmic slope of the subhalo mass function
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
-    :param kwargs_suppression_field: keyword arguments for the suppression function for field halos
-    :param suppression_model_field: the type of suppression, either 'polynomial' or 'hyperbolic'
+
+    ###################################################################################################
+    The following keywords define how the WDM mass-concentration relation is suppressed relative to CDM
+
+    :param kwargs_suppression_field: keyword arguments for the suppression function for field halo concentrations
+    :param suppression_model_field: the type of suppression, either 'polynomial' or 'hyperbolic'. Default form is polynomial
     :param kwargs_suppression_sub: keyword arguments for the suppression function for subhalos
     :param suppression_model_sub: the type of suppression, either 'polynomial' or 'hyperbolic'
+
+    The form of the polynomial suppression function, f, is defined in terms of x = half-mode-mass / mass:
+
+    f = (1 + a * x ^ b_wdm) ^ c_wdm
+
+    The form of the hyperbolic suppression function, f, is (see functions in Halos.HaloModels.concentration)
+
+    f = 1/2 [1 + tanh( (x - a_wdm)/2b_wdm ) ) ]
+    ###################################################################################################
+
     :param kwargs_other: any other optional keyword arguments
 
     :return: a realization of WDM halos
@@ -185,6 +199,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
                            'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
+
     if suppression_model_sub is not None:
         kwargs_model_subhalos.update({'suppression_model': suppression_model_sub})
         kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_sub})
@@ -201,6 +216,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     wdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 
     return wdm_realization
+
 
 def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross_section,
          kwargs_core_collapse_profile, deflection_angle_function, central_density_function, evolution_timescale_function,

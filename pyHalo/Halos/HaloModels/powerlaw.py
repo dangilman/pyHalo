@@ -18,6 +18,39 @@ class PowerLawSubhalo(Halo):
                                               lens_cosmo_instance, args, unique_tag)
 
     @property
+    def params_physical(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+
+        if not hasattr(self, '_params_physical'):
+            (concentration, gamma, x_core_halo) = self.profile_args
+            rhos, rs, _ = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+
+            if 'x_match' in self._args.keys():
+                x_match = self._args['x_match']
+            else:
+                # r_vmax = 2.16 * rs
+                x_match = 2.16
+
+            r_match_arcsec = x_match * rs / kpc_per_arcsec
+            fx = np.log(1 + x_match) - x_match / (1 + x_match)
+            m = 4 * np.pi * rs ** 3 * rhos * fx
+            r_core_arcsec = x_core_halo * r_match_arcsec / x_match
+
+            sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+            sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
+
+            rho0 = m / self._prof.mass_3d(r_match_arcsec, sigma_crit_arcsec, r_core_arcsec, gamma)
+            # units 1 / arcsec
+
+            rho0 *= sigma_crit_arcsec * kpc_per_arcsec ** -3
+            self._params_physical = {'rho0': rho0, 'r_core': x_core_halo * rs}
+
+        return self._params_physical
+
+    @property
     def lenstronomy_params(self):
         """
         See documentation in base class (Halos/halo_base.py)
