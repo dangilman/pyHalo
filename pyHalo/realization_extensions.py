@@ -3,10 +3,6 @@ from copy import deepcopy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
-from pyHalo.defaults import RealizationDefaults
-from lenstronomy.LensModel.Profiles.gaussian_kappa import GaussianKappa
-from lenstronomy.LensModel.Profiles.nfw import NFW
-import random
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
@@ -248,13 +244,13 @@ class RealizationExtensions(object):
             if n_flucs==0:
                 return self._realization
             if n_flucs > n_cut: #supress amplitudes by # of cancellations if above n_cut
-                fluctuation_amplitude_variance /= np.sqrt(n_flucs/n_cut) 
+                fluctuation_amplitude_variance /= np.sqrt(n_flucs/n_cut)
                 n_flucs = int(n_cut)
         if shape=='aperture':
             if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
                 return self._realization
             if np.mean(n_flucs) > n_cut: #supress amplitudes by # of cancellations if average above n_cut
-                fluctuation_amplitude_variance /= np.sqrt(np.mean(n_flucs)/n_cut) 
+                fluctuation_amplitude_variance /= np.sqrt(np.mean(n_flucs)/n_cut)
                 n_flucs = np.array([int(n_cut)]*4)
 
         # create fluctuations
@@ -506,6 +502,7 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
     sigma_crit = realization.lens_cosmo.sigmacrit # in units M_sun / arcsec^2
     masses = 2 * np.pi * sigs ** 2 * amps * sigma_crit / (2*np.pi*sigs**2)
 
-    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, None, realization._zlens, True, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
+    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, 'GAUSSIAN', realization._zlens,
+                             True, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
 
     return fluctuations
