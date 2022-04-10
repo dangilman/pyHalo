@@ -4,6 +4,7 @@ from scipy.interpolate import interp1d
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
+from scipy.special import jv
 
 
 def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
@@ -306,7 +307,7 @@ def delta_sigma(m, z, rein, de_Broglie_wavelength):
 
 def delta_sigma_kawai(r, dm_fraction, lambda_dB, halo_mass, halo_redshift, mc_scatter=True):
     """
-    Returns standard deviation of the density fluctuations in projection in convergence units
+    Returns the mean ULDM fluctuation ampltiude of the host dark matter halo in units M_sun/kpc^2
     using Equation 30 in Kawai et al. (2021)
     :param r: the radius at which to evaluate the fluctuation amplitude [units kpc]
     :param f: the fraction of projected mass in dark matter at the radius r
@@ -322,12 +323,28 @@ def delta_sigma_kawai(r, dm_fraction, lambda_dB, halo_mass, halo_redshift, mc_sc
     c = l.NFW_concentration(halo_mass, halo_redshift, scatter=mc_scatter)
     rhos, rs, _ = l.NFW_params_physical(halo_mass, c, halo_redshift)
     halo_size = effective_halo_size(r, rhos, rs, c)
+    pi = np.pi
 
-    relative_length_scale = lambda_dB / halo_size
-    prefactor = 16 * np.pi ** 2 / 3 # extra 4pi from
-    # integrating over the exponential
-    delta_kappa_square = dm_fraction ** 2 * prefactor * relative_length_scale
-    return delta_kappa_square ** 0.5
+    window_function = lambda x: jv(1, x)/(4*x*pi**2)
+
+    integrand = lambda k: 2*np.pi*k * window_function(k*lambda_dB)**2 * (4*np.pi*lambda_dB**3/(3 * halo_size)) * np.exp(-(lambda_dB*k)**2/4)
+
+    rmax = 100 / lambda_dB
+
+    integral = quad(integrand, 0, rmax)[0] / (4 * pi**2)
+
+    fluc_dimensionless = dm_fraction * np.sqrt(integral)
+
+    x = r/rs
+    nfw_projected_density = 2 * rhos * rs * (1 - nfwF(x))/(x**2 - 1)
+
+    return fluc_dimensionless * nfw_projected_density
+
+def nfwF(x):
+    if x < 1:
+        return np.arctanh(np.sqrt(1-x**2))/(np.sqrt(1-x**2))
+    else:
+        return np.arctan(np.sqrt(x ** 2 - 1)) / (np.sqrt(x ** 2 - 1))
 
 def projected_density_squared(R_ein, rhos, rs, concentration):
 

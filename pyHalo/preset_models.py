@@ -185,6 +185,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 
     :return: a realization of WDM halos
     """
+
     mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
@@ -275,10 +276,10 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     return realization
 
 def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
-                  c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
+                  c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, einstein_radius=6., n_cut=5e4, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, n_cut=5e4, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -314,9 +315,11 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
 
         (m_0,    b_uldm,    c_uldm) = ( (1.6*10**10) * (m22)**(-4/3),    1.1,    2.2)
 
-    As for the concentration relative to CDM, Du et al. 2016 (https://arxiv.org/pdf/1608.02575.pdf) found that
-    the same fitting function as Lovell 2020 is a good estimation of the ULDM concentration,
+    As for the concentration relative to CDM, there hasa not been a detailed study to date. Hoever, since the formation
+    history and collapse time determines concentration, we can reasonably use a WDM concentration-mass relation
+    such as the Lovell 2020 formula,
     i.e. simply c_wdm = c_uldm, with (c_scale, c_power) = (15, -0.3).
+    or the Bose et al. forumula with (c_scale, c_power) = (60, -0.17) and a very negligible redshift dependence.
 
     Furthermore, Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf) found a redshift-dependent minimum ULDM halo mass
     given by
@@ -379,14 +382,19 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
     if log_m_min(z_lens) >= log_mlow:
         log_mlow = log_m_min(z_lens) # only use M_min for minimum halo mass if it is above input 'log_mlow'
     kwargs_model_field = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
-                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
                           'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
 
     kwargs_model_subhalos = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
-                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
+    kwargs_model_subhalos.update({'suppression_model': 'polynomial'})
+    kwargs_model_field.update({'suppression_model': 'polynomial'})
+    kwargs_suppression_mcrelation = {'c_scale': c_scale, 'c_power': c_power}
+    kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_mcrelation})
+    kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_mcrelation})
 
     kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw, 'scale_nfw':scale_nfw}
 
