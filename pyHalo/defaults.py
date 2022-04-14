@@ -74,7 +74,8 @@ class DMHaloDefaults(object):
 
         # From Bose et al 2016
         self.suppression_model = 'polynomial'
-        self.kwargs_suppression = {'c_scale': 60., 'c_power': -0.17}
+        self.kwargs_suppression = {'c_scale': 60., 'c_power': -0.17,
+                                   'c_power_inner': 1.0, 'mc_suppression_redshift_evolution': True}
 
 class RealizationDefaults(object):
 

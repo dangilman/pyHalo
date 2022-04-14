@@ -31,7 +31,8 @@ class TestPopulationModel(object):
         sigma_sub = 0.1
         power_law_index = -1.9
         subhalo_spatial_distribution = 'HOST_NFW'
-        kwargs_suppression = {'c_scale': 10.5, 'c_power': -0.2}
+        kwargs_suppression = {'c_scale': 10.5, 'c_power': -0.2, 'c_power_inner': 1.0,
+                              'mc_suppression_redshift_evolution': True}
         suppression_model = 'polynomial'
         kwargs_cdm = {'zmin': zmin,
                       'zmax': zmax,

@@ -74,7 +74,7 @@ class TestLensCosmo(object):
         npt.assert_raises(AssertionError, npt.assert_array_equal, c, c2)
 
         logmhm = 8.
-        kwargs_suppression, suppression_model = {'c_scale': 60., 'c_power': -0.17}, 'polynomial'
+        kwargs_suppression, suppression_model = {'c_scale': 60., 'c_power': -0.17, 'mc_suppression_redshift_evolution': False, 'c_power_inner': 1.1}, 'polynomial'
         c_wdm = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=False, logmhm=logmhm,
                                                   kwargs_suppresion=kwargs_suppression, suppression_model=suppression_model)
 

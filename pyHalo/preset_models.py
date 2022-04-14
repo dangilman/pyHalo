@@ -192,6 +192,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
                           'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
                           'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
                           }
+
     if suppression_model_field is not None:
         kwargs_model_field.update({'suppression_model': suppression_model_field})
         kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_field})
@@ -276,7 +277,7 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     return realization
 
 def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
-                  c_scale=60., c_power=-0.17, cone_opening_angle_arcsec=6.,
+                  c_scale=3.348, c_power=-0.489, c_power_inner=1.546,cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
                   flucs_shape='aperture', flucs_args={}, n_cut=5e4, **kwargs_other):
@@ -319,7 +320,12 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
     history and collapse time determines concentration, we can reasonably use a WDM concentration-mass relation
     such as the Lovell 2020 formula,
     i.e. simply c_wdm = c_uldm, with (c_scale, c_power) = (15, -0.3).
-    or the Bose et al. forumula with (c_scale, c_power) = (60, -0.17) and a very negligible redshift dependence.
+    or the Bose et al. formula with (c_scale, c_power) = (60, -0.17) and a very negligible redshift dependence.
+
+    The default model was computed using the formalism presented by Schneider et al. (2015) using a ULDM power spectrum,
+    and results in a sharper cutoff with (c_scale, c_power, c_power_inner) = (3.348, -0.489, 1.5460)
+
+    The form for the ULDM concentration-mass relation turnover is (1 + c_scale * (mhm/m)^c_power_inner)^c_power
 
     Furthermore, Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf) found a redshift-dependent minimum ULDM halo mass
     given by
@@ -390,9 +396,15 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
+
     kwargs_model_subhalos.update({'suppression_model': 'polynomial'})
     kwargs_model_field.update({'suppression_model': 'polynomial'})
-    kwargs_suppression_mcrelation = {'c_scale': c_scale, 'c_power': c_power}
+
+    kwargs_suppression_mcrelation = {'c_scale': c_scale,
+                                     'c_power': c_power,
+                                     'c_power_inner': c_power_inner,
+                                     'mc_suppression_redshift_evolution': False}
+
     kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_mcrelation})
     kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_mcrelation})
 

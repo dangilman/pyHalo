@@ -1,6 +1,6 @@
 import numpy as numpy
 from colossus.halo.concentration import concentration, peaks
-
+from pyHalo.defaults import halo_default
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -130,9 +130,14 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppre
     :return: the ratio c_wdm over c_cdm
     """
 
+    if 'mc_suppression_redshift_evolution' not in kwargs_suppresion.keys():
+        kwargs_suppresion['mc_suppression_redshift_evolution'] = \
+            halo_default.kwargs_suppression['mc_suppression_redshift_evolution']
+    
     if suppression_model == 'polynomial':
         return _suppression_polynomial(halo_mass, z, log_half_mode_mass, kwargs_suppresion['c_scale'],
-                                       kwargs_suppresion['c_power'])
+                                       kwargs_suppresion['c_power'], kwargs_suppresion['c_power_inner'],
+                                       kwargs_suppresion['mc_suppression_redshift_evolution'])
     elif suppression_model == 'hyperbolic':
         return _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, kwargs_suppresion['a_mc'],
                                        kwargs_suppresion['b_mc'])
@@ -165,7 +170,8 @@ def _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, a, b):
 
     return 0.5 * (1 + numpy.tanh(argument))
 
-def _suppression_polynomial(halo_mass, z, log_half_mode_mass, c_scale, c_power):
+def _suppression_polynomial(halo_mass, z, log_half_mode_mass, c_scale, c_power, c_power_inner,
+                            mc_suppression_redshift_evolution=True):
 
     """
     :param halo_mass: halo mass
@@ -191,9 +197,12 @@ def _suppression_polynomial(halo_mass, z, log_half_mode_mass, c_scale, c_power):
 
     mass_ratio = mhm / halo_mass
 
-    concentration_factor = (1 + c_scale * mass_ratio) ** c_power
+    concentration_factor = (1 + c_scale * mass_ratio ** c_power_inner) ** c_power
 
-    redshift_factor = (1 + z) ** (0.026 * z - 0.04)
+    if mc_suppression_redshift_evolution:
+        redshift_factor = (1 + z) ** (0.026 * z - 0.04)
+    else:
+        redshift_factor = 1.0
 
     rescale = redshift_factor * concentration_factor
 

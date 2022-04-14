@@ -8,6 +8,7 @@ from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
 from copy import deepcopy
+from pyHalo.utilities import nfw_velocity_dispersion
 
 class RealizationExtensions(object):
 
@@ -101,9 +102,8 @@ class RealizationExtensions(object):
 
         return indexes
 
-    def find_core_collapsed_halos(self, time_scale_function, velocity_dispersion_function,
-                                  cross_section, t_sub=10., t_field=100., t_sub_range=2, t_field_range=2.,
-                                  model_type='TCHANNEL'):
+    def find_core_collapsed_halos(self, time_scale_function, probability_collapse_function,
+                                  cross_section, t_sub=10., t_field=100., collapse_window_scale=2):
 
         """
         :param time_scale_function: a function that computes the characteristic timescale for SIDM halos. This function
@@ -111,19 +111,11 @@ class RealizationExtensions(object):
 
         t_scale = time_scale_function(rhos, v_rms, cross_section_class)
 
-        :param velocity_dispersion_function: a function that computes the central velocity disperion of the halo
-
-        It must be callable as:
-        v = velocity_dispersion_function(halo_mass, redshift, delta_c_over_c, model_type, additional_keyword_arguments)
-
-        where model_type is a string (see for example the function solve_sigmav_with_interpolation in sidmpy.py)
+        :param probability_collapse_function: computes the probability of core-collapse
         :param cross_section: the cross section class (see SIDMpy for examples)
         :param t_sub: sets the timescale for subhalo core collapse; subhalos collapse at t_sub * t_scale
         :param t_field: sets the timescale for field halo core collapse; field halos collapse at t_field * t_scale
-        :param t_sub_range: halos begin to core collapse (probability = 0) at t_sub - t_sub_range, and all are core
-        collapsed by t = t_sub + t_sub_range (probability = 1)
-        :param t_field_range: field halos begin to core collapse (probability = 0) at t_field - t_field_range, and all
-        are core collapsed by t = t_field + t_field_range (probability = 1)
+        :param collapse_window_scale: the interval of time where halos core collapse
         :param model_type: specifies the cross section model to use when computing the solution to the velocity
         dispersion of the halo
         :return: indexes of halos that are core collapsed
@@ -137,29 +129,19 @@ class RealizationExtensions(object):
 
             concentration = halo.profile_args[0]
             rhos, rs = halo.params_physical['rhos'], halo.params_physical['rs']
-            median_concentration = self._realization.lens_cosmo.NFW_concentration(halo.mass, halo.z, scatter=False)
-            delta_c_over_c = 1 - concentration/median_concentration
-            v_rms = velocity_dispersion_function(halo.mass, halo.z, delta_c_over_c, model_type, cross_section.kwargs)
-            timescale = time_scale_function(rhos, v_rms, cross_section)
+            v_rms = nfw_velocity_dispersion(rhos, rs, concentration)
+            relaxation_time = time_scale_function(rhos, v_rms, cross_section)
 
             if halo.is_subhalo:
-                tcollapse_min = timescale * t_sub / t_sub_range
-                tcollapse_max = timescale * t_sub * t_sub_range
+                timescale = relaxation_time * t_sub
             else:
-                tcollapse_min = timescale * t_field / t_field_range
-                tcollapse_max = timescale * t_field * t_field_range
+                timescale = relaxation_time * t_field
 
             halo_age = self._realization.lens_cosmo.cosmo.halo_age(halo.z)
-
-            if halo_age > tcollapse_max:
-                p = 1.
-            elif halo_age < tcollapse_min:
-                p = 0.
-            else:
-                p = (halo_age - tcollapse_min) / (tcollapse_max - tcollapse_min)
-
-            u = np.random.rand()
-            if p >= u:
+            p_collapse = probability_collapse_function(halo_age, timescale,
+                                                       t_min_scale=1/collapse_window_scale,
+                                                       t_max_scale=collapse_window_scale)
+            if np.random.rand() < p_collapse:
                 inds.append(i)
 
         return inds

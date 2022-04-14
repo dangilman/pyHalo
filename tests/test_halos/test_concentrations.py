@@ -57,7 +57,7 @@ class TestConcentration(object):
         npt.assert_almost_equal(ccdm1, ccdm2)
 
         model = {'custom': True, 'c0': 2., 'beta': 0.9, 'zeta': -0.1}
-        kwargs_suppresion, suppression_model = {'c_scale': 60., 'c_power': -0.26}, 'polynomial'
+        kwargs_suppresion, suppression_model = {'c_scale': 60., 'c_power': -0.26, 'c_power_inner': 1.0, 'mc_suppression_redshift_evolution': True}, 'polynomial'
         ccdm = self.concentration.nfw_concentration(m, z, model, None, None, False, 0.1, kwargs_suppresion, suppression_model)
         cwdm = self.concentration.nfw_concentration(m, z, model, None, 8., False, 0.1, kwargs_suppresion, suppression_model)
         fac = WDM_concentration_suppresion_factor(m, z, 8.,suppression_model, kwargs_suppresion)
@@ -66,7 +66,7 @@ class TestConcentration(object):
         ccdm = self.concentration.nfw_concentration(m_array_2, z_array_2, model, None, None, False, 0.1, kwargs_suppresion, suppression_model)
         npt.assert_equal(len(ccdm), len(m_array_2))
 
-        kwargs_suppresion, suppression_model = {'c_scale': 60., 'c_power': 0.26}, 'polynomial'
+        kwargs_suppresion, suppression_model = {'c_scale': 60., 'c_power': 0.26, 'c_power_inner': 1.0, 'mc_suppression_redshift_evolution': False}, 'polynomial'
         npt.assert_raises(Exception, WDM_concentration_suppresion_factor, 10**8, 0.1, 7., suppression_model, kwargs_suppresion)
         kwargs_suppresion, suppression_model = {'c_scale': -60., 'c_power': -0.26}, 'polynomial'
         npt.assert_raises(Exception, WDM_concentration_suppresion_factor, 10 ** 8, 0.1, 7., suppression_model,

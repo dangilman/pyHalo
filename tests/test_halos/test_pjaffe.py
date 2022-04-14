@@ -31,7 +31,7 @@ class TestPjaffeHalo(object):
         self._dm, self._bar = self.omega_DM, self.omega_baryon
         cosmo = Cosmology(cosmo_kwargs=cosmo_params)
         self.lens_cosmo = LensCosmo(self.z, 2., cosmo)
-        kwargs_suppression = {'c_scale': 10.5, 'c_power': -0.2}
+        kwargs_suppression = {'c_scale': 10.5, 'c_power': -0.2, 'c_power_inner': 1.0, 'mc_suppression_redshift_evolution': True}
         suppression_model = 'polynomial'
         profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
                         'evaluate_mc_at_zlens': True,

@@ -19,13 +19,15 @@ class TestPresetModels(object):
 
         realization_wdm = WDM(0.5, 1.5, 8.)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
-        kwargs_suppression_polynomial = {'c_power': -0.17, 'c_scale': 60.}
+        kwargs_suppression_polynomial = {'c_power': -0.17, 'c_scale': 60., 'c_power_inner': 1.0,'mc_suppression_redshift_evolution': False}
         kwargs_suppression_hyperbolic = {'a_mc': 1., 'b_mc': 1.}
         realization_wdm = WDM(0.5, 1.5, 8., suppression_model_field='polynomial',
                               suppression_model_sub='hyperbolic', kwargs_suppression_field=kwargs_suppression_polynomial,
                               kwargs_suppression_sub=kwargs_suppression_hyperbolic)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
 
+        kwargs_suppression_polynomial = {'c_power': -0.17, 'c_scale': 60., 'c_power_inner': 1.0,
+                                         'mc_suppression_redshift_evolution': True}
         realization_wdm = WDM(0.5, 1.5, 8., suppression_model_field='hyperbolic',
                               suppression_model_sub='polynomial',
                               kwargs_suppression_field=kwargs_suppression_hyperbolic,
@@ -52,7 +54,7 @@ class TestPresetModels(object):
     def test_ULDM(self):
 
         log10_m_uldm=-22
-        
+
         #test without fluctuations
         realization_ULDM = ULDM(0.5,1.5,log10_m_uldm,flucs=False)
         npt.assert_equal(len(realization_ULDM.rendering_classes), 3)

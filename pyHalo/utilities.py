@@ -5,6 +5,7 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.special import jv
+from scipy.integrate import simps
 
 
 def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
@@ -399,3 +400,32 @@ def effective_halo_size(r, rhos, rs, concentration):
     denom = projected_density_squared(r, rhos, rs, concentration)
     num = projected_squared_density(r, rhos, rs, concentration)
     return num/denom
+
+
+def nfw_velocity_dispersion(rhos, rs, c, x=1):
+    """
+    Computes the central velocity dispersion of an NFW profile integrating from r = x * rs
+    :param rhos:
+    :param rs:
+    :param c:
+    :return:
+    """
+    G = 4.3e-6  # kpc/solMass * (km/sec)**2
+    prefactor = 4 * np.pi * G * rhos ** 2 * rs ** 2
+    density_at_r = rhos / (x * (1 + x) ** 2)
+    _integrand = lambda x: (np.log(1 + x) - x / (1 + x)) / (x * (1 + x) ** 2) / x ** 2
+
+    x = np.linspace(x, c, 150)
+    y = _integrand(x)
+    return np.sqrt(prefactor * simps(y, x) / density_at_r)
+
+def nfw_velocity_dispersion_fromfit(m):
+    """
+    The velocity dispersion of an NFW profile with mass m calibrated from a power law fit for halos
+    between 10^6 and 10^10 at z=0
+    :param m: halo mass in M_sun
+    :return: the velocity dispersion inside rs
+    """
+    coeffs = [0.31575757, -1.74259129]
+    log_vrms = coeffs[0] * np.log10(m) + coeffs[1]
+    return 10 ** log_vrms
