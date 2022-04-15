@@ -306,40 +306,27 @@ def delta_sigma(m, z, rein, de_Broglie_wavelength):
     delta_sigma = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5
     return delta_sigma
 
-def delta_sigma_kawai(r, dm_fraction, lambda_dB, halo_mass, halo_redshift, mc_scatter=True):
+def delta_sigma_kawai(r, mhost, zhost, lambda_dB, dm_density_over_stellar_density):
     """
-    Returns the mean ULDM fluctuation ampltiude of the host dark matter halo in units M_sun/kpc^2
-    using Equation 30 in Kawai et al. (2021)
-    :param r: the radius at which to evaluate the fluctuation amplitude [units kpc]
-    :param f: the fraction of projected mass in dark matter at the radius r
-    :param lambda_dB: de Broglie wavelength in kpc
-    :param rhos: the density normalization of NFW proifle
-    :param rs: the scale radius of NFW profile
-    :param concentration:
-    :param mc_scatter:
+
+    :param lambda_dB:
+    :param effective_halo_size:
+    :param baryon_fraction:
     :return:
     """
 
     l = LensCosmo()
-    c = l.NFW_concentration(halo_mass, halo_redshift, scatter=mc_scatter)
-    rhos, rs, _ = l.NFW_params_physical(halo_mass, c, halo_redshift)
-    halo_size = effective_halo_size(r, rhos, rs, c)
-    pi = np.pi
+    c = l.NFW_concentration(mhost, zhost, scatter=False)
+    rhos, rs, _ = l.NFW_params_physical(mhost, c, zhost)
+    reff = effective_halo_size(r, rhos, rs, c)
+    f = dm_density_over_stellar_density / (dm_density_over_stellar_density + 1)
 
-    window_function = lambda x: jv(1, x)/(4*x*pi**2)
-
-    integrand = lambda k: 2*np.pi*k * window_function(k*lambda_dB)**2 * (4*np.pi*lambda_dB**3/(3 * halo_size)) * np.exp(-(lambda_dB*k)**2/4)
-
-    rmax = 100 / lambda_dB
-
-    integral = quad(integrand, 0, rmax)[0] / (4 * pi**2)
-
-    fluc_dimensionless = dm_fraction * np.sqrt(integral)
-
-    x = r/rs
-    nfw_projected_density = 2 * rhos * rs * (1 - nfwF(x))/(x**2 - 1)
-
-    return fluc_dimensionless * nfw_projected_density
+    window_function = lambda x: jv(1, x)/x # FFT of circular tophat
+    dB_volume = 4 * np.pi * lambda_dB / 3
+    integrand = lambda k: 2 * np.pi * k * np.exp(-0.25 * k ** 2 * lambda_dB ** 2) * window_function(lambda_dB * k) ** 2
+    integral = quad(integrand, 0, 100 * lambda_dB)[0] / (2 * np.pi ** 2)  # has units length^-2
+    prefactor = f ** 2 * dB_volume / reff  # has units length^2
+    return np.sqrt(prefactor * integral)
 
 def nfwF(x):
     if x < 1:

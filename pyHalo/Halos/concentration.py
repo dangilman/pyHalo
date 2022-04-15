@@ -133,7 +133,7 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppre
     if 'mc_suppression_redshift_evolution' not in kwargs_suppresion.keys():
         kwargs_suppresion['mc_suppression_redshift_evolution'] = \
             halo_default.kwargs_suppression['mc_suppression_redshift_evolution']
-    
+
     if suppression_model == 'polynomial':
         return _suppression_polynomial(halo_mass, z, log_half_mode_mass, kwargs_suppresion['c_scale'],
                                        kwargs_suppresion['c_power'], kwargs_suppresion['c_power_inner'],
