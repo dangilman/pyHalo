@@ -113,7 +113,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
                   a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                    kwargs_suppression_field=None, suppression_model_field=None, kwargs_suppression_sub=None,
+                    kwargs_suppression_mc_relation_field=None, suppression_model_field=None, kwargs_suppression_mc_relation_sub=None,
                   suppression_model_sub=None, **kwargs_other):
 
     """
@@ -139,7 +139,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     is less dense. The default suppresion to halo concentrations is implemented using the fitting function (Eqn. 17) presented by
     Bose et al. (2016) (https://arxiv.org/pdf/1507.01998.pdf), where the concentration relative to CDM is given by
 
-    c_wdm / c_cdm = (1+z)^B(z) * (1 + c_scale * m_c / m) ^ c_power
+    c_wdm / c_cdm = (1+z)^B(z) * (1 + c_scale * (m_c / m) ** c_power_inner) ^ c_power
 
     where m_c is the same as the definition for the halo mass function and (c_scale, c_power) = (60, -0.17). Note that the
     factor of 60 makes the effect on halo concentrations kick in on mass scales > m_c. This routine assumes the
@@ -167,14 +167,14 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     ###################################################################################################
     The following keywords define how the WDM mass-concentration relation is suppressed relative to CDM
 
-    :param kwargs_suppression_field: keyword arguments for the suppression function for field halo concentrations
-    :param suppression_model_field: the type of suppression, either 'polynomial' or 'hyperbolic'. Default form is polynomial
-    :param kwargs_suppression_sub: keyword arguments for the suppression function for subhalos
-    :param suppression_model_sub: the type of suppression, either 'polynomial' or 'hyperbolic'
+    :param kwargs_suppression_mc_relation_field: keyword arguments for the suppression function for field halo concentrations
+    :param suppression_model_field: the type of suppression of the MC relation for field halos, either 'polynomial' or 'hyperbolic'. Default form is polynomial
+    :param kwargs_suppression_mc_relation_sub: keyword arguments for the suppression function for subhalos
+    :param suppression_model_sub: the type of suppression of the MC relation for subhalos, either 'polynomial' or 'hyperbolic'
 
     The form of the polynomial suppression function, f, is defined in terms of x = half-mode-mass / mass:
 
-    f = (1 + a * x ^ b_wdm) ^ c_wdm
+    f = (1 + c_scale * x ^ c_power_inner) ^ c_power
 
     The form of the hyperbolic suppression function, f, is (see functions in Halos.HaloModels.concentration)
 
@@ -195,7 +195,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 
     if suppression_model_field is not None:
         kwargs_model_field.update({'suppression_model': suppression_model_field})
-        kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_field})
+        kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_mc_relation_field})
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
                            'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
@@ -204,7 +204,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 
     if suppression_model_sub is not None:
         kwargs_model_subhalos.update({'suppression_model': suppression_model_sub})
-        kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_sub})
+        kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_mc_relation_sub})
 
     kwargs_model_field.update(kwargs_other)
     kwargs_model_subhalos.update(kwargs_other)
