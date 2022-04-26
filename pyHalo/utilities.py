@@ -308,7 +308,7 @@ def delta_sigma(m, z, rein, de_Broglie_wavelength):
 
 def delta_sigma_kawai(r, mhost, zhost, lambda_dB, dm_density_over_stellar_density):
     """
-
+    https://arxiv.org/pdf/2109.04704.pdf
     :param lambda_dB:
     :param effective_halo_size:
     :param baryon_fraction:
@@ -324,7 +324,7 @@ def delta_sigma_kawai(r, mhost, zhost, lambda_dB, dm_density_over_stellar_densit
     window_function = lambda x: jv(1, x)/x # FFT of circular tophat
     dB_volume = 4 * np.pi * lambda_dB / 3
     integrand = lambda k: 2 * np.pi * k * np.exp(-0.25 * k ** 2 * lambda_dB ** 2) * window_function(lambda_dB * k) ** 2
-    integral = quad(integrand, 0, 100 * lambda_dB)[0] / (2 * np.pi ** 2)  # has units length^-2
+    integral = quad(integrand, 0, 100 * lambda_dB)[0] / (4 * np.pi ** 2)  # has units length^-2
     prefactor = f ** 2 * dB_volume / reff  # has units length^2
     return np.sqrt(prefactor * integral)
 
@@ -388,6 +388,21 @@ def effective_halo_size(r, rhos, rs, concentration):
     num = projected_squared_density(r, rhos, rs, concentration)
     return num/denom
 
+def nfw_halo_projected_mass(r, m, z):
+
+    """
+    Evaluates the projected mass on an NFW halo at a particular radius
+    :param r: radius [kpc]
+    :param m: halo mass [M_sun]
+    :param z: halo redshift
+    :return: projected mass in M_sun/kpc^2
+    """
+    l = LensCosmo()
+    c = l.NFW_concentration(m, z, scatter=False)
+    rhos, rs, _ = l.NFW_params_physical(m, c, z)
+    x = r/rs
+    sigma = 2 * rhos * rs * (1-nfwF(x)) / (x**2-1)
+    return sigma
 
 def nfw_velocity_dispersion(rhos, rs, c, x=1):
     """

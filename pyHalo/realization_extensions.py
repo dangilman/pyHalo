@@ -102,23 +102,27 @@ class RealizationExtensions(object):
 
         return indexes
 
-    def find_core_collapsed_halos(self, time_scale_function, probability_collapse_function,
-                                  cross_section, t_sub=10., t_field=100., collapse_window_scale=2):
+    def find_core_collapsed_halos(self, collapse_probability_function, cross_section_class,
+                                  t_sub=10., t_field=300., collapse_time_width=2):
 
         """
-        :param time_scale_function: a function that computes the characteristic timescale for SIDM halos. This function
-        must take as an input the NFW halo density normalization, velocity dispersion, and cross section class,
+        This class is meant to be used with the software SIDMpy, but you can also write your own functions/classes to
+        use with this routine
 
-        t_scale = time_scale_function(rhos, v_rms, cross_section_class)
+        :param collapse_probability_function: a function that computes the probability of core collapse for a halo. There
+        are functions in sidmpy/core_collapse_timescale that can be passed in directly (e.g. collapse_probability)
 
-        :param probability_collapse_function: computes the probability of core-collapse
-        :param cross_section: the cross section class (see SIDMpy for examples)
-        :param t_sub: sets the timescale for subhalo core collapse; subhalos collapse at t_sub * t_scale
-        :param t_field: sets the timescale for field halo core collapse; field halos collapse at t_field * t_scale
-        :param collapse_window_scale: the interval of time where halos core collapse
-        :param model_type: specifies the cross section model to use when computing the solution to the velocity
-        dispersion of the halo
-        :return: indexes of halos that are core collapsed
+        The collapse_probability_function must have a certain signature:
+        probability = collapse_probability(time, density, distance, cross_section, number, number)
+        where time is measured in Gyr, the density is in solar mass/kpc^3, the distance is in kpc; again, this is all
+        automatically implemented in SIDMpy, but in principle any routine could be passed through this function
+
+        :param cross_section_class: a class that describes a self-interaction cross section, for examples see classes in
+        SIDMpy/CrossSections
+        :param t_sub: the timescale for core-collapse for subhalos; this is a dimensionless number that scales the evolution timescale
+        :param t_field: same as t_sub, but for line-of-sight (field) halos
+        :param collapse_time_width: sets the width of the collapse window; passing in a tiny number reults in a delta-function
+        :return: the indexes of halos in the realization that are core-collaapsed
         """
         inds = []
 
@@ -127,21 +131,24 @@ class RealizationExtensions(object):
             if halo.mdef not in ['NFW', 'TNFW', 'coreTNFW']:
                 continue
 
-            concentration = halo.profile_args[0]
-            rhos, rs = halo.params_physical['rhos'], halo.params_physical['rs']
-            v_rms = nfw_velocity_dispersion(rhos, rs, concentration)
-            relaxation_time = time_scale_function(rhos, v_rms, cross_section)
-
-            if halo.is_subhalo:
-                timescale = relaxation_time * t_sub
-            else:
-                timescale = relaxation_time * t_field
-
+            rho_s, r_s = halo.params_physical['rhos'], halo.params_physical['rs']
             halo_age = self._realization.lens_cosmo.cosmo.halo_age(halo.z)
-            p_collapse = probability_collapse_function(halo_age, timescale,
-                                                       t_min_scale=1/collapse_window_scale,
-                                                       t_max_scale=collapse_window_scale)
-            if np.random.rand() < p_collapse:
+            if halo.is_subhalo:
+                p = collapse_probability_function(halo_age,
+                                                  rho_s,
+                                                  r_s,
+                                                  cross_section_class,
+                                                  t_sub,
+                                                  collapse_time_width)
+            else:
+                p = collapse_probability_function(halo_age,
+                                                  rho_s,
+                                                  r_s,
+                                                  cross_section_class,
+                                                  t_field,
+                                                  collapse_time_width)
+
+            if np.random.rand() < p:
                 inds.append(i)
 
         return inds

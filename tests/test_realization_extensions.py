@@ -18,18 +18,21 @@ class TestRealizationExtensions(object):
 
     def core_collapsed_halos(self):
 
-        def timescalefunction_short(rhos, rs, v):
+        def p_short(*args, **kwargs):
             return 1e-9
-        def timescalefunction_long(rhos, rs, v):
-            return 1e9
+        def p_long(*args, **kwargs):
+            return 1.0
+        class cross_section_class(object):
+                pass
+
 
         single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
         ext = RealizationExtensions(single_halo)
         vfunc = lambda x: 4 / np.sqrt(3.1459)
 
-        indexes = ext.find_core_collapsed_halos(timescalefunction_short, vfunc)
+        indexes = ext.find_core_collapsed_halos(p_short, cross_section_class)
         npt.assert_equal(True, 0 in indexes)
-        indexes = ext.find_core_collapsed_halos(timescalefunction_long, vfunc)
+        indexes = ext.find_core_collapsed_halos(p_long, cross_section_class)
         npt.assert_equal(False, 0 in indexes)
 
     def test_collapse_by_mass(self):
@@ -103,7 +106,7 @@ class TestRealizationExtensions(object):
         x_images = np.array([-0.347, -0.734, -1.096, 0.207])
         y_images = np.array([ 0.964,  0.649, -0.079, -0.148])
         args_aperture = {'x_images':x_images,'y_images':y_images,'aperture':0.25}
-        
+
         ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='aperture',args=args_aperture, n_cut=n_cut)
 
         #ring
