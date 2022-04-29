@@ -431,3 +431,4 @@ def nfw_velocity_dispersion_fromfit(m):
     coeffs = [0.31575757, -1.74259129]
     log_vrms = coeffs[0] * np.log10(m) + coeffs[1]
     return 10 ** log_vrms
+

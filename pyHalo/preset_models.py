@@ -102,7 +102,6 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     # this will use the default cosmology. parameters can be found in defaults.py
     pyhalo = pyHalo(z_lens, z_source)
     # Using the render method will result a list of realizations
-
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
     realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
 
@@ -280,7 +279,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
                   c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, n_cut=5e4, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, n_cut=5e4, r_ein=1.0, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -368,6 +367,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
     :param fluc_args: Keyword arguments for specifying the fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
     :param einstein_radius: Einstein radius of main deflector halo in kpc
     :param n_cut: Number of fluctuations above which to start cancelling
+    :param r_ein: the Einstein radius in arcseconds
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
@@ -430,8 +430,38 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
         if flucs_args=={}:
             raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
 
-        fluctuation_amplitude_norm = 10 ** log10_fluc_amplitude
-        fluctuation_amplitude = fluctuation_amplitude_norm * (10**log10_m_uldm / 1e-22) ** -0.5
+        a_fluc = 10 ** log10_fluc_amplitude
+        m_psi = 10 ** log10_m_uldm
+
+        zlens_ref, zsource_ref = 0.5, 2.0
+        mhost_ref = 10**13.3
+        rein_ref = 1.0
+        r_perp_ref = rein_ref * uldm_realization.lens_cosmo.cosmo.kpc_proper_per_asec(zlens_ref)
+
+        sigma_crit_ref = uldm_realization.lens_cosmo.get_sigma_crit_lensing(zlens_ref, zsource_ref)
+        c_host_ref = uldm_realization.lens_cosmo.NFW_concentration(mhost_ref, z_lens, scatter=False)
+        rhos_ref, rs_ref, _ = uldm_realization.lens_cosmo.NFW_params_physical(mhost_ref, c_host_ref, zlens_ref)
+        xref = r_perp_ref/rs_ref
+        if xref < 1:
+            Fxref = np.arctanh(np.sqrt(1 - xref ** 2)) / np.sqrt(1 - xref ** 2)
+        else:
+            Fxref = np.arctan(np.sqrt(-1 + xref ** 2)) / np.sqrt(-1 + xref ** 2)
+        sigma_host_ref = 2 * rhos_ref * rs_ref * (1-Fxref)/(xref**2 - 1)
+
+        r_perp = r_ein * uldm_realization.lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
+        sigma_crit = uldm_realization.lens_cosmo.get_sigma_crit_lensing(z_lens, z_source)
+        c_host = uldm_realization.lens_cosmo.NFW_concentration(10**log_m_host, z_lens, scatter=True)
+        rhos, rs, _ = uldm_realization.lens_cosmo.NFW_params_physical(10**log_m_host, c_host, z_lens)
+        x = r_perp / rs
+        if x < 1:
+            Fx = np.arctanh(np.sqrt(1 - x ** 2)) / np.sqrt(1 - x ** 2)
+        else:
+            Fx = np.arctan(np.sqrt(-1 + x ** 2)) / np.sqrt(-1 + x ** 2)
+        sigma_host = 2 * rhos * rs * (1 - Fx) / (x ** 2 - 1)
+
+        fluctuation_amplitude = a_fluc * (m_psi / 1e-22) ** -0.5 * \
+                                (sigma_crit_ref/sigma_crit) * (sigma_host/sigma_host_ref)
+
         uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
                                 fluctuation_amplitude_variance=fluctuation_amplitude,
                                 fluctuation_size_variance=lambda_dB,
@@ -440,4 +470,3 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
                                 n_cut=n_cut)
 
     return uldm_realization
-
