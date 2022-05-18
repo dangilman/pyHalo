@@ -68,7 +68,7 @@ class TestRealizationExtensions(object):
         i_field_collapsed_2 = 0
         i_field_2 = 0
         for halo in realization_collapsed.halos:
-            print(halo.mdef)
+
             if halo.is_subhalo:
                 if halo.mass < 10 ** 8:
                     i_subs_1 += 1
