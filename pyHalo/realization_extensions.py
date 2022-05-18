@@ -8,7 +8,7 @@ from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
 from copy import deepcopy
-from pyHalo.utilities import nfw_velocity_dispersion
+
 
 class RealizationExtensions(object):
 
@@ -196,16 +196,18 @@ class RealizationExtensions(object):
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
 
-    def add_ULDM_fluctuations(self, de_Broglie_wavelength, fluctuation_amplitude_variance, fluctuation_size_variance,
-                              n_cut, shape='ring', args={'rmin':0.9,'rmax':1.1}):
+    def add_ULDM_fluctuations(self, de_Broglie_wavelength, fluctuation_amplitude,
+                              fluctuation_size, fluctuation_size_variance, n_cut, n_fluc_scale=1., shape='ring', args={'rmin':0.9,'rmax':1.1}):
 
         """
         This function adds gaussian fluctuations of the given de Broglie wavelength to a realization.
 
         :param de_Broglie_wavelength: de Broglie wavelength of the DM particle in kpc
-        :param fluctuation_amplitude_variance: Standard deviation of amplitude distribution in convergence units
-        :param fluctuation_size_variance: Mean of fluctuation standard deviation in kpc
-        :param rho_mean: typical convergence of a fluctuation at its peak
+        :param fluctuation_amplitude: Standard deviation of amplitude distribution in convergence units
+        :param fluctuation_size: half the physical size of an indiviudal blob [kpc]
+        (Blobs are modeled as Gaussians, so their diameter is ~2 * fluctuation_size)
+        :param fluctuation_size_variance: scales the variance of the distribution of sizes of fluctuations,
+        relative to lambda_dB
         :param shape: keyword argument for fluctuation geometry, can place fluctuations in a
 
             'ring', 'ellipse, or 'aperture' (centered about lensing images)
@@ -226,25 +228,27 @@ class RealizationExtensions(object):
             raise Exception('shape must be ring or ellipse or aperture!')
 
         # get number of fluctuations
-        n_flucs = _get_number_flucs(self._realization,de_Broglie_wavelength,shape,args)
+        n_flucs = _get_number_flucs(self._realization,de_Broglie_wavelength,
+                                    fluctuation_size/de_Broglie_wavelength,n_fluc_scale,shape,args)
 
         # if zero fluctuations, return original realization
         if shape!='aperture':
             if n_flucs==0:
                 return self._realization
             if n_flucs > n_cut: #supress amplitudes by # of cancellations if above n_cut
-                fluctuation_amplitude_variance /= np.sqrt(n_flucs/n_cut)
+                fluctuation_amplitude /= np.sqrt(n_flucs/n_cut)
                 n_flucs = int(n_cut)
         if shape=='aperture':
             if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
                 return self._realization
             if np.mean(n_flucs) > n_cut: #supress amplitudes by # of cancellations if average above n_cut
-                fluctuation_amplitude_variance /= np.sqrt(np.mean(n_flucs)/n_cut)
+                fluctuation_amplitude /= np.sqrt(np.mean(n_flucs)/n_cut)
                 n_flucs = np.array([int(n_cut)]*4)
 
         # create fluctuations
         fluctuations = _get_fluctuation_halos(self._realization,
-                                              fluctuation_amplitude_variance,
+                                              fluctuation_amplitude,
+                                              fluctuation_size,
                                               fluctuation_size_variance,
                                               shape,
                                               n_flucs,
@@ -389,54 +393,57 @@ class RealizationExtensions(object):
 
         return realization_with_clustering.join(realization_smooth)
 
-def _get_number_flucs(realization,de_Broglie_wavelength,shape,args):
+def _get_number_flucs(realization, de_Broglie_wavelength, fluctuation_size_scale, n_fluc_scale, shape, args):
     """
     This function returns the number of fluctuations to place in the realization.
 
     :param realization: the realization to which to add the fluctuations
     :param de_Broglie_wavelength: de Broglie wavelength of the DM particle in kpc
+    :param fluctuation_size_scale: sets the size of the fluctuatiions relative to the de Broglie wavelength
+    :param n_fluc_scale: rescales the total number of fluctuations
     :param shape: keyword argument for fluctuation geometry, see 'add_ULDM_fluctuations'
     :param args: properties of the given shape, see 'add_ULDM_fluctuations'
     """
 
     D_d = realization.lens_cosmo.cosmo.D_A_z(realization._zlens)
     arcsec = realization.lens_cosmo.cosmo.arcsec
-    fluc_area=np.pi*de_Broglie_wavelength**2 #de Broglie area
+    fluc_area=np.pi*(de_Broglie_wavelength * fluctuation_size_scale)**2 #de Broglie area
     to_kpc = D_d * arcsec * 1e3 # convert arcsec to kpc
 
     if shape=='ring': # fluctuations in a circular slice (for visualization purposes)
 
         rmin_kpc,rmax_kpc = args['rmin'] * to_kpc, args['rmax'] * to_kpc #args in kpc
         area_ring = np.pi*(rmax_kpc**2-rmin_kpc**2) # volume of ring
-        n_flucs_expected=area_ring/fluc_area # number of fluctuations in ring
+        n_flucs_expected=n_fluc_scale*area_ring/fluc_area # number of fluctuations in ring
         n_flucs = np.random.poisson(n_flucs_expected)
 
     if shape=='ellipse': # fluctuations in a elliptical slice (for visualization purposes)
 
         amin_kpc,bmin_kpc,amax_kpc,bmax_kpc=args['amin'] * to_kpc, args['bmin'] * to_kpc, args['amax'] * to_kpc, args['bmax'] * to_kpc #args in kpc
         area_ellipse=np.pi*(amax_kpc*bmax_kpc - amin_kpc*bmin_kpc) # volume of ellipse
-        n_flucs_expected=area_ellipse/fluc_area # number of fluctuations in ellipse
+        n_flucs_expected=n_fluc_scale*area_ellipse/fluc_area # number of fluctuations in ellipse
         n_flucs = np.random.poisson(n_flucs_expected)
 
     if shape=='aperture': # fluctuations around lensing images (for computation)
 
         n_images=len(args['x_images']) #number of lensed images
-        r_kpc = args['aperture'] * D_d * arcsec * 1e3 #aperture in kpc
+        r_kpc = args['aperture'] * to_kpc #aperture in kpc
         area_aperture = np.pi*r_kpc**2 # aperture area
-        n_flucs_expected = area_aperture/fluc_area #number of expected fluctuations per aperture
+        n_flucs_expected = n_fluc_scale*area_aperture/fluc_area #number of expected fluctuations per aperture
         n_flucs = np.random.poisson(n_flucs_expected,n_images) #draw number of fluctuations from poisson distribution for each image
         n_flucs = n_flucs[n_flucs!=0] #get rid of aperture if zero fluctuations within it
 
     return n_flucs
 
-def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuation_size_variance, shape, n_flucs, args):
+def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size, fluctuation_size_variance, shape, n_flucs, args):
     """
     This function creates 'n_flucs' Gaussian fluctuations and places them according to 'shape'.
 
     :param realization: the realization to which to add the fluctuations
-    :param de_Broglie_wavelength: de Broglie wavelength of the DM particle in kpc
-    :param fluctuation_amplitude_variance: Standard deviation of amplitude distribution in convergence units
-    :param fluctuation_size_variance: Mean of fluctuation standard deviation in kpc
+    :param fluctuation_amplitude: Standard deviation of amplitude distribution in convergence units
+    :param fluctuation_size: half the physical size of a fluctuation (individual blobs are modeled as Gaussians, with
+    a variance fluctuation_size)
+    :param fluctuation_size_variance: scales the variance of the distribution of sizes of fluctuations, relative to lambda_dB
     :param rho_bar: typical convergence of a fluctuation at its peak
     :param shape: keyword argument for fluctuation geometry, see 'add_ULDM_fluctuations'
     :param n_flucs: Number of fluctuations to make
@@ -444,12 +451,15 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
     """
 
     kpc_per_arcsec = realization.lens_cosmo.cosmo.kpc_proper_per_asec(realization._zlens)
-    fluc_var_angle = fluctuation_size_variance / kpc_per_arcsec # gaussian variance in arcsec
+    fluc_var_angle = fluctuation_size / kpc_per_arcsec # gaussian variance in arcsec
+    fluctuation_size_variance_angle = fluctuation_size_variance / kpc_per_arcsec
 
     if shape != 'aperture':
 
-        sigs = np.abs(np.random.normal(1.3*fluc_var_angle,fluc_var_angle/20,n_flucs)) #random widths
-        kappa0 = np.random.normal(0, fluctuation_amplitude_variance, n_flucs)
+        sigs = np.abs(np.random.normal(fluc_var_angle,fluctuation_size_variance_angle,n_flucs)) #random widths
+
+        kappa0 = np.random.normal(0, fluctuation_amplitude, n_flucs)
+
         # kappa0 = amp / (2 * np.pi * sigma ** 2)
         amps = kappa0 * 2 * np.pi * sigs ** 2
 
@@ -474,10 +484,10 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
 
         for i in range(0, len(n_flucs)): #loop through each image
 
-            sigs_i = np.random.normal(1.3*fluc_var_angle,fluc_var_angle/20,n_flucs[i])
+            sigs_i = np.random.normal(fluc_var_angle,fluctuation_size_variance_angle,n_flucs[i])
             sigs_i = np.absolute(sigs_i)
 
-            kappa0 = np.random.normal(0, fluctuation_amplitude_variance, n_flucs[i])
+            kappa0 = np.random.normal(0, fluctuation_amplitude, n_flucs[i])
             amps_i = kappa0 * 2*np.pi*sigs_i**2
 
             angles_i = np.random.uniform(0, 2*np.pi, n_flucs[i])  # random angles
@@ -488,9 +498,9 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude_variance, fluctuat
 
     args_fluc=[{'amp': amps[i], 'sigma': sigs[i], 'center_x': xs[i], 'center_y': ys[i]} for i in range(len(amps))]
     # kappa(r) = kappa * exp(-0.5 * r^2/sigma^2)
-    sigma_crit = realization.lens_cosmo.sigmacrit # in units M_sun / arcsec^2
-    masses = 2 * np.pi * sigs ** 2 * amps * sigma_crit / (2*np.pi*sigs**2)
-
+    #sigma_crit = realization.lens_cosmo.sigmacrit # in units M_sun / arcsec^2
+    masses = np.absolute(amps)
+    #masses = [10 ** 8.0] * len(xs)
     fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, 'GAUSSIAN', realization._zlens,
                              True, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
 

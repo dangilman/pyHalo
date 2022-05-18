@@ -275,11 +275,12 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
-def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, fluctuation_size_scale=0.25,
+         fluctuation_size_dispersion=0.05, n_fluc_scale=1.0, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, n_cut=5e4, r_ein=1.0, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, n_cut=50000, r_ein=1.0, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -346,6 +347,16 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
     :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
     :param log10_fluc_amplitude: sets the amplitude of the fluctuations in the host dark matter halo.
     fluctuations are generated from a Guassian distriubtion with mean 0 and variance 10^log10_fluc_amplitude
+    :param fluctuation_size_scale: half the size of an individual fluctuation; fluctuations are modeled as Gaussians with variance
+    fluctuation_size_scale * lambda_dB, so their diameter is approximately 2 * fluctuation_size_scale * lambda_dB.
+    To fit an overdenisty and an underdensiity inside one lambda_dB, you therefore need fluctuation_size_scale = 1/4
+    :param fluctuation_size_dispersion: sets the variance of the distribution of fluctuation sizes, in units of fluctuation size:
+
+    variance = fluctuation_size_dispersion * lambda_dB * fluctuation_size_scale
+
+    To sumamrize, individual fluctuations are modeled as Gaussians with a mean fluctuation_size_scale * lambda_dB and a
+    variance fluctuation_size_dispersion * lambda_dB
+    :param n_fluc_scale: rescales the total number of fluctuations
     :param velocity_scale: velocity for de Broglie wavelength calculation in km/s
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
     :param b_uldm: defines the ULDM mass function (see above)
@@ -463,8 +474,11 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_sca
                                 (sigma_crit_ref/sigma_crit) * (sigma_host/sigma_host_ref)
 
         uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
-                                fluctuation_amplitude_variance=fluctuation_amplitude,
-                                fluctuation_size_variance=lambda_dB,
+                                fluctuation_amplitude=fluctuation_amplitude,
+                                fluctuation_size=lambda_dB * fluctuation_size_scale,
+                                fluctuation_size_variance=lambda_dB * fluctuation_size_scale *
+                                                          fluctuation_size_dispersion,
+                                n_fluc_scale=n_fluc_scale,
                                 shape=flucs_shape,
                                 args=flucs_args,
                                 n_cut=n_cut)

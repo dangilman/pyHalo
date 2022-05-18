@@ -6,6 +6,7 @@ from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.special import jv
 from scipy.integrate import simps
+from multiprocessing.pool import Pool
 
 
 def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
