@@ -280,7 +280,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, fluctuation_
                   c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, n_cut=100000, r_ein=1.0, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, n_cut=50000, r_ein=1.0, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
