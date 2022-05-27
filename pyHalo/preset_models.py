@@ -275,8 +275,8 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     return realization
 
-def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, fluctuation_size_scale=0.25,
-         fluctuation_size_dispersion=0.5, n_fluc_scale=1.0, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.9, fluctuation_size_scale=0.05,
+         fluctuation_size_dispersion=0.2, n_fluc_scale=1.0, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
                   c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
