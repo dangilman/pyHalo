@@ -28,9 +28,6 @@ Features
 - Quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. Implemented models currently include cold and warm dark matter, custom mass-concentration relations, self-interacting dark matter, and more.
 - Translte halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy
 
-Citation
--------
-If you use pyHalo, please cite `Gilman et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210505259G/abstract>`_.
 
 Credits
 -------
