@@ -93,6 +93,69 @@ class TestRealizationExtensions(object):
         npt.assert_almost_equal(abs(p_field[0] - i_field_collapsed_1 / i_field_1), 0, 1)
         npt.assert_almost_equal(abs(p_field[1] - i_field_collapsed_2 / i_field_2), 0, 1)
 
+    def test_collapse_by_mass_redshift(self):
+
+        cosmo = Cosmology()
+        m_list = 10**np.random.uniform(6, 10, 1000)
+        realization = SingleHalo(m_list[0], 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True,
+                                 cosmo=cosmo)
+        for mi in m_list[1:]:
+            single_halo = SingleHalo(mi, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True, cosmo=cosmo)
+            realization = realization.join(single_halo)
+            single_halo = SingleHalo(mi, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=False, cosmo=cosmo)
+            realization = realization.join(single_halo)
+
+        ext = RealizationExtensions(realization)
+
+        mass_range_subs = [[6, 8], [8, 10]]
+        mass_range_field = [[6, 8], [8, 10]]
+
+        custom_func_1 = lambda z: 0.3
+        custom_func_2 = lambda z: 0.9
+        custom_func_3 = lambda z: 0.8
+        custom_func_4 = lambda z: 0.25
+        z_eval = 0.5
+        p_subs = [custom_func_1, custom_func_2]
+        p_field = [custom_func_3, custom_func_4]
+        kwargs_halo = {'log_slope_halo': -3, 'x_core_halo': 0.05}
+        inds_collapsed = ext.core_collapse_by_mass(mass_range_subs, mass_range_field,
+                              p_subs, p_field, z_eval)
+        realization_collapsed = ext.add_core_collapsed_halos(inds_collapsed, **kwargs_halo)
+
+        i_subs_collapsed_1 = 0
+        i_subs_1 = 0
+        i_field_collapsed_1 = 0
+        i_field_1 = 0
+        i_subs_collapsed_2 = 0
+        i_subs_2 = 0
+        i_field_collapsed_2 = 0
+        i_field_2 = 0
+        for halo in realization_collapsed.halos:
+
+            if halo.is_subhalo:
+                if halo.mass < 10 ** 8:
+                    i_subs_1 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_subs_collapsed_1 += 1
+                else:
+                    i_subs_2 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_subs_collapsed_2 += 1
+            else:
+                if halo.mass < 10 ** 8:
+                    i_field_1 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_field_collapsed_1 += 1
+                else:
+                    i_field_2 += 1
+                    if halo.mdef == 'SPL_CORE':
+                        i_field_collapsed_2 += 1
+
+        npt.assert_almost_equal(abs(p_subs[0](z_eval) - i_subs_collapsed_1 / i_subs_1), 0, 1)
+        npt.assert_almost_equal(abs(p_subs[1](z_eval) - i_subs_collapsed_2 / i_subs_2), 0, 1)
+        npt.assert_almost_equal(abs(p_field[0](z_eval) - i_field_collapsed_1 / i_field_1), 0, 1)
+        npt.assert_almost_equal(abs(p_field[1](z_eval) - i_field_collapsed_2 / i_field_2), 0, 1)
+
     def test_add_ULDM_fluctuations(self):
 
         single_halo = SingleHalo(10 ** 8, 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True)
@@ -100,6 +163,7 @@ class TestRealizationExtensions(object):
         wavelength=0.6 #kpc, correpsonds to m=10^-22 eV for ULDM
         amp_var = 0.04 #in convergence units
         fluc_var = wavelength
+        fluc_size = 0.1
         n_cut = 1e4
 
         # apeture
@@ -107,15 +171,15 @@ class TestRealizationExtensions(object):
         y_images = np.array([ 0.964,  0.649, -0.079, -0.148])
         args_aperture = {'x_images':x_images,'y_images':y_images,'aperture':0.25}
 
-        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='aperture',args=args_aperture, n_cut=n_cut)
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_size,fluc_var,n_cut,shape='aperture',args=args_aperture)
 
         #ring
         args_ring = {'rmin':0.95,'rmax':1.05}
-        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ring',args=args_ring, n_cut=n_cut)
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_size,fluc_var,n_cut,shape='ring',args=args_ring)
 
         #ellipse
         args_ellipse = {'amin':0.8,'amax':1.7,'bmin':0.4,'bmax':1.2,'angle':np.pi/4}
-        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_var,shape='ellipse',args=args_ellipse, n_cut=n_cut)
+        ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_size,fluc_var,n_cut,shape='ellipse',args=args_ellipse)
 
     def test_add_pbh(self):
 

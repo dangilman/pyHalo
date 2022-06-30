@@ -61,7 +61,7 @@ class RealizationExtensions(object):
                                       self._realization.geometry)
 
     def core_collapse_by_mass(self, mass_ranges_subhalos, mass_ranges_field_halos,
-                              probabilities_subhalos, probabilities_field_halos):
+                              probabilities_subhalos, probabilities_field_halos, z_eval=None):
 
         """
         This routine transforms some fraction of subhalos and field halos into core collapsed profiles
@@ -75,7 +75,14 @@ class RealizationExtensions(object):
         range that core collapse
         e.g. probabilities_subhalos = [0.5, 1.] makes half of subhalos with mass 10^6 - 10^8 collapse, and
         100% of subhalos with mass between 10^8 and 10^10 collapse
+
+        If the entries in probabilities subhalos is a function, i.e. you pass in [function_1, function_2]
+        instead of [0.5, 1.0], they functions will be evaluated at z_eval, i.e. the fraction of collpsed
+        halos becomes [function_1(z_eval), function_2(z_eval)]
+
         :param probabilities_field_halos: same as probabilities subhalos, but for the population of field halos
+        :param z_eval: the redshift at which to evaluate the entries of probabilities_subhalos and probabilities_field_halos,
+        if these contain a list of functions
         :return: indexes of core collapsed halos
         """
 
@@ -85,18 +92,32 @@ class RealizationExtensions(object):
         indexes = []
 
         for i_halo, halo in enumerate(self._realization.halos):
+
             u = np.random.rand()
+
             if halo.is_subhalo:
+
                 for i, mrange in enumerate(mass_ranges_subhalos):
                     if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
-                        if u <= probabilities_subhalos[i]:
+                        if callable(probabilities_subhalos[i]):
+                            prob = probabilities_subhalos[i](z_eval)
+                        else:
+                            prob = probabilities_subhalos[i]
+
+                        if u <= prob:
                             indexes.append(i_halo)
                         break
 
             else:
                 for i, mrange in enumerate(mass_ranges_field_halos):
                     if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
-                        if u <= probabilities_field_halos[i]:
+
+                        if callable(probabilities_field_halos[i]):
+                            prob = probabilities_field_halos[i](z_eval)
+                        else:
+                            prob = probabilities_field_halos[i]
+
+                        if u <= prob:
                             indexes.append(i_halo)
                         break
 
@@ -197,7 +218,8 @@ class RealizationExtensions(object):
                                       self._realization.geometry)
 
     def add_ULDM_fluctuations(self, de_Broglie_wavelength, fluctuation_amplitude,
-                              fluctuation_size, fluctuation_size_variance, n_cut, n_fluc_scale=1., shape='ring', args={'rmin':0.9,'rmax':1.1}):
+                              fluctuation_size, fluctuation_size_variance, n_cut, n_fluc_scale=1., shape='ring',
+                              args={'rmin':0.9,'rmax':1.1}, rescale_fluc_amp=True):
 
         """
         This function adds gaussian fluctuations of the given de Broglie wavelength to a realization.
@@ -221,6 +243,8 @@ class RealizationExtensions(object):
             Note that for 'ellipse' the 'angle' parameter is the angle in radians at which to orient the ellipse relative to the positive x-axis.
 
         :param num_cut: integer number of fluctuations above which to start cancelling fluctuations
+        :param rescale_fluc_amp: Boolean specifying whether re-scale fluctuation amplitudes by sqrt(n_cut / n), where n
+        is the total number of fluctuations in the given area and n_cut (defined below) is the maximum number to generate
         """
 
         if (shape != 'ring') and (shape != 'ellipse') and (shape != 'aperture'): # check shape keyword
@@ -235,13 +259,13 @@ class RealizationExtensions(object):
         if shape!='aperture':
             if n_flucs==0:
                 return self._realization
-            if n_flucs > n_cut: #supress amplitudes by # of cancellations if above n_cut
+            if rescale_fluc_amp and n_flucs > n_cut: #supress amplitudes by # of cancellations if above n_cut
                 fluctuation_amplitude /= np.sqrt(n_flucs/n_cut)
                 n_flucs = int(n_cut)
         if shape=='aperture':
             if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
                 return self._realization
-            if np.mean(n_flucs) > n_cut: #supress amplitudes by # of cancellations if average above n_cut
+            if rescale_fluc_amp and np.mean(n_flucs) > n_cut: #supress amplitudes by # of cancellations if average above n_cut
                 fluctuation_amplitude /= np.sqrt(np.mean(n_flucs)/n_cut)
                 n_flucs = np.array([int(n_cut)]*4)
 
@@ -296,11 +320,11 @@ class RealizationExtensions(object):
 
         correlated_structure = CorrelatedStructure(kwargs_mass_function, self._realization, r_max_arcsec)
 
-        masses, x, y, r3d, redshifts, subhalo_flag, rescale_indicies, rescale_factor = correlated_structure.render(x_image_interp_list, y_image_interp_list,
+        masses, x, y, r3d, redshifts, subhalo_flag, rescale_indicies, rescale_factors = correlated_structure.render(x_image_interp_list, y_image_interp_list,
                                                                                  arcsec_per_pixel)
 
-        for index in np.unique(rescale_indicies):
-            realization_copy.halos[index].rescale_normalization(rescale_factor)
+        for i, index in enumerate(rescale_indicies):
+            realization_copy.halos[index].rescale_normalization(rescale_factors[i])
 
         mdefs = [mass_definition] * len(masses)
         realization_pbh = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,

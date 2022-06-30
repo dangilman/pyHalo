@@ -55,7 +55,7 @@ class CorrelatedStructure(RenderingClassBase):
         plane_redshifts = self._realization.unique_redshifts
         delta_z = []
         rescale_inds = []
-        rescale_factor = 1.
+        rescale_factors = []
 
         for i, zi in enumerate(plane_redshifts[0:-1]):
             delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
@@ -87,11 +87,12 @@ class CorrelatedStructure(RenderingClassBase):
                     y = np.append(y, _y)
                     redshifts = np.append(redshifts, _z)
                     rescale_inds += halo_inds
+                    rescale_factors += [rescale_factor] * len(halo_inds)
 
         subhalo_flag = [False] * len(masses)
         r3d = np.array([None] * len(masses))
 
-        return masses, x, y, r3d, redshifts, subhalo_flag, rescale_inds, rescale_factor
+        return masses, x, y, r3d, redshifts, subhalo_flag, rescale_inds, rescale_factors
 
     def render_at_z(self, z, angular_coordinate_x, angular_coordinate_y, rendering_radius, arcsec_per_pixel):
 
@@ -114,6 +115,7 @@ class CorrelatedStructure(RenderingClassBase):
             return np.array([]), np.array([]), np.array([]), [], 1.
 
         m, rescale_factor = self.render_masses_at_z(mass_in_area)
+
         n_halos = len(m)
         if n_halos > 0:
             x_kpc, y_kpc = self.spatial_distribution_model.draw(n_halos, rendering_radius, pdf, z,
@@ -129,9 +131,9 @@ class CorrelatedStructure(RenderingClassBase):
     def render_masses_at_z(self, mass_in_area):
 
         """
-        :param z: redshift at which to render masses
-        :param delta_z: thickness of the redshift slice
-        :return: halo masses at the desired redshift in units Msun
+        :param mass_in_area: total mass at the lens plane
+        :return: halo masses at the desired redshift in units Msun, and the factor by which to rescale the
+        original halo profiles
         """
 
         if self.kwargs_rendering['mass_function_type'] == 'DELTA':
@@ -150,6 +152,18 @@ class CorrelatedStructure(RenderingClassBase):
     def _kappa_at_lens_plane(self, z, angular_coordinate_x, angular_coordinate_y,
                             rendering_radius, arcsec_per_pixel):
 
+        """
+        This routine computes the 2D convergence map of all halos at a certain redshift centered around (angular_coordinate_x,
+        angular_coordinate_y) out to a radius "rendering_radius"
+
+        :param z: redshift
+        :param angular_coordinate_x: x center in arcsec
+        :param angular_coordinate_y: y center in arcsec
+        :param rendering_radius: radius in arcsec
+        :param arcsec_per_pixel: pixel size in arcsec
+        :return: the convergence map, the total mass in the convergence map in the specified area,
+        the indexes of halos contributing to the projected mass map
+        """
         realization_at_plane, halo_indexes = realization_at_z(self._realization,
                                                    z,
                                                    angular_coordinate_x,
@@ -181,10 +195,18 @@ class CorrelatedStructure(RenderingClassBase):
         rendering_radius_mpc = rendering_radius * (0.001 * self.cylinder_geometry.kpc_per_arcsec(z))
         effective_area = np.pi * rendering_radius_mpc ** 2 / npixels
         mass_in_area = self._mass_in_area(pdf, z, effective_area)
+
         return pdf.reshape(shape0), mass_in_area, halo_indexes
 
     def _mass_in_area(self, kappa_pdf, z, area):
 
+        """
+
+        :param kappa_pdf: a convergence map at the given redshift
+        :param z: redshift
+        :param area: the "area" of the convergence map in Mpc^2/pixel
+        :return: the total mass contained in the convergence map
+        """
         sigma_crit = self._realization.lens_cosmo.get_sigma_crit_lensing(
             z, self._realization.lens_cosmo.z_source)
 

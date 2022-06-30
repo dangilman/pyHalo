@@ -37,18 +37,23 @@ class Halo(ABC):
         self.unique_tag = unique_tag
         self._rescale_norm = 1.
         self.fixed_position = fixed_position
+        self._rescaled_once = False
 
     def rescale_normalization(self, factor):
         """
-        Sets the rescaling factor for the normalization
+        Sets the rescaling factor for the normalization (only can do this once)
         :param factor:
         :return:
         """
-        self._rescale_norm = factor
-        if hasattr(self, '_params_physical'):
-            delattr(self, '_params_physical')
-        if hasattr(self, '_kwargs_lenstronomy'):
-            delattr(self, '_kwargs_lenstronomy')
+        if self._rescaled_once:
+            pass
+        else:
+            self._rescaled_once = True
+            self._rescale_norm = factor
+            if hasattr(self, '_params_physical'):
+                delattr(self, '_params_physical')
+            if hasattr(self, '_kwargs_lenstronomy'):
+                delattr(self, '_kwargs_lenstronomy')
 
     @property
     @abstractmethod

@@ -222,7 +222,8 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross_section,
          kwargs_core_collapse_profile, deflection_angle_function, central_density_function, evolution_timescale_function,
          velocity_dispersion_function, t_sub=10, t_field=100, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
-         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', **kwargs_other):
+         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', realization_no_core_collapse=None,
+         **kwargs_other):
 
     """
     This generates realizations of self-interacting dark matter (SIDM) halos, inluding both cored and core-collapsed
@@ -263,7 +264,8 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
                        'numerical_deflection_angle_class': deflection_angle_function}
     kwargs_sidm.update(kwargs_other)
 
-    realization_no_core_collapse = CDM(z_lens, z_source, sigma_sub, power_law_index, cone_opening_angle_arcsec, log_mlow,
+    if realization_no_core_collapse is None:
+        realization_no_core_collapse = CDM(z_lens, z_source, sigma_sub, power_law_index, cone_opening_angle_arcsec, log_mlow,
                               log_mhigh, LOS_normalization, log_m_host, r_tidal, mdef, **kwargs_sidm)
 
     ext = RealizationExtensions(realization_no_core_collapse)
@@ -280,7 +282,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                   c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, n_cut=50000, r_ein=1.0, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, n_cut=50000, rescale_fluc_amp=True, r_ein=1.0, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -376,6 +378,8 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :param flucs: Boolean specifying whether or not to include density fluctuations in the main deflector halo
     :param flucs_shape: String specifying how to place fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
     :param fluc_args: Keyword arguments for specifying the fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
+    :param rescale_fluc_amp: Boolean specifying whether re-scale fluctuation amplitudes by sqrt(n_cut / n), where n
+    is the total number of fluctuations in the given area and n_cut (defined below) is the maximum number to generate
     :param einstein_radius: Einstein radius of main deflector halo in kpc
     :param n_cut: Number of fluctuations above which to start cancelling
     :param r_ein: the Einstein radius in arcseconds
@@ -481,6 +485,6 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                                 n_fluc_scale=n_fluc_scale,
                                 shape=flucs_shape,
                                 args=flucs_args,
-                                n_cut=n_cut)
+                                n_cut=n_cut, rescale_fluc_amp=rescale_fluc_amp)
 
     return uldm_realization

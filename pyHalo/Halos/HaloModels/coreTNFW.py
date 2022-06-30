@@ -90,6 +90,7 @@ class coreTNFWBase(Halo):
             beta_norm = 0.0025 * Rs_angle
             x_match = 10.
             r_trunc_norm = x_match * Rs_angle
+
             alpha_norm, _ = numerical_deflection_class(x_match * Rs_angle, 0., Rs_angle, beta_norm, r_trunc_norm, norm=1.)
             alpha_tnfw, _ = self._tnfw_lenstronomy.derivatives(x_match * Rs_angle, 0., Rs=Rs_angle,
                                                                alpha_Rs=theta_Rs,

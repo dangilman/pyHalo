@@ -9,6 +9,22 @@ class Geometry(object):
     def __init__(self, cosmology, z_lens, z_source, opening_angle, geometry_type,
                  angle_pad=0.8):
 
+        """
+        This class handles geometric calculations for rendering halos along the line of sight
+
+        :param cosmology: an instance of the Cosmology() class in pyHalo
+        :param z_lens: lens redshift
+        :param z_source: source redshift
+        :param opening_angle: the opening angle of the rendering area in arcsec.
+        For a double cone configuration, for example, the angular size of the area in which halos are rendered
+        is equal to 2 * cone_opening_angle for z < z_lens, and closes towards the source redshift
+        :param geometry_type: the type of geometry
+        DOUBLE_CONE opens towards the lens redshift and closes behind it
+        CYLINDER generates objects in a cylinder; the physical radius of the cylinder is the angular diameter distance
+        to the lens times 2 * cone_opening_angle (in radians)
+        :param angle_pad: modifies the closure of the rendering volume behind the main deflector, only relevant for
+        DOUBLE_CONE geometries. Values less than one will result in a non-zero rendering area at the source redshift
+        """
         if geometry_type == 'DOUBLE_CONE':
             self._geometrytype = DoubleCone(cosmology, z_lens, z_source, opening_angle, angle_pad)
             self.volume_type = 'DOUBLE_CONE'
@@ -146,7 +162,14 @@ class Cylinder(object):
                              cosmology.D_C_transverse(self._zsource)
 
     def rendering_scale(self, z):
+        """
+        Determines the angular size of the area at redshift z where halos are rendered;
+        for this geometry, the physical size of the cylinder remains constant, and is set by
+        cone_opening_angle / 2 * D_z, where D_z is the distance to the main deflector
 
+        :param z: redshift
+        :return: a factor that scales the size of the rendering area
+        """
         d_c = self._cosmo.D_C_transverse(z)
         xi = self.d_c_lens/d_c
 
@@ -174,7 +197,14 @@ class DoubleCone(object):
         self._total_volume = volume_background + volume_foreground
 
     def rendering_scale(self, z):
-
+        """
+        Determines the angular size of the area at redshift z where halos are rendered;
+        for this geometry, the angle stays constant for z < z_lens, and closes towards the source
+        angle_pad < 1.0 ensures that the rendering area doesn't close exactly at the source, so that halos are
+        rendered up to z = z_source
+        :param z: redshift
+        :return: a factor that scales the size of the rendering area
+        """
         if z <= self._zlens:
             return 1.
         else:
