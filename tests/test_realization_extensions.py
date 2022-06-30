@@ -117,9 +117,11 @@ class TestRealizationExtensions(object):
         z_eval = 0.5
         p_subs = [custom_func_1, custom_func_2]
         p_field = [custom_func_3, custom_func_4]
+        kwargs_sub = [{}, {}]
+        kwargs_field = [{}, {}]
         kwargs_halo = {'log_slope_halo': -3, 'x_core_halo': 0.05}
         inds_collapsed = ext.core_collapse_by_mass(mass_range_subs, mass_range_field,
-                              p_subs, p_field, z_eval)
+                              p_subs, p_field, kwargs_sub, kwargs_field)
         realization_collapsed = ext.add_core_collapsed_halos(inds_collapsed, **kwargs_halo)
 
         i_subs_collapsed_1 = 0

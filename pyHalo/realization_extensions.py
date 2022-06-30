@@ -61,7 +61,8 @@ class RealizationExtensions(object):
                                       self._realization.geometry)
 
     def core_collapse_by_mass(self, mass_ranges_subhalos, mass_ranges_field_halos,
-                              probabilities_subhalos, probabilities_field_halos, z_eval=None):
+                              probabilities_subhalos, probabilities_field_halos,
+                              kwargs_sub=None, kwargs_field=None):
 
         """
         This routine transforms some fraction of subhalos and field halos into core collapsed profiles
@@ -81,8 +82,10 @@ class RealizationExtensions(object):
         halos becomes [function_1(z_eval), function_2(z_eval)]
 
         :param probabilities_field_halos: same as probabilities subhalos, but for the population of field halos
-        :param z_eval: the redshift at which to evaluate the entries of probabilities_subhalos and probabilities_field_halos,
-        if these contain a list of functions
+        :param kwargs_sub: list of keyword arguments for each function passed in mass_ranges_subhalos, if the entries in
+        mass_ranges_subhalos are callable functions
+        :param kwargs_field: list of keyword arguments for each function passed in mass_ranges_field_halos, if the entries in
+        mass_ranges_field_halos are callable functions
         :return: indexes of core collapsed halos
         """
 
@@ -100,7 +103,7 @@ class RealizationExtensions(object):
                 for i, mrange in enumerate(mass_ranges_subhalos):
                     if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
                         if callable(probabilities_subhalos[i]):
-                            prob = probabilities_subhalos[i](z_eval)
+                            prob = probabilities_subhalos[i](halo.z, **kwargs_sub[i])
                         else:
                             prob = probabilities_subhalos[i]
 
@@ -113,7 +116,7 @@ class RealizationExtensions(object):
                     if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
 
                         if callable(probabilities_field_halos[i]):
-                            prob = probabilities_field_halos[i](z_eval)
+                            prob = probabilities_field_halos[i](halo.z, **kwargs_field[i])
                         else:
                             prob = probabilities_field_halos[i]
 
