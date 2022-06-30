@@ -13,7 +13,7 @@ pyHalo
 
 pyHalo renders full mass distributions for substructure lensing simulations with the open source gravitational lensing software package lenstronomy (https://github.com/sibirrer/lenstronomy). The example notebooks illustrate the core functionality of this package. 
 
-If you would like to use this package and have questions, please get in touch with me at gilman@astro.utoronto.ca - I am happy to help! 
+If you would like to use this package and have questions, please get in touch with me at daniel.gilman@utoronto.ca - I am happy to help! 
 
 Installation
 ------------
@@ -28,9 +28,6 @@ Features
 - Quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. Implemented models currently include cold and warm dark matter, custom mass-concentration relations, self-interacting dark matter, and more.
 - Translte halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy
 
-Citation
--------
-If you use pyHalo, please cite `Gilman et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210505259G/abstract>`_.
 
 Credits
 -------
