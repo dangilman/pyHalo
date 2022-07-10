@@ -1,6 +1,6 @@
 import numpy as np
-from copy import deepcopy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
+from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
@@ -177,14 +177,15 @@ class RealizationExtensions(object):
 
         return inds
 
-    def add_core_collapsed_halos(self, indexes, **kwargs_halo):
+    def add_core_collapsed_halos(self, indexes, halo_profile='SPL_CORE',**kwargs_halo):
 
         """
         This function turns NFW halos in a realization into profiles modeled as PseudoJaffe profiles
         with 1/r^2 central density profiles with the same total mass as the original NFW
         profile.
 
-        :param indexes: the indexes of halos in the realization to transform into PsuedoJaffe profiles
+        :param indexes: the indexes of halos in the realization to transform into powerlaw or generalized nfw profiles
+        :param halo_profile: specifies whether to transform to powerlaw or generalized_nfw profile
         :param kwargs_halo: the keyword arguments for the collapsed halo profile
         :return: A new instance of Realization where the halos indexed by indexes
         in the original realization have their mass definitions changed to PsuedoJaffe
@@ -193,16 +194,23 @@ class RealizationExtensions(object):
         halos = self._realization.halos
         new_halos = []
 
+        if halo_profile == 'GNFW':
+            subhalo_model = GeneralNFWSubhalo
+            fieldhalo_model = GeneralNFWFieldHalo
+        elif halo_profile == 'SPL_CORE':
+            subhalo_model = PowerLawSubhalo
+            fieldhalo_model = PowerLawFieldHalo
+
         for i, halo in enumerate(halos):
 
             if i in indexes:
 
                 halo._args.update(kwargs_halo)
                 if halo.is_subhalo:
-                    new_halo = PowerLawSubhalo(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
+                    new_halo = subhalo_model(halo.mass, halo.x, halo.y, halo.r3d, halo_profile,
                                                  halo.z, True, halo.lens_cosmo, halo._args, halo.unique_tag)
                 else:
-                    new_halo = PowerLawFieldHalo(halo.mass, halo.x, halo.y, halo.r3d, 'SPL_CORE',
+                    new_halo = fieldhalo_model(halo.mass, halo.x, halo.y, halo.r3d, halo_profile,
                                                  halo.z, False, halo.lens_cosmo, halo._args, halo.unique_tag)
                 new_halos.append(new_halo)
 

@@ -35,6 +35,24 @@ class TestRealizationExtensions(object):
         indexes = ext.find_core_collapsed_halos(p_long, cross_section_class)
         npt.assert_equal(False, 0 in indexes)
 
+    def test_collapse_profile(self):
+
+        cosmo = Cosmology()
+        m_list = 10 ** np.random.uniform(6, 10, 1000)
+        realization = SingleHalo(m_list[0], 0.5, -0.1, 'TNFW', 0.5, 0.5, 1.5, subhalo_flag=True,
+                                 cosmo=cosmo)
+        ext = RealizationExtensions(realization)
+        kwargs_halo_gnfw = {'gamma_inner': 2.2, 'gamma_outer': 3.05, 'x_match': 2.5}
+        kwargs_halo_splcore = {'log_slope_halo': 3.0, 'x_core_halo': 0.05, 'x_match': 2.5}
+
+        realization_collapsed = ext.add_core_collapsed_halos([0], **kwargs_halo_splcore)
+        lens_model_list, _, _, _ = realization_collapsed.lensing_quantities()
+        npt.assert_string_equal(lens_model_list[0],'SPL_CORE')
+
+        realization_collapsed = ext.add_core_collapsed_halos([0], 'GNFW',**kwargs_halo_gnfw)
+        lens_model_list, _, _, _ = realization_collapsed.lensing_quantities()
+        npt.assert_string_equal(lens_model_list[0], 'GNFW')
+
     def test_collapse_by_mass(self):
 
         cosmo = Cosmology()
@@ -53,7 +71,7 @@ class TestRealizationExtensions(object):
         mass_range_field = [[6, 8], [8, 10]]
         p_subs = [0.3, 0.9]
         p_field = [0.8, 0.25]
-        kwargs_halo = {'log_slope_halo': -3, 'x_core_halo': 0.05}
+        kwargs_halo = {'log_slope_halo': 3, 'x_core_halo': 0.05}
         inds_collapsed = ext.core_collapse_by_mass(mass_range_subs, mass_range_field,
                               p_subs, p_field)
         realization_collapsed = ext.add_core_collapsed_halos(inds_collapsed, **kwargs_halo)

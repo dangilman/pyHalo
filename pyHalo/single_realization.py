@@ -4,6 +4,7 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
+from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
 from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWFieldHalo, coreTNFWSubhalo
@@ -682,6 +683,16 @@ class Realization(object):
 
             model = Gaussian(mass, x, y, r3d, mdef, z, is_subhalo,
                                   lens_cosmo_instance, args, unique_tag)
+
+        elif mdef == 'GNFW':
+
+            if is_subhalo:
+                model = GeneralNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                    lens_cosmo_instance, args, unique_tag)
+
+            else:
+                model = GeneralNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                      lens_cosmo_instance, args, unique_tag)
 
 
         else:

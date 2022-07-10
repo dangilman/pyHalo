@@ -45,7 +45,6 @@ class NFWFieldHalo(Halo):
         Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
 
         x, y = np.round(self.x, 4), np.round(self.y, 4)
-
         Rs_angle = np.round(Rs_angle, 10)
         theta_Rs = np.round(theta_Rs, 10)
 

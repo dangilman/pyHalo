@@ -239,10 +239,6 @@ class TestTNFWHalos(object):
         con_field_halo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
         npt.assert_almost_equal(wdm_suppresion * con_field_halo, c)
 
-t = TestTNFWHalos()
-t.setup()
-t.test_rescale_norm()
+if __name__ == '__main__':
+    pytest.main()
 
-# if __name__ == '__main__':
-#     pytest.main()
-#
