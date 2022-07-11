@@ -42,7 +42,7 @@ class TestCorrelated(object):
 
         npt.assert_equal(len(masses), len(x))
         npt.assert_equal(len(masses), len(y))
-        npt.assert_equal(rescale_factor, 0.5)
+        npt.assert_equal(rescale_factor[0], 0.5)
         npt.assert_equal(len(rescale_inds), len(self.realization.halos))
 
         for i in range(0, len(masses)):

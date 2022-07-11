@@ -193,17 +193,19 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
                           }
 
     if suppression_model_field is not None:
-        kwargs_model_field.update({'suppression_model': suppression_model_field})
-        kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_mc_relation_field})
+        kwargs_model_field['suppression_model'] = suppression_model_field
+        kwargs_model_field['kwargs_suppression'] = kwargs_suppression_mc_relation_field
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
                            'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
 
+
     if suppression_model_sub is not None:
-        kwargs_model_subhalos.update({'suppression_model': suppression_model_sub})
-        kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_mc_relation_sub})
+
+        kwargs_model_subhalos['suppression_model'] = suppression_model_sub
+        kwargs_model_subhalos['kwargs_suppression'] = kwargs_suppression_mc_relation_sub
 
     kwargs_model_field.update(kwargs_other)
     kwargs_model_subhalos.update(kwargs_other)
@@ -220,9 +222,10 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 
 
 def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross_section,
-         kwargs_core_collapse_profile, deflection_angle_function, central_density_function, evolution_timescale_function,
-         velocity_dispersion_function, t_sub=10, t_field=100, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
-         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', realization_no_core_collapse=None,
+         kwargs_core_collapse_profile, deflection_angle_function, central_density_function, collapse_probability_function,
+         t_sub=10, t_field=100, collapse_time_width=0.5, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
+         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', mdef_collapse='SPL_CORE',
+         realization_no_core_collapse=None,
          **kwargs_other):
 
     """
@@ -240,11 +243,11 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     (convention is for this to be a positive number)
     :param deflection_angle_function: a function that returns the deflection angles, to be passed into lenstronomy
     :param central_density_function: a function that computes the central density of cored halos
-    :param evolution_timescale_function: a function that computes the evolution timescale t_0 for a given cross section
-    (for example, Equation 9 in Gilman et al. 2021)
+    :param collapse_probability_function: a function that computes the probability of core collapse for a given cross section
     :param velocity_dispersion_function: a function that computes the central velocity dispersion of an SIDM halo
     :param t_sub: core collapse timescale for subhalos
     :param t_field: core collapse timescale for field halos
+    :param collapse_time_width: scatter in collapse times
     :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
     :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
     :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
@@ -255,7 +258,8 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
     :param kwargs_other: any addition keyword arguments
-    :param mdef: the halo mass definition
+    :param mdef: the halo profile for halos that have not core collapsed
+    :param mdef_collapse: the halo profile for halos that have core collapsed
     :return: an instance of Realization that contains cored and core collapsed halos
     """
 
@@ -270,10 +274,10 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
 
     ext = RealizationExtensions(realization_no_core_collapse)
 
-    inds = ext.find_core_collapsed_halos(evolution_timescale_function, velocity_dispersion_function,
-                                         cross_section_class, t_sub=t_sub, t_field=t_field)
+    inds = ext.find_core_collapsed_halos(collapse_probability_function, cross_section_class,
+                                  t_sub=t_sub, t_field=t_field, collapse_time_width=collapse_time_width)
 
-    realization = ext.add_core_collapsed_halos(inds, **kwargs_core_collapse_profile)
+    realization = ext.add_core_collapsed_halos(inds, mdef_collapse, **kwargs_core_collapse_profile)
 
     return realization
 

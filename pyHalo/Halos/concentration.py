@@ -117,7 +117,7 @@ class Concentration(object):
 
         return c
 
-def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppression_model, kwargs_suppresion):
+def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppression_model, kwargs_supression):
 
     """
 
@@ -130,17 +130,17 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppre
     :return: the ratio c_wdm over c_cdm
     """
 
-    if 'mc_suppression_redshift_evolution' not in kwargs_suppresion.keys():
-        kwargs_suppresion['mc_suppression_redshift_evolution'] = \
+    if 'mc_suppression_redshift_evolution' not in kwargs_supression.keys():
+        kwargs_supression['mc_suppression_redshift_evolution'] = \
             halo_default.kwargs_suppression['mc_suppression_redshift_evolution']
 
     if suppression_model == 'polynomial':
-        return _suppression_polynomial(halo_mass, z, log_half_mode_mass, kwargs_suppresion['c_scale'],
-                                       kwargs_suppresion['c_power'], kwargs_suppresion['c_power_inner'],
-                                       kwargs_suppresion['mc_suppression_redshift_evolution'])
+        return _suppression_polynomial(halo_mass, z, log_half_mode_mass, kwargs_supression['c_scale'],
+                                       kwargs_supression['c_power'], kwargs_supression['c_power_inner'],
+                                       kwargs_supression['mc_suppression_redshift_evolution'])
     elif suppression_model == 'hyperbolic':
-        return _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, kwargs_suppresion['a_mc'],
-                                       kwargs_suppresion['b_mc'])
+        return _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, kwargs_supression['a_mc'],
+                                       kwargs_supression['b_mc'])
     else:
         raise Exception('suppression model '+str(suppression_model)+' not recognized.')
 

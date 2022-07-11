@@ -127,7 +127,7 @@ class RealizationExtensions(object):
         return indexes
 
     def find_core_collapsed_halos(self, collapse_probability_function, cross_section_class,
-                                  t_sub=10., t_field=300., collapse_time_width=2):
+                                  t_sub=10., t_field=300., collapse_time_width=0.5):
 
         """
         This class is meant to be used with the software SIDMpy, but you can also write your own functions/classes to
@@ -156,21 +156,15 @@ class RealizationExtensions(object):
                 continue
 
             rho_s, r_s = halo.params_physical['rhos'], halo.params_physical['rs']
-            halo_age = self._realization.lens_cosmo.cosmo.halo_age(halo.z)
+
             if halo.is_subhalo:
-                p = collapse_probability_function(halo_age,
-                                                  rho_s,
-                                                  r_s,
-                                                  cross_section_class,
-                                                  t_sub,
-                                                  collapse_time_width)
+                p = collapse_probability_function(rho_s, r_s, halo.z, cross_section_class,
+                                                  self._realization.lens_cosmo, t_sub,
+                                                  collapse_time_width, None)
             else:
-                p = collapse_probability_function(halo_age,
-                                                  rho_s,
-                                                  r_s,
-                                                  cross_section_class,
-                                                  t_field,
-                                                  collapse_time_width)
+                p = collapse_probability_function(rho_s, r_s, halo.z, cross_section_class,
+                                                  self._realization.lens_cosmo, t_field,
+                                                  collapse_time_width, None)
 
             if np.random.rand() < p:
                 inds.append(i)
@@ -200,6 +194,9 @@ class RealizationExtensions(object):
         elif halo_profile == 'SPL_CORE':
             subhalo_model = PowerLawSubhalo
             fieldhalo_model = PowerLawFieldHalo
+        else:
+            raise Exception('only halo profile models GNFW and SPL_CORE '
+                            'implemented for collapsed objects')
 
         for i, halo in enumerate(halos):
 

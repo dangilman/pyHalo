@@ -19,26 +19,23 @@ class TestPresetModels(object):
 
         realization_wdm = WDM(0.5, 1.5, 8.)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
-        kwargs_suppression_polynomial = {'c_power': -0.17, 'c_scale': 60., 'c_power_inner': 1.0,'mc_suppression_redshift_evolution': False}
-        kwargs_suppression_hyperbolic = {'a_mc': 1., 'b_mc': 1.}
-        realization_wdm = WDM(0.5, 1.5, 8., suppression_model_field='polynomial',
-                              suppression_model_sub='hyperbolic', kwargs_suppression_field=kwargs_suppression_polynomial,
-                              kwargs_suppression_sub=kwargs_suppression_hyperbolic)
-        npt.assert_equal(len(realization_wdm.rendering_classes), 3)
 
-        kwargs_suppression_polynomial = {'c_power': -0.17, 'c_scale': 60., 'c_power_inner': 1.0,
-                                         'mc_suppression_redshift_evolution': True}
-        realization_wdm = WDM(0.5, 1.5, 8., suppression_model_field='hyperbolic',
-                              suppression_model_sub='polynomial',
-                              kwargs_suppression_field=kwargs_suppression_hyperbolic,
-                              kwargs_suppression_sub=kwargs_suppression_polynomial)
-        npt.assert_equal(len(realization_wdm.rendering_classes), 3)
+        a_wdm_sub = 0.5
+        b_wdm_sub = 0.8
+        c_wdm_sub = -3.0
+        a_wdm_los = 0.5
+        b_wdm_los = 0.8
+        c_wdm_los = -3.0
+        suppression_model_mcrelation = 'hyperbolic'
+        kwargs_suppresion_model_mcrelation = {'a_mc': 0.25, 'b_mc': 0.5}
+        kwargs_wdm = {'a_wdm_los': a_wdm_los, 'a_wdm_sub': a_wdm_sub, 'b_wdm_los': b_wdm_los, 'b_wdm_sub': b_wdm_sub,
+                      'c_wdm_los': c_wdm_los, 'c_wdm_sub': c_wdm_sub,
+                      'suppression_model_sub': suppression_model_mcrelation,
+                      'suppression_model_field': suppression_model_mcrelation,
+                      'kwargs_suppression_mc_relation_sub': kwargs_suppresion_model_mcrelation,
+                      'kwargs_suppression_mc_relation_field': kwargs_suppresion_model_mcrelation}
 
-        wdm = preset_model_from_name('WDM')
-        realization_wdm = wdm(0.5, 1.5, 8., suppression_model_field='hyperbolic',
-                              suppression_model_sub='polynomial',
-                              kwargs_suppression_field=kwargs_suppression_hyperbolic,
-                              kwargs_suppression_sub=kwargs_suppression_polynomial)
+        realization_wdm = WDM(0.5, 1.5,8.0,cone_opening_angle_arcsec=10, **kwargs_wdm)
         npt.assert_equal(len(realization_wdm.rendering_classes), 3)
 
     def test_SIDM(self):
