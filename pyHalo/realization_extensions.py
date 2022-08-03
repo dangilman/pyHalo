@@ -179,7 +179,7 @@ class RealizationExtensions(object):
         profile.
 
         :param indexes: the indexes of halos in the realization to transform into powerlaw or generalized nfw profiles
-        :param halo_profile: specifies whether to transform to powerlaw or generalized_nfw profile
+        :param halo_profile: specifies whether to transform to powerlaw (SPL_CORE) or generalized_nfw profile (GNFW)
         :param kwargs_halo: the keyword arguments for the collapsed halo profile
         :return: A new instance of Realization where the halos indexed by indexes
         in the original realization have their mass definitions changed to PsuedoJaffe
@@ -306,7 +306,8 @@ class RealizationExtensions(object):
                                  mass_definition,
                                    x_image_interp_list,
                                    y_image_interp_list,
-                                   r_max_arcsec, arcsec_per_pixel):
+                                   r_max_arcsec, arcsec_per_pixel,
+                                 rescale_normalizations=True):
 
         """
         Adds structure along the line of sight with a spatial distribution that tracks the dark matter density at each
@@ -331,8 +332,9 @@ class RealizationExtensions(object):
         masses, x, y, r3d, redshifts, subhalo_flag, rescale_indicies, rescale_factors = correlated_structure.render(x_image_interp_list, y_image_interp_list,
                                                                                  arcsec_per_pixel)
 
-        for i, index in enumerate(rescale_indicies):
-            realization_copy.halos[index].rescale_normalization(rescale_factors[i])
+        if rescale_normalizations:
+            for i, index in enumerate(rescale_indicies):
+                realization_copy.halos[index].rescale_normalization(rescale_factors[i])
 
         mdefs = [mass_definition] * len(masses)
         realization_pbh = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
@@ -344,7 +346,8 @@ class RealizationExtensions(object):
         return new_realization
 
     def add_primordial_black_holes(self, pbh_mass_fraction, kwargs_pbh_mass_function, mass_fraction_in_halos,
-                                   x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005):
+                                   x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005,
+                                   rescale_normalizations=True):
 
         """
         This routine renders populations of primordial black holes modeled as point masses along the line of sight.
@@ -363,6 +366,8 @@ class RealizationExtensions(object):
         :param arcsec_per_pixel: the resolution of the grid used to compute the population of PBH whose spatial
         distribution tracks the dark matter density along the LOS specific by the instance of Realization used to
         instantiate the class
+        :param rescale_normalizations: bool; whether or not to rescale the density profile of halos to account for the
+        mass added in correlated structure
         :return: a new instance of Realization that contains primordial black holes modeled as point masses
         """
         mass_definition = 'PT_MASS'
@@ -421,7 +426,7 @@ class RealizationExtensions(object):
 
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
         realization_with_clustering = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list, y_image_interp_list,
-                                                        r_max_arcsec, arcsec_per_pixel)
+                                                        r_max_arcsec, arcsec_per_pixel, rescale_normalizations)
 
         return realization_with_clustering.join(realization_smooth)
 

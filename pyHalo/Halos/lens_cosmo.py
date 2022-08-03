@@ -86,7 +86,7 @@ class LensCosmo(object):
         return rN_physical_kpc
 
     def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=None,
-                          scatter=True, scatter_amplitude=0.13, kwargs_suppresion=None, suppression_model=None):
+                          scatter=True, scatter_amplitude=0.2, kwargs_suppresion=None, suppression_model=None):
 
         """
         Returns the concentration of an NFW halo (see method in the class Concentration)
@@ -184,6 +184,7 @@ class LensCosmo(object):
     ##################################################################################
     def NFW_params_physical(self, M, c, z):
         """
+
         :param M: physical M200
         :param c: concentration
         :param z: halo redshift
