@@ -347,7 +347,7 @@ class RealizationExtensions(object):
 
     def add_primordial_black_holes(self, pbh_mass_fraction, kwargs_pbh_mass_function, mass_fraction_in_halos,
                                    x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005,
-                                   rescale_normalizations=True):
+                                   rescale_normalizations=True, combine_inds=False, mindist=False):
 
         """
         This routine renders populations of primordial black holes modeled as point masses along the line of sight.
@@ -368,6 +368,8 @@ class RealizationExtensions(object):
         instantiate the class
         :param rescale_normalizations: bool; whether or not to rescale the density profile of halos to account for the
         mass added in correlated structure
+        :param combine_inds: indices of images closer together than r_max =.24 , use in conjunction with mindist param
+        :param mindist: distance between the images that are too close together, use in conjunction with combine_inds param
         :return: a new instance of Realization that contains primordial black holes modeled as point masses
         """
         mass_definition = 'PT_MASS'
@@ -382,6 +384,8 @@ class RealizationExtensions(object):
                                                      self._realization.lens_cosmo.z_source,
                                                      2 * r_max_arcsec,
                                                      'DOUBLE_CONE')
+        
+        indcount = 0
 
         mass_fraction_smooth = (1 - mass_fraction_in_halos) * pbh_mass_fraction
         mass_fraction_clumpy = pbh_mass_fraction * mass_fraction_in_halos
@@ -392,6 +396,19 @@ class RealizationExtensions(object):
         redshifts = np.array([])
 
         for x_image_interp, y_image_interp in zip(x_image_interp_list, y_image_interp_list):
+            indcount += 1 # midpoint-position is always last index
+            r_max_stored = r_max_arcsec
+                
+            if mindist != None and indcount == 3:
+                print('hi there')
+                r_new = r_max_arcsec + .5*mindist
+                r_max_arcsec = r_new
+                geometry2 = Geometry(self._realization.lens_cosmo.cosmo,
+                                         self._realization.lens_cosmo.z_lens,
+                                         self._realization.lens_cosmo.z_source,
+                                         2 * r_max_arcsec,
+                                         'DOUBLE_CONE')
+                geometry = geometry2
             for zi, delta_zi in zip(plane_redshifts, delta_z):
 
                 d = geometry._cosmo.D_C_transverse(zi)
@@ -425,11 +442,18 @@ class RealizationExtensions(object):
                                           self._realization.lens_cosmo, kwargs_realization=self._realization._prof_params)
 
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
-        realization_with_clustering = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list, y_image_interp_list,
-                                                        r_max_arcsec, arcsec_per_pixel, rescale_normalizations)
+        if mindist == None:
+            realization_with_clustering = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list, y_image_interp_list,
+                                                            r_max_arcsec, arcsec_per_pixel, rescale_normalizations)
+        if mindist != None:
+            realization_with_clustering_A = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list[0:2], y_image_interp_list[0:2],
+                                                            r_max_stored, arcsec_per_pixel, rescale_normalizations)
+            realization_with_clustering_B = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, [x_image_interp_list[2]], [y_image_interp_list[2]],
+                                                            r_new, arcsec_per_pixel, rescale_normalizations)
+            realization_with_clustering = realization_with_clustering_A.join(realization_with_clustering_B)
 
         return realization_with_clustering.join(realization_smooth)
-
+    
 def _get_number_flucs(realization, de_Broglie_wavelength, fluctuation_size_scale, n_fluc_scale, shape, args):
     """
     This function returns the number of fluctuations to place in the realization.
