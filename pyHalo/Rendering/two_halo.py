@@ -32,9 +32,7 @@ class TwoHaloContribution(RenderingClassBase):
         """
 
         idx = np.argmin(abs(np.array(self._lens_plane_redshifts) - self.lens_cosmo.z_lens))
-
         delta_z = self._delta_z_list[idx]
-
         m = self.render_masses_at_z(self.lens_cosmo.z_lens, delta_z)
         x, y = self.render_positions_at_z(self.lens_cosmo.z_lens, len(m))
         subhalo_flag = [False] * len(m)
@@ -115,7 +113,7 @@ class TwoHaloContribution(RenderingClassBase):
 
         rmax = self.lens_cosmo.cosmo.D_C_transverse(z + delta_z) - self.lens_cosmo.cosmo.D_C_transverse(z)
         rmin = min(rmax, 0.5)
-
+        
         two_halo_boost = self.halo_mass_function.two_halo_boost(self._rendering_kwargs['host_m200'], z, rmax=rmax,
                                                                 rmin=rmin)
 

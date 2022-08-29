@@ -9,6 +9,8 @@ from scipy.interpolate import interp1d
 from copy import deepcopy
 import pytest
 from pyHalo.Rendering.halo_population import HaloPopulation
+from pyHalo.preset_models import CDM
+
 
 class TestSingleRealization(object):
 
@@ -55,7 +57,7 @@ class TestSingleRealization(object):
         kwargs_cdm_2 = {'zmin': 0.01, 'zmax': 1.98, 'log_mc': None, 'log_mlow': 6.,
                       'log_mhigh': 9., 'host_m200': 10 ** 13, 'LOS_normalization': 2000.,
                       'LOS_normalization_mass_sheet': 1.,
-                      'draw_poisson': False, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
+                      'draw_poisson': True, 'log_mass_sheet_min': 7., 'log_mass_sheet_max': 10., 'kappa_scale': 1.,
                       'delta_power_law_index': 0., 'a_wdm': None, 'b_wdm': None, 'c_wdm': None,
                       'm_pivot': 10 ** 8, 'cone_opening_angle': 6., 'subtract_exact_mass_sheets': True,
                         'mass_function_LOS_type': 'POWER_LAW'}
@@ -385,6 +387,14 @@ class TestSingleRealization(object):
         npt.assert_almost_equal(x[0], self.realization_cdm.x[0]*d1)
         npt.assert_almost_equal(y[0], self.realization_cdm.y[0] * d1)
         npt.assert_almost_equal(10**logm[0], self.realization_cdm.masses[0])
+
+    def test_draw_poisson(self):
+
+        cdm1 = CDM(0.5, 2.0, draw_poisson=False)
+        cdm2 = CDM(0.5, 2.0, draw_poisson=False)
+        l1 = len(cdm1.halos)
+        l2 = len(cdm2.halos)
+        npt.assert_equal(l1, l2)
 
 if __name__ == '__main__':
     pytest.main()

@@ -9,6 +9,7 @@ from pyHalo.Halos.HaloModels.powerlaw import PowerLawFieldHalo, PowerLawSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
 from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWFieldHalo, coreTNFWSubhalo
+from pyHalo.Halos.HaloModels.coreNFW import coreNFWFieldHalo, coreNFWSubhalo
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
 import numpy as np
@@ -669,6 +670,15 @@ class Realization(object):
                                   lens_cosmo_instance, args, unique_tag)
             else:
                 model = coreTNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
+
+        elif mdef == 'coreNFW':
+
+            if is_subhalo:
+                model = coreNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
+                                  lens_cosmo_instance, args, unique_tag)
+            else:
+                model = coreNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
                                   lens_cosmo_instance, args, unique_tag)
 
         elif mdef == 'ULDM':
