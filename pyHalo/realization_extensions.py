@@ -362,7 +362,7 @@ class RealizationExtensions(object):
         given a comoving distance
         :param y_image_interp_list: a list of interp1d functions that return the angular y coordinate of a light ray
         given a comoving distance
-        :param r_max_arcsec: the radius of the rendering region in arcsec
+        :param r_max_arcsec: the radius of the rendering region in arcsec, here an array corresponding to the coordinates used for x_interp_list
         :param arcsec_per_pixel: the resolution of the grid used to compute the population of PBH whose spatial
         distribution tracks the dark matter density along the LOS specific by the instance of Realization used to
         instantiate the class
@@ -376,13 +376,7 @@ class RealizationExtensions(object):
         for i, zi in enumerate(plane_redshifts[0:-1]):
             delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
         delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
-
-        geometry = Geometry(self._realization.lens_cosmo.cosmo,
-                                                     self._realization.lens_cosmo.z_lens,
-                                                     self._realization.lens_cosmo.z_source,
-                                                     2 * r_max_arcsec,
-                                                     'DOUBLE_CONE')
-
+        
         mass_fraction_smooth = (1 - mass_fraction_in_halos) * pbh_mass_fraction
         mass_fraction_clumpy = pbh_mass_fraction * mass_fraction_in_halos
 
@@ -390,13 +384,17 @@ class RealizationExtensions(object):
         xcoords = np.array([])
         ycoords = np.array([])
         redshifts = np.array([])
-
-        for x_image_interp, y_image_interp in zip(x_image_interp_list, y_image_interp_list):
+        for x_image_interp, y_image_interp, r_max in zip(x_image_interp_list, y_image_interp_list, r_max_arcsec):
+            geometry = Geometry(self._realization.lens_cosmo.cosmo,
+                                        self._realization.lens_cosmo.z_lens,
+                                        self._realization.lens_cosmo.z_source,
+                                        2 * r_max,
+                                        'DOUBLE_CONE')
             for zi, delta_zi in zip(plane_redshifts, delta_z):
 
                 d = geometry._cosmo.D_C_transverse(zi)
                 angle_x, angle_y = x_image_interp(d), y_image_interp(d)
-                rendering_radius = r_max_arcsec * geometry.rendering_scale(zi)
+                rendering_radius = r_max * geometry.rendering_scale(zi)
                 spatial_distribution_model_smooth = Uniform(rendering_radius, geometry)
 
                 if kwargs_pbh_mass_function['mass_function_type'] == 'DELTA':
@@ -417,16 +415,24 @@ class RealizationExtensions(object):
                     xcoords = np.append(xcoords, x_arcsec)
                     ycoords = np.append(ycoords, y_arcsec)
                     redshifts = np.append(redshifts, np.array([zi] * len(m_smooth)))
+                    
+        
 
         mdefs = [mass_definition] * len(masses)
         r3d = np.array([None] * len(masses))
         subhalo_flag = [False] * len(masses)
         realization_smooth = Realization(masses, xcoords, ycoords, r3d, mdefs, redshifts, subhalo_flag,
                                           self._realization.lens_cosmo, kwargs_realization=self._realization._prof_params)
-
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
-        realization_with_clustering = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, x_image_interp_list, y_image_interp_list,
-                                                        r_max_arcsec, arcsec_per_pixel, rescale_normalizations)
+        
+        for ii, (x_image_interp, y_image_interp, r_max) in enumerate(zip(x_image_interp_list, y_image_interp_list, r_max_arcsec)):
+            realization_with_clustering_temp = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, 
+                                                                             [x_image_interp], [y_image_interp], r_max, 
+                                                                             arcsec_per_pixel, rescale_normalizations)
+            if ii == 0: 
+                realization_with_clustering = realization_with_clustering_temp 
+                continue # first time through loop
+            realization_with_clustering = realization_with_clustering.join(realization_with_clustering_temp)
 
         return realization_with_clustering.join(realization_smooth)
 
