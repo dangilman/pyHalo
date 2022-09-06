@@ -228,12 +228,15 @@ class TestRealizationExtensions(object):
         dlist = [cosmo.D_C_transverse(zi) for zi in zlist]
         x_image_interp_list = [interp1d(dlist, x_image)]
         y_image_interp_list = [interp1d(dlist, y_image)]
+        
+        r_array = np.zeros(len(x_image_interp_list))
+        r_array[0:] = rmax
 
         pbh_realization = ext.add_primordial_black_holes(mass_fraction, kwargs_mass_function,
                                                          fraction_in_halos,
                                                          x_image_interp_list,
                                                          y_image_interp_list,
-                                                         rmax)
+                                                         r_array)
 
         lens_model_list, _, kwargs, _ = pbh_realization.lensing_quantities()
 
