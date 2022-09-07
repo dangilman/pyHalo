@@ -1,7 +1,8 @@
 import numpy as np
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.power_law_MixDM import GeneralPowerLawMixDM
 from pyHalo.Rendering.SpatialDistributions.nfw_core import ProjectedNFW
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic, integrate_power_law_quad
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic, integrate_power_law_quad, integrate_power_law_quad_MixDM
 from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
 class Subhalos(RenderingClassBase):
@@ -24,6 +25,7 @@ class Subhalos(RenderingClassBase):
         self.lens_cosmo = lens_cosmo
         self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
+        self._keywords_master = keywords_master
 
         if 'subhalo_spatial_distribution' not in keywords_master.keys():
             raise Exception('must specify a value for the subhalo_spatial_distribution keyword.'
@@ -70,8 +72,18 @@ class Subhalos(RenderingClassBase):
 
         log_mlow, log_mhigh = self._redshift_dependent_mass_range(self._zlens, self._rendering_kwargs['log_mlow'],
                                                                   self._rendering_kwargs['log_mhigh'])
-
-        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'], norm,
+        #if 'frac' in self._rendering_kwargs:
+        if 'frac' in self._keywords_master:
+            print('MixDM suppresion subhalos.py')
+            mfunc = GeneralPowerLawMixDM(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'], norm,
+                                                               self._rendering_kwargs['log_mc'],
+                                                               self._rendering_kwargs['a_wdm'],
+                                                               self._rendering_kwargs['b_wdm'],
+                                                               self._rendering_kwargs['c_wdm'],
+                                                               self._keywords_master['frac'])
+        else:
+            print('WDM suppresion subhalos.py')
+            mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'], norm,
                                                            self._rendering_kwargs['log_mc'],
                                                            self._rendering_kwargs['a_wdm'],
                                                            self._rendering_kwargs['b_wdm'],
@@ -156,8 +168,16 @@ class Subhalos(RenderingClassBase):
             'delta_power_law_index']
         power_law_index = self._rendering_kwargs['power_law_index'] + delta_power_law_index
 
-        if self._rendering_kwargs['log_mc'] is not None:
-            mass_in_subhalos = integrate_power_law_quad(norm,
+        if 'log_mc' in self._rendering_kwargs:
+            if 'frac' in self._rendering_kwargs:
+                print('using MixDM suppression, subhalos')
+                mass_in_subhalos = integrate_power_law_quad_MixDM(norm,
+                                                        m_low, m_high, self._rendering_kwargs['log_mc'],
+                                                        1, power_law_index, self._rendering_kwargs['a_wdm'],
+                                                        self._rendering_kwargs['b_wdm'], self._rendering_kwargs['c_wdm'],self._rendering_kwargs['frac'] )
+            else:
+                print('using WDM suppression, subhalos')
+                mass_in_subhalos = integrate_power_law_quad(norm,
                                                         m_low, m_high, self._rendering_kwargs['log_mc'],
                                                         1, power_law_index, self._rendering_kwargs['a_wdm'],
                                                         self._rendering_kwargs['b_wdm'], self._rendering_kwargs['c_wdm'])

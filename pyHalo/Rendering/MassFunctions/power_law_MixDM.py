@@ -2,7 +2,7 @@ import numpy as np
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
 from pyHalo.Rendering.MassFunctions.mass_function_utilities import WDM_suppression, MixDM_suppression
 
-class GeneralPowerLaw(object):
+class GeneralPowerLawMixDM(object):
 
     """
     This class handles computations of a double power law mass function of the form
@@ -16,7 +16,7 @@ class GeneralPowerLaw(object):
     """
 
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
-                 log_mc, a_wdm, b_wdm, c_wdm):
+                 log_mc, a_wdm, b_wdm, c_wdm, frac):
 
         if a_wdm is None:
             assert b_wdm is None, 'If one of a_wdm, b_wdm, or c_wdm is not specified (None), all parameters must be None'
@@ -53,6 +53,7 @@ class GeneralPowerLaw(object):
         self._a_wdm = a_wdm
         self._b_wdm = b_wdm
         self._c_wdm = c_wdm
+        self._frac = frac
 
         self.draw_poisson = draw_poisson
         self._index = power_law_index
@@ -84,7 +85,7 @@ class GeneralPowerLaw(object):
         if len(m) == 0 or self._log_mc is None:
             return m
 
-        factor = WDM_suppression(m, 10 ** self._log_mc, self._a_wdm, self._b_wdm, self._c_wdm)
+        factor = MixDM_suppression(m, 10 ** self._log_mc, self._a_wdm, self._b_wdm, self._c_wdm, self._frac)
         u = np.random.rand(int(len(m)))
         inds = np.where(u < factor)
 

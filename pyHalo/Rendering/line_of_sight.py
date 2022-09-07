@@ -1,9 +1,10 @@
 import numpy as np
 from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.power_law_MixDM import GeneralPowerLawMixDM
 from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
+from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic, integrate_power_law_quad_MixDM
 from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
 class LineOfSightNoSheet(RenderingClassBase):
@@ -27,6 +28,7 @@ class LineOfSightNoSheet(RenderingClassBase):
         """
 
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
+        self._keywords_master = keywords_master
 
         self.lens_cosmo = lens_cosmo
 
@@ -95,8 +97,10 @@ class LineOfSightNoSheet(RenderingClassBase):
         :param delta_z: thickness of the redshift slice
         :return: halo masses at the desired redshift in units Msun
         """
+        print('render masses at z is called')
 
         if self._rendering_kwargs['mass_function_LOS_type'] == 'POWER_LAW':
+            print('PL type los mass function called')
 
             norm, plaw_index = self._normalization_slope(z, delta_z)
 
@@ -107,7 +111,12 @@ class LineOfSightNoSheet(RenderingClassBase):
 
             log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
 
-            mfunc = GeneralPowerLaw(log_mlow, log_mhigh, plaw_index, args['draw_poisson'],
+            if 'frac' in self._keywords_master:
+                mfunc = GeneralPowerLawMixDM(log_mlow, log_mhigh, plaw_index, args['draw_poisson'],
+                                        norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
+                                        args['c_wdm'],self._keywords_master['frac'])
+            else:
+                mfunc = GeneralPowerLaw(log_mlow, log_mhigh, plaw_index, args['draw_poisson'],
                                     norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
                                     args['c_wdm'])
 
@@ -289,19 +298,28 @@ class LineOfSight(LineOfSightNoSheet):
     def _convergence_at_z(self, z, delta_z, log_sheet_min,
                              log_sheet_max, kappa_scale):
 
+        print('convergence at z is called')
+
         norm, plaw_index = self._normalization_slope(z, delta_z)
 
         m_low = 10 ** log_sheet_min
         m_high = 10 ** log_sheet_max
 
-        if self._rendering_kwargs['log_mc'] is None:
-            mtheory = integrate_power_law_analytic(norm, m_low, m_high, 1, plaw_index)
-
-        else:
-            mtheory = integrate_power_law_quad(norm, m_low, m_high, self._rendering_kwargs['log_mc'], 1,
+        if 'log_mc' in self._rendering_kwargs:
+            if 'frac' in self._keywords_master:
+                print('using MixDM suppression, los')
+                mtheory = integrate_power_law_quad_MixDM(norm, m_low, m_high, self._rendering_kwargs['log_mc'], 1,
+                                               plaw_index, self._rendering_kwargs['a_wdm'],
+                                               self._rendering_kwargs['b_wdm'],
+                                               self._rendering_kwargs['c_wdm'],self._rendering_kwargs['frac'])
+            else:
+                print('using wdm suppression, los')
+                mtheory = integrate_power_law_quad(norm, m_low, m_high, self._rendering_kwargs['log_mc'], 1,
                                                plaw_index, self._rendering_kwargs['a_wdm'],
                                                self._rendering_kwargs['b_wdm'],
                                                self._rendering_kwargs['c_wdm'])
+        else:
+            mtheory = integrate_power_law_analytic(norm, m_low, m_high, 1, plaw_index)
 
         area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
         sigma_crit_mass = self.lens_cosmo.sigma_crit_mass(z, area)

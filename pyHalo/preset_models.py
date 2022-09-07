@@ -20,6 +20,8 @@ def preset_model_from_name(name):
         return CDM
     elif name == 'WDM':
         return WDM
+    elif name == 'MixDM':
+        return MixDM
     elif name == 'SIDM':
         return SIDM
     elif name == 'ULDM':
@@ -102,6 +104,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     # this will use the default cosmology. parameters can be found in defaults.py
     pyhalo = pyHalo(z_lens, z_source)
     # Using the render method will result a list of realizations
+
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
     realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
 
@@ -112,7 +115,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
                   a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                    kwargs_suppression_mc_relation_field=None, suppression_model_field=None, kwargs_suppression_mc_relation_sub=None,
+                    kwargs_suppression_field=None, suppression_model_field=None, kwargs_suppression_sub=None,
                   suppression_model_sub=None, **kwargs_other):
 
     """
@@ -138,7 +141,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     is less dense. The default suppresion to halo concentrations is implemented using the fitting function (Eqn. 17) presented by
     Bose et al. (2016) (https://arxiv.org/pdf/1507.01998.pdf), where the concentration relative to CDM is given by
 
-    c_wdm / c_cdm = (1+z)^B(z) * (1 + c_scale * (m_c / m) ** c_power_inner) ^ c_power
+    c_wdm / c_cdm = (1+z)^B(z) * (1 + c_scale * m_c / m) ^ c_power
 
     where m_c is the same as the definition for the halo mass function and (c_scale, c_power) = (60, -0.17). Note that the
     factor of 60 makes the effect on halo concentrations kick in on mass scales > m_c. This routine assumes the
@@ -166,14 +169,14 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     ###################################################################################################
     The following keywords define how the WDM mass-concentration relation is suppressed relative to CDM
 
-    :param kwargs_suppression_mc_relation_field: keyword arguments for the suppression function for field halo concentrations
-    :param suppression_model_field: the type of suppression of the MC relation for field halos, either 'polynomial' or 'hyperbolic'. Default form is polynomial
-    :param kwargs_suppression_mc_relation_sub: keyword arguments for the suppression function for subhalos
-    :param suppression_model_sub: the type of suppression of the MC relation for subhalos, either 'polynomial' or 'hyperbolic'
+    :param kwargs_suppression_field: keyword arguments for the suppression function for field halo concentrations
+    :param suppression_model_field: the type of suppression, either 'polynomial' or 'hyperbolic'. Default form is polynomial
+    :param kwargs_suppression_sub: keyword arguments for the suppression function for subhalos
+    :param suppression_model_sub: the type of suppression, either 'polynomial' or 'hyperbolic'
 
     The form of the polynomial suppression function, f, is defined in terms of x = half-mode-mass / mass:
 
-    f = (1 + c_scale * x ^ c_power_inner) ^ c_power
+    f = (1 + a * x ^ b_wdm) ^ c_wdm
 
     The form of the hyperbolic suppression function, f, is (see functions in Halos.HaloModels.concentration)
 
@@ -184,28 +187,25 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 
     :return: a realization of WDM halos
     """
-
+    print('test')
     mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
                           'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
                           }
-
     if suppression_model_field is not None:
-        kwargs_model_field['suppression_model'] = suppression_model_field
-        kwargs_model_field['kwargs_suppression'] = kwargs_suppression_mc_relation_field
+        kwargs_model_field.update({'suppression_model': suppression_model_field})
+        kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_field})
 
     kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
                            'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
 
-
     if suppression_model_sub is not None:
-
-        kwargs_model_subhalos['suppression_model'] = suppression_model_sub
-        kwargs_model_subhalos['kwargs_suppression'] = kwargs_suppression_mc_relation_sub
+        kwargs_model_subhalos.update({'suppression_model': suppression_model_sub})
+        kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_sub})
 
     kwargs_model_field.update(kwargs_other)
     kwargs_model_subhalos.update(kwargs_other)
@@ -221,12 +221,121 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     return wdm_realization
 
 
+
+def MixDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
+                  a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, frac=0.5, cone_opening_angle_arcsec=6.,
+                  sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
+                    kwargs_suppression_field=None, suppression_model_field=None, kwargs_suppression_sub=None,
+                  suppression_model_sub=None, **kwargs_other):
+
+    """
+
+    This specifies the keywords for the Warm Dark Matter (WDM) halo mass function model presented by Lovell 2020
+    (https://arxiv.org/pdf/2003.01125.pdf)
+
+    The differential halo mass function is described by four parameters:
+    1) log_mc - the log10 value of the half-mode mass, or the scale where the WDM mass function begins to deviate from CDM
+    2) a_wdm - scale factor for the characteristic mass scale (see below)
+    3) b_wdm - modifies the logarithmic slope of the WDM mass function (see below)
+    4) c_wdm - modifies the logarithmic slope of the WDM mass function (see below)
+
+    The defult parameterization for the mass function is:
+
+    n_wdm / n_cdm = (1 + (a_wdm * m_c / m)^b_wdm) ^ c_wdm
+
+    where m_c = 10**log_mc is the half-mode mass, and n_wdm and n_cdm are differential halo mass functions. Lovell 2020 find different fits
+    to subhalos and field halos. For field halos, (a_wdm, b_wdm, c_wdm) = (2.3, 0.8, -1) while for subhalos
+    (a_wdm_sub, b_wdm_sub, c_wdm_sub) = (4.2, 2.5, -0.2).
+
+    WDM models also have reduced concentrations relative to CDM halos because WDM structure collapse later, when the Universe
+    is less dense. The default suppresion to halo concentrations is implemented using the fitting function (Eqn. 17) presented by
+    Bose et al. (2016) (https://arxiv.org/pdf/1507.01998.pdf), where the concentration relative to CDM is given by
+
+    c_wdm / c_cdm = (1+z)^B(z) * (1 + c_scale * m_c / m) ^ c_power
+
+    where m_c is the same as the definition for the halo mass function and (c_scale, c_power) = (60, -0.17). Note that the
+    factor of 60 makes the effect on halo concentrations kick in on mass scales > m_c. This routine assumes the
+    a mass-concentration for CDM halos given by Diemer & Joyce 2019 (https://arxiv.org/pdf/1809.07326.pdf)
+
+    :param z_lens: the lens redshift
+    :param z_source: the source redshift
+    :param log_mc: log10(half mode mass) in units M_sun (no little h)
+    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param a_wdm_los: describes the line of sight WDM halo mass function (see above)
+    :param b_wdm_los: describes the line of sight WDM halo mass function (see above)
+    :param c_wdm_los: describes the line of sight WDM halo mass function (see above)
+    :param a_wdm_sub: defines the WDM subhalo mass function (see above)
+    :param b_wdm_sub: defines the WDM subhalo mass function (see above)
+    :param c_wdm_sub: defines the WDM subhalo mass function (see above)
+    :param cone_opening_angle: the opening angle in arcsec of the volume where halos are added
+    :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param power_law_index: logarithmic slope of the subhalo mass function
+    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
+    to account for tidal stripping of halos that pass close to the central galaxy
+
+    ###################################################################################################
+    The following keywords define how the WDM mass-concentration relation is suppressed relative to CDM
+
+    :param kwargs_suppression_field: keyword arguments for the suppression function for field halo concentrations
+    :param suppression_model_field: the type of suppression, either 'polynomial' or 'hyperbolic'. Default form is polynomial
+    :param kwargs_suppression_sub: keyword arguments for the suppression function for subhalos
+    :param suppression_model_sub: the type of suppression, either 'polynomial' or 'hyperbolic'
+
+    The form of the polynomial suppression function, f, is defined in terms of x = half-mode-mass / mass:
+
+    f = (1 + a * x ^ b_wdm) ^ c_wdm
+
+    The form of the hyperbolic suppression function, f, is (see functions in Halos.HaloModels.concentration)
+
+    f = 1/2 [1 + tanh( (x - a_wdm)/2b_wdm ) ) ]
+    ###################################################################################################
+
+    :param kwargs_other: any other optional keyword arguments
+
+    :return: a realization of WDM halos
+    """
+    print('using MixDM, preset_model')
+    mass_definition = 'TNFW' # truncated NFW profile
+    kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
+                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh, 'frac': frac,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
+                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
+                          }
+    if suppression_model_field is not None:
+        kwargs_model_field.update({'suppression_model': suppression_model_field})
+        kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_field})
+
+    kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
+                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh, 'frac': frac,
+                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
+                             'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
+
+    if suppression_model_sub is not None:
+        kwargs_model_subhalos.update({'suppression_model': suppression_model_sub})
+        kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_sub})
+
+    kwargs_model_field.update(kwargs_other)
+    kwargs_model_subhalos.update(kwargs_other)
+
+    # this will use the default cosmology. parameters can be found in defaults.py
+    pyhalo = pyHalo(z_lens, z_source)
+    # Using the render method will result a list of realizations
+    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
+    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
+    print('kwargs model field', kwargs_model_field['frac'])
+    wdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
+
+    return wdm_realization
+
+
+
 def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross_section,
-         kwargs_core_collapse_profile, deflection_angle_function, central_density_function, collapse_probability_function,
-         t_sub=10, t_field=100, collapse_time_width=0.5, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
-         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', mdef_collapse='SPL_CORE',
-         realization_no_core_collapse=None,
-         **kwargs_other):
+         kwargs_core_collapse_profile, deflection_angle_function, central_density_function, evolution_timescale_function,
+         velocity_dispersion_function, t_sub=10, t_field=100, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
+         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', **kwargs_other):
 
     """
     This generates realizations of self-interacting dark matter (SIDM) halos, inluding both cored and core-collapsed
@@ -243,11 +352,11 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     (convention is for this to be a positive number)
     :param deflection_angle_function: a function that returns the deflection angles, to be passed into lenstronomy
     :param central_density_function: a function that computes the central density of cored halos
-    :param collapse_probability_function: a function that computes the probability of core collapse for a given cross section
+    :param evolution_timescale_function: a function that computes the evolution timescale t_0 for a given cross section
+    (for example, Equation 9 in Gilman et al. 2021)
     :param velocity_dispersion_function: a function that computes the central velocity dispersion of an SIDM halo
     :param t_sub: core collapse timescale for subhalos
     :param t_field: core collapse timescale for field halos
-    :param collapse_time_width: scatter in collapse times
     :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
     :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
     :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
@@ -258,8 +367,7 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
     to account for tidal stripping of halos that pass close to the central galaxy
     :param kwargs_other: any addition keyword arguments
-    :param mdef: the halo profile for halos that have not core collapsed
-    :param mdef_collapse: the halo profile for halos that have core collapsed
+    :param mdef: the halo mass definition
     :return: an instance of Realization that contains cored and core collapsed halos
     """
 
@@ -268,25 +376,23 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
                        'numerical_deflection_angle_class': deflection_angle_function}
     kwargs_sidm.update(kwargs_other)
 
-    if realization_no_core_collapse is None:
-        realization_no_core_collapse = CDM(z_lens, z_source, sigma_sub, power_law_index, cone_opening_angle_arcsec, log_mlow,
+    realization_no_core_collapse = CDM(z_lens, z_source, sigma_sub, power_law_index, cone_opening_angle_arcsec, log_mlow,
                               log_mhigh, LOS_normalization, log_m_host, r_tidal, mdef, **kwargs_sidm)
 
     ext = RealizationExtensions(realization_no_core_collapse)
 
-    inds = ext.find_core_collapsed_halos(collapse_probability_function, cross_section_class,
-                                  t_sub=t_sub, t_field=t_field, collapse_time_width=collapse_time_width)
+    inds = ext.find_core_collapsed_halos(evolution_timescale_function, velocity_dispersion_function,
+                                         cross_section_class, t_sub=t_sub, t_field=t_field)
 
-    realization = ext.add_core_collapsed_halos(inds, mdef_collapse, **kwargs_core_collapse_profile)
+    realization = ext.add_core_collapsed_halos(inds, **kwargs_core_collapse_profile)
 
     return realization
 
-def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_size_scale=0.05,
-         fluctuation_size_dispersion=0.2, n_fluc_scale=1.0, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
-                  c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
+def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-1.5, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
+                  c_scale=15., c_power=-0.3, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, n_cut=50000, rescale_fluc_amp=True, r_ein=1.0, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, einstein_radius=6., n_cut=5e4, **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -322,16 +428,9 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
 
         (m_0,    b_uldm,    c_uldm) = ( (1.6*10**10) * (m22)**(-4/3),    1.1,    2.2)
 
-    As for the concentration relative to CDM, there hasa not been a detailed study to date. Hoever, since the formation
-    history and collapse time determines concentration, we can reasonably use a WDM concentration-mass relation
-    such as the Lovell 2020 formula,
+    As for the concentration relative to CDM, Du et al. 2016 (https://arxiv.org/pdf/1608.02575.pdf) found that
+    the same fitting function as Lovell 2020 is a good estimation of the ULDM concentration,
     i.e. simply c_wdm = c_uldm, with (c_scale, c_power) = (15, -0.3).
-    or the Bose et al. formula with (c_scale, c_power) = (60, -0.17) and a very negligible redshift dependence.
-
-    The default model was computed using the formalism presented by Schneider et al. (2015) using a ULDM power spectrum,
-    and results in a sharper cutoff with (c_scale, c_power, c_power_inner) = (3.348, -0.489, 1.5460)
-
-    The form for the ULDM concentration-mass relation turnover is (1 + c_scale * (mhm/m)^c_power_inner)^c_power
 
     Furthermore, Schive et al. 2014 (https://arxiv.org/pdf/1407.7762.pdf) found a redshift-dependent minimum ULDM halo mass
     given by
@@ -353,16 +452,6 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
     :param log10_fluc_amplitude: sets the amplitude of the fluctuations in the host dark matter halo.
     fluctuations are generated from a Guassian distriubtion with mean 0 and variance 10^log10_fluc_amplitude
-    :param fluctuation_size_scale: half the size of an individual fluctuation; fluctuations are modeled as Gaussians with variance
-    fluctuation_size_scale * lambda_dB, so their diameter is approximately 2 * fluctuation_size_scale * lambda_dB.
-    To fit an overdenisty and an underdensiity inside one lambda_dB, you therefore need fluctuation_size_scale = 1/4
-    :param fluctuation_size_dispersion: sets the variance of the distribution of fluctuation sizes, in units of fluctuation size:
-
-    variance = fluctuation_size_dispersion * lambda_dB * fluctuation_size_scale
-
-    To sumamrize, individual fluctuations are modeled as Gaussians with a mean fluctuation_size_scale * lambda_dB and a
-    variance fluctuation_size_dispersion * lambda_dB
-    :param n_fluc_scale: rescales the total number of fluctuations
     :param velocity_scale: velocity for de Broglie wavelength calculation in km/s
     :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
     :param b_uldm: defines the ULDM mass function (see above)
@@ -382,11 +471,8 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :param flucs: Boolean specifying whether or not to include density fluctuations in the main deflector halo
     :param flucs_shape: String specifying how to place fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
     :param fluc_args: Keyword arguments for specifying the fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
-    :param rescale_fluc_amp: Boolean specifying whether re-scale fluctuation amplitudes by sqrt(n_cut / n), where n
-    is the total number of fluctuations in the given area and n_cut (defined below) is the maximum number to generate
     :param einstein_radius: Einstein radius of main deflector halo in kpc
     :param n_cut: Number of fluctuations above which to start cancelling
-    :param r_ein: the Einstein radius in arcseconds
     :param kwargs_other: any other optional keyword arguments
     :return: a realization of ULDM halos
     """
@@ -407,25 +493,14 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     if log_m_min(z_lens) >= log_mlow:
         log_mlow = log_m_min(z_lens) # only use M_min for minimum halo mass if it is above input 'log_mlow'
     kwargs_model_field = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
-                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
                           'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
 
     kwargs_model_subhalos = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
-                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                          'c_scale': c_scale, 'c_power': c_power, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
-
-    kwargs_model_subhalos.update({'suppression_model': 'polynomial'})
-    kwargs_model_field.update({'suppression_model': 'polynomial'})
-
-    kwargs_suppression_mcrelation = {'c_scale': c_scale,
-                                     'c_power': c_power,
-                                     'c_power_inner': c_power_inner,
-                                     'mc_suppression_redshift_evolution': False}
-
-    kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_mcrelation})
-    kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_mcrelation})
 
     kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw, 'scale_nfw':scale_nfw}
 
@@ -449,46 +524,13 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         if flucs_args=={}:
             raise Exception('Must specify fluctuation arguments, see realization_extensions.add_ULDM_fluctuations')
 
-        a_fluc = 10 ** log10_fluc_amplitude
-        m_psi = 10 ** log10_m_uldm
-
-        zlens_ref, zsource_ref = 0.5, 2.0
-        mhost_ref = 10**13.3
-        rein_ref = 1.0
-        r_perp_ref = rein_ref * uldm_realization.lens_cosmo.cosmo.kpc_proper_per_asec(zlens_ref)
-
-        sigma_crit_ref = uldm_realization.lens_cosmo.get_sigma_crit_lensing(zlens_ref, zsource_ref)
-        c_host_ref = uldm_realization.lens_cosmo.NFW_concentration(mhost_ref, z_lens, scatter=False)
-        rhos_ref, rs_ref, _ = uldm_realization.lens_cosmo.NFW_params_physical(mhost_ref, c_host_ref, zlens_ref)
-        xref = r_perp_ref/rs_ref
-        if xref < 1:
-            Fxref = np.arctanh(np.sqrt(1 - xref ** 2)) / np.sqrt(1 - xref ** 2)
-        else:
-            Fxref = np.arctan(np.sqrt(-1 + xref ** 2)) / np.sqrt(-1 + xref ** 2)
-        sigma_host_ref = 2 * rhos_ref * rs_ref * (1-Fxref)/(xref**2 - 1)
-
-        r_perp = r_ein * uldm_realization.lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
-        sigma_crit = uldm_realization.lens_cosmo.get_sigma_crit_lensing(z_lens, z_source)
-        c_host = uldm_realization.lens_cosmo.NFW_concentration(10**log_m_host, z_lens, scatter=True)
-        rhos, rs, _ = uldm_realization.lens_cosmo.NFW_params_physical(10**log_m_host, c_host, z_lens)
-        x = r_perp / rs
-        if x < 1:
-            Fx = np.arctanh(np.sqrt(1 - x ** 2)) / np.sqrt(1 - x ** 2)
-        else:
-            Fx = np.arctan(np.sqrt(-1 + x ** 2)) / np.sqrt(-1 + x ** 2)
-        sigma_host = 2 * rhos * rs * (1 - Fx) / (x ** 2 - 1)
-
-        fluctuation_amplitude = a_fluc * (m_psi / 1e-22) ** -0.5 * \
-                                (sigma_crit_ref/sigma_crit) * (sigma_host/sigma_host_ref)
-
+        fluctuation_amplitude_norm = 10 ** log10_fluc_amplitude
+        fluctuation_amplitude = fluctuation_amplitude_norm * (10**log10_m_uldm / 1e-22) ** -0.5
         uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
-                                fluctuation_amplitude=fluctuation_amplitude,
-                                fluctuation_size=lambda_dB * fluctuation_size_scale,
-                                fluctuation_size_variance=lambda_dB * fluctuation_size_scale *
-                                                          fluctuation_size_dispersion,
-                                n_fluc_scale=n_fluc_scale,
+                                fluctuation_amplitude_variance=fluctuation_amplitude,
+                                fluctuation_size_variance=lambda_dB,
                                 shape=flucs_shape,
                                 args=flucs_args,
-                                n_cut=n_cut, rescale_fluc_amp=rescale_fluc_amp)
+                                n_cut=n_cut)
 
     return uldm_realization

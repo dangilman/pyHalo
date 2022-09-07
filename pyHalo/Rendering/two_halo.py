@@ -2,6 +2,7 @@ from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
 import numpy as np
 from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.power_law_MixDM import GeneralPowerLawMixDM
 from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
 class TwoHaloContribution(RenderingClassBase):
@@ -16,6 +17,7 @@ class TwoHaloContribution(RenderingClassBase):
     def __init__(self, keywords_master, halo_mass_function, geometry, lens_cosmo, lens_plane_redshifts, delta_z_list):
 
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
+        self._keywords_master = keywords_master
         self.halo_mass_function = halo_mass_function
         self.geometry = geometry
         self.lens_cosmo = lens_cosmo
@@ -54,7 +56,14 @@ class TwoHaloContribution(RenderingClassBase):
         norm, slope = self._norm_slope(z, delta_z)
         args = deepcopy(self._rendering_kwargs)
         log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
-        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, args['draw_poisson'],
+        if 'frac' in self._keywords_master:
+            print('Mix DM PL, in two_halos.py')
+            mfunc = GeneralPowerLawMixDM(log_mlow, log_mhigh, slope, args['draw_poisson'],
+                                norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
+                                args['c_wdm'], self._keywords_master['frac'])
+        else:
+            print('WDM PL, in two_halos.py')
+            mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, args['draw_poisson'],
                                 norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
                                 args['c_wdm'])
         m = mfunc.draw()

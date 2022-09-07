@@ -26,8 +26,10 @@ class HaloPopulation(object):
         lens_plane_redshifts)
         """
         self.rendering_classes = []
-
+        if 'frac' in keywords_master:
+            print('halo pop.py', keywords_master['frac'])
         for population_model in model_list:
+            print('population model',population_model)
             if population_model == 'LINE_OF_SIGHT':
                 model = LineOfSight(keywords_master, halo_mass_function, geometry, lens_cosmo,
                                     lens_plane_redshift_list, redshift_spacings)
@@ -94,7 +96,3 @@ class HaloPopulation(object):
             redshift_list += redshifts
 
         return profile_list, redshift_list, kwargs_list
-
-
-
-

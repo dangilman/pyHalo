@@ -28,10 +28,15 @@ class pyHalo(pyHaloBase):
         :param kwargs_massfunc:
         keyword arguments
         """
+
         super(pyHalo, self).__init__(zlens, zsource, cosmology_kwargs, kwargs_halo_mass_function)
 
     def render(self, population_model_list, model_keywords, nrealizations=1,
                convergence_sheet_correction=True):
+
+        if 'log_mc' in model_keywords:
+            if 'frac' in model_keywords:
+                print('pyhalo.py model_keywords',model_keywords['frac']) 
 
         halo_mass_function = self.build_LOS_mass_function(model_keywords)
         geometry = self.halo_mass_function.geometry
