@@ -113,7 +113,7 @@ class TwoHaloContribution(RenderingClassBase):
 
         rmax = self.lens_cosmo.cosmo.D_C_transverse(z + delta_z) - self.lens_cosmo.cosmo.D_C_transverse(z)
         rmin = min(rmax, 0.5)
-        
+
         two_halo_boost = self.halo_mass_function.two_halo_boost(self._rendering_kwargs['host_m200'], z, rmax=rmax,
                                                                 rmin=rmin)
 
