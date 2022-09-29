@@ -26,7 +26,7 @@ class HaloPopulation(object):
         lens_plane_redshifts)
         """
         self.rendering_classes = []
-        if 'frac' in keywords_master:
+        #if 'frac' in keywords_master:
             #print('halo pop.py', keywords_master['frac'])
         for population_model in model_list:
             #print('population model',population_model)
