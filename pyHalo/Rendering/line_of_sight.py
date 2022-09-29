@@ -97,10 +97,10 @@ class LineOfSightNoSheet(RenderingClassBase):
         :param delta_z: thickness of the redshift slice
         :return: halo masses at the desired redshift in units Msun
         """
-        print('render masses at z is called')
+        #print('render masses at z is called')
 
         if self._rendering_kwargs['mass_function_LOS_type'] == 'POWER_LAW':
-            print('PL type los mass function called')
+            #print('PL type los mass function called')
 
             norm, plaw_index = self._normalization_slope(z, delta_z)
 

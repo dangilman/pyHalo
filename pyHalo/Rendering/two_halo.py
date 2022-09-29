@@ -57,12 +57,12 @@ class TwoHaloContribution(RenderingClassBase):
         args = deepcopy(self._rendering_kwargs)
         log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
         if 'frac' in self._keywords_master:
-            print('Mix DM PL, in two_halos.py')
+            #print('Mix DM PL, in two_halos.py')
             mfunc = GeneralPowerLawMixDM(log_mlow, log_mhigh, slope, args['draw_poisson'],
                                 norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
                                 args['c_wdm'], self._keywords_master['frac'])
         else:
-            print('WDM PL, in two_halos.py')
+            #print('WDM PL, in two_halos.py')
             mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, args['draw_poisson'],
                                 norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
                                 args['c_wdm'])

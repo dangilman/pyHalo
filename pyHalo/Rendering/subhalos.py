@@ -74,7 +74,7 @@ class Subhalos(RenderingClassBase):
                                                                   self._rendering_kwargs['log_mhigh'])
         #if 'frac' in self._rendering_kwargs:
         if 'frac' in self._keywords_master:
-            print('MixDM suppresion subhalos.py')
+            #print('MixDM suppresion subhalos.py')
             mfunc = GeneralPowerLawMixDM(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'], norm,
                                                                self._rendering_kwargs['log_mc'],
                                                                self._rendering_kwargs['a_wdm'],
@@ -82,7 +82,7 @@ class Subhalos(RenderingClassBase):
                                                                self._rendering_kwargs['c_wdm'],
                                                                self._keywords_master['frac'])
         else:
-            print('WDM suppresion subhalos.py')
+            #print('WDM suppresion subhalos.py')
             mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'], norm,
                                                            self._rendering_kwargs['log_mc'],
                                                            self._rendering_kwargs['a_wdm'],
