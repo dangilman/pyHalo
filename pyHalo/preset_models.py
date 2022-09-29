@@ -187,7 +187,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
 
     :return: a realization of WDM halos
     """
-    print('test')
+    #print('test')
     mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
@@ -297,7 +297,7 @@ def MixDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b
 
     :return: a realization of WDM halos
     """
-    print('using MixDM, preset_model')
+    #print('using MixDM, preset_model')
     mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh, 'frac': frac,
@@ -325,7 +325,7 @@ def MixDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b
     # Using the render method will result a list of realizations
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
     realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
-    print('kwargs model field', kwargs_model_field['frac'])
+    #print('kwargs model field', kwargs_model_field['frac'])
     wdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 
     return wdm_realization

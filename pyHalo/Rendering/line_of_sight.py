@@ -298,7 +298,7 @@ class LineOfSight(LineOfSightNoSheet):
     def _convergence_at_z(self, z, delta_z, log_sheet_min,
                              log_sheet_max, kappa_scale):
 
-        print('convergence at z is called')
+        #print('convergence at z is called')
 
         norm, plaw_index = self._normalization_slope(z, delta_z)
 
@@ -307,13 +307,13 @@ class LineOfSight(LineOfSightNoSheet):
 
         if 'log_mc' in self._rendering_kwargs:
             if 'frac' in self._keywords_master:
-                print('using MixDM suppression, los')
+                #print('using MixDM suppression, los')
                 mtheory = integrate_power_law_quad_MixDM(norm, m_low, m_high, self._rendering_kwargs['log_mc'], 1,
                                                plaw_index, self._rendering_kwargs['a_wdm'],
                                                self._rendering_kwargs['b_wdm'],
-                                               self._rendering_kwargs['c_wdm'],self._rendering_kwargs['frac'])
+                                               self._rendering_kwargs['c_wdm'],self._keywords_master['frac'])
             else:
-                print('using wdm suppression, los')
+                #print('using wdm suppression, los')
                 mtheory = integrate_power_law_quad(norm, m_low, m_high, self._rendering_kwargs['log_mc'], 1,
                                                plaw_index, self._rendering_kwargs['a_wdm'],
                                                self._rendering_kwargs['b_wdm'],

@@ -7,10 +7,10 @@ def integrate_power_law_quad(norm, m_low, m_high, log_mc, n, plaw_index, a_wdm, 
     Numerically integrates a double power law profile
 
     """
-    print('wdm suppression, integral')
+    #print('wdm suppression, integral')
 
     def _integrand_wdm(m, m_break, plaw_index, n):
-        print('wdm suppression, integral')# this doesn't seem to be used...
+        #print('wdm suppression, integral')# this doesn't seem to be used...
         return norm * m ** (n + plaw_index) * WDM_suppression(m, m_break, a_wdm, b_wdm, c_wdm)
     def _integrand_cdm(m, plaw_index, n):
         return norm * m ** (n + plaw_index)
@@ -28,7 +28,7 @@ def integrate_power_law_quad_MixDM(norm, m_low, m_high, log_mc, n, plaw_index, a
     Numerically integrates a MixDM profile
 
     """
-    print('using MixDM suppression, integrator')
+    #print('using MixDM suppression, integrator')
 
     def _integrand_wdm(m, m_break, plaw_index, n):
         return norm * m ** (n + plaw_index) * MixDM_suppression(m, m_break, a_wdm, b_wdm, c_wdm, frac)
@@ -75,7 +75,7 @@ def WDM_suppression(m, m_c, a_wdm, b_wdm, c_wdm):
 
     where WDM suppression is (1 + a_wdm * (m_c / m)^b_wdm)^c_wdm
     """
-    print('wdm suppression, definition')
+    #print('wdm suppression, definition')
     r = a_wdm * (m_c / m) ** b_wdm
     factor = 1 + r
 
@@ -92,7 +92,7 @@ def MixDM_suppression(m, m_c, a_wdm, b_wdm, c_wdm, frac):
 
     where WDM suppression is (1 + a_wdm * (m_c / m)^b_wdm)^c_wdm
     """
-    print('using MixDM suppression, definition')
+    #print('using MixDM suppression, definition')
     r = a_wdm * (m_c / m) ** b_wdm
     factor = 1 + r
     wdm_comp = factor ** c_wdm
