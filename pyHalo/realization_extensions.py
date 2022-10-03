@@ -376,7 +376,7 @@ class RealizationExtensions(object):
         for i, zi in enumerate(plane_redshifts[0:-1]):
             delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
         delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
-        
+
         mass_fraction_smooth = (1 - mass_fraction_in_halos) * pbh_mass_fraction
         mass_fraction_clumpy = pbh_mass_fraction * mass_fraction_in_halos
 
@@ -415,8 +415,6 @@ class RealizationExtensions(object):
                     xcoords = np.append(xcoords, x_arcsec)
                     ycoords = np.append(ycoords, y_arcsec)
                     redshifts = np.append(redshifts, np.array([zi] * len(m_smooth)))
-                    
-        
 
         mdefs = [mass_definition] * len(masses)
         r3d = np.array([None] * len(masses))
@@ -424,13 +422,13 @@ class RealizationExtensions(object):
         realization_smooth = Realization(masses, xcoords, ycoords, r3d, mdefs, redshifts, subhalo_flag,
                                           self._realization.lens_cosmo, kwargs_realization=self._realization._prof_params)
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
-        
+
         for ii, (x_image_interp, y_image_interp, r_max) in enumerate(zip(x_image_interp_list, y_image_interp_list, r_max_arcsec)):
-            realization_with_clustering_temp = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition, 
-                                                                             [x_image_interp], [y_image_interp], r_max, 
+            realization_with_clustering_temp = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition,
+                                                                             [x_image_interp], [y_image_interp], r_max,
                                                                              arcsec_per_pixel, rescale_normalizations)
-            if ii == 0: 
-                realization_with_clustering = realization_with_clustering_temp 
+            if ii == 0:
+                realization_with_clustering = realization_with_clustering_temp
                 continue # first time through loop
             realization_with_clustering = realization_with_clustering.join(realization_with_clustering_temp)
 
