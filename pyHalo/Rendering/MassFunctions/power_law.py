@@ -1,6 +1,5 @@
 import numpy as np
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import WDM_suppression
+
 
 class GeneralPowerLaw(object):
 
@@ -16,51 +15,21 @@ class GeneralPowerLaw(object):
     """
 
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
-                 log_mc, a_wdm, b_wdm, c_wdm):
+                 mass_function_model_class, kwargs_suppression_function):
 
-        if a_wdm is None:
-            assert b_wdm is None, 'If one of a_wdm, b_wdm, or c_wdm is not specified (None), all parameters must be None'
-            assert c_wdm is None, 'If one of a_wdm, b_wdm, or c_wdm is not specified (None), all parameters must be None'
-        else:
-            assert b_wdm is not None, 'Must specify values for all three of a_wdm, b_wdm, c_wdm'
-            assert c_wdm is not None, 'Must specify values for all three of a_wdm, b_wdm, c_wdm'
-        if b_wdm is None:
-            assert a_wdm is None, 'If one of a_wdm, b_wdm, or c_wdm is not specified (None), all parameters must be None'
-            assert c_wdm is None, 'If one of a_wdm, b_wdm, or c_wdm is not specified (None), all parameters must be None'
-        else:
-            assert a_wdm is not None, 'Must specify values for all three of a_wdm, b_wdm, c_wdm'
-            assert c_wdm is not None, 'Must specify values for all three of a_wdm, b_wdm, c_wdm'
-        if c_wdm is None:
-            assert a_wdm is None, 'If one of a_wdm, b_wdm, or c_wdm is not specified (None), all parameters must be None'
-            assert b_wdm is None, 'If one of a_wdm, b_wdm, or c_wdm is not specified (None), all parameters must be None'
-        else:
-            assert a_wdm is not None, 'Must specify values for all three of a_wdm, b_wdm, c_wdm'
-            assert b_wdm is not None, 'Must specify values for all three of a_wdm, b_wdm, c_wdm'
-
-        if normalization < 0:
-            raise Exception('normalization cannot be < 0.')
-        if c_wdm is not None and c_wdm > 0:
-            raise ValueError('c_wdm should be a negative number (otherwise mass function gets steeper (unphysical)')
-        if a_wdm is not None and a_wdm < 0:
-            raise ValueError('a_wdm should be a positive number for suppression factor: '
-                             '( 1 + (a_wdm * m/m_c)^b_wdm)^c_wdm')
-
-        if np.any([a_wdm is None, b_wdm is None, c_wdm is None]):
-            assert log_mc is None, 'If log_mc is specified, must also specify kwargs for a_wdm, b_wdm, c_wdm.' \
-                                   '(See documentation in pyHalo/Rendering/MassFunctions/Powerlaw/broken_powerlaw'
-
-        self._log_mc = log_mc
-        self._a_wdm = a_wdm
-        self._b_wdm = b_wdm
-        self._c_wdm = c_wdm
 
         self.draw_poisson = draw_poisson
         self._index = power_law_index
         self._mL = 10 ** log_mlow
         self._mH = 10 ** log_mhigh
 
-        self._nhalos_mean_unbroken = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10 ** log_mhigh, 0,
-                                                                  power_law_index)
+        self._mass_function_model_class = mass_function_model_class
+        self._kwargs_suppression_function = kwargs_suppression_function
+
+        self._nhalos_mean_unbroken = self._mass_function_model_class.integrate_power_law_analytic(normalization,
+                                                                                             10 ** log_mlow,
+                                                                                             10 ** log_mhigh, 0,
+                                                                                             power_law_index)
 
     def draw(self):
 
@@ -81,13 +50,12 @@ class GeneralPowerLaw(object):
 
         m = self._sample(self.draw_poisson, self._index, self._mH, self._mL, self._nhalos_mean_unbroken)
 
-        if len(m) == 0 or self._log_mc is None:
+        if len(m) == 0:
             return m
 
-        factor = WDM_suppression(m, 10 ** self._log_mc, self._a_wdm, self._b_wdm, self._c_wdm)
+        factor = self._mass_function_model_class.suppression(m, **self._kwargs_suppression_function)
         u = np.random.rand(int(len(m)))
         inds = np.where(u < factor)
-
         return m[inds]
 
     def _sample(self, draw_poisson, index, mH, mL, n_draw):

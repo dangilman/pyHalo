@@ -1,10 +1,9 @@
 import numpy as np
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
 from pyHalo.Rendering.SpatialDistributions.nfw_core import ProjectedNFW
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic, integrate_power_law_quad
-from pyHalo.Rendering.rendering_class_base import RenderingClassBase
+from pyHalo.Rendering.rendering_class_base import Rendering
 
-class Subhalos(RenderingClassBase):
+class Subhalos(Rendering):
 
     """
     This class generates subhalos, or objects that have been accreted onto the host halo of the main deflector.
@@ -36,7 +35,7 @@ class Subhalos(RenderingClassBase):
             raise Exception('subhalo_spatial_distribution ' + str(keywords_master['subhalo_spatial_distribution']) +
                             ' not recognized. Try HOST_NFW.')
 
-        super(Subhalos, self).__init__()
+        super(Subhalos, self).__init__(keywords_master)
 
     def render(self):
 
@@ -70,12 +69,8 @@ class Subhalos(RenderingClassBase):
 
         log_mlow, log_mhigh = self._redshift_dependent_mass_range(self._zlens, self._rendering_kwargs['log_mlow'],
                                                                   self._rendering_kwargs['log_mhigh'])
-
-        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'], norm,
-                                                           self._rendering_kwargs['log_mc'],
-                                                           self._rendering_kwargs['a_wdm'],
-                                                           self._rendering_kwargs['b_wdm'],
-                                                           self._rendering_kwargs['c_wdm'])
+        mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, self._rendering_kwargs['draw_poisson'],
+                                norm, self._mass_function_model_util, self._kwargs_mass_function_model)
         m = mfunc.draw()
 
         return m
@@ -156,14 +151,8 @@ class Subhalos(RenderingClassBase):
             'delta_power_law_index']
         power_law_index = self._rendering_kwargs['power_law_index'] + delta_power_law_index
 
-        if self._rendering_kwargs['log_mc'] is not None:
-            mass_in_subhalos = integrate_power_law_quad(norm,
-                                                        m_low, m_high, self._rendering_kwargs['log_mc'],
-                                                        1, power_law_index, self._rendering_kwargs['a_wdm'],
-                                                        self._rendering_kwargs['b_wdm'], self._rendering_kwargs['c_wdm'])
-        else:
-            mass_in_subhalos = integrate_power_law_analytic(norm,
-                                                        m_low, m_high, 1, power_law_index)
+        mass_in_subhalos = self._mass_function_model_util.integrate_power_law_quad(norm, m_low, m_high, 1, power_law_index,
+                                                                          **self._kwargs_mass_function_model)
 
         if kw_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 

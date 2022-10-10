@@ -80,4 +80,47 @@ class RenderingClassBase(ABC):
         ...
 
 
+class Rendering(RenderingClassBase):
+
+    def __init__(self, keywords_master):
+
+        self._keywords_master = keywords_master
+        self._mass_function_model_util, self._kwargs_mass_function_model = self._setup_mass_function(keywords_master)
+        super(Rendering, self).__init__()
+
+    @staticmethod
+    def _setup_mass_function(keywords_master):
+
+        if keywords_master['log_mc'] is None:
+            from pyHalo.Rendering.MassFunctions.models import ScaleFree
+            mass_function_model_util = ScaleFree()
+            kwargs_mass_function_model = {}
+
+        elif keywords_master['log_mc'] is not None:
+
+            if keywords_master['mass_function_turnover_model'] == 'POLYNOMIAL':
+                from pyHalo.Rendering.MassFunctions.models import PolynomialSuppression
+                mass_function_model_util = PolynomialSuppression()
+                kwargs_mass_function_model = {}
+                for kw in ['log_mc', 'a_wdm', 'b_wdm', 'c_wdm']:
+                    kwargs_mass_function_model.update({kw: keywords_master[kw]})
+
+            elif keywords_master['mass_function_turnover_model'] == 'MIXED_DM':
+
+                from pyHalo.Rendering.MassFunctions.models import MixedDMSuppression
+                mass_function_model_util = MixedDMSuppression()
+                kwargs_mass_function_model = {}
+                for kw in ['log_mc', 'a_wdm', 'b_wdm', 'c_wdm', 'mixed_DM_frac']:
+                    kwargs_mass_function_model.update({kw: keywords_master[kw]})
+
+            else:
+                raise Exception('mass_function_turnover_model = '+str(keywords_master['mass_function_turnover_model']) +
+                                'not recognized. Must be either POLYNOMIAL or MIXED_DM')
+
+        else:
+            raise Exception('must either specify keyword log_mc, which specifies the log10 mass scale where there is'
+                            'a break in the mass function, together with a mass_function_turnover_model model, '
+                            'or specify log_mc as None')
+
+        return mass_function_model_util, kwargs_mass_function_model
 

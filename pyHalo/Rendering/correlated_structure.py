@@ -1,12 +1,12 @@
 import numpy as np
 from lenstronomy.LensModel.lens_model import LensModel
-from pyHalo.Rendering.rendering_class_base import RenderingClassBase
+from pyHalo.Rendering.rendering_class_base import Rendering
 from pyHalo.Rendering.SpatialDistributions.correlated import Correlated2D
 from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.single_realization import realization_at_z
 
-class CorrelatedStructure(RenderingClassBase):
+class CorrelatedStructure(Rendering):
 
     """
     This class generates a population of halos with a spatial distribution that tracks the dark matter density in halos
@@ -32,6 +32,7 @@ class CorrelatedStructure(RenderingClassBase):
 
         self.spatial_distribution_model = Correlated2D(self.cylinder_geometry)
         self._rmax = r_max_arcsec
+        super(CorrelatedStructure, self).__init__(kwargs_rendering)
 
     def render(self, x_center_interp_list, y_center_interp_list, arcsec_per_pixel):
 

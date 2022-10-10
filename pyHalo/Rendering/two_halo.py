@@ -2,9 +2,9 @@ from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
 import numpy as np
 from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
-from pyHalo.Rendering.rendering_class_base import RenderingClassBase
+from pyHalo.Rendering.rendering_class_base import Rendering
 
-class TwoHaloContribution(RenderingClassBase):
+class TwoHaloContribution(Rendering):
 
     """
     This class adds correlated structure associated with the host dark matter halo. The amount of structure added is
@@ -22,7 +22,7 @@ class TwoHaloContribution(RenderingClassBase):
         self.spatial_distribution_model = LensConeUniform(keywords_master['cone_opening_angle'], geometry)
         self._lens_plane_redshifts = lens_plane_redshifts
         self._delta_z_list = delta_z_list
-        super(TwoHaloContribution, self).__init__()
+        super(TwoHaloContribution, self).__init__(keywords_master)
 
     def render(self):
 
@@ -53,8 +53,7 @@ class TwoHaloContribution(RenderingClassBase):
         args = deepcopy(self._rendering_kwargs)
         log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
         mfunc = GeneralPowerLaw(log_mlow, log_mhigh, slope, args['draw_poisson'],
-                                norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
-                                args['c_wdm'])
+                                norm, self._mass_function_model_util, self._kwargs_mass_function_model)
         m = mfunc.draw()
 
         return m

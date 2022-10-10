@@ -114,6 +114,8 @@ class RealizationDefaults(object):
 
         self.kappa_scale = 1
 
+        self.default_turnover_model = 'POLYNOMIAL'
+
 ####################################################################################
 
 cosmo_default = CosmoDefaults()
@@ -154,15 +156,18 @@ def set_default_kwargs(profile_params, zsource):
     if 'log_mc' in profile_params.keys():
 
         if 'log_mc' is not None:
-            for param_name in ['a_wdm', 'b_wdm', 'c_wdm']:
-                if param_name not in profile_params.keys():
-                    raise Exception('If log_mc is specified, must include a_wdm, b_wdm, c_wdm keywords. See documentation in '
-                                'Rendering/MassFuncctions/broken_powerlaw')
 
-            profile_params.update({'log_mc': profile_params['log_mc'],
-                                   'a_wdm': profile_params['a_wdm'],
-                                   'b_wdm': profile_params['b_wdm'],
-                                   'c_wdm': profile_params['c_wdm']})
+            if 'mass_function_turnover_model' not in profile_params.keys():
+                profile_params.update({'mass_function_turnover_model': realization_default.default_turnover_model})
+
+            if profile_params['mass_function_turnover_model'] in ['POLYNOMIAL', 'MIXED_DM']:
+                for param_name in ['a_wdm', 'b_wdm', 'c_wdm']:
+                    if param_name not in profile_params.keys():
+                        raise Exception('If log_mc is specified, must include a_wdm, b_wdm, c_wdm keywords')
+
+                if profile_params['mass_function_turnover_model'] in ['MIXED_DM']:
+                    if 'mixed_DM_frac' not in profile_params.keys():
+                        raise Exception('with MIXED_DM model, must specify mixed_DM_frac keyword')
 
         else:
             profile_params.update({'log_mc': None,

@@ -1,7 +1,6 @@
 import numpy.testing as npt
 import pytest
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
 import numpy as np
 
 class TestGeneralPowerLaw(object):
