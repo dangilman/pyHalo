@@ -8,7 +8,7 @@ import numpy.testing as npt
 from copy import deepcopy
 from pyHalo.pyhalo import pyHalo
 import pytest
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
+from pyHalo.Rendering.MassFunctions.models import ScaleFree
 
 class TestLOS(object):
 
@@ -157,11 +157,11 @@ class TestLOS(object):
 
         # factor of two because the kappa sheets are added at every other lens plane
         norm, slope = self.rendering_class._normalization_slope(z, 2 * dz)
-
-        mtheory = integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mass_sheet_min'],
+        model = ScaleFree()
+        mtheory = model.integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mass_sheet_min'],
                                                10 ** self.kwargs_cdm['log_mass_sheet_max'],
                                                1., slope)
-        mtheory_2 = integrate_power_law_analytic(norm, 10**log_mass_sheet_min,
+        mtheory_2 = model.integrate_power_law_analytic(norm, 10**log_mass_sheet_min,
                                                10 ** self.kwargs_cdm['log_mass_sheet_max'],
                                                1., slope)
 

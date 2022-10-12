@@ -30,7 +30,7 @@ def preset_model_from_name(name):
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
         log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs',
         mass_definition='TNFW', c0=None, log10c0=None,
-        beta=None, zeta=None, **kwargs_other):
+        beta=None, zeta=None, two_halo_contribution=True, **kwargs_other):
 
     """
     This specifies the keywords for a CDM halo mass function model with a subhalo mass function described by a power law
@@ -70,7 +70,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
     :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
     :param zeta: modifies the redshift evolution of the mass-concentration-relation
-
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
     :return: a realization of CDM halos
     """
 
@@ -103,7 +103,11 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     pyhalo = pyHalo(z_lens, z_source)
     # Using the render method will result a list of realizations
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
-    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
+    if two_halo_contribution:
+        los_components = ['LINE_OF_SIGHT', 'TWO_HALO']
+    else:
+        los_components = ['LINE_OF_SIGHT']
+    realization_line_of_sight = pyhalo.render(los_components, kwargs_model_field, nrealizations=1)[0]
 
     cdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 
@@ -113,7 +117,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
                   a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                     kwargs_suppression_mc_relation_field=None, suppression_model_field=None, kwargs_suppression_mc_relation_sub=None,
-                  suppression_model_sub=None, **kwargs_other):
+                  suppression_model_sub=None, two_halo_contribution=True, **kwargs_other):
 
     """
 
@@ -181,7 +185,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     ###################################################################################################
 
     :param kwargs_other: any other optional keyword arguments
-
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
     :return: a realization of WDM halos
     """
 
@@ -201,7 +205,6 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
 
-
     if suppression_model_sub is not None:
 
         kwargs_model_subhalos['suppression_model'] = suppression_model_sub
@@ -214,7 +217,11 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     pyhalo = pyHalo(z_lens, z_source)
     # Using the render method will result a list of realizations
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
-    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
+    if two_halo_contribution:
+        los_components = ['LINE_OF_SIGHT', 'TWO_HALO']
+    else:
+        los_components = ['LINE_OF_SIGHT']
+    realization_line_of_sight = pyhalo.render(los_components, kwargs_model_field, nrealizations=1)[0]
 
     wdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 
@@ -286,7 +293,8 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                   c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
                   mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, n_cut=50000, rescale_fluc_amp=True, r_ein=1.0, **kwargs_other):
+                  flucs_shape='aperture', flucs_args={}, n_cut=50000, rescale_fluc_amp=True, r_ein=1.0, two_halo_contribution=True,
+         **kwargs_other):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -388,6 +396,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :param n_cut: Number of fluctuations above which to start cancelling
     :param r_ein: the Einstein radius in arcseconds
     :param kwargs_other: any other optional keyword arguments
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
     :return: a realization of ULDM halos
     """
     # constants
@@ -439,7 +448,11 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     pyhalo = pyHalo(z_lens, z_source)
     # Using the render method will result a list of realizations
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
-    realization_line_of_sight = pyhalo.render(['LINE_OF_SIGHT', 'TWO_HALO'], kwargs_model_field, nrealizations=1)[0]
+    if two_halo_contribution:
+        los_components = ['LINE_OF_SIGHT', 'TWO_HALO']
+    else:
+        los_components = ['LINE_OF_SIGHT']
+    realization_line_of_sight = pyhalo.render(los_components, kwargs_model_field, nrealizations=1)[0]
     uldm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
 
     if flucs: # add fluctuations to realization

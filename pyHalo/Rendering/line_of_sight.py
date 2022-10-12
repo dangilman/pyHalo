@@ -3,10 +3,9 @@ from copy import deepcopy
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
 from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
 from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
-from pyHalo.Rendering.rendering_class_base import RenderingClassBase
+from pyHalo.Rendering.rendering_class_base import Rendering
 
-class LineOfSightNoSheet(RenderingClassBase):
+class LineOfSightNoSheet(Rendering):
     """
     This class generates line-of-sight halos, or more precisely objects between the observer and the source that are
     not associated with the host dark matter halo around the main deflector.
@@ -27,17 +26,14 @@ class LineOfSightNoSheet(RenderingClassBase):
         """
 
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
-
         self.lens_cosmo = lens_cosmo
-
         self.spatial_distribution_model = LensConeUniform(keywords_master['cone_opening_angle'],
                                                           geometry)
-
         self.halo_mass_function = halo_mass_function
         self.geometry = geometry
         self._lens_plane_redshifts = lens_plane_redshifts
         self._delta_z_list = delta_z_list
-        super(LineOfSightNoSheet, self).__init__()
+        super(LineOfSightNoSheet, self).__init__(keywords_master)
 
     def render(self):
 
@@ -108,8 +104,7 @@ class LineOfSightNoSheet(RenderingClassBase):
             log_mlow, log_mhigh = self._redshift_dependent_mass_range(z, args['log_mlow'], args['log_mhigh'])
 
             mfunc = GeneralPowerLaw(log_mlow, log_mhigh, plaw_index, args['draw_poisson'],
-                                    norm, args['log_mc'], args['a_wdm'], args['b_wdm'],
-                                    args['c_wdm'])
+                                    norm, self._mass_function_model_util, self._kwargs_mass_function_model)
 
         elif self._rendering_kwargs['mass_function_LOS_type'] == 'DELTA':
 
@@ -294,14 +289,8 @@ class LineOfSight(LineOfSightNoSheet):
         m_low = 10 ** log_sheet_min
         m_high = 10 ** log_sheet_max
 
-        if self._rendering_kwargs['log_mc'] is None:
-            mtheory = integrate_power_law_analytic(norm, m_low, m_high, 1, plaw_index)
-
-        else:
-            mtheory = integrate_power_law_quad(norm, m_low, m_high, self._rendering_kwargs['log_mc'], 1,
-                                               plaw_index, self._rendering_kwargs['a_wdm'],
-                                               self._rendering_kwargs['b_wdm'],
-                                               self._rendering_kwargs['c_wdm'])
+        mtheory = self._mass_function_model_util.integrate_power_law_quad(norm, m_low, m_high, 1, plaw_index,
+                                                                          **self._kwargs_mass_function_model)
 
         area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, z)
         sigma_crit_mass = self.lens_cosmo.sigma_crit_mass(z, area)

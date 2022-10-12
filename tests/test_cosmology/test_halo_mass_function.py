@@ -2,6 +2,7 @@ import numpy.testing as npt
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction, massFunction
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.models import ScaleFree
 import pytest
 from scipy.integrate import quad
 import numpy as np
@@ -167,7 +168,9 @@ class TestLensingMassFunction(object):
 
         norm = volume_element * self.lmf_no_lookup_ShethTormen.norm_at_z_density(z, plaw_index_theory, 10**8)
 
-        mfunc = GeneralPowerLaw(6, 8.7, plaw_index_theory, False, norm, None, None, None, None)
+        model = ScaleFree()
+        kwargs_model = {}
+        mfunc = GeneralPowerLaw(6, 8.7, plaw_index_theory, False, norm, model, kwargs_model)
         mdraw = mfunc.draw()
         dndm_model = []
 
