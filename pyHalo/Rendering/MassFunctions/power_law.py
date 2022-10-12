@@ -54,6 +54,7 @@ class GeneralPowerLaw(object):
             return m
 
         factor = self._mass_function_model_class.suppression(m, **self._kwargs_suppression_function)
+
         u = np.random.rand(int(len(m)))
         inds = np.where(u < factor)
         return m[inds]

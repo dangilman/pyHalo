@@ -91,12 +91,11 @@ class Rendering(RenderingClassBase):
     @staticmethod
     def _setup_mass_function(keywords_master):
 
-        if keywords_master['log_mc'] is None:
-            from pyHalo.Rendering.MassFunctions.models import ScaleFree
-            mass_function_model_util = ScaleFree()
-            kwargs_mass_function_model = {}
+        if 'log_mc' in keywords_master.keys() and keywords_master['log_mc'] is not None:
 
-        elif keywords_master['log_mc'] is not None:
+            if keywords_master['mass_function_turnover_model'] == 'SCALE_FREE':
+                raise Exception('you specified a scale-free mass function (mass_function_turnover_model = SCALE_FREE) but'
+                                ' also specified a break in the mass function with the log_mc keyword. This does not make sense')
 
             if keywords_master['mass_function_turnover_model'] == 'POLYNOMIAL':
                 from pyHalo.Rendering.MassFunctions.models import PolynomialSuppression
@@ -116,11 +115,10 @@ class Rendering(RenderingClassBase):
             else:
                 raise Exception('mass_function_turnover_model = '+str(keywords_master['mass_function_turnover_model']) +
                                 'not recognized. Must be either POLYNOMIAL or MIXED_DM')
-
         else:
-            raise Exception('must either specify keyword log_mc, which specifies the log10 mass scale where there is'
-                            'a break in the mass function, together with a mass_function_turnover_model model, '
-                            'or specify log_mc as None')
+            from pyHalo.Rendering.MassFunctions.models import ScaleFree
+            mass_function_model_util = ScaleFree()
+            kwargs_mass_function_model = {}
 
         return mass_function_model_util, kwargs_mass_function_model
 

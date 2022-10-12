@@ -71,6 +71,7 @@ class TestPopulationModel(object):
         kwargs_wdm['c_wdm'] = c_wdm
         kwargs_wdm['kwargs_suppression'] = kwargs_suppression
         kwargs_wdm['suppression_model'] = suppression_model
+        kwargs_wdm['mass_function_turnover_model'] = 'POLYNOMIAL'
 
         kwargs_no_sheet = deepcopy(kwargs_cdm)
         kwargs_no_sheet['mass_function_LOS_type'] = 'DELTA'

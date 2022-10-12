@@ -1,16 +1,14 @@
-from pyHalo.pyhalo import pyHalo
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from copy import deepcopy
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import WDM_suppression
 import numpy as np
 import numpy.testing as npt
 from pyHalo.pyhalo import pyHalo
 import pytest
 from pyHalo.Rendering.subhalos import normalization_sigmasub
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_quad, integrate_power_law_analytic
+from pyHalo.Rendering.MassFunctions.models import ScaleFree, PolynomialSuppression, MixedDMSuppression
 
 class TestRenderedPopulations(object):
 
@@ -97,6 +95,15 @@ class TestRenderedPopulations(object):
         self.realization_wdm_field = pyhalo.render(model_list_field, kwargs_wdm)[0]
         self.realization_wdm_subhalos = pyhalo.render(model_list_sub, kwargs_wdm)[0]
 
+        self.kwargs_mixed = deepcopy(kwargs_cdm)
+        self.kwargs_mixed['mass_function_turnover_model'] = 'MIXED_DM'
+        self.kwargs_mixed['a_wdm'] = 1.3
+        self.kwargs_mixed['b_wdm'] = 1.5
+        self.kwargs_mixed['c_wdm'] = -0.4
+        self.kwargs_mixed['log_mc'] = 7.8
+        self.kwargs_mixed['mixed_DM_frac'] = 0.5
+        self.realization_mixed = pyhalo.render(model_list_field, self.kwargs_mixed)[0]
+
     def test_mass_rendered_subhalos(self):
 
         plaw_index = self.kwargs_cdm['power_law_index'] + \
@@ -109,7 +116,9 @@ class TestRenderedPopulations(object):
                                       self.kwargs_cdm['cone_opening_angle'],
                                       plaw_index, self.kwargs_cdm['m_pivot']
                                       )
-        mtheory = integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mlow'], 10 ** self.kwargs_cdm['log_mhigh'],
+
+        model = ScaleFree()
+        mtheory = model.integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mlow'], 10 ** self.kwargs_cdm['log_mhigh'],
                                                1., plaw_index)
         m_subs = 0.
         for halo in self.realization_cdm.halos:
@@ -128,10 +137,10 @@ class TestRenderedPopulations(object):
                                       self.kwargs_cdm['cone_opening_angle'],
                                       plaw_index, self.kwargs_wdm['m_pivot']
                                       )
-        mtheory = integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mlow'],
+        model = PolynomialSuppression()
+        mtheory = model.integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mlow'],
                                                10 ** self.kwargs_wdm['log_mhigh'],
-                                                self.kwargs_wdm['log_mc'],
-                                               1., plaw_index, self.kwargs_wdm['a_wdm'],
+                                               1., plaw_index, self.kwargs_wdm['log_mc'], self.kwargs_wdm['a_wdm'],
                                            self.kwargs_wdm['b_wdm'], self.kwargs_wdm['c_wdm'])
         m_subs = 0.
         for halo in self.realization_wdm_subhalos.halos:
@@ -144,7 +153,7 @@ class TestRenderedPopulations(object):
 
         m_theory = 0
         m_rendered = 0
-
+        model = ScaleFree()
         for z, dz in zip(self.lens_plane_redshifts, self.delta_zs):
 
             m_rendered += self.realization_cdm_field.mass_at_z_exact(z)
@@ -154,7 +163,7 @@ class TestRenderedPopulations(object):
                    self.halo_mass_function.norm_at_z_density(z, slope, self.kwargs_cdm['m_pivot']) * \
                    self.geometry.volume_element_comoving(z, dz)
 
-            m_theory += integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mlow'],
+            m_theory += model.integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mlow'],
                                                             10 ** self.kwargs_cdm['log_mhigh'], 1,
                                                             slope)
 
@@ -163,7 +172,7 @@ class TestRenderedPopulations(object):
 
         m_theory = 0
         m_rendered = 0
-
+        model = PolynomialSuppression()
         for z, dz in zip(self.lens_plane_redshifts, self.delta_zs):
 
             m_rendered += self.realization_wdm_field.mass_at_z_exact(z)
@@ -172,9 +181,10 @@ class TestRenderedPopulations(object):
                    self.halo_mass_function.norm_at_z_density(z, slope, self.kwargs_wdm['m_pivot']) * \
                     self.geometry.volume_element_comoving(z, dz)
 
-            m_theory += integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mlow'],
-                                                            10 ** self.kwargs_wdm['log_mhigh'], self.kwargs_wdm['log_mc'],
-                                                        1, slope, self.kwargs_wdm['a_wdm'], self.kwargs_wdm['b_wdm'],
+            m_theory += model.integrate_power_law_quad(norm, 10 ** self.kwargs_wdm['log_mlow'],
+                                                            10 ** self.kwargs_wdm['log_mhigh'],
+                                                        1, slope, self.kwargs_wdm['log_mc'],
+                                                       self.kwargs_wdm['a_wdm'], self.kwargs_wdm['b_wdm'],
                                                         self.kwargs_wdm['c_wdm'])
 
         ratio = m_theory / m_rendered
@@ -194,12 +204,39 @@ class TestRenderedPopulations(object):
         log_halo_mass = np.log10(halo_masses_cdm)
         h_cdm, _ = np.histogram(log_halo_mass, bins=mass_bins)
 
-        suppression_factor = WDM_suppression(10**logM,
-                                             10**self.kwargs_wdm['log_mc'],
+        model = PolynomialSuppression()
+        suppression_factor = model.suppression(10**logM,
+                                             self.kwargs_wdm['log_mc'],
                                              self.kwargs_wdm['a_wdm'],
                                              self.kwargs_wdm['b_wdm'],
                                              self.kwargs_wdm['c_wdm'],
                                              )
+
+        for i in range(0, 10):
+            ratio = h_wdm[i]/h_cdm[i]
+            npt.assert_almost_equal(ratio, suppression_factor[i], 1)
+
+    def test_mixedDM_mass_function(self):
+
+        mass_bins = np.linspace(6, 9, 20)
+        halo_masses_mixedDM = [halo.mass for halo in self.realization_mixed.halos]
+        log_halo_mass = np.log10(halo_masses_mixedDM)
+        h_wdm, logM = np.histogram(log_halo_mass, bins=mass_bins)
+        logmstep = (logM[1] - logM[0]) / 2
+        logM = logM[0:-1] + logmstep
+
+        mass_bins = np.linspace(6, 9, 20)
+        halo_masses_cdm = [halo.mass for halo in self.realization_cdm_field.halos]
+        log_halo_mass = np.log10(halo_masses_cdm)
+        h_cdm, _ = np.histogram(log_halo_mass, bins=mass_bins)
+
+        model = MixedDMSuppression()
+        suppression_factor = model.suppression(10**logM,
+                                             self.kwargs_mixed['log_mc'],
+                                               self.kwargs_mixed['a_wdm'],
+                                               self.kwargs_mixed['b_wdm'],
+                                               self.kwargs_mixed['c_wdm'],
+                                               self.kwargs_mixed['mixed_DM_frac'])
 
         for i in range(0, 10):
             ratio = h_wdm[i]/h_cdm[i]

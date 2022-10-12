@@ -70,8 +70,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
     :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
     :param zeta: modifies the redshift evolution of the mass-concentration-relation
-    :param two_halo_contribution: whether or not to include the two-halo term for correlated structure near
-    the main deflector
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
     :return: a realization of CDM halos
     """
 
@@ -186,8 +185,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     ###################################################################################################
 
     :param kwargs_other: any other optional keyword arguments
-    :param two_halo_contribution: whether or not to include the two-halo term for correlated structure near
-    the main deflector
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
     :return: a realization of WDM halos
     """
 
@@ -206,7 +204,6 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
                            'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
                           'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
                              'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
-
 
     if suppression_model_sub is not None:
 
@@ -235,7 +232,7 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
          kwargs_core_collapse_profile, deflection_angle_function, central_density_function, collapse_probability_function,
          t_sub=10, t_field=100, collapse_time_width=0.5, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
          LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', mdef_collapse='SPL_CORE',
-         realization_no_core_collapse=None, two_halo_contribution=True,
+         realization_no_core_collapse=None,
          **kwargs_other):
 
     """
@@ -270,8 +267,6 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     :param kwargs_other: any addition keyword arguments
     :param mdef: the halo profile for halos that have not core collapsed
     :param mdef_collapse: the halo profile for halos that have core collapsed
-    :param two_halo_contribution: whether or not to include the two-halo term for correlated structure near
-    the main deflector
     :return: an instance of Realization that contains cored and core collapsed halos
     """
 
@@ -401,8 +396,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :param n_cut: Number of fluctuations above which to start cancelling
     :param r_ein: the Einstein radius in arcseconds
     :param kwargs_other: any other optional keyword arguments
-    :param two_halo_contribution: whether or not to include the two-halo term for correlated structure near
-    the main deflector
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
     :return: a realization of ULDM halos
     """
     # constants

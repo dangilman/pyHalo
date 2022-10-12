@@ -8,7 +8,7 @@ import numpy.testing as npt
 from copy import deepcopy
 from pyHalo.pyhalo import pyHalo
 import pytest
-from pyHalo.Rendering.MassFunctions.mass_function_utilities import integrate_power_law_analytic
+from pyHalo.Rendering.MassFunctions.models import ScaleFree
 
 class TestSubhalos(object):
 
@@ -137,7 +137,8 @@ class TestSubhalos(object):
         norm, slope = self.rendering_class_uniform._norm_slope()
 
         # factor of two because the kappa sheets are added at every other lens plane
-        mtheory = integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mass_sheet_min'],
+        model = ScaleFree()
+        mtheory = model.integrate_power_law_analytic(norm, 10 ** self.kwargs_cdm['log_mass_sheet_min'],
                                                10 ** self.kwargs_cdm['log_mass_sheet_max'],
                                                1., slope)
         area = self.geometry.angle_to_physical_area(0.5 * self.kwargs_cdm['cone_opening_angle'], z)

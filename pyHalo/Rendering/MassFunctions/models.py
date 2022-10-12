@@ -87,10 +87,10 @@ class MixedDMSuppression(ScaleFree):
         """
 
         """
-        # print('using MixDM suppression, definition')
+
         m_c = 10 ** log_mc
         r = a_wdm * (m_c / m) ** b_wdm
         factor = 1 + r
         wdm_comp = factor ** c_wdm
-        tot_supp = (mixed_DM_frac + (1 - mixed_DM_frac) * np.sqrt(wdm_comp)) ** 2
-        return tot_supp
+        suppression_factor = (mixed_DM_frac + (1 - mixed_DM_frac) * np.sqrt(wdm_comp)) ** 2
+        return suppression_factor
