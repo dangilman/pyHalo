@@ -790,7 +790,7 @@ class Realization(object):
 class SingleHalo(Realization):
 
     def __init__(self, halo_mass, x, y, mdef, z, zlens, zsource, r3d=None, subhalo_flag=False,
-                 kwargs_halo={}, cosmo=None):
+                 kwargs_halo={}, cosmo=None, lens_cosmo=None):
 
         """
        Useful for generating a realization with a single or a few
@@ -807,11 +807,12 @@ class SingleHalo(Realization):
         :param subhalo_flag: bool, sets whether or not a halo is a subhalo
         :param kwargs_halo: keyword arguments for the halo
         :param cosmo: an instance of Cosmology(); if none is provided a default cosmology will be used
+        :param lens_cosmo: an instance of LensCosmo; if none is provided loads the default class
         """
         if cosmo is None:
             cosmo = Cosmology()
-
-        lens_cosmo = LensCosmo(zlens, zsource, cosmo)
+        if lens_cosmo is None:
+            lens_cosmo = LensCosmo(zlens, zsource, cosmo)
 
         # these are redundant keywords for a single halo, but we need to specify them anyways
         kwargs_halo.update({'cone_opening_angle': 6., 'log_mlow': 6., 'log_mhigh': 10.})
