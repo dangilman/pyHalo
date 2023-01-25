@@ -127,7 +127,7 @@ class TNFWSubhalo(TNFWFieldHalo):
         if not hasattr(self, '_params_physical'):
             [concentration, rt] = self.profile_args
             rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc': rt}
+            self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
 
         return self._params_physical
 

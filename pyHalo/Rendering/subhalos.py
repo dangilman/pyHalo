@@ -23,7 +23,7 @@ class Subhalos(Rendering):
         self.lens_cosmo = lens_cosmo
         self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
-
+  
         if 'subhalo_spatial_distribution' not in keywords_master.keys():
             raise Exception('must specify a value for the subhalo_spatial_distribution keyword.'
                             ' Currently only HOST_NFW is implemented.')
@@ -153,6 +153,9 @@ class Subhalos(Rendering):
 
         mass_in_subhalos = self._mass_function_model_util.integrate_power_law_quad(norm, m_low, m_high, 1, power_law_index,
                                                                           **self._kwargs_mass_function_model)
+
+        if mass_in_subhalos == 0:
+            return [], [], []
 
         if kw_mass_sheets['subhalo_convergence_correction_profile'] == 'UNIFORM':
 

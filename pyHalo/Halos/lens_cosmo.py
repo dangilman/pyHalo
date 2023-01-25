@@ -62,11 +62,9 @@ class LensCosmo(object):
         :param r3d: 3d radial position in the halo (kpc)
         :return: truncation radius in Kpc (physical)
         """
-
         m_units_7 = M / 10 ** 7
         radius_units_50 = r3d / 50
         rtrunc_kpc = k * m_units_7 ** (1. / 3) * radius_units_50 ** nu
-
         return numpy.round(rtrunc_kpc, 3)
 
     def LOS_truncation_rN(self, M, z, N):
@@ -82,7 +80,6 @@ class LensCosmo(object):
         h = self.cosmo.h
         r50_physical_Mpc = self.rN_M_nfw_comoving(M * h, N, z) * a_z / h
         rN_physical_kpc = r50_physical_Mpc * 1000
-
         return rN_physical_kpc
 
     def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=None,
@@ -107,7 +104,6 @@ class LensCosmo(object):
         :return: the concentration of the NFW halo
 
         """
-
         return self._concentration.nfw_concentration(M, z, model, mdef, logmhm,
                                                      scatter,scatter_amplitude, kwargs_suppresion, suppression_model)
 
@@ -192,7 +188,6 @@ class LensCosmo(object):
         """
 
         rho0, Rs, r200 = self.nfwParam_physical_Mpc(M, c, z)
-
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
     def nfw_physical2angle_fromNFWparams(self, rhos, rs, z):
@@ -302,6 +297,24 @@ class LensCosmo(object):
         factor *= dds / dd / ds
 
         return factor ** 0.5 / self.cosmo.arcsec
+
+    def halo_dynamical_time(self, M_host, z, c_host=None):
+        """
+        This routine computes the dynamical timescale for a halo of mass M defined as
+        t = 0.5427 / sqrt(G*rho)
+        where G is the gravitational constant and rho is the average density
+        :param M_host: host mass in M_sun
+        :param z: host redshift
+        :param c_host: host halo concentration
+        :return: the dynamical timescale in Gyr
+        """
+        if c_host is None:
+            c_host = self.NFW_concentration(M_host, z, scatter=False)
+        _, _, rvir = self.NFW_params_physical(M_host, c_host, z)
+        volume = (4/3)*numpy.pi*rvir**3
+        rho_average = M_host / volume
+        G = 4.3e-6
+        return 0.5427 / numpy.sqrt(G*rho_average)
 
     ##################################################################################
     """ACCRETION REDSHIFT PDF FROM GALACTICUS"""

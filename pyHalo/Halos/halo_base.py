@@ -104,6 +104,21 @@ class Halo(ABC):
 
         return self._z_infall
 
+    @property
+    def time_since_infall(self):
+        """
+        This routine calculates the time in Gyr since infall for subhalos using the infall redshift as predicted by
+        Galacticus
+        :return: the time since the subhalo was accreted onto thehost [Gyr]
+        """
+        if not self.is_subhalo:
+            print("time since infall is a meaningless concept for field halos")
+            return None
+        if not hasattr(self, '_time_since_infall'):
+            self._time_since_infall = self.lens_cosmo.cosmo.halo_age(self.z, self.z_infall)
+        return self._time_since_infall
+
+
 
 
 
