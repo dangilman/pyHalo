@@ -126,7 +126,7 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppre
     :param z: redshift
     :param log_half_mode_mass: log10 of the half mode mass in a WDM model
     :param suppression_model: the type of suppression, either 'polynomial' or 'hyperbolic'
-    :param kwargs_suppresion: keyword arguments for the suppression function
+    :param kwargs_supression: keyword arguments for the suppression function
     :return: the ratio c_wdm over c_cdm
     """
 
@@ -142,7 +142,8 @@ def WDM_concentration_suppresion_factor(halo_mass, z, log_half_mode_mass, suppre
         return _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, kwargs_supression['a_mc'],
                                        kwargs_supression['b_mc'])
     else:
-        raise Exception('suppression model '+str(suppression_model)+' not recognized.')
+        raise Exception('suppression model '+str(suppression_model)+' not recognized; allowed models '
+                                                                    'are polynomial and hyperbolic')
 
 def _suppression_hyperbolic(halo_mass, z, log_half_mode_mass, a, b):
 
