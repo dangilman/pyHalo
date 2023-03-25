@@ -9,6 +9,8 @@ from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy as np
 from pyHalo.utilities import de_broglie_wavelength
+from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
+from pyHalo.single_realization import Realization
 
 def preset_model_from_name(name):
     """
@@ -24,6 +26,8 @@ def preset_model_from_name(name):
         return SIDM
     elif name == 'ULDM':
         return ULDM
+    elif name == 'CDMEmulator':
+        return CDMFromEmulator
     else:
         raise Exception('preset model '+ str(name)+' not recognized!')
 
@@ -113,6 +117,86 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 
     return cdm_realization
 
+def CDMFromEmulator(z_lens, z_source, emulator_input, cone_opening_angle_arcsec=6., log_mlow=6., log_mhigh=10.,
+                 LOS_normalization=1., log_m_host=13.3, c0=None,
+                 log10c0=None, beta=None, zeta=None, two_halo_contribution=True,
+                 kwargs_halo_mass_function=None, **kwargs_other):
+    """
+    This generates a realization of subhalos using an emulator of the semi-analytic modeling code Galacticus, and
+     generates line-of-sight halos from a mass function parameterized as Sheth-Tormen.
+
+    :param z_lens: main deflector redshift
+    :param z_source: sourcee redshift
+    :param emulator_input: either an array or a callable function
+
+    if callable: a function that returns an array of
+    1) subhalo masses at infall [M_sun]
+    2) subhalo projected x position [kpc]
+    3) subhalo projected y position [kpc]
+    4) subhalo final_bound_mass [M_sun]
+    5) subhalo concentrations at infall
+
+    if not callable: an array with shape (N_subhalos 5) that contains masses, positions x, positions y, etc.
+
+    Mass convention is m200 with respect to the critical density of the Universe at redshift Z_infall, where Z_infall is
+    the infall redshift (not necessarily the redshift at the time of lensing).
+
+    :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
+    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
+
+    The following optional keywords specify a concentration-mass relation for field halos parameterized as a power law
+    in peak height. If they are not set in the function call, pyHalo assumes a default concentration-mass relation from Diemer&Joyce
+    :param c0: amplitude of the mass-concentration relation at 10^8
+    :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
+    :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
+    :param zeta: modifies the redshift evolution of the mass-concentration-relation
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
+    :param kwargs_halo_mass_function: keyword arguments passed to the LensingMassFunction class
+    (see Cosmology.lensing_mass_function)
+    :return: a realization of CDM halos
+    """
+
+    # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
+    cdm_halos_LOS = CDM(z_lens, z_source, sigma_sub=0.0, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
+                        log_mlow=log_mlow, log_mhigh=log_mhigh, LOS_normalization=LOS_normalization, log_m_host=log_m_host,
+                        c0=c0, log10c0=log10c0, beta=beta, zeta=zeta, two_halo_contribution=two_halo_contribution,
+                        kwargs_halo_mass_function=kwargs_halo_mass_function, **kwargs_other)
+    # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
+    lens_cosmo = cdm_halos_LOS.lens_cosmo
+
+    # now create subhalos from the specified properties using the TNFWSubhaloEmulator class
+    halo_list = []
+    if callable(emulator_input):
+        subhalo_infall_masses, subhalo_x_kpc, subhalo_y_kpc, subhalo_final_bound_masses, \
+        subhalo_infall_concentrations = emulator_input()
+    else:
+        subhalo_infall_masses = emulator_input[:, 0]
+        subhalo_x_kpc = emulator_input[:, 1]
+        subhalo_y_kpc = emulator_input[:, 2]
+        subhalo_final_bound_masses = emulator_input[:, 3]
+        subhalo_infall_concentrations = emulator_input[:, 4]
+
+    for i in range(0, len(subhalo_infall_masses)):
+        halo = TNFWSubhaloEmulator(subhalo_infall_masses[i],
+                                   subhalo_x_kpc[i],
+                                   subhalo_y_kpc[i],
+                                   subhalo_final_bound_masses[i],
+                                   subhalo_infall_concentrations[i],
+                                   z_lens, lens_cosmo)
+        halo_list.append(halo)
+
+    # grab the default keyword arguments from whatever is in the default pyHalo code from LOS halo class
+    profile_params = cdm_halos_LOS._prof_params
+    # combine the subhalos with line-of-sight halos
+    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, profile_params, msheet_correction=False,
+                                         rendering_classes=None)
+    return cdm_halos_LOS.join(subhalos_from_emulator)
+
+
 def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
                   a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, cone_opening_angle_arcsec=6.,
                   sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
@@ -159,7 +243,7 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     :param a_wdm_sub: defines the WDM subhalo mass function (see above)
     :param b_wdm_sub: defines the WDM subhalo mass function (see above)
     :param c_wdm_sub: defines the WDM subhalo mass function (see above)
-    :param cone_opening_angle: the opening angle in arcsec of the volume where halos are added
+    :param cone_opening_angle_arcsec: the opening angle in arcsec of the volume where halos are added
     :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
     :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
     :param log_m_host: log10 host halo mass in M_sun

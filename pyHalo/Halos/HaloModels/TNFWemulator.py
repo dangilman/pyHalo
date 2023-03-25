@@ -4,6 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.interpolate import RegularGridInterpolator
 
+
 def tnfw_mass_fraction(tau, c):
     """
     This function returns the fraction = final_mass/initial_mass, assuming a truncated NFW profile
@@ -14,14 +15,16 @@ def tnfw_mass_fraction(tau, c):
     Rs = 1.0
     r_trunc = tau * Rs
     func = (r_trunc ** 2 * (-2 * x * (1 + r_trunc ** 2) + 4 * (1 + x) * r_trunc * np.arctan(x / r_trunc) -
-                            2 * (1 + x) * (-1 + r_trunc ** 2) * np.log(Rs) + 2 * (1 + x) * (-1 + r_trunc ** 2) * np.log(Rs * (1 + x)) +
+                            2 * (1 + x) * (-1 + r_trunc ** 2) * np.log(Rs) + 2 * (1 + x) * (-1 + r_trunc ** 2) * np.log(
+            Rs * (1 + x)) +
                             2 * (1 + x) * (-1 + r_trunc ** 2) * np.log(Rs * r_trunc) -
-                            (1 + x) * (-1 + r_trunc ** 2) * np.log(Rs ** 2 * (x ** 2 + r_trunc ** 2)))) / (2. * (1 + x) * (1 + r_trunc ** 2) ** 2)
-    mass_loss = func / (np.log(1+c)-c/(1+c))
+                            (1 + x) * (-1 + r_trunc ** 2) * np.log(Rs ** 2 * (x ** 2 + r_trunc ** 2)))) / (
+                   2. * (1 + x) * (1 + r_trunc ** 2) ** 2)
+    mass_loss = func / (np.log(1 + c) - c / (1 + c))
     return mass_loss
 
-def _tau_mf_interpolator():
 
+def tau_mf_interpolator():
     N = 250
     tau = np.logspace(-3.5, 2.5, N)
     concentration = np.linspace(1.0, 200.0, N)
@@ -29,25 +32,26 @@ def _tau_mf_interpolator():
     log10_mass_fraction_1d = np.linspace(-4, -0.001, N)
     log10tau_2d = np.zeros((N, N))
 
-    # This computes the value of tau that correponds to each pair of (concentration, mass_loss)
+    # This computes the value of tau that corresponds to each pair of (concentration, mass_loss)
     for i, con_i in enumerate(concentration):
         mfinal = tnfw_mass_fraction(tau, con_i)
         log10final_mass = np.log10(mfinal)
         mfinterp = interp1d(log10final_mass, np.log10(tau), fill_value='extrapolate')
 
         for j, log10_mass_j in enumerate(log10_mass_fraction_1d):
-            log10tau_2d[i,j]  = float(mfinterp(log10_mass_j))
+            log10tau_2d[i, j] = float(mfinterp(log10_mass_j))
 
     interp_points = (concentration, log10_mass_fraction_1d)
     interpolator = RegularGridInterpolator(interp_points, log10tau_2d, fill_value=None, bounds_error=False)
     return interpolator
 
-_truncation_radius_interpolator = _tau_mf_interpolator()
+_truncation_radius_interpolator = tau_mf_interpolator()
 
 class TNFWSubhaloEmulator(Halo):
     """
     Defines a truncated NFW halo that is a subhalo of the host dark matter halo
     """
+
     def __init__(self, infall_mass, x, y, final_bound_mass, infall_concentration, redshift,
                  lens_cosmo_instance, unique_tag=None):
         """
@@ -64,40 +68,40 @@ class TNFWSubhaloEmulator(Halo):
 
         # set the concentration
         self.c = infall_concentration
-        self.z = redshift
-        self._bound_mass_fraction = final_bound_mass/infall_mass
-        self._kpc_per_asec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-        x_arcsec = x / self._kpc_per_asec
-        y_arcsec = y / self._kpc_per_asec
-        super(TNFWSubhaloEmulator, self).__init__(infall_mass, x_arcsec, y_arcsec, r3d, profile_definition, redshift, sub_flag,
-                                           lens_cosmo_instance, args, unique_tag)
+        self._bound_mass_fraction = final_bound_mass / infall_mass
+        self._kpc_per_arcsec_at_z = self._lens_cosmo.cosmo.kpc_proper_per_asec(redshift)
+        x_arcsec = x / self._kpc_per_arcsec_at_z
+        y_arcsec = y / self._kpc_per_arcsec_at_z
+        super(TNFWSubhaloEmulator, self).__init__(infall_mass, x_arcsec, y_arcsec, r3d, profile_definition, redshift,
+                                                  sub_flag,
+                                                  lens_cosmo_instance, args, unique_tag)
 
     @property
-    def angles(self):
+    def z_eval(self):
         """
-        See documentation in base class (Halos/halo_base.py)
+        Returns the halo redshift
         """
-        if not hasattr(self, '_angles'):
-           self._Rs_angle, self._theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
-        
-        return self._angles
-    
+
+        return self.z
+
     @property
     def lenstronomy_params(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_kwargs_lenstronomy'):
+            [concentration, rt] = self.profile_args
 
-            [concentration, rt_kpc] = self.profile_args
+            # evaluate density parameters at the time of lensing
+            _rhos_mpc, _rs_mpc, _ = self._lens_cosmo.nfwParam_physical_Mpc(self.mass, concentration, self.z_eval)
+            # convert to angles at the time of lensing (deflector redshift)
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(_rhos_mpc, _rs_mpc, self.z_eval)
             x, y = np.round(self.x, 4), np.round(self.y, 4)
-            Rs_angle = np.round(self._Rs_angle, 10)
-            theta_Rs = np.round(self._theta_Rs, 10)
-            r_trunc_arcsec = rt_kpc / self._kpc_per_asec
-
+            Rs_angle = np.round(Rs_angle, 10)
+            theta_Rs = np.round(theta_Rs, 10)
+            r_trunc_arcsec = rt / self._kpc_per_arcsec_at_z
             kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle,
-                      'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
-
+                       'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
             self._kwargs_lenstronomy = kwargs
 
         return self._kwargs_lenstronomy, None
@@ -108,9 +112,12 @@ class TNFWSubhaloEmulator(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_profile_args'):
-            point = (np.log10(self.c), np.log10(self._bound_mass_fraction))
+            point = (self.c, np.log10(self._bound_mass_fraction))
             Rs_angle, _ = self._lens_cosmo.nfw_physical2angle(self.mass, self.c, self.z)
             log10_tau = float(_truncation_radius_interpolator(point))
+            rt_over_rs = 10 ** log10_tau
+            truncation_kpc = Rs_angle * rt_over_rs * self._kpc_per_arcsec_at_z
+            self._profile_args = (self.c, truncation_kpc)
 
         return self._profile_args
 
