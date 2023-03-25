@@ -31,6 +31,8 @@ class Geometry(object):
         elif geometry_type == 'CYLINDER':
             self._geometrytype = Cylinder(cosmology, z_lens, z_source, opening_angle)
             self.volume_type = 'CYLINDER'
+        elif geometry_type == 'CONE':
+            self._geometrytype = Cone(cosmology, z_lens, z_source, opening_angle, angle_pad)
         #elif geometry_type == 'DOUBLE_CONE_CYLINDER':
         #    self._geometrytype = DoubleConeCylindner(cosmology, z_lens, z_source, opening_angle, angle_pad)
         else:
@@ -141,6 +143,36 @@ class Geometry(object):
         asec_per_kpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value
 
         return r_co_kpc * asec_per_kpc
+
+class Cone(object):
+
+    def __init__(self, cosmology, z_lens, z_source, opening_angle, angle_pad):
+
+        self._cosmo = cosmology
+
+        self.opening_angle_radians = opening_angle * cosmology.arcsec
+
+        self.d_c_lens = cosmology.D_C_transverse(z_lens)
+
+        self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
+
+        self.comoving_radius_cylinder = 0.5 * self.opening_angle_radians * self.d_c_lens
+
+        self._zlens, self._zsource = z_lens, z_source
+
+        self._total_volume = np.pi * self.comoving_radius_cylinder ** 2 * \
+                             cosmology.D_C_transverse(self._zsource)
+
+    def rendering_scale(self, z):
+        """
+        Determines the angular size of the area at redshift z where halos are rendered;
+        for this geometry, the physical size of the cylinder remains constant, and is set by
+        cone_opening_angle / 2 * D_z, where D_z is the distance to the main deflector
+
+        :param z: redshift
+        :return: a factor that scales the size of the rendering area
+        """
+        return 1.0
 
 class Cylinder(object):
 

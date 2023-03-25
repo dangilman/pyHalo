@@ -197,7 +197,7 @@ class LensCosmo(object):
         :param rhos: central density normalization in M_sun / Mpc^3
         :param rs: scale radius in Mpc
         :param z: redshift
-        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
+        :return: theta_Rs (deflection angle at the scale radius) [arcsec], scale radius [arcsec]
         """
 
         D_d = self.cosmo.D_A_z(z)
@@ -216,7 +216,6 @@ class LensCosmo(object):
         """
 
         rhos, rs, _ = self.nfwParam_physical_Mpc(M, c, z)
-
         return self.nfw_physical2angle_fromNFWparams(rhos, rs, z)
 
     def nfw_physical2angle_fromM(self, M, z, **mc_kwargs):
@@ -230,17 +229,20 @@ class LensCosmo(object):
         """
 
         c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
-
         return self.nfw_physical2angle(M, c, z)
 
-    def rho0_c_NFW(self, c, z_eval_rho=0.):
+    def rho0_c_NFW(self, c, z_eval_rho=0., N=200):
         """
         computes density normalization as a function of concentration parameter
+
+        :param c: concentration
+        :param z_eval_rho: redshift at which to evaluate the critical density
+        :param N: the density contrast used to define the halo mass
         :return: density normalization in h^2/Mpc^3 (comoving)
         """
 
         rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
-        return 200. / 3 * rho_crit * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
+        return N / 3 * rho_crit * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
 
     def rN_M_nfw_comoving(self, M, N, z):
         """
@@ -254,7 +256,7 @@ class LensCosmo(object):
 
         return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
 
-    def nfwParam_physical_Mpc(self, M, c, z):
+    def nfwParam_physical_Mpc(self, M, c, z, N=200):
 
         """
 
@@ -268,8 +270,8 @@ class LensCosmo(object):
         """
 
         h = self.cosmo.h
-        r200 = self.rN_M_nfw_comoving(M * h, 200., z) / h  # physical radius r200
-        rhos = self.rho0_c_NFW(c, z) * h ** 2  # physical density in M_sun/Mpc**3
+        r200 = self.rN_M_nfw_comoving(M * h, N, z) / h  # comoving virial radius
+        rhos = self.rho0_c_NFW(c, z, N) * h ** 2  # density in M_sun/Mpc**3
         rs = r200 / c
         return rhos, rs, r200
 
@@ -298,23 +300,23 @@ class LensCosmo(object):
 
         return factor ** 0.5 / self.cosmo.arcsec
 
-    def halo_dynamical_time(self, M_host, z, c_host=None):
+    def halo_dynamical_time(self, m_host, z, c_host=None):
         """
         This routine computes the dynamical timescale for a halo of mass M defined as
         t = 0.5427 / sqrt(G*rho)
         where G is the gravitational constant and rho is the average density
-        :param M_host: host mass in M_sun
+        :param m_host: host mass in M_sun
         :param z: host redshift
         :param c_host: host halo concentration
         :return: the dynamical timescale in Gyr
         """
         if c_host is None:
-            c_host = self.NFW_concentration(M_host, z, scatter=False)
-        _, _, rvir = self.NFW_params_physical(M_host, c_host, z)
+            c_host = self.NFW_concentration(m_host, z, scatter=False)
+        _, _, rvir = self.NFW_params_physical(m_host, c_host, z)
         volume = (4/3)*numpy.pi*rvir**3
-        rho_average = M_host / volume
-        G = 4.3e-6
-        return 0.5427 / numpy.sqrt(G*rho_average)
+        rho_average = m_host / volume
+        g = 4.3e-6
+        return 0.5427 / numpy.sqrt(g*rho_average)
 
     ##################################################################################
     """ACCRETION REDSHIFT PDF FROM GALACTICUS"""
@@ -411,4 +413,3 @@ class LensCosmo(object):
 
         idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
         return idx
-

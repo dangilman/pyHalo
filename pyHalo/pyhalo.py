@@ -23,10 +23,10 @@ class pyHalo(pyHaloBase):
         :param zsource: source redshift
         :param cosmology_kwargs:
         keyword arguments for 'Cosmology' class. See documentation in cosmology.py
-        :param halo_mass_function_args:
+        :param kwargs_halo_mass_function:
         keyword arguments for 'LensingMassFunction' class. See documentation in lensing_mass_function.py
-        :param kwargs_massfunc:
-        keyword arguments
+        :param cosmology_kwargs
+        keyword arguments that specify cosmological parameters
         """
         super(pyHalo, self).__init__(zlens, zsource, cosmology_kwargs, kwargs_halo_mass_function)
 

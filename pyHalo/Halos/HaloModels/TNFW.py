@@ -52,7 +52,7 @@ class TNFWFieldHalo(Halo):
         if not hasattr(self, '_params_physical'):
 
             [concentration, rt] = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
             self._params_physical = {'rhos': rhos * self._rescale_norm, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
 
         return self._params_physical
@@ -94,7 +94,7 @@ class TNFWFieldHalo(Halo):
         """
         if not hasattr(self, '_profile_args'):
 
-            truncation_radius = self._lens_cosmo.LOS_truncation_rN(self.mass, self.z,
+            truncation_radius = self._lens_cosmo.LOS_truncation_rN(self.mass, self.z_eval,
                                                              self._args['LOS_truncation_factor'])
 
             self._profile_args = (self.c, truncation_radius)
@@ -105,6 +105,7 @@ class TNFWSubhalo(TNFWFieldHalo):
     """
     Defines a truncated NFW halo that is a subhalo of the host dark matter halo
     """
+
     @property
     def z_eval(self):
         """
@@ -126,7 +127,7 @@ class TNFWSubhalo(TNFWFieldHalo):
         """
         if not hasattr(self, '_params_physical'):
             [concentration, rt] = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
             self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
 
         return self._params_physical
@@ -145,3 +146,27 @@ class TNFWSubhalo(TNFWFieldHalo):
 
         return self._profile_args
 
+    @property
+    def lenstronomy_params(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_kwargs_lenstronomy'):
+            [concentration, rt] = self.profile_args
+
+            # evaluate density parameters at infall
+            _rhos_mpc, _rs_mpc, _ = self._lens_cosmo.nfwParam_physical_Mpc(self.mass, concentration, self.z_eval)
+            # convert to angles at the time of lensing (deflector redshift)
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(_rhos_mpc, _rs_mpc, self.z)
+
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
+            Rs_angle = np.round(Rs_angle, 10)
+            theta_Rs = np.round(theta_Rs, 10)
+            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+
+            kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle,
+                       'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
+
+            self._kwargs_lenstronomy = kwargs
+
+        return self._kwargs_lenstronomy, None

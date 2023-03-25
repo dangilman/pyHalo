@@ -353,7 +353,7 @@ class Realization(object):
                                       self.apply_mass_sheet_correction, rendering_classes,
                                       centerx, centery, self.geometry)
 
-    def shift_background_to_source(self, ray_interp_x, ray_interp_y):
+    def shift_background_to_source(self, ray_interp_x, ray_interp_y, min_shift_redshift=0):
 
         """
         This routine shifts the entire relation along a path specified by ray_interp_x/y. This routine is intended
@@ -363,6 +363,7 @@ class Realization(object):
         :param ray_interp_x: instance of scipy.interp1d, returns the angular position of a ray
         fired through the lens center given a comoving distance
         :param ray_interp_y: same but for the y coordinate
+        :param min_shift_redshift: only apply shift when halo redshift exceeds min_shift_redshift
         :return:
         """
 
@@ -376,11 +377,11 @@ class Realization(object):
             if halo.fixed_position:
                 halos.append(halo)
                 continue
+            if halo.z < min_shift_redshift:
+                continue
 
             comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(halo.z)
-
             xshift, yshift = ray_interp_x(comoving_distance_z), ray_interp_y(comoving_distance_z)
-
             halo.x += xshift
             halo.y += yshift
             halos.append(halo)

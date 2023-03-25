@@ -30,7 +30,7 @@ def preset_model_from_name(name):
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
         log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs',
         mass_definition='TNFW', c0=None, log10c0=None,
-        beta=None, zeta=None, two_halo_contribution=True, **kwargs_other):
+        beta=None, zeta=None, two_halo_contribution=True, kwargs_halo_mass_function=None, **kwargs_other):
 
     """
     This specifies the keywords for a CDM halo mass function model with a subhalo mass function described by a power law
@@ -71,6 +71,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
     :param zeta: modifies the redshift evolution of the mass-concentration-relation
     :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
+    :param kwargs_halo_mass_function: keyword arguments passed to the LensingMassFunction class
+    (see Cosmology.lensing_mass_function)
     :return: a realization of CDM halos
     """
 
@@ -83,11 +85,9 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
                              'mdef_subs': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
 
     if any(x is not None for x in [c0, log10c0, beta, zeta]):
-
         if c0 is None:
             assert log10c0 is not None
             c0 = 10 ** log10c0
-
         assert beta is not None
         assert zeta is not None
         mc_model = {'custom': True,
@@ -100,7 +100,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     kwargs_model_subhalos.update(kwargs_other)
 
     # this will use the default cosmology. parameters can be found in defaults.py
-    pyhalo = pyHalo(z_lens, z_source)
+    pyhalo = pyHalo(z_lens, z_source, kwargs_halo_mass_function=kwargs_halo_mass_function)
     # Using the render method will result a list of realizations
     realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
     if two_halo_contribution:

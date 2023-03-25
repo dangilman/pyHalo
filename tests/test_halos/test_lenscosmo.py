@@ -8,6 +8,8 @@ from astropy.constants import G, c
 from pyHalo.Halos.concentration import Concentration, WDM_concentration_suppresion_factor
 import astropy.units as un
 from colossus.halo.profile_nfw import NFWProfile
+from pyHalo.Cosmology.cosmology import Cosmology
+from lenstronomy.Cosmo.lens_cosmo import LensCosmo as LensCosmoLenstronomy
 
 class TestLensCosmo(object):
 
@@ -157,6 +159,21 @@ class TestLensCosmo(object):
         rs, theta_rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc, rs_mpc, 0.5)
         npt.assert_almost_equal(rs, out[0])
         npt.assert_almost_equal(theta_rs, out[1])
+
+    def test_nfw_definitions_wrt_lenstronomy(self):
+
+        cosmo = Cosmology()
+        astropy = cosmo.astropy
+        zlens = 0.5
+        zsource = 2.0
+        lc = LensCosmoLenstronomy(zlens, zsource, astropy)
+        lens_cosmo = LensCosmo(zlens, zsource, cosmo)
+
+        rho0_lenstronomy, rs_lenstronomy, r200_lenstronomy = lc.nfwParam_physical(10 ** 8, 16.0)
+        rho0, rs, r200 = lens_cosmo.nfwParam_physical_Mpc(10 ** 8, 16.0, zlens)
+        npt.assert_almost_equal(rho0_lenstronomy/rho0, 1, 4)
+        npt.assert_almost_equal(rs/rs_lenstronomy, 1.0, 4)
+        npt.assert_almost_equal(r200/r200_lenstronomy, 1.0, 4)
 
 if __name__ == '__main__':
     pytest.main()
