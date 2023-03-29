@@ -34,7 +34,7 @@ def preset_model_from_name(name):
 def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
         log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs',
         mass_definition='TNFW', c0=None, log10c0=None,
-        beta=None, zeta=None, two_halo_contribution=True, kwargs_halo_mass_function=None, **kwargs_other):
+        beta=None, zeta=None, two_halo_contribution=True, kwargs_halo_mass_function={}, **kwargs_other):
 
     """
     This specifies the keywords for a CDM halo mass function model with a subhalo mass function described by a power law
@@ -120,7 +120,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
 def CDMFromEmulator(z_lens, z_source, emulator_input, cone_opening_angle_arcsec=6., log_mlow=6., log_mhigh=10.,
                  LOS_normalization=1., log_m_host=13.3, c0=None,
                  log10c0=None, beta=None, zeta=None, two_halo_contribution=True,
-                 kwargs_halo_mass_function=None, **kwargs_other):
+                 kwargs_halo_mass_function={}, **kwargs_other):
     """
     This generates a realization of subhalos using an emulator of the semi-analytic modeling code Galacticus, and
      generates line-of-sight halos from a mass function parameterized as Sheth-Tormen.
