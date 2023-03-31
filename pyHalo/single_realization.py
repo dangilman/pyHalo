@@ -787,6 +787,78 @@ class Realization(object):
         else:
             return True
 
+    def plot(self, ax, annotation='', color_normalization=6, marker_size_normalization=7.5):
+
+        from matplotlib import cm
+        import matplotlib.pyplot as plt
+
+        cmap = cm.bone
+        distance_calc = self.lens_cosmo.cosmo.D_C_transverse
+        zlens = self.lens_cosmo.z_lens
+        zsource = self.lens_cosmo.z_source
+        z_array = np.linspace(0.01, zsource, 100)
+        d = [distance_calc(zi) for zi in z_array]
+        x_comoving = []
+        y_comoving = []
+        redshifts = []
+        masses = []
+
+        opening_angle = self.geometry.cone_opening_angle
+        angle_zlens = opening_angle * self.geometry.rendering_scale(zlens) / 2.5
+        angle_zsrc = opening_angle * self.geometry.rendering_scale(zsource) / 2.5
+        if angle_zlens > angle_zsrc:
+            r_max = distance_calc(zlens) * angle_zlens / 206265
+        else:
+            r_max = distance_calc(zsource) * angle_zsrc / 206265
+
+        for zi in self.unique_redshifts:
+
+            d = distance_calc(zi)
+            halos_at_redshift, _ = self.halos_at_z(zi)
+            for halo in halos_at_redshift:
+                x_comoving.append(halo.x * d)
+                y_comoving.append(halo.y * d)
+                redshifts.append(halo.z)
+                masses.append(halo.mass)
+        masses = np.array(masses)
+        colors = []
+        for mi in masses:
+            rescaled_mass = max(0.2, (np.log10(mi) - color_normalization) / 4)
+            rescaled_mass = min(rescaled_mass, 0.75)
+            colors.append(cmap(rescaled_mass))
+
+        distances_from_halo_redshifts = np.array([distance_calc(zi) for zi in redshifts])
+        sizes = 24 * (masses / 10**marker_size_normalization) ** 1.
+
+        ax.scatter(distances_from_halo_redshifts, np.array(x_comoving) / 206265,
+                   np.array(y_comoving) / 206265,
+                   s=sizes,
+                   color=colors)
+
+        ax.annotate(annotation, xy=(0.02, 0.045), fontsize=20)
+        ax.set_xlim(0., distance_calc(1.025 * zsource))
+        zplot = np.arange(0., zsource, 0.25)
+        xticks = np.array([distance_calc(zi) for zi in zplot])
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(zplot, fontsize=16)
+        ax.set_xlabel('redshift', fontsize=20, labelpad=35)
+        ax.set_ylabel('transverse comoving\ndistance [kpc]', fontsize=18, labelpad=35)
+
+        yminmax = 0.05
+        ax.set_ylim(-r_max, r_max)
+        ax.set_zlim(-r_max, r_max)
+        yz_ticks = np.round(np.linspace(-1000 * r_max, 1000 * r_max, 5), 0) / 1000
+        ax.set_yticks(yz_ticks)
+        ax.set_yticklabels(1000 * yz_ticks, fontsize=16)
+        ax.set_zticks(yz_ticks)
+        ax.set_zticklabels(1000 * yz_ticks, fontsize=16)
+        ax.tick_params(axis='y', which='major', pad=10)
+        ax.tick_params(axis='z', which='major', pad=10)
+        yzticks = np.array([distance_calc(zi) for zi in zplot])
+        ax.view_init(30., 70)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+
 class SingleHalo(Realization):
 
     def __init__(self, halo_mass, x, y, mdef, z, zlens, zsource, r3d=None, subhalo_flag=False,

@@ -7,7 +7,7 @@ class Geometry(object):
     _delta_z_min = 1e-4
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle, geometry_type,
-                 angle_pad=0.8):
+                 angle_pad=0.95):
 
         """
         This class handles geometric calculations for rendering halos along the line of sight
