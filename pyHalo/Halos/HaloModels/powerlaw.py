@@ -65,7 +65,12 @@ class PowerLawSubhalo(Halo):
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
             if 'x_match' in self._args.keys():
-                x_match = self._args['x_match']
+                if self._args['x_match'] == 'c':
+                    x_match = concentration
+                elif self._args['x_match'] == 'r200':
+                    x_match = r200
+                else:
+                    x_match = self._args['x_match']
             else:
                 # r_vmax = 2.16 * rs
                 x_match = 2.16
