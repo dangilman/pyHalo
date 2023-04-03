@@ -61,7 +61,7 @@ class PowerLawSubhalo(Halo):
         if not hasattr(self, '_lenstronomy_args'):
 
             (concentration, gamma, x_core_halo) = self.profile_args
-            rhos, rs, _ = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
             if 'x_match' in self._args.keys():
