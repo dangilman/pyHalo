@@ -25,6 +25,7 @@ class Geometry(object):
         :param angle_pad: modifies the closure of the rendering volume behind the main deflector, only relevant for
         DOUBLE_CONE geometries. Values less than one will result in a non-zero rendering area at the source redshift
         """
+
         if geometry_type == 'DOUBLE_CONE':
             self._geometrytype = DoubleCone(cosmology, z_lens, z_source, opening_angle, angle_pad)
             self.volume_type = 'DOUBLE_CONE'
