@@ -1,6 +1,10 @@
 """
 default parameters used to create realizations. This should be good for most applications
 """
+from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche
+
+__all__ = ['cosmo_default', 'lenscone_default',
+           'truncation_default', 'halo_default', 'realization_default', 'set_default_kwargs']
 
 class CosmoDefaults(object):
 
@@ -58,8 +62,10 @@ class TruncationDefaults(object):
     def __init__(self):
 
         self.RocheNorm = 1.4
-        self.RocheNu = 2./3
-        self.LOS_truncation = 50 # truncate at 'r50'
+        self.RocheNu = 2. / 3
+        self.LOS_truncation = 50  # truncate at 'r50'
+        self.truncation_model_subhalos = TruncationRoche(self.RocheNorm, RocheNu=self.RocheNu)
+        self.truncation_model_field_halos = TruncationRN(self.LOS_truncation)
 
 class DMHaloDefaults(object):
 
@@ -229,14 +235,6 @@ def set_default_kwargs(profile_params, zsource):
     if 'c_scatter_dex' not in profile_params.keys():
         profile_params.update({'c_scatter_dex': halo_default.c_scatter_dex})
 
-    if 'RocheNorm' not in profile_params.keys():
-        profile_params.update({'RocheNorm': truncation_default.RocheNorm})
-    if 'RocheNu' not in profile_params.keys():
-        profile_params.update({'RocheNu': truncation_default.RocheNu})
-
-    if 'LOS_truncation_factor' not in profile_params.keys():
-        profile_params.update({'LOS_truncation_factor': truncation_default.LOS_truncation})
-
     if 'zmin' not in profile_params.keys():
         profile_params.update({'zmin': lenscone_default.default_zstart})
     if 'zmax' not in profile_params.keys():
@@ -251,6 +249,11 @@ def set_default_kwargs(profile_params, zsource):
         profile_params.update({'mass_function_LOS_type': 'POWER_LAW'})
     if 'mass_function_SUB_type' not in profile_params.keys():
         profile_params.update({'mass_function_SUB_type': 'POWER_LAW'})
+
+    if 'truncation_model_subhalos' not in profile_params.keys():
+        profile_params.update({'truncation_model_subhalos': truncation_default.truncation_model_subhalos})
+    if 'truncation_model_field_halos' not in profile_params.keys():
+        profile_params.update({'truncation_model_field_halos': truncation_default.truncation_model_field_halos})
 
 
     return profile_params

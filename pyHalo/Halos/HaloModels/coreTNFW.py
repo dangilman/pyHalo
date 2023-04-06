@@ -125,11 +125,13 @@ class coreTNFWFieldHalo(coreTNFWBase):
     """
     Describes a cored TNFW profile in the field
     """
+
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+                 sub_flag, lens_cosmo_instance, args,
+                 truncation_class, unique_tag):
 
         tnfw_class = TNFWFieldHalo(mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag)
+                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag)
         super(coreTNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag, tnfw_class)
 
@@ -152,11 +154,13 @@ class coreTNFWSubhalo(coreTNFWBase):
     """
     Describes a cored TNFW subhalo
     """
+
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+                 sub_flag, lens_cosmo_instance, args,
+                 truncation_class, unique_tag):
 
         tnfw_class = TNFWSubhalo(mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag)
+                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag)
         super(coreTNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z,
                                                 sub_flag, lens_cosmo_instance, args, unique_tag, tnfw_class)
 

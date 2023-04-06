@@ -11,7 +11,7 @@ class ULDMFieldHalo(Halo):
     The base class for a truncated NFW halo
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
@@ -59,7 +59,7 @@ class ULDMFieldHalo(Halo):
         kwargs_uldm_temporary = {'theta_c': theta_c, 'kappa_0': kappa_0,
             'center_x': x, 'center_y': y}
         kwargs = self._rescaled_cnfw_params(kwargs_cnfw_temporary,
-                                                kwargs_uldm_temporary)                   
+                                                kwargs_uldm_temporary)
         return kwargs, None
 
     @property

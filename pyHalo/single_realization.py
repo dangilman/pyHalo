@@ -633,93 +633,81 @@ class Realization(object):
         :return: the specific Halo class corresponding to mass definition mdef
         """
 
+        kwargs_halo = {'mass': mass, 'x': x, 'y': y, 'r3d': r3d, 'mdef': mdef,
+                       'z': z, 'is_subhalo': is_subhalo, 'lens_cosmo_instance': lens_cosmo_instance,
+                       'args': args, 'unique_tag': unique_tag}
+
+        if is_subhalo:
+            kwargs_halo['truncation_class'] = args['truncation_model_subhalos']
+        else:
+            kwargs_halo['truncation_class'] = args['truncation_model_field_halos']
+
         if mdef == 'NFW':
 
             if is_subhalo:
-                model = NFWSubhhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                    lens_cosmo_instance, args, unique_tag)
+                model = NFWSubhhalo
             else:
-                model = NFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                    lens_cosmo_instance, args, unique_tag)
-
+                model = NFWFieldHalo
 
         elif mdef == 'TNFW':
 
             if is_subhalo:
-                model = TNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                    lens_cosmo_instance, args, unique_tag)
+                model = TNFWSubhalo
 
             else:
-                model = TNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                      lens_cosmo_instance, args, unique_tag)
+                model = TNFWFieldHalo
 
         elif mdef == 'PT_MASS':
 
-            model = PTMass(mass, x, y, r3d, mdef, z, is_subhalo,
-                           lens_cosmo_instance, args, unique_tag)
+            model = PTMass
 
         elif mdef == 'PJAFFE':
 
-            model = PJaffeSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+            model = PJaffeSubhalo
 
         elif mdef == 'coreTNFW':
 
             if is_subhalo:
-                model = coreTNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+                model = coreTNFWSubhalo
             else:
-                model = coreTNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+                model = coreTNFWFieldHalo
 
         elif mdef == 'coreNFW':
 
             if is_subhalo:
-                model = coreNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+                model = coreNFWSubhalo
             else:
-                model = coreNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+                model = coreNFWFieldHalo
 
         elif mdef == 'ULDM':
 
             if is_subhalo:
-                model = ULDMSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+                model = ULDMSubhalo
             else:
-                model = ULDMFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+                model = ULDMFieldHalo
 
         elif mdef == 'GAUSSIAN_KAPPA':
 
-            model = Gaussian(mass, x, y, r3d, mdef, z, is_subhalo,
-                                  lens_cosmo_instance, args, unique_tag)
+            model = Gaussian
 
         elif mdef == 'GNFW':
 
             if is_subhalo:
-                model = GeneralNFWSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                    lens_cosmo_instance, args, unique_tag)
-
+                model = GeneralNFWSubhalo
             else:
-                model = GeneralNFWFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                      lens_cosmo_instance, args, unique_tag)
+                model = GeneralNFWFieldHalo
 
         elif mdef == 'SPL_CORE':
 
             if is_subhalo:
-                model = PowerLawSubhalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                    lens_cosmo_instance, args, unique_tag)
-
+                model = PowerLawSubhalo
             else:
-                model = PowerLawFieldHalo(mass, x, y, r3d, mdef, z, is_subhalo,
-                                      lens_cosmo_instance, args, unique_tag)
-
+                model = PowerLawFieldHalo
 
         else:
             raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
 
-        return model
+        return model(**kwargs_halo)
 
     def _tags(self, halos=None):
 

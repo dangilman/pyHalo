@@ -9,13 +9,12 @@ class Gaussian(Halo):
     # kappa0 = amp / (2 * np.pi * sigma ** 2)
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
 
         self._lens_cosmo = lens_cosmo_instance
-
         super(Gaussian, self).__init__(mass, x, y, r3d, mdef, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag, fixed_position=True)
 

@@ -8,7 +8,7 @@ class PowerLawSubhalo(Halo):
     The base class for a halo modeled as a power law profile
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """

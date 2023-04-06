@@ -11,7 +11,7 @@ class GeneralNFWSubhalo(Halo):
     an NFW profile with the specified halo mass
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
