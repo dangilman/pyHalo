@@ -15,18 +15,28 @@ class GeneralPowerLaw(object):
     """
 
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
-                 mass_function_model_class, kwargs_suppression_function):
+                 suppression_model_class, kwargs_suppression_function):
+        """
 
+        :param log_mlow: log10(minimum halo mass)
+        :param log_mhigh: log10(maximum halo mass)
+        :param power_law_index: logarithmic slope of the halo mass function between mlow and mhigh
+        :param draw_poisson: bool; whether to draw number of halos from a poisson distribution
+        :param normalization: the amplitude of the mass function
+        :param suppression_model_class: a function that returns the suppression of the mass function as a function of
+        halo mass (for example, for warm dark matter)
+        :param kwargs_suppression_function: keyword arguments for calls to suppresion_model_class.suppression
+        """
 
         self.draw_poisson = draw_poisson
         self._index = power_law_index
         self._mL = 10 ** log_mlow
         self._mH = 10 ** log_mhigh
 
-        self._mass_function_model_class = mass_function_model_class
+        self._suppression_model_class = suppression_model_class
         self._kwargs_suppression_function = kwargs_suppression_function
 
-        self._nhalos_mean_unbroken = self._mass_function_model_class.integrate_power_law_analytic(normalization,
+        self._nhalos_mean_unbroken = self._suppression_model_class.integrate_power_law_analytic(normalization,
                                                                                              10 ** log_mlow,
                                                                                              10 ** log_mhigh, 0,
                                                                                              power_law_index)
@@ -34,18 +44,7 @@ class GeneralPowerLaw(object):
     def draw(self):
 
         """
-        Draws samples from a double power law distribution between mL and mH of the form
-        m ^ power_law_index * (1 + (a*mc / m)^b )^c
-
-        Physically, the second term multiplying m^power_law_index can be a suppression in the mass function on small
-        scales.
-
-        :param draw_poisson:
-        :param _index:
-        :param _mH:
-        :param _mL:
-        :param n_draw:
-        :return:
+        Generate samples from the mass function
         """
 
         m = self._sample(self.draw_poisson, self._index, self._mH, self._mL, self._nhalos_mean_unbroken)
@@ -53,7 +52,7 @@ class GeneralPowerLaw(object):
         if len(m) == 0:
             return m
 
-        factor = self._mass_function_model_class.suppression(m, **self._kwargs_suppression_function)
+        factor = self._suppression_model_class.suppression(m, **self._kwargs_suppression_function)
 
         u = np.random.rand(int(len(m)))
         inds = np.where(u < factor)
@@ -62,12 +61,12 @@ class GeneralPowerLaw(object):
     def _sample(self, draw_poisson, index, mH, mL, n_draw):
 
         """
-        Draws samples from a power law distribution between mL and mH
-        :param draw_poisson:
-        :param _index:
-        :param _mH:
-        :param _mL:
-        :param n_draw:
+        Samples from the mass function
+        :param draw_poisson: bool; generate samples from poisson distribution
+        :param index: logarithmic slope
+        :param mH: high mass
+        :param mL: low mass
+        :param n_draw: number of halos to draw
         :return:
         """
 
