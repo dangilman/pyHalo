@@ -10,12 +10,13 @@ class NFWFieldHalo(Halo):
     """
 
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
 
         """
         See documentation in base class (Halos/halo_base.py)
         """
         self._lens_cosmo = lens_cosmo_instance
+        self._concentration_class = concentration_class
         super(NFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
@@ -60,15 +61,7 @@ class NFWFieldHalo(Halo):
         """
 
         if not hasattr(self, '_c'):
-            self._c = self._lens_cosmo.NFW_concentration(self.mass,
-                                                         self.z_eval,
-                                                         self._args['mc_model'],
-                                                         self._args['mc_mdef'],
-                                                         self._args['log_mc'],
-                                                         self._args['c_scatter'],
-                                                         self._args['c_scatter_dex'],
-                                                         self._args['kwargs_suppression'],
-                                                         self._args['suppression_model'])
+            self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
         return self._c
 
     @property

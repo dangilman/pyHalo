@@ -8,12 +8,14 @@ class PowerLawSubhalo(Halo):
     The base class for a halo modeled as a power law profile
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         self._prof = SPLCORE()
         self._lens_cosmo = lens_cosmo_instance
+        self._truncation_class = truncation_class
+        self._concentration_class = concentration_class
         super(PowerLawSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                               lens_cosmo_instance, args, unique_tag)
 
@@ -110,16 +112,7 @@ class PowerLawSubhalo(Halo):
             else:
                 z_eval = self.z_infall
 
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  z_eval,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
-
+            concentration = self._concentration_class.nfw_concentration(self.mass, z_eval)
             gamma = self._args['log_slope_halo']
             x_core_halo = self._args['x_core_halo']
             self._profile_args = (concentration, gamma, x_core_halo)
@@ -138,15 +131,7 @@ class PowerLawFieldHalo(PowerLawSubhalo):
         """
         if not hasattr(self, '_profile_args'):
 
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  self.z,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                               self._args['kwargs_suppression'],
-                                                               self._args['suppression_model'])
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z)
             gamma = self._args['log_slope_halo']
             x_core_halo = self._args['x_core_halo']
             self._profile_args = (concentration, gamma, x_core_halo)

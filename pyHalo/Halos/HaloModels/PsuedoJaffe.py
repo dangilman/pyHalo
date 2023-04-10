@@ -11,12 +11,13 @@ class PJaffeSubhalo(Halo):
 
     """
     def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         self._lens_cosmo = lens_cosmo_instance
         self._prof = PJaffe()
+        self._concentration_class = concentration_class
         super(PJaffeSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
@@ -104,16 +105,7 @@ class PJaffeSubhalo(Halo):
             else:
                 z_eval = self.z_infall
 
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  z_eval,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
-
+            concentration = self._concentration_class.nfw_concentration(self.mass, z_eval)
             self._profile_args = (concentration)
 
         return self._profile_args
@@ -127,16 +119,7 @@ class PJaffeFieldhalo(PJaffeSubhalo):
 
         if not hasattr(self, '_profile_args'):
 
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  self.z,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
-
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z)
             self._profile_args = (concentration)
 
         return self._profile_args

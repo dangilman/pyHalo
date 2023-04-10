@@ -3,9 +3,6 @@ default parameters used to create realizations. This should be good for most app
 """
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche
 
-__all__ = ['cosmo_default', 'lenscone_default',
-           'truncation_default', 'halo_default', 'realization_default', 'set_default_kwargs']
-
 class CosmoDefaults(object):
 
     def __init__(self):

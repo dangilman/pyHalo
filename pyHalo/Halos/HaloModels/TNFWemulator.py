@@ -1,5 +1,4 @@
 from pyHalo.Halos.halo_base import Halo
-from pyHalo.Halos.concentration import Concentration
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.interpolate import RegularGridInterpolator
@@ -53,7 +52,7 @@ class TNFWSubhaloEmulator(Halo):
     """
 
     def __init__(self, infall_mass, x, y, final_bound_mass, infall_concentration, redshift,
-                 lens_cosmo_instance, unique_tag=None):
+                 lens_cosmo_instance, truncation_class=None, concentration_class=None, unique_tag=None):
         """
         See documentation in base class (Halos/halo_base.py)
         """
