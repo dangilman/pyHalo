@@ -1,6 +1,7 @@
 """
 default parameters used to create realizations. This should be good for most applications
 """
+from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche
 
 class CosmoDefaults(object):
@@ -61,24 +62,19 @@ class TruncationDefaults(object):
         self.RocheNorm = 1.4
         self.RocheNu = 2. / 3
         self.LOS_truncation = 50  # truncate at 'r50'
-        self.truncation_model_subhalos = TruncationRoche(self.RocheNorm, RocheNu=self.RocheNu)
-        self.truncation_model_field_halos = TruncationRN(self.LOS_truncation)
+        self.truncation_class_subhalos = TruncationRoche(self.RocheNorm, RocheNu=self.RocheNu)
+        self.truncation_class_field_halos = TruncationRN(self.LOS_truncation)
 
 class DMHaloDefaults(object):
 
     def __init__(self):
 
-        self.mass_concentration_relation = 'diemer19'
-        self.mass_concentration_mdef = '200c'
+        self.concentration_class_subhalos = ConcentrationDiemerJoyce
+        self.concentration_class_field_halos = ConcentrationDiemerJoyce
         self.evaluate_mc_at_zlens = False
 
         self.scatter = True
         self.c_scatter_dex = 0.2
-
-        # From Bose et al 2016
-        self.suppression_model = 'polynomial'
-        self.kwargs_suppression = {'c_scale': 60., 'c_power': -0.17,
-                                   'c_power_inner': 1.0, 'mc_suppression_redshift_evolution': True}
 
 class RealizationDefaults(object):
 
@@ -219,14 +215,8 @@ def set_default_kwargs(profile_params, zsource):
     else:
         profile_params.update({'LOS_normalization_mass_sheet': profile_params['LOS_normalization']})
 
-    if 'mc_model' not in profile_params.keys():
-        profile_params.update({'mc_model': halo_default.mass_concentration_relation})
-    if 'mc_mdef' not in profile_params.keys():
-        profile_params.update({'mc_mdef': halo_default.mass_concentration_mdef})
-
     if 'evaluate_mc_at_zlens' not in profile_params.keys():
         profile_params.update({'evaluate_mc_at_zlens': halo_default.evaluate_mc_at_zlens})
-
     if 'c_scatter' not in profile_params.keys():
         profile_params.update({'c_scatter': halo_default.scatter})
     if 'c_scatter_dex' not in profile_params.keys():
@@ -247,10 +237,14 @@ def set_default_kwargs(profile_params, zsource):
     if 'mass_function_SUB_type' not in profile_params.keys():
         profile_params.update({'mass_function_SUB_type': 'POWER_LAW'})
 
-    if 'truncation_model_subhalos' not in profile_params.keys():
-        profile_params.update({'truncation_model_subhalos': truncation_default.truncation_model_subhalos})
-    if 'truncation_model_field_halos' not in profile_params.keys():
-        profile_params.update({'truncation_model_field_halos': truncation_default.truncation_model_field_halos})
+    if 'truncation_class_subhalos' not in profile_params.keys():
+        profile_params.update({'truncation_class_subhalos': truncation_default.truncation_class_subhalos})
+    if 'truncation_class_field_halos' not in profile_params.keys():
+        profile_params.update({'truncation_class_field_halos': truncation_default.truncation_class_field_halos})
+    if 'concentration_class_subhalos' not in profile_params.keys():
+        profile_params.update({'concentration_class_subhalos': halo_default.concentration_class_subhalos})
+    if 'concentration_class_field_halos' not in profile_params.keys():
+        profile_params.update({'concentration_class_field_halos': halo_default.concentration_class_field_halos})
 
 
     return profile_params

@@ -639,71 +639,52 @@ class Realization(object):
 
         if is_subhalo:
             kwargs_halo['truncation_class'] = args['truncation_model_subhalos']
+            kwargs_halo['concentration_class'] = args['concentration_class_subhalos']
         else:
             kwargs_halo['truncation_class'] = args['truncation_model_field_halos']
+            kwargs_halo['concentration_class'] = args['concentration_class_field_halos']
 
         if mdef == 'NFW':
-
             if is_subhalo:
                 model = NFWSubhhalo
             else:
                 model = NFWFieldHalo
-
         elif mdef == 'TNFW':
-
             if is_subhalo:
                 model = TNFWSubhalo
-
             else:
                 model = TNFWFieldHalo
-
         elif mdef == 'PT_MASS':
-
             model = PTMass
-
         elif mdef == 'PJAFFE':
-
             model = PJaffeSubhalo
-
         elif mdef == 'coreTNFW':
-
             if is_subhalo:
                 model = coreTNFWSubhalo
             else:
                 model = coreTNFWFieldHalo
-
         elif mdef == 'coreNFW':
-
             if is_subhalo:
                 model = coreNFWSubhalo
             else:
                 model = coreNFWFieldHalo
-
         elif mdef == 'ULDM':
-
             if is_subhalo:
                 model = ULDMSubhalo
             else:
                 model = ULDMFieldHalo
-
         elif mdef == 'GAUSSIAN_KAPPA':
-
             model = Gaussian
-
         elif mdef == 'GNFW':
-
             if is_subhalo:
                 model = GeneralNFWSubhalo
             else:
                 model = GeneralNFWFieldHalo
-
         elif mdef == 'SPL_CORE':
-
             if is_subhalo:
                 model = PowerLawSubhalo
             else:
                 model = PowerLawFieldHalo
-
         else:
             raise ValueError('halo profile ' + str(mdef) + ' not recongnized.')
 

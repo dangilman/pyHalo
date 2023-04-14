@@ -3,7 +3,61 @@ from colossus.halo.concentration import concentration, peaks
 import warnings
 warnings.filterwarnings("ignore")
 
-class ConcentrationWDMPolynomial(object):
+__all__ = ['ConcentrationDiemerJoyce', 'ConcentrationWDMHyperbolic', 'ConcentrationWDMPolynomial', 'ConcentrationPeakHeight']
+
+class _ConcentrationCDM(object):
+
+    def __init__(self, lens_cosmo, *args, **kwargs):
+        """
+        This class handles concentrations of the mass-concentration relation for NFW profiles
+        :param lens_cosmo: an instance of LensCosmo
+        """
+        self._lens_cosmo = lens_cosmo
+
+    def nfw_concentration(self, m, z, scatter=True, scatter_amplitude=0.2):
+        """
+        Evaluates the concentration of a halo of mass 'm' at redshift z
+        :param M: halo mass [M_sun]
+        :param z: halo redshift
+        :param scatter: bool; add log-normal scatter to concentration
+        :param scatter_amplitude: the amount of scatter in dex, assumes log-normal distribution
+        :return:
+        """
+        c = self._evaluate_concentration(m, z)
+        if scatter:
+            log_c = numpy.log(c)
+            c = numpy.random.lognormal(log_c, scatter_amplitude)
+        return c
+
+    def _evaluate_concentration(self, *args, **kargs):
+        raise Exception(
+            'Custom concentration class must have a method evaluate_concentration with inputs mass, redshift')
+
+class _ConcentrationTurnover(object):
+
+    def __init__(self, cdm_concentration):
+        """
+
+        :param cdm_concentration: an instantiated CDM concentration-mass relation class
+        """
+        self._cdm_concentration = cdm_concentration
+
+    def nfw_concentration(self, m, z, scatter=True, scatter_amplitude=0.2):
+        """
+        Evaluates the concentration of a halo of mass 'm' at redshift z
+        :param M: halo mass [M_sun]
+        :param z: halo redshift
+        :param scatter: bool; add log-normal scatter to concentration
+        :param scatter_amplitude: the amount of scatter in dex, assumes log-normal distribution
+        :return:
+        """
+        c_cdm = self._cdm_concentration.nfw_concentration(m, z, scatter, scatter_amplitude)
+        return c_cdm * self.suppression(m, z)
+
+    def suppression(self, *args, **kwargs):
+        raise Exception('a WDM model with a turnover must have a suppression function')
+
+class ConcentrationWDMPolynomial(_ConcentrationTurnover):
 
     def __init__(self, lens_cosmo, concentration_cdm_class, log_mc, c_scale=60.0,
                  c_power=-0.17, c_power_inner=1.0, mc_suppression_redshift_evolution=True, kwargs_cdm={}):
@@ -17,7 +71,7 @@ class ConcentrationWDMPolynomial(object):
         :param mc_suppression_redshift_evolution: bool; adds the (mild) redshift evolution from Bose et al. (2016)
         :param kwargs_cdm: keyword arguments for the CDM concentration class
         """
-        self._cdm_concentration_cdm = concentration_cdm_class(lens_cosmo, **kwargs_cdm)
+        cdm_concentration = concentration_cdm_class(lens_cosmo, **kwargs_cdm)
         if c_power > 0:
             raise Exception('c_power parameters > 0 are unphysical')
         if c_scale < 0:
@@ -28,6 +82,7 @@ class ConcentrationWDMPolynomial(object):
         self._c_power = c_power
         self._c_power_inner = c_power_inner
         self._mc_suppression_redshift_evolution = mc_suppression_redshift_evolution
+        super(ConcentrationWDMPolynomial, self).__init__(cdm_concentration)
 
     def suppression(self, m, z):
         """
@@ -47,7 +102,7 @@ class ConcentrationWDMPolynomial(object):
         rescale = redshift_factor * rescale_factor
         return rescale
 
-class ConcentrationWDMHyperbolic(object):
+class ConcentrationWDMHyperbolic(_ConcentrationTurnover):
 
     def __init__(self, lens_cosmo, concentration_cdm_class, log_mc, a,  b, kwargs_cdm={}):
         """
@@ -56,10 +111,11 @@ class ConcentrationWDMHyperbolic(object):
         :param concentration_cdm_class:
         :param kwargs_cdm:
         """
-        self._cdm_concentration_cdm = concentration_cdm_class(lens_cosmo, **kwargs_cdm)
+        cdm_concentration = concentration_cdm_class(lens_cosmo, **kwargs_cdm)
         self._a = a
         self._b = b
         self._log_mc = log_mc
+        super(ConcentrationWDMHyperbolic, self).__init__(cdm_concentration)
 
     def suppression(self, m, z):
         """
@@ -71,36 +127,10 @@ class ConcentrationWDMHyperbolic(object):
         :param b:
         :return:
         """
-        if b < 0:
-            raise Exception('b parameters < 0 are unphysical')
         mhm = 10 ** self._log_mc
         log10u = numpy.log10(m / mhm)
         argument = (log10u - self._a) / (2 * self._b)
         return 0.5 * (1 + numpy.tanh(argument))
-
-class _ConcentrationCDM(object):
-
-    def nfw_concentration(self, M, z, scatter=True, scatter_amplitude=0.2):
-        """
-
-        :param M: halo mass
-        :param z: halo redshift
-        :param scatter: bool; add log-normal scatter to concentration
-        :param scatter_amplitude: the amount of scatter in dex, assumes log-normal distribution
-        :return:
-        """
-
-        c = self.evaluate_concentration(M, z)
-        if scatter:
-            log_c = numpy.log(c)
-            c = numpy.random.lognormal(log_c, scatter_amplitude)
-        return c * self.suppression_fuction()
-
-    def evaluate_concentration(self, *args, **kargs):
-        raise Exception('Custom concentration class must have a method evaluate_concentration with inputs mass, redshift')
-
-    def suppression_fuction(self, *args, **kwargs):
-        return 1.0
 
 class ConcentrationDiemerJoyce(_ConcentrationCDM):
 
@@ -109,23 +139,16 @@ class ConcentrationDiemerJoyce(_ConcentrationCDM):
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param lens_cosmo: an instance of LensCosmo
         """
-        self._lens_cosmo = lens_cosmo
+        super(ConcentrationDiemerJoyce, self).__init__(lens_cosmo)
 
-    def evaluate_concentration(self, M, z):
+    def _evaluate_concentration(self, M, z):
 
         """
         Evaluates the concentration of an NFW profile
 
         :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
-        :param model:
-        :param mdef:
-        :param logmhm:
-        :param scatter:
-        :param scatter_amplitude:
-        :param kwargs_suppresion:
-        :param suppression_model:
-        :return:
+        :return: halo concentratioon
         """
 
         model = 'diemer19'
@@ -152,22 +175,23 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param lens_cosmo: an instance of LensCosmo
         """
-        self._lens_cosmo = lens_cosmo
         self._c0 = c0
         if zeta > 0:
             raise Exception('positive values of zeta are unphysical')
         self._zeta = zeta
         self._beta = beta
+        super(ConcentrationPeakHeight, self).__init__(lens_cosmo)
 
-    def evaluate_concentration(self, M, z):
+    def _evaluate_concentration(self, M, z):
 
         """
+        Evaluates the concentration of an NFW profile
 
-        :param M: halo mass
+        :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
-        :return: concentration
+        :return: halo concentratioon
         """
-        M_h = M * self._lens_cosmo.h
+        M_h = M * self._lens_cosmo.cosmo.h
         Mref_h = 10 ** 8 * self._lens_cosmo.cosmo.h
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, 0)

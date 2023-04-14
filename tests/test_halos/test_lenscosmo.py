@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 from scipy.integrate import quad
 from astropy.constants import G, c
-from pyHalo.Halos.concentration import Concentration, WDM_concentration_suppresion_factor
 import astropy.units as un
 from colossus.halo.profile_nfw import NFWProfile
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -51,45 +50,6 @@ class TestLensCosmo(object):
 
         colossus = self.lens_cosmo.colossus
         npt.assert_almost_equal(colossus.Om0, 0.2)
-
-    def test_truncate_roche(self):
-
-        m = 10**9.
-        norm = 1.4
-        power = 0.9
-        r3d = 1000
-
-        rt = norm * (m / 10 ** 7) ** (1./3) * (r3d / 50) ** power
-        rtrunc = self.lens_cosmo.truncation_roche(m, r3d, norm, power)
-        npt.assert_almost_equal(rt, rtrunc, 3)
-
-    def test_LOS_trunc(self):
-
-        rt = self.lens_cosmo.LOS_truncation_rN(10**8, 0.2, 90)
-        rtrunc = self.lens_cosmo.rN_M_nfw_comoving(10**8 * self.lens_cosmo.cosmo.h, 90, 0.2)
-        npt.assert_almost_equal(rt, 1000 * rtrunc * (1+0.2)**-1 / self.lens_cosmo.cosmo.h)
-
-    def test_NFW_concentration(self):
-
-        c = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=False)
-        c2 = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=True)
-        npt.assert_raises(AssertionError, npt.assert_array_equal, c, c2)
-
-        logmhm = 8.
-        kwargs_suppression, suppression_model = {'c_scale': 60., 'c_power': -0.17, 'mc_suppression_redshift_evolution': False, 'c_power_inner': 1.1}, 'polynomial'
-        c_wdm = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=False, logmhm=logmhm,
-                                                  kwargs_suppresion=kwargs_suppression, suppression_model=suppression_model)
-
-        suppresion = WDM_concentration_suppresion_factor(10**9, 0.2, logmhm, suppression_model, kwargs_suppression)
-        npt.assert_almost_equal(suppresion * c, c_wdm)
-
-        kwargs_suppression, suppression_model = {'a_mc': 0.5, 'b_mc': 0.17}, 'hyperbolic'
-        c_wdm = self.lens_cosmo.NFW_concentration(10 ** 9, 0.2, model='diemer19', scatter=False, logmhm=logmhm,
-                                                  kwargs_suppresion=kwargs_suppression,
-                                                  suppression_model=suppression_model)
-
-        suppresion = WDM_concentration_suppresion_factor(10 ** 9, 0.2, logmhm, suppression_model, kwargs_suppression)
-        npt.assert_almost_equal(suppresion * c, c_wdm)
 
     def test_subhalo_accretion(self):
 

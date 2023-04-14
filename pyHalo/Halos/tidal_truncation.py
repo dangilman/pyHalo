@@ -3,22 +3,26 @@ import numpy as np
 
 class TruncationRN(object):
 
-    def __init__(self, LOS_truncation_factor=50):
+    def __init__(self, lens_cosmo, LOS_truncation_factor=50):
         """
         This implements a tidal truncation at r_N, where N is some overdensity with respect to the critical density of
         the Universe at z
+        :param lens_cosmo: an instance of LensCosmo
+        :param LOS_truncation_factor: the multiple of the overdensity threshold at which to truncte the halo, e.g. N=200
+        would truncate at r200
         """
+        self._lens_cosmo = lens_cosmo
         self._N = LOS_truncation_factor
 
     def truncation_radius_halo(self, halo):
         """
-        Thiis method computess the truncation radius using the class attributes of an instance of Halo
+        Thiis method computes the truncation radius using the class attributes of an instance of Halo
         :param halo: an instance of halo
-        :return: the truncation radius
+        :return: the truncation radius in physical kpc
         """
-        return self.truncation_radius(halo.mass, halo.z, halo.r3d, halo._lens_cosmo)
+        return self.truncation_radius(halo.mass, halo.z)
 
-    def truncation_radius(self, halo_mass, z, lens_cosmo):
+    def truncation_radius(self, halo_mass, z):
         """
         Computes the radius r_N of an NFW halo
         :param halo_mass: halo mass (m200 with respect to critical density at z)
@@ -26,15 +30,13 @@ class TruncationRN(object):
         :param lens_cosmo: an instance of LensCosmo
         :return: the truncation radius
         """
-        a_z = lens_cosmo.cosmo.scale_factor(z)
-        h = lens_cosmo.cosmo.h
-        r50_physical_Mpc = self.lens_cosmo.rN_M_nfw_comoving(M * h, N, z) * a_z / h
-        rN_physical_kpc = r50_physical_Mpc * 1000
-        return rN_physical_kpc
+        # concentration doesn't matter here
+        _, _, rN_physical_mpc = self._lens_cosmo.nfwParam_physical(halo_mass, 16.0, z)
+        return rN_physical_mpc*1000
 
 class TruncationRoche(object):
 
-    def __init__(self, RocheNorm=1.4, m_power=1./3, RocheNu=2./3):
+    def __init__(self, lens_cosmo, RocheNorm=1.4, m_power=1./3, RocheNu=2./3):
         """
         This implements a tidal truncation for subhalos of the form
 
@@ -56,7 +58,7 @@ class TruncationRoche(object):
         """
         Thiis method computess the truncation radius using the class attributes of an instance of Halo
         :param halo: an instance of halo
-        :return: the truncation radius
+        :return: the truncation radius in physical kpc
         """
         return self.truncation_radius(halo.mass, halo.r3d)
 
@@ -64,8 +66,8 @@ class TruncationRoche(object):
 
         """
         :param M: m200
-        :param r3d: 3d radial position in the halo (kpc)
-        :return: truncation radius in Kpc (physical)
+        :param r3d: 3d radial position in the halo (physical kpc)
+        :return: the truncation radius in physical kpc
         """
         m_units_7 = subhalo_mass / 10 ** 7
         radius_units_50 = subhalo_r3d / 50

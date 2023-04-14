@@ -3,77 +3,108 @@ import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
-from pyHalo.Halos.concentration import Concentration, WDM_concentration_suppresion_factor
+from pyHalo.Halos.concentration import *
+from astropy.cosmology import FlatLambdaCDM
 
 class TestConcentration(object):
 
     def setup(self):
 
-        cosmo = Cosmology()
+        astropy = FlatLambdaCDM(70.0, 0.3)
+        cosmo = Cosmology(astropy_instance=astropy)
         self.cosmo = cosmo
         self.lenscosmo = LensCosmo(0.5, 1.5, cosmo)
-        self.concentration = Concentration(self.lenscosmo)
 
-    def test_concentration(self):
-
+    def test_concentration_diemer_joyce(self):
 
         m = 10 ** 8
         z = 0.5
-        kwargs_suppresion, suppression_model = {'c_scale': 60., 'c_power': -0.17}, 'polynomial'
-        c = self.concentration.nfw_concentration(m, z, 'diemer19', '200c', None, False, 0.1,
-                                                 kwargs_suppresion, suppression_model)
-        npt.assert_array_less(0., c)
+        c_true = 14.246936385951503
+        scatter = False
+        scatter_amplitude_dex = 0.2
+        concentration_model = ConcentrationDiemerJoyce(self.lenscosmo)
+        c = concentration_model.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        npt.assert_almost_equal(c_true, c)
 
-        m_array = np.logspace(6, 6, 10)
+        scatter = True
+        c = concentration_model.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        npt.assert_equal(c != c_true, True)
+
+    def test_concentration_peak_height(self):
+
+        c_true = 14.24
+        m = 10 ** 8
         z = 0.5
-        c_array = self.concentration.nfw_concentration(m_array, z, 'diemer19', '200c', None, False,
-                                                 0.1, kwargs_suppresion, suppression_model)
-        npt.assert_equal(True, len(c_array)==10)
+        c0 = 21.49
+        zeta = -0.5
+        beta = 0.8
+        scatter = False
+        scatter_amplitude_dex = 0.2
+        concentration_model = ConcentrationPeakHeight(self.lenscosmo, c0, zeta, beta)
+        c1 = concentration_model.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        npt.assert_almost_equal(c1, c_true, 2)
 
-        z_array = np.linspace(0.5, 0.5, 10)
-        c_array = self.concentration.nfw_concentration(m, z_array, 'diemer19', '200c', None, False,
-                                                       0.1, kwargs_suppresion, suppression_model)
-        npt.assert_equal(True, len(c_array) == 10)
-        for ci in c_array:
-            npt.assert_equal(ci, c)
+        scatter = True
+        c = concentration_model.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        npt.assert_equal(c != c_true, True)
+        args = (self.lenscosmo, c0, 0.5, beta)
+        npt.assert_raises(Exception, ConcentrationPeakHeight, args)
 
-        m_array_2, z_array_2 = np.logspace(6, 8, 10), np.linspace(0.2, 1., 10)
-        c_array = self.concentration.nfw_concentration(m_array_2, z_array_2, 'diemer19', '200c', None, False,
-                                                       0.1, kwargs_suppresion, suppression_model)
-        for i, ci in enumerate(c_array):
-            _c = self.concentration.nfw_concentration(m_array_2[i], z_array_2[i], 'diemer19', '200c', None, False,
-                                                       0.1, kwargs_suppresion, suppression_model)
-            npt.assert_equal(_c, ci)
+    def test_concentration_wdm_polynomial(self):
 
-        kwargs_suppresion, suppression_model = {'a_mc': 0.5, 'b_mc': 0.8}, 'hyperbolic'
-        cwdm = self.concentration.nfw_concentration(m, z, 'diemer19', '200c', 8., False, 0.1, kwargs_suppresion, suppression_model)
-        fac = WDM_concentration_suppresion_factor(m, z, 8., suppression_model, kwargs_suppresion)
-        npt.assert_equal(cwdm, c * fac)
+        m = 10 ** 8
+        z = 0.5
+        c0 = 21.49
+        zeta = -0.5
+        beta = 0.8
+        kwargs_cdm = {'c0': c0, 'zeta': zeta, 'beta': beta}
+        concentration_cdm = ConcentrationPeakHeight
+        concentration_cdm_peak_height = concentration_cdm(self.lenscosmo, **kwargs_cdm)
+        log_mc = 8.2
+        c_scale = 60.0
+        c_power = -0.17
+        c_power_inner = 1.5
 
-        model1 = {'custom': True, 'log10c0': 1., 'beta': 0.9, 'zeta': -0.1}
-        model2 = {'custom': True, 'c0': 10., 'beta': 0.9, 'zeta': -0.1}
-        ccdm1 = self.concentration.nfw_concentration(m, z, model1, None, None, False, None, kwargs_suppresion, suppression_model)
-        ccdm2 = self.concentration.nfw_concentration(m, z, model2, None, None, False, None, kwargs_suppresion, suppression_model)
-        npt.assert_almost_equal(ccdm1, ccdm2)
+        mc_suppression_redshift_evolution = False
+        concentration_model = ConcentrationWDMPolynomial(self.lenscosmo, concentration_cdm,
+                                                         log_mc, c_scale, c_power, c_power_inner, mc_suppression_redshift_evolution,
+                                                         kwargs_cdm)
+        scatter = False
+        scatter_amplitude_dex = 0.2
+        c_wdm = concentration_model.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        c_cdm = concentration_cdm_peak_height.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        suppression = (1 + c_scale * (10**log_mc / m)**c_power_inner)**c_power
+        npt.assert_almost_equal(c_wdm, c_cdm * suppression)
 
-        model = {'custom': True, 'c0': 2., 'beta': 0.9, 'zeta': -0.1}
-        kwargs_suppresion, suppression_model = {'c_scale': 60., 'c_power': -0.26, 'c_power_inner': 1.0, 'mc_suppression_redshift_evolution': True}, 'polynomial'
-        ccdm = self.concentration.nfw_concentration(m, z, model, None, None, False, 0.1, kwargs_suppresion, suppression_model)
-        cwdm = self.concentration.nfw_concentration(m, z, model, None, 8., False, 0.1, kwargs_suppresion, suppression_model)
-        fac = WDM_concentration_suppresion_factor(m, z, 8.,suppression_model, kwargs_suppresion)
-        npt.assert_equal(cwdm, ccdm * fac)
+        mc_suppression_redshift_evolution = True
+        concentration_model = ConcentrationWDMPolynomial(self.lenscosmo, concentration_cdm,
+                                                         log_mc, c_scale, c_power, c_power_inner,
+                                                         mc_suppression_redshift_evolution,
+                                                         kwargs_cdm)
+        scatter = False
+        scatter_amplitude_dex = 0.2
+        c_wdm = concentration_model.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        c_cdm = concentration_cdm_peak_height.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        suppression *= (1 + z) ** (0.026 * z - 0.04)
+        npt.assert_almost_equal(c_wdm, c_cdm * suppression)
 
-        ccdm = self.concentration.nfw_concentration(m_array_2, z_array_2, model, None, None, False, 0.1, kwargs_suppresion, suppression_model)
-        npt.assert_equal(len(ccdm), len(m_array_2))
+    def test_concentration_wdm_hyperbolic(self):
 
-        kwargs_suppresion, suppression_model = {'c_scale': 60., 'c_power': 0.26, 'c_power_inner': 1.0, 'mc_suppression_redshift_evolution': False}, 'polynomial'
-        npt.assert_raises(Exception, WDM_concentration_suppresion_factor, 10**8, 0.1, 7., suppression_model, kwargs_suppresion)
-        kwargs_suppresion, suppression_model = {'c_scale': -60., 'c_power': -0.26}, 'polynomial'
-        npt.assert_raises(Exception, WDM_concentration_suppresion_factor, 10 ** 8, 0.1, 7., suppression_model,
-                          kwargs_suppresion)
-        kwargs_suppresion, suppression_model = {'a_mc': 1., 'b_mc': -0.26}, 'hyperbolic'
-        npt.assert_raises(Exception, WDM_concentration_suppresion_factor, 10 ** 8, 0.1, 7., suppression_model,
-                          kwargs_suppresion)
+        m = 10 ** 8
+        z = 0.5
+        kwargs_cdm = {}
+        concentration_cdm = ConcentrationDiemerJoyce
+        concentration_cdm_diemer_joyce = concentration_cdm(self.lenscosmo, **kwargs_cdm)
+        log_mc = 8.2
+        a = 0.2
+        b = 0.5
+        concentration_model = ConcentrationWDMHyperbolic(self.lenscosmo, concentration_cdm, log_mc, a, b, kwargs_cdm)
+        scatter = False
+        scatter_amplitude_dex = 0.2
+        c_wdm = concentration_model.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        c_cdm = concentration_cdm_diemer_joyce.nfw_concentration(m, z, scatter, scatter_amplitude_dex)
+        suppression = 0.5 * (1 + np.tanh((np.log10(m/10**log_mc) - a) / (2 * b)))
+        npt.assert_almost_equal(c_wdm, c_cdm * suppression)
 
 if __name__ == '__main__':
     pytest.main()
