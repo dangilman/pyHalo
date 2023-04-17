@@ -787,7 +787,9 @@ class Realization(object):
         else:
             return True
 
-    def plot(self, ax, annotation='', color_normalization=6, marker_size_normalization=7.5):
+    def plot(self, ax, annotation='', color_normalization=6, marker_size_normalization=7.5,
+             view_init_1=30.0, view_init_2=70.0, r_max=None, ray_interp_x_list=None, ray_interp_y_list=None,
+             scale_rays=1.0):
 
         from matplotlib import cm
         import matplotlib.pyplot as plt
@@ -796,20 +798,19 @@ class Realization(object):
         distance_calc = self.lens_cosmo.cosmo.D_C_transverse
         zlens = self.lens_cosmo.z_lens
         zsource = self.lens_cosmo.z_source
-        z_array = np.linspace(0.01, zsource, 100)
-        d = [distance_calc(zi) for zi in z_array]
         x_comoving = []
         y_comoving = []
         redshifts = []
         masses = []
 
         opening_angle = self.geometry.cone_opening_angle
-        angle_zlens = opening_angle * self.geometry.rendering_scale(zlens) / 2.5
-        angle_zsrc = opening_angle * self.geometry.rendering_scale(zsource) / 2.5
-        if angle_zlens > angle_zsrc:
-            r_max = distance_calc(zlens) * angle_zlens / 206265
-        else:
-            r_max = distance_calc(zsource) * angle_zsrc / 206265
+        angle_zlens = opening_angle * self.geometry.rendering_scale(zlens) / 2.2
+        angle_zsrc = opening_angle * self.geometry.rendering_scale(zsource) / 2.2
+        if r_max is None:
+            if angle_zlens > angle_zsrc:
+                r_max = distance_calc(zlens) * angle_zlens / 206265
+            else:
+                r_max = distance_calc(zsource) * angle_zsrc / 206265
 
         for zi in self.unique_redshifts:
 
@@ -835,6 +836,15 @@ class Realization(object):
                    s=sizes,
                    color=colors)
 
+        if ray_interp_x_list is not None:
+            assert ray_interp_y_list is not None
+            z_array_lines = np.linspace(0.01, zsource, 100)
+            d = np.array([distance_calc(zi) for zi in z_array_lines])
+            for x_interp,y_interp in zip(ray_interp_x_list, ray_interp_y_list):
+                x_rays = scale_rays * d*x_interp(d)/206265
+                y_rays = scale_rays * d*y_interp(d)/206265
+                ax.plot(d, x_rays, y_rays, color='r',lw=3)
+
         ax.annotate(annotation, xy=(0.02, 0.045), fontsize=20)
         ax.set_xlim(0., distance_calc(1.025 * zsource))
         zplot = np.arange(0., zsource, 0.25)
@@ -844,7 +854,6 @@ class Realization(object):
         ax.set_xlabel('redshift', fontsize=20, labelpad=35)
         ax.set_ylabel('transverse comoving\ndistance [kpc]', fontsize=18, labelpad=35)
 
-        yminmax = 0.05
         ax.set_ylim(-r_max, r_max)
         ax.set_zlim(-r_max, r_max)
         yz_ticks = np.round(np.linspace(-1000 * r_max, 1000 * r_max, 5), 0) / 1000
@@ -854,10 +863,9 @@ class Realization(object):
         ax.set_zticklabels(1000 * yz_ticks, fontsize=16)
         ax.tick_params(axis='y', which='major', pad=10)
         ax.tick_params(axis='z', which='major', pad=10)
-        yzticks = np.array([distance_calc(zi) for zi in zplot])
-        ax.view_init(30., 70)
+        #yzticks = np.array([distance_calc(zi) for zi in zplot])
+        ax.view_init(view_init_1, view_init_2)
         plt.xticks(rotation=45)
-        plt.tight_layout()
 
 class SingleHalo(Realization):
 
