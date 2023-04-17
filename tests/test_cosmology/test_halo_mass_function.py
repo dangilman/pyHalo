@@ -1,8 +1,8 @@
 import numpy.testing as npt
 from pyHalo.Cosmology.lensing_mass_function import LensingMassFunction, massFunction
 from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
-from pyHalo.Rendering.MassFunctions.models import ScaleFree
+from pyHalo.Rendering.MassFunctions.mass_function_base import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.delta_function import ScaleFree
 import pytest
 from scipy.integrate import quad
 import numpy as np

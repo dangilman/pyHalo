@@ -36,7 +36,7 @@ class TruncationRN(object):
 
 class TruncationRoche(object):
 
-    def __init__(self, lens_cosmo, RocheNorm=1.4, m_power=1./3, RocheNu=2./3):
+    def __init__(self, lens_cosmo=None, RocheNorm=1.4, m_power=1./3, RocheNu=2./3):
         """
         This implements a tidal truncation for subhalos of the form
 

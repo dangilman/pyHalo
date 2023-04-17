@@ -1,41 +1,34 @@
 import numpy as np
-from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.mass_function_base import GeneralPowerLaw
 from pyHalo.Rendering.SpatialDistributions.nfw_core import ProjectedNFW
-from pyHalo.Rendering.rendering_class_base import Rendering
+from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
-class Subhalos(Rendering):
+class Subhalos(RenderingClassBase):
 
     """
     This class generates subhalos, or objects that have been accreted onto the host halo of the main deflector.
     """
 
-    def __init__(self, keywords_master, geometry, lens_cosmo):
+    def __init__(self, mass_function_model, kwargs_mass_function, spatial_distribution_model,
+                 geometry, lens_cosmo, lens_plane_redshifts):
 
         """
+
         :param keywords_master: a dictionary of keyword arguments to be passed to each model class
-        :param geometry: an instance of Geometry (see Cosmology.geometry)
         :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
+        :param geometry: an instance of Geometry (see Cosmology.geometry)
+        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.lensing_mass_function)
+        :param lens_plane_redshifts: a list of redshifts at which to render halos
+        :param delta_z_list: a list of redshift increments between each lens plane (should be the same length as
+        lens_plane_redshifts)
         """
-
-        self._zlens = lens_cosmo.z_lens
-        self._z_source = lens_cosmo.z_source
-        self.geometry = geometry
-        self.lens_cosmo = lens_cosmo
-        self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
-        self._rendering_kwargs = self.keyword_parse_render(keywords_master)
-  
-        if 'subhalo_spatial_distribution' not in keywords_master.keys():
-            raise Exception('must specify a value for the subhalo_spatial_distribution keyword.'
-                            ' Currently only HOST_NFW is implemented.')
-
-        elif keywords_master['subhalo_spatial_distribution'] == 'HOST_NFW':
-            self.spatial_distribution_model = ProjectedNFW.from_keywords_master(keywords_master, lens_cosmo, geometry)
-
-        else:
-            raise Exception('subhalo_spatial_distribution ' + str(keywords_master['subhalo_spatial_distribution']) +
-                            ' not recognized. Try HOST_NFW.')
-
-        super(Subhalos, self).__init__(keywords_master)
+        self._mass_function_model = mass_function_model
+        self._spatial_distribution_model = spatial_distribution_model
+        self._kwargs_mass_function = kwargs_mass_function
+        self._geometry = geometry
+        self._lens_cosmo = lens_cosmo
+        super(Subhalos, self).__init__()
+        self._mass_function_moment_interp = None
 
     def render(self):
 

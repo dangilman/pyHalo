@@ -8,7 +8,7 @@ import numpy.testing as npt
 from pyHalo.pyhalo import pyHalo
 import pytest
 from pyHalo.Rendering.subhalos import normalization_sigmasub
-from pyHalo.Rendering.MassFunctions.models import ScaleFree, PolynomialSuppression, MixedDMSuppression
+from pyHalo.Rendering.MassFunctions.delta_function import ScaleFree, PolynomialSuppression, MixedDMSuppression
 
 class TestRenderedPopulations(object):
 

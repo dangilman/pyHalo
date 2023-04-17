@@ -1,11 +1,11 @@
 import numpy
 from scipy.interpolate import interp1d
 from scipy.special import erfc
-from lenstronomy.Cosmo.lens_cosmo import LensCosmo as LensCosmoLenstronomy
+from lenstronomy.Cosmo.nfw_param import NFWParam
 import astropy.units as un
 
 
-class LensCosmo(LensCosmoLenstronomy):
+class LensCosmo(object):
 
     def __init__(self, z_lens=None, z_source=None, cosmology=None):
 
@@ -15,7 +15,7 @@ class LensCosmo(LensCosmoLenstronomy):
 
         self.cosmo = cosmology
         self._arcsec = 2 * numpy.pi / 360 / 3600
-
+        self.h = self.cosmo.h
         # critical density of the universe in M_sun h^2 Mpc^-3
         rhoc = un.Quantity(self.cosmo.astropy.critical_density(0), unit=un.Msun / un.Mpc ** 3).value
         self.rhoc = rhoc / self.cosmo.h ** 2
@@ -31,7 +31,9 @@ class LensCosmo(LensCosmoLenstronomy):
             self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
                 z_lens, z_source)
         self._computed_zacc_pdf = False
-        super(LensCosmo, self).__init__(z_lens, z_source, self.cosmo.astropy)
+        self._nfw_param = NFWParam(self.cosmo.astropy)
+        self.z_lens = z_lens
+        self.z_source = z_source
 
     def nfw_physical2angle(self, m, c, z):
         """
@@ -58,8 +60,8 @@ class LensCosmo(LensCosmoLenstronomy):
         :param c: concentration
         :return: rho0 [Msun/Mpc^3], Rs [Mpc], r200 [Mpc]
         """
-        r200 = self.nfw_param.r200_M(m * self.h, z) / self.h  # physical radius r200
-        rho0 = self.nfw_param.rho0_c(c, z) * self.h**2  # physical density in M_sun/Mpc**3
+        r200 = self._nfw_param.r200_M(m * self.h, z) / self.h  # physical radius r200
+        rho0 = self._nfw_param.rho0_c(c, z) * self.h**2  # physical density in M_sun/Mpc**3
         Rs = r200/c
         return rho0, Rs, r200
 

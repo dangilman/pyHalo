@@ -3,7 +3,10 @@ from colossus.halo.concentration import concentration, peaks
 import warnings
 warnings.filterwarnings("ignore")
 
-__all__ = ['ConcentrationDiemerJoyce', 'ConcentrationWDMHyperbolic', 'ConcentrationWDMPolynomial', 'ConcentrationPeakHeight']
+__all__ = ['ConcentrationDiemerJoyce',
+           'ConcentrationWDMHyperbolic',
+           'ConcentrationWDMPolynomial',
+           'ConcentrationPeakHeight']
 
 class _ConcentrationCDM(object):
 

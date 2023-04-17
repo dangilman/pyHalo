@@ -124,10 +124,8 @@ class LensingMassFunction(object):
         """
 
         norm = self._norm_dV_interp(z)
-
         assert m_pivot == self.m_pivot
         factor = 1/(m_pivot**plaw_index)
-
         return norm * factor
 
     def norm_at_z(self, z, plaw_index, delta_z, m_pivot):

@@ -8,27 +8,23 @@ class Gaussian(Halo):
 
     # kappa0 = amp / (2 * np.pi * sigma ** 2)
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
+
+    def __init__(self, mass, x, y, r3d, z,
+                 sub_flag, lens_cosmo_instance, args,
+                 truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-
         self._lens_cosmo = lens_cosmo_instance
         self._concentration_class = concentration_class
-        super(Gaussian, self).__init__(mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag, fixed_position=True)
+        self._truncation_class = truncation_class
+        mdef = 'GAUSSIAN_KAPPA'
+        super(Gaussian, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
+                                            lens_cosmo_instance, args, unique_tag, fixed_position=True)
 
     @property
     def profile_args(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
-        if not hasattr(self, '_profile_args'):
-
-            self._profile_args=None
-
-        return self._profile_args
+        return None
 
     @property
     def lenstronomy_ID(self):
@@ -46,8 +42,7 @@ class Gaussian(Halo):
                 'sigma':self._args['sigma'],
                 'center_x':self._args['center_x'],
                 'center_y':self._args['center_y']}]
-
-        return kwargs,None
+        return kwargs, None
 
     @property
     def z_eval(self):

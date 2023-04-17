@@ -1,7 +1,7 @@
 from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
 import numpy as np
 from copy import deepcopy
-from pyHalo.Rendering.MassFunctions.power_law import GeneralPowerLaw
+from pyHalo.Rendering.MassFunctions.mass_function_base import GeneralPowerLaw
 from pyHalo.Rendering.rendering_class_base import Rendering
 
 class TwoHaloContribution(Rendering):

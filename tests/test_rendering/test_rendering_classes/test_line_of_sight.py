@@ -8,7 +8,7 @@ import numpy.testing as npt
 from copy import deepcopy
 from pyHalo.pyhalo import pyHalo
 import pytest
-from pyHalo.Rendering.MassFunctions.models import ScaleFree
+from pyHalo.Rendering.MassFunctions.delta_function import ScaleFree
 
 class TestLOS(object):
 

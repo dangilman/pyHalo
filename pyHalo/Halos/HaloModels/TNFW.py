@@ -1,14 +1,12 @@
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.interpolate import RegularGridInterpolator
 
 class TNFWFieldHalo(Halo):
 
     """
     The base class for a truncated NFW halo
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
+    def __init__(self, mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args,
                  truncation_class, concentration_class, unique_tag):
         """
@@ -17,6 +15,7 @@ class TNFWFieldHalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._concentration_class = concentration_class
         self._truncation_class = truncation_class
+        mdef = 'TNFW'
         super(TNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
 

@@ -10,14 +10,18 @@ class PJaffeSubhalo(Halo):
     M200. The scale radius of the Psuedo-Jafee profile is the same as the NFW profile
 
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
+    def __init__(self, mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
+
+        This profile is defined to have the same total mass as an NFW profile; rs = rs_pjaffe
         """
         self._lens_cosmo = lens_cosmo_instance
         self._prof = PJaffe()
         self._concentration_class = concentration_class
+        self._truncation_class = truncation_class
+        mdef = 'PJAFFE'
         super(PJaffeSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 

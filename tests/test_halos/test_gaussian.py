@@ -3,8 +3,9 @@ import numpy as np
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.single_realization import SingleHalo
-from lenstronomy.LensModel.Profiles.gaussian_kappa import GaussianKappa
+from astropy.cosmology import FlatLambdaCDM
+import pytest
+
 
 class TestGaussianHalo(object):
 
@@ -13,30 +14,23 @@ class TestGaussianHalo(object):
         mass = 10 ** 8.
         x = 0.5
         y = 1.
-        z = 0.9
         r3d = np.sqrt(1 + 0.5 ** 2 + 70 ** 2)
-        self.r3d = r3d
-        mdef = 'GAUSSIAN_KAPPA'
+        astropy = FlatLambdaCDM(70.0, 0.3)
+        cosmo = Cosmology(astropy)
+        z = 0.5
         self.z = z
-
-        self.H0 = 70
-        self.omega_baryon = 0.03
-        self.omega_DM = 0.25
-        self.sigma8 = 0.82
-        curvature = 'flat'
-        self.ns = 0.9608
-        cosmo_params = {'H0': self.H0, 'Om0': self.omega_baryon + self.omega_DM, 'Ob0': self.omega_baryon,
-                        'sigma8': self.sigma8, 'ns': self.ns, 'curvature': curvature}
-
-        cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-        self.lens_cosmo = LensCosmo(self.z, 2., cosmo)
-
-        profile_args = {'amp':1,'sigma':1,'center_x':0,'center_y':0}
-
+        lens_cosmo = LensCosmo(z, 2., cosmo)
+        profile_args = {'amp':1,'sigma':1,'center_x':1.0,'center_y':1.0}
         sub_flag = False
-        self.halo = Gaussian(mass, x, y, r3d, mdef,z,
-                               sub_flag, self.lens_cosmo,
-                               profile_args, unique_tag=np.random.rand())
+        self.halo = Gaussian(mass, x, y, r3d, z,
+                               sub_flag, lens_cosmo,
+                               profile_args, None, None, unique_tag=np.random.rand())
+
+    def test_lenstronomy_params(self):
+
+        kwargs, _ = self.halo.lenstronomy_params
+        for param in kwargs[0].keys():
+            npt.assert_equal(kwargs[0][param], 1.0)
 
     def test_lenstronomy_ID(self):
 
@@ -47,15 +41,6 @@ class TestGaussianHalo(object):
 
         z_halo = self.halo.z_eval
         npt.assert_equal(z_halo, self.z)
-
-    def test_profile_load(self):
-
-        profile_args = {'amp':1,'sigma':1,'center_x':0,'center_y':0}
-
-        single_halo = SingleHalo(1e8, 0.5, 0.5, 'GAUSSIAN_KAPPA', 0.5, 0.5, 1.5, None, True, profile_args, None)
-        lens_model_list, redshift_array, kwargs_lens, numerical_interp = single_halo.\
-            lensing_quantities(add_mass_sheet_correction=False)
-        npt.assert_string_equal(lens_model_list[0], 'GAUSSIAN_KAPPA')
 
 if __name__ == '__main__':
    pytest.main()
