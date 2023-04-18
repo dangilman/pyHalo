@@ -3,7 +3,7 @@ from pyHalo.Rendering.MassFunctions.util import integrate_power_law_analytic, in
 from scipy.interpolate import interp1d
 
 
-class PowerLawBase(object):
+class _PowerLawBase(object):
 
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization):
         """
@@ -45,9 +45,10 @@ class PowerLawBase(object):
                     (1 + self._index) ** -1)
         return np.array(X)
 
-class PowerLawTurnoverBase(object):
+class _PowerLawTurnoverBase(object):
 
-    def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization, kwargs_mass_function):
+    def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson,
+                 normalization, kwargs_mass_function):
         """
 
         :param log_mlow: log10(minimum halo mass)
@@ -66,7 +67,7 @@ class PowerLawTurnoverBase(object):
         self._draw_poisson = draw_poisson
         self._normalization = normalization
         self._kwargs_mass_function = kwargs_mass_function
-        self._mass_function_unbroken = PowerLawBase(log_mlow, log_mhigh, power_law_index, draw_poisson, normalization)
+        self._mass_function_unbroken = _PowerLawBase(log_mlow, log_mhigh, power_law_index, draw_poisson, normalization)
         self.n_mean = integrate_power_law_quad(normalization, 10 ** log_mlow, 10 ** log_mhigh,
                                                          0.0, power_law_index, self._turnover,
                                                      self._kwargs_mass_function)
@@ -92,9 +93,9 @@ class PowerLawTurnoverBase(object):
         raise Exception('must specify turnover method')
 
 
-class CDMPowerLaw(PowerLawBase):
+class CDMPowerLaw(_PowerLawBase):
 
-    def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization):
+    def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization, *args, **kwargs):
         """
 
        :param log_mlow: log10(minimum halo mass)
@@ -106,10 +107,10 @@ class CDMPowerLaw(PowerLawBase):
         super(CDMPowerLaw, self).__init__(log_mlow, log_mhigh, power_law_index, draw_poisson, normalization)
 
 
-class WDMPowerLaw(PowerLawTurnoverBase):
+class WDMPowerLaw(_PowerLawTurnoverBase):
 
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
-                 log_mc, a_wdm, b_wdm, c_wdm):
+                 log_mc, a_wdm, b_wdm, c_wdm, *args, **kwargs):
         """
 
        :param log_mlow: log10(minimum halo mass)
@@ -149,10 +150,10 @@ class WDMPowerLaw(PowerLawTurnoverBase):
         return factor ** c_mfunc_break
 
 
-class MixedWDMPowerLaw(PowerLawTurnoverBase):
+class MixedWDMPowerLaw(_PowerLawTurnoverBase):
 
     def __init__(self, log_mlow, log_mhigh, log_mc, power_law_index, draw_poisson, normalization,
-                 a_wdm, b_wdm, c_wdm, mixed_DM_frac):
+                 a_wdm, b_wdm, c_wdm, mixed_DM_frac, *args, **kwargs):
         """
 
        :param log_mlow: log10(minimum halo mass)
@@ -172,7 +173,7 @@ class MixedWDMPowerLaw(PowerLawTurnoverBase):
                                                normalization, kwargs_mass_function)
 
     @staticmethod
-    def suppression(m, log_mc, a_mfunc_break, b_mfunc_break, c_mfunc_break, mixed_DM_frac):
+    def _turnover(m, log_mc, a_mfunc_break, b_mfunc_break, c_mfunc_break, mixed_DM_frac):
         m_c = 10 ** log_mc
         r = a_mfunc_break * (m_c / m) ** b_mfunc_break
         factor = 1 + r

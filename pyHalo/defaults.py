@@ -129,19 +129,8 @@ def set_default_kwargs(profile_params, zsource):
     if 'm_pivot' not in profile_params.keys():
         profile_params.update({'m_pivot': realization_default.m_pivot})
 
-    if 'delta_power_law_index' not in profile_params.keys():
-        profile_params.update({'delta_power_law_index': realization_default.delta_power_law_index})
-    if 'delta_power_law_index_coupling' not in profile_params.keys():
-        profile_params.update({'delta_power_law_index_coupling': realization_default.delta_power_law_index_coupling})
-
     if 'subtract_exact_mass_sheets' not in profile_params.keys():
         profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
-
-    if 'subtract_subhalo_mass_sheet' not in profile_params.keys():
-        profile_params.update({'subtract_subhalo_mass_sheet': realization_default.subtract_subhalo_mass_sheet})
-
-    if 'subhalo_convergence_correction_profile' not in profile_params.keys():
-        profile_params.update({'subhalo_convergence_correction_profile': realization_default.subhalo_convergence_correction_profile})
 
     if 'subhalo_mass_sheet_scale' not in profile_params.keys():
         profile_params.update({'subhalo_mass_sheet_scale': realization_default.subhalo_mass_sheet_scale})

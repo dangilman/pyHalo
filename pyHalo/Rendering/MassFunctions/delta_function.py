@@ -10,7 +10,7 @@ class DeltaFunction(object):
     number of objects = density * volume / mass
     """
 
-    def __init__(self, mass, volume, rho, draw_poisson):
+    def __init__(self, mass, volume, rho, draw_poisson, *args, **kwargs):
         """
 
         :param mass: mass of objects to render

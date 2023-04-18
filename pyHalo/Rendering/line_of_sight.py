@@ -5,31 +5,9 @@ from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 
 class LineOfSightNoSheet(RenderingClassBase):
     """
-    This class generates line-of-sight halos, or more precisely objects between the observer and the source that are
-    not associated with the host dark matter halo around the main deflector.
+    This class generates halos between the observer and source that are
+    not bound to the host dark matter halo around the main deflector.
     """
-
-    def __init__(self, mass_function_model, kwargs_mass_function, spatial_distribution_model,
-                 geometry, lens_cosmo, lens_plane_redshifts, delta_z_list):
-
-        """
-
-        :param keywords_master: a dictionary of keyword arguments to be passed to each model class
-        :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
-        :param geometry: an instance of Geometry (see Cosmology.geometry)
-        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.lensing_mass_function)
-        :param lens_plane_redshifts: a list of redshifts at which to render halos
-        :param delta_z_list: a list of redshift increments between each lens plane (should be the same length as
-        lens_plane_redshifts)
-        """
-        self._mass_function_model = mass_function_model
-        self._spatial_distribution_model = spatial_distribution_model
-        self._kwargs_mass_function = kwargs_mass_function
-        self._geometry = geometry
-        self._lens_cosmo = lens_cosmo
-        self._lens_plane_redshifts = lens_plane_redshifts
-        self._delta_z_list = delta_z_list
-        super(LineOfSightNoSheet, self).__init__()
 
     def render(self):
 
@@ -63,27 +41,6 @@ class LineOfSightNoSheet(RenderingClassBase):
         r3d = np.array([None] * len(masses))
         return masses, x, y, r3d, redshifts, subhalo_flag
 
-    def render_positions_at_z(self, z, nhalos):
-
-        """
-        :param z: redshift
-        :param nhalos: number of halos or objects to generate
-        :return: the x, y coordinate of objects in arcsec, and a 3 dimensional coordinate in kpc
-        The 3d coordinate only has a clear physical interpretation for subhalos, and is used to compute truncation raddi.
-        For line of sight halos it is set to None.
-        """
-
-        x_kpc, y_kpc = self._spatial_distribution_model.draw(nhalos, z)
-
-        if len(x_kpc) > 0:
-            kpc_per_asec = self._geometry.kpc_per_arcsec(z)
-            x_arcsec = x_kpc * kpc_per_asec ** -1
-            y_arcsec = y_kpc * kpc_per_asec ** -1
-            return x_arcsec, y_arcsec
-
-        else:
-            return np.array([]), np.array([])
-
     def _get_mass_function_model(self, z, delta_z, log_mlow=None, log_mhigh=None):
         """
 
@@ -98,31 +55,29 @@ class LineOfSightNoSheet(RenderingClassBase):
             kwargs_model['log_mlow'] = log_mlow
         if log_mhigh is not None:
             kwargs_model['log_mhigh'] = log_mhigh
-        line_of_sight_rescaling = kwargs_model['LOS_normalization']
+        line_of_sight_rescaling = self._redshift_dependent_normalization(z, kwargs_model['LOS_normalization'])
         del kwargs_model['LOS_normalization']
         if 'delta_power_law_index' in kwargs_model.keys():
             delta_power_law_index = kwargs_model['delta_power_law_index']
             del kwargs_model['delta_power_law_index']
         else:
             delta_power_law_index = 0.0
+        kwargs_model['log_mlow'], kwargs_model['log_mhigh'] = self._redshift_dependent_mass_range(z,
+                                                                       kwargs_model['log_mlow'],
+                                                                       kwargs_model['log_mhigh'])
         mfunc_model = self._mass_function_model.from_redshift(z, delta_z, self._geometry, line_of_sight_rescaling,
                                                               kwargs_model, delta_power_law_index)
         return mfunc_model
-
-    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh,
-                                     kwargs_mass_sheets=None, zmin=None, zmax=None):
-        return [{}], [], []
 
 
 class LineOfSight(LineOfSightNoSheet):
 
     """
-    This class generates line-of-sight halos, or more precisely objects between the observer and the source that are
-    not associated with the host dark matter halo around the main deflector.
+    This class generates halos between the observer and source that are not bound to the host dark matter halo around
+    the main deflector, with the inclusion of negative sheets of convergence to remove the mass added in halos
     """
 
-    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh,
-                                     kwargs_mass_sheets=None, zmin=None, zmax=None):
+    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, zmin=None, zmax=None):
 
         """
         this routine applies the negative convergence sheet correction for lens planes along the line of sight

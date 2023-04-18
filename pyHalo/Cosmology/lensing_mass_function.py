@@ -160,45 +160,6 @@ class LensingMassFunction(object):
 
         return idx
 
-    def two_halo_boost(self, m200, z, rmin=0.5, rmax=10):
-
-        """
-        Computes the average contribution of the two halo term in a redshift slice adjacent
-        the main deflector. Returns a rescaling factor applied to the mass function normalization
-
-        :param m200: host halo mass
-        :param z: redshift
-        :param rmin: lower limit of the integral, something like the virial radius ~500 kpc
-        :param rmax: Upper limit of the integral, this is computed based on redshift spacing during
-        the rendering of halos
-        :return: scaling factor applied to the normalization of the LOS mass function
-        """
-
-        mean_boost = 2 * quad(self.twohaloterm, rmin, rmax, args=(m200, z))[0] / (rmax - rmin)
-        # factor of two for symmetry in front/behind host halo
-
-        return 1. + mean_boost
-
-    def twohaloterm(self, r, M, z, mdef='200c'):
-
-        """
-        Computes the boost to the background density of the Universe
-        from correlated structure around a host of mass M
-        :param r:
-        :param M:
-        :param z:
-        :param mdef:
-        :return:
-        """
-
-        h = self.cosmo.h
-        M_h = M * h
-        r_h = r * h
-
-        rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self.cosmo._colossus_cosmo.rho_m(z)
-
-        return rho_2h
-
     def mass_fraction_in_halos(self, z, mlow, mhigh, mlow_global=10**-6):
 
         """
