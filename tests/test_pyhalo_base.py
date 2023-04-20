@@ -11,16 +11,10 @@ class TestpyHaloBase(object):
 
     def test_lens_plane_redshifts(self):
 
-        zplanes, dz = self.pyhalo.lens_plane_redshifts()
+        zplanes, dz = self.pyhalo.lens_plane_redshifts
         npt.assert_equal(len(zplanes), len(dz))
         npt.assert_equal(dz[1], lenscone_default.default_z_step)
         npt.assert_equal(True, zplanes[-1]==2 - lenscone_default.default_z_step)
-
-        kwargs = {'zstep': 0.05}
-        zplanes, dz = self.pyhalo.lens_plane_redshifts(kwargs_render=kwargs)
-        npt.assert_equal(len(zplanes), len(dz))
-        npt.assert_equal(dz[1], 0.05)
-        npt.assert_equal(True, zplanes[-1] == 2 - 0.05)
 
 if __name__ == '__main__':
 

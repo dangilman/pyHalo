@@ -74,6 +74,7 @@ class _PowerLawTurnoverBase(object):
         self.first_moment = integrate_power_law_quad(normalization, 10 ** log_mlow, 10 ** log_mhigh,
                                                          1.0, power_law_index, self._turnover,
                                                      self._kwargs_mass_function)
+        print(self.n_mean, self.first_moment)
 
     def draw(self):
         """
@@ -144,6 +145,15 @@ class WDMPowerLaw(_PowerLawTurnoverBase):
 
     @staticmethod
     def _turnover(m, log_mc, a_mfunc_break, b_mfunc_break, c_mfunc_break):
+        """
+
+        :param m:
+        :param log_mc:
+        :param a_mfunc_break:
+        :param b_mfunc_break:
+        :param c_mfunc_break:
+        :return:
+        """
         m_c = 10 ** log_mc
         r = a_mfunc_break * (m_c / m) ** b_mfunc_break
         factor = 1 + r
@@ -152,8 +162,8 @@ class WDMPowerLaw(_PowerLawTurnoverBase):
 
 class MixedWDMPowerLaw(_PowerLawTurnoverBase):
 
-    def __init__(self, log_mlow, log_mhigh, log_mc, power_law_index, draw_poisson, normalization,
-                 a_wdm, b_wdm, c_wdm, mixed_DM_frac, *args, **kwargs):
+    def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
+                 log_mc, a_wdm, b_wdm, c_wdm, mixed_DM_frac, *args, **kwargs):
         """
 
        :param log_mlow: log10(minimum halo mass)
@@ -169,11 +179,22 @@ class MixedWDMPowerLaw(_PowerLawTurnoverBase):
        """
         kwargs_mass_function = {'log_mc': log_mc, 'a_mfunc_break': a_wdm, 'b_mfunc_break': b_wdm,
                                 'c_mfunc_break': c_wdm, 'mixed_DM_frac': mixed_DM_frac}
+        print(power_law_index)
         super(MixedWDMPowerLaw, self).__init__(log_mlow, log_mhigh, power_law_index, draw_poisson,
                                                normalization, kwargs_mass_function)
 
     @staticmethod
     def _turnover(m, log_mc, a_mfunc_break, b_mfunc_break, c_mfunc_break, mixed_DM_frac):
+        """
+
+        :param m:
+        :param log_mc:
+        :param a_mfunc_break:
+        :param b_mfunc_break:
+        :param c_mfunc_break:
+        :param mixed_DM_frac:
+        :return:
+        """
         m_c = 10 ** log_mc
         r = a_mfunc_break * (m_c / m) ** b_mfunc_break
         factor = 1 + r

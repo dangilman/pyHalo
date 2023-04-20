@@ -77,7 +77,7 @@ class LineOfSight(LineOfSightNoSheet):
     the main deflector, with the inclusion of negative sheets of convergence to remove the mass added in halos
     """
 
-    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, zmin=None, zmax=None):
+    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, zmin=None, zmax=None, *args, **kwargs):
 
         """
         this routine applies the negative convergence sheet correction for lens planes along the line of sight

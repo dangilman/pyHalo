@@ -32,14 +32,14 @@ class CosmoDefaults(object):
         self.ns = 0.965
         self.power_law = False
 
-        self._cosmo_param_dictionary = {'H0': self.H0, 'Ob0': self.Ob0, 'Om0': self.Om0,
+        self.cosmo_param_dictionary = {'H0': self.H0, 'Ob0': self.Ob0, 'Om0': self.Om0,
                                         'Odm0': self.omega_DM, 'sigma8': self.sigma8, 'flat': self.curvature,
                                         'ns': self.ns, 'power_law': self.power_law}
 
     def __call__(self, key):
 
         try:
-            return self._cosmo_param_dictionary[key]
+            return self.cosmo_param_dictionary[key]
         except:
             raise Exception(key + ' not a recognized cosmology key word argument.')
 
@@ -52,6 +52,8 @@ class LensConeDefaults(object):
         self.default_z_round = 2
         self.default_z_step = 0.02
         self.default_geometry = 'DOUBLE_CONE'
+        self.kwargs_mass_sheet_default = {'kappa_scale': 1.0, 'log_mlow': 7.0,
+                                          'log_mhigh': 10.0, 'subtract_exact_mass_sheets': False}
         # other possibilities:
         # CONE, CYLINDER
 

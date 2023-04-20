@@ -11,39 +11,43 @@ class HaloPopulation(object):
     adds to the lens model.
     """
 
-    def __init__(self, model_list, mass_function_list, spatial_distribution_list,
-                 kwars_model_list, lens_cosmo, geometry,
+    def __init__(self, model_list, mass_function_class_list, kwargs_mass_function,
+                 spatial_distribution_class_list, kwargs_spatial_distribution,
+                 lens_cosmo, geometry,
                  lens_plane_redshift_list=None, redshift_spacings=None):
 
         """
 
-        :param model_list: A list of population models (e.g. ['SUBHALOS', 'LINE_OF_SIGHT']
-        :param keywords_master: a dictionary of keyword arguments to be passed to each model class
+        :param model_list: a list of names for different halo populations (e.g. ['LINE_OF_SIGHT', 'SUBHALOS', ...])
+        :param mass_function_class_list: a list of non-instatiated mass function classes (see Rendering/MassFunctions)
+        :param kwargs_mass_function: keyword arguments for the mass function classes
+        :param spatial_distribution_class_list: a list of non-instantiated spatial distribution classes
+        (see Rendering/SpatialDistributions)
+        :param kwargs_spatial_distribution: keyword arguments for the spatial distribution classes
         :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
-        :param geometry: an instance of Geometry (see Cosmology.geometry)
-        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.lensing_mass_function)
-        :param lens_plane_redshift_list: a list of redshifts at which to render halos
-        :param redshift_spacings: a list of redshift increments between each lens plane (should be the same length as
-        lens_plane_redshifts)
+        :param geometry: an instance of Geometry class (see Cosmology.geometry)
+        :param lens_plane_redshift_list: redshifts at which to render line-of-sight halos
+        :param redshift_spacings: spacing between redshift planes
         """
-        self.rendering_classes = []
 
-        for model_name, mass_function_model, spatial_distribution_model, kwargs_model in \
-            zip(model_list,
-                mass_function_list,
-                spatial_distribution_list,
-                kwars_model_list):
+        self.rendering_classes = []
+        for i, model_name in enumerate(model_list):
+
+            mass_function_model_class = mass_function_class_list[i]
+            kwargs_model = kwargs_mass_function[i]
+            spatial_distribution_model = spatial_distribution_class_list[i](**kwargs_spatial_distribution)
+
             if model_name == 'LINE_OF_SIGHT':
-                model = LineOfSight(mass_function_model, kwargs_model, spatial_distribution_model,
+                model = LineOfSight(mass_function_model_class, kwargs_model, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
             elif model_name == 'LINE_OF_SIGHT_NOSHEET':
-                model = LineOfSightNoSheet(mass_function_model, kwargs_model, spatial_distribution_model,
+                model = LineOfSightNoSheet(mass_function_model_class, kwargs_model, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
             elif model_name == 'SUBHALOS':
-                model = Subhalos(mass_function_model, kwargs_model, spatial_distribution_model,
+                model = Subhalos(mass_function_model_class, kwargs_model, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
             elif model_name == 'TWO_HALO':
-                model = TwoHaloContribution(mass_function_model, kwargs_model, spatial_distribution_model,
+                model = TwoHaloContribution(mass_function_model_class, kwargs_model, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
             else:
                 raise Exception('model '+str(model_name)+' not recognized. ')

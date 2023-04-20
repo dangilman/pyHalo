@@ -39,11 +39,11 @@ class Geometry(object):
         else:
             raise Exception('geometry type '+str(geometry_type) + ' not recognized.')
 
-        self._cosmo = cosmology
+        self.cosmo = cosmology
         self._zlens, self._zsource = z_lens, z_source
         self.cone_opening_angle = opening_angle
-        self._arcsec = self._cosmo.arcsec
-        self.kpc_per_arcsec_zlens = self._cosmo.kpc_proper_per_asec(self._zlens)
+        self._arcsec = self.cosmo.arcsec
+        self.kpc_per_arcsec_zlens = self.cosmo.kpc_proper_per_asec(self._zlens)
         self._reduced_to_phys = self._geometrytype._reduced_to_phys
 
     def rendering_scale(self, z):
@@ -52,13 +52,13 @@ class Geometry(object):
 
     def kpc_per_arcsec(self, z):
 
-        return self._cosmo.kpc_proper_per_asec(z)
+        return self.cosmo.kpc_proper_per_asec(z)
 
     def angle_to_physicalradius(self, radius_arcsec, z):
 
         angle_radian = radius_arcsec * self._arcsec
 
-        return angle_radian * self.rendering_scale(z) * self._cosmo.D_A_z(z)
+        return angle_radian * self.rendering_scale(z) * self.cosmo.D_A_z(z)
 
     def angle_to_comovingradius(self, radius_arcsec, z):
 
@@ -66,7 +66,7 @@ class Geometry(object):
         This is specific to the geometry, e.g. if you pick cone if will close behind the main
         deflector
         """
-        a_z = self._cosmo.scale_factor(z)
+        a_z = self.cosmo.scale_factor(z)
         return self.angle_to_physicalradius(radius_arcsec, z) / a_z
 
     def volume_element_comoving(self, z, delta_z, radius=None):
@@ -99,7 +99,7 @@ class Geometry(object):
         """
         area_comoving = self.angle_to_comoving_area(radius_arcsec, z)
 
-        dR = self._cosmo.astropy.hubble_distance.value * self._cosmo.astropy.efunc(z) ** -1
+        dR = self.cosmo.astropy.hubble_distance.value * self.cosmo.astropy.efunc(z) ** -1
 
         return area_comoving * dR
 
@@ -133,7 +133,7 @@ class Geometry(object):
 
         area_comoving = self.angle_to_comoving_area(radius_arcsec, z)
 
-        a_z = self._cosmo.scale_factor(z)
+        a_z = self.cosmo.scale_factor(z)
 
         return area_comoving * a_z ** 2
 
@@ -141,7 +141,7 @@ class Geometry(object):
 
         r_co_mpc = self.angle_to_comovingradius(radius_arcsec, z)
         r_co_kpc = r_co_mpc * 1000
-        asec_per_kpc = self._cosmo.astropy.arcsec_per_kpc_comoving(z).value
+        asec_per_kpc = self.cosmo.astropy.arcsec_per_kpc_comoving(z).value
 
         return r_co_kpc * asec_per_kpc
 
@@ -149,13 +149,13 @@ class Cone(object):
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle, angle_pad):
 
-        self._cosmo = cosmology
+        self.cosmo = cosmology
 
         self.opening_angle_radians = opening_angle * cosmology.arcsec
 
         self.d_c_lens = cosmology.D_C_transverse(z_lens)
 
-        self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
+        self._reduced_to_phys = self.cosmo.D_A(0, z_source) / self.cosmo.D_A(z_lens, z_source)
 
         self.comoving_radius_cylinder = 0.5 * self.opening_angle_radians * self.d_c_lens
 
@@ -179,13 +179,13 @@ class Cylinder(object):
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle):
 
-        self._cosmo = cosmology
+        self.cosmo = cosmology
 
         self.opening_angle_radians = opening_angle * cosmology.arcsec
 
         self.d_c_lens = cosmology.D_C_transverse(z_lens)
 
-        self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
+        self._reduced_to_phys = self.cosmo.D_A(0, z_source) / self.cosmo.D_A(z_lens, z_source)
 
         self.comoving_radius_cylinder = 0.5 * self.opening_angle_radians * self.d_c_lens
 
@@ -203,7 +203,7 @@ class Cylinder(object):
         :param z: redshift
         :return: a factor that scales the size of the rendering area
         """
-        d_c = self._cosmo.D_C_transverse(z)
+        d_c = self.cosmo.D_C_transverse(z)
         xi = self.d_c_lens/d_c
 
         return xi
@@ -212,16 +212,16 @@ class DoubleCone(object):
 
     def __init__(self, cosmology, z_lens, z_source, opening_angle, angle_pad):
 
-        self._cosmo = cosmology
+        self.cosmo = cosmology
 
         self._angle_pad = angle_pad
 
-        d_c_lens = self._cosmo.D_C_transverse(z_lens)
-        d_c_lens_source = self._cosmo.D_C_transverse(z_source) - d_c_lens
+        d_c_lens = self.cosmo.D_C_transverse(z_lens)
+        d_c_lens_source = self.cosmo.D_C_transverse(z_source) - d_c_lens
 
-        comoving_radius_zlens = 0.5 * opening_angle * self._cosmo.arcsec * d_c_lens
+        comoving_radius_zlens = 0.5 * opening_angle * self.cosmo.arcsec * d_c_lens
 
-        self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
+        self._reduced_to_phys = self.cosmo.D_A(0, z_source) / self.cosmo.D_A(z_lens, z_source)
 
         self._zlens, self._zsource = z_lens, z_source
 
@@ -241,24 +241,8 @@ class DoubleCone(object):
         if z <= self._zlens:
             return 1.
         else:
-            D_dz = self._cosmo.D_A(self._zlens, z)
-            D_z = self._cosmo.D_A_z(z)
+            D_dz = self.cosmo.D_A(self._zlens, z)
+            D_z = self.cosmo.D_A_z(z)
             ratio = D_dz / D_z
 
             return 1 - self._angle_pad * self._reduced_to_phys * ratio
-
-# class DoubleConeCylindner(object):
-#
-#     def __init__(self, cosmology, z_lens, z_source, opening_angle, angle_pad):
-#
-#         self._cosmo = cosmology
-#         self._dlbcone = DoubleCone(cosmology, z_lens, z_source, opening_angle, angle_pad)
-#         self._cyl = Cylinder(cosmology, z_lens, z_source, opening_angle)
-#         self._reduced_to_phys = self._cosmo.D_A(0, z_source) / self._cosmo.D_A(z_lens, z_source)
-#
-#     def rendering_scale(self, z):
-#
-#         scale_cone = self._dlbcone.rendering_scale(z)
-#         scale_cyl = self._cyl.rendering_scale(z)
-#         scale = min(scale_cone, scale_cyl)
-#         return scale

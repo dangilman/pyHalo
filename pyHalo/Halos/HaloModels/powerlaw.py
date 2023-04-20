@@ -69,8 +69,6 @@ class PowerLawSubhalo(Halo):
             if 'x_match' in self._args.keys():
                 if self._args['x_match'] == 'c':
                     x_match = concentration
-                elif self._args['x_match'] == 'r200':
-                    x_match = r200
                 else:
                     x_match = self._args['x_match']
             else:

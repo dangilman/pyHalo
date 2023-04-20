@@ -32,7 +32,7 @@ class DeltaFunction(object):
          halo mass function at different redshifts
 
         """
-        astropy = geometry_class.cosmo.astropy_instance
+        astropy = geometry_class.cosmo.astropy
         density_to_MsunperMpc = geometry_class.cosmo.density_to_MsunperMpc
         rho_dm_crit = astropy.Odm(0.) * astropy.critical_density(z).value * density_to_MsunperMpc
         volume = geometry_class.volume_element_comoving(z, delta_z)

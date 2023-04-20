@@ -74,7 +74,7 @@ class Subhalos(RenderingClassBase):
                                                                kwargs_model['power_law_index'], kwargs_model['m_pivot'])
         return self._mass_function_model(**kwargs_model)
 
-    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh):
+    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, *args, **kwargs):
 
         mass_in_subhalos = self._get_mass_function_model(log_mlow, log_mhigh).first_moment
         if mass_in_subhalos == 0:
