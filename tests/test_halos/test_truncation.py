@@ -8,7 +8,7 @@ from astropy.cosmology import FlatLambdaCDM
 
 class TestTruncation(object):
 
-    def setup(self):
+    def setup_method(self):
 
         astropy = FlatLambdaCDM(70.0, 0.3)
         cosmo = Cosmology(astropy)

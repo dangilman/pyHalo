@@ -10,7 +10,7 @@ import pytest
 
 class TestTNFWHalos(object):
 
-    def setup(self):
+    def setup_method(self):
 
         astropy = FlatLambdaCDM(70.0, 0.3)
         cosmo = Cosmology(astropy_instance=astropy)

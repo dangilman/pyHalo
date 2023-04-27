@@ -26,7 +26,7 @@ class DeltaFunction(object):
         self.first_moment = self.mass
 
     @classmethod
-    def from_redshift(cls, z, delta_z, geometry_class, rescaling, kwargs_model, delta_power_law_index=None):
+    def from_redshift(cls, z, delta_z, geometry_class, kwargs_model):
         """
         Creates the class from arbitrary functions that specify the amplitude and slope of the
          halo mass function at different redshifts
@@ -36,7 +36,7 @@ class DeltaFunction(object):
         density_to_MsunperMpc = geometry_class.cosmo.density_to_MsunperMpc
         rho_dm_crit = astropy.Odm(0.) * astropy.critical_density(z).value * density_to_MsunperMpc
         volume = geometry_class.volume_element_comoving(z, delta_z)
-        rho = rescaling * kwargs_model['mass_fraction'] * rho_dm_crit
+        rho = kwargs_model['LOS_normalization'] * kwargs_model['mass_fraction'] * rho_dm_crit
         return DeltaFunction(kwargs_model['mass'], volume, rho, kwargs_model['draw_poisson'])
 
     def draw(self):

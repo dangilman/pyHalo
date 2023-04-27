@@ -9,7 +9,7 @@ import pytest
 
 class TestGaussianHalo(object):
 
-    def setup(self):
+    def setup_method(self):
 
         mass = 10 ** 8.
         x = 0.5

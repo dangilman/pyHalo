@@ -12,7 +12,7 @@ from lenstronomy.Cosmo.lens_cosmo import LensCosmo as LensCosmoLenstronomy
 
 class TestLensCosmo(object):
 
-    def setup(self):
+    def setup_method(self):
 
         kwargs_cosmo = {'Om0': 0.2}
         self.cosmo = Cosmology(cosmo_kwargs=kwargs_cosmo)

@@ -12,7 +12,7 @@ from lenstronomy.LensModel.Profiles.p_jaffe import PJaffe as PJaffeLenstronomy
 
 class TestPjaffeHalo(object):
 
-    def setup(self):
+    def setup_method(self):
         astropy = FlatLambdaCDM(70.0, 0.3)
         cosmo = Cosmology(astropy_instance=astropy)
         self.zhalo = 0.5

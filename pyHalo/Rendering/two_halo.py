@@ -1,6 +1,8 @@
 import numpy as np
 from copy import deepcopy
 from pyHalo.Rendering.line_of_sight import LineOfSightNoSheet
+from scipy.integrate import quad
+
 
 class TwoHaloContribution(LineOfSightNoSheet):
 
@@ -35,12 +37,44 @@ class TwoHaloContribution(LineOfSightNoSheet):
         z_eval = lens_cosmo.z_lens
         idx = np.argmin(abs(np.array(lens_plane_redshifts) - z_eval))
         delta_z = delta_z_list[idx]
-        rmax = lens_cosmo.cosmo.D_C_transverse(z_eval + delta_z) - lens_cosmo.cosmo.D_C_transverse(z_eval)
-        rmin = min(rmax, 0.5)
-        two_halo_boost = self._lens_cosmo.two_halo_boost(host_m200, z_eval, rmin=rmin, rmax=rmax)
-        line_of_sight_rescaling = two_halo_boost - 1.
+        boost = two_halo_enhancement_factor(z_eval, delta_z, lens_cosmo, host_m200)
+        relative_enhancement = boost - 1.
         kwargs_mass_function_scaled = deepcopy(kwargs_mass_function)
-        kwargs_mass_function_scaled['LOS_normalization'] = line_of_sight_rescaling
+        kwargs_mass_function_scaled['LOS_normalization'] *= relative_enhancement
+        self._delta_z = delta_z
         super(TwoHaloContribution, self).__init__(mass_function_model, kwargs_mass_function_scaled, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshifts, delta_z_list)
+
+    def render(self):
+
+        """
+        Generates halo masses and positions for objects along the line of sight
+        (except for halos from the two-halo contribution)
+        :return: mass (in Msun), x (arcsec), y (arcsec), r3d (kpc), redshift
+        """
+
+        mfunc_model = self._get_mass_function_model(self._lens_cosmo.z_lens, self._delta_z)
+        masses = mfunc_model.draw()
+        nhalos = len(masses)
+        x, y = self.render_positions_at_z(self._lens_cosmo.z_lens, nhalos)
+        redshifts = np.array([self._lens_cosmo.z_lens] * nhalos)
+        subhalo_flag = [False] * nhalos
+        r3d = np.array([None] * nhalos)
+        return masses, x, y, r3d, redshifts, subhalo_flag
+
+def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200):
+    """
+
+    :param z_lens:
+    :param lens_plane_redshifts:
+    :param delta_z_list:
+    :param lens_cosmo:
+    :param overdensity_m200:
+    :return:
+    """
+    rmax = lens_cosmo.cosmo.D_C_transverse(z_lens + z_step) - lens_cosmo.cosmo.D_C_transverse(z_lens)
+    rmin = min(rmax, 0.5)
+    mean_boost = 2 * quad(lens_cosmo.twohaloterm, rmin, rmax, args=(overdensity_m200, z_lens))[0] / (rmax - rmin)
+    two_halo_boost = 1 + mean_boost
+    return two_halo_boost
 

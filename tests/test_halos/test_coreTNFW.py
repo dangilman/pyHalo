@@ -10,7 +10,7 @@ from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 class TestcoreTNFWHalos(object):
 
-    def setup(self):
+    def setup_method(self):
 
         mass = 10**8.
         x = 0.5

@@ -12,7 +12,7 @@ import pytest
 
 class TestULDMHalo(object):
 
-    def setup(self):
+    def setup_method(self):
         astropy = FlatLambdaCDM(70.0, 0.3)
         cosmo = Cosmology(astropy_instance=astropy)
         self.zhalo = 0.5

@@ -6,8 +6,43 @@ from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.special import jv
 from scipy.integrate import simps
-from multiprocessing.pool import Pool
 
+def inverse_transform_sampling(x, function, args, n_samples):
+    """
+
+    :param x: the domain of the function across which you want to obtain samples
+    :param function: the function or probability density you want to sample from
+    :param args: arguments passed to function after x
+    :param n_samples: number of samples to draw
+    :return: samples from the probability density described by function
+    """
+    y = function(x, *args)
+    cdf = np.cumsum(y)
+    cdf /= np.max(cdf)
+    cdf_inverse = interp1d(cdf, x)
+    u = np.random.uniform(cdf[0], cdf[-1], n_samples)
+    return cdf_inverse(u)
+
+def generate_lens_plane_redshifts(zlens, zsource):
+    """
+    This routine sets up the redshift planes along the line of sight in the lens system
+    :param zlens: main deflector plane redshift (if there is no main lens plane, then this can be set as None)
+    :param zsource: source plane redshift
+    :return: lens plane redshifts and the thickness of each slice
+    """
+    zmin = lenscone_default.default_zstart
+    zstep = lenscone_default.default_z_step
+    if zlens is None:
+        redshifts = np.arange(zmin, zsource, zstep)
+    else:
+        front_z = np.arange(zmin, zlens, zstep)
+        back_z = np.arange(zlens, zsource, zstep)
+        redshifts = np.append(front_z, back_z)
+    delta_zs = []
+    for i in range(0, len(redshifts) - 1):
+        delta_zs.append(redshifts[i + 1] - redshifts[i])
+    delta_zs.append(zsource - redshifts[-1])
+    return list(np.round(redshifts, 2)), np.round(delta_zs, 2)
 
 def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
                           terminate_at_source=False, source_x=None, source_y=None, evaluate_at_mean=False,
@@ -184,7 +219,6 @@ def sample_density(probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax, s
         x_out = np.append(x_out, x_sample_arcsec[keep])
         y_out = np.append(y_out, y_sample_arcsec[keep])
 
-    # originally this returned coord_x and coord_y, shouldn't it return x_out and y_out?
     return x_out, y_out
 
 def sample_circle(max_rendering_range, Nsmooth, center_x, center_y):

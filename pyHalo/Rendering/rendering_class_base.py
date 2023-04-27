@@ -18,6 +18,8 @@ class RenderingClassBase(object):
         """
         self._mass_function_model = mass_function_model
         self._spatial_distribution_model = spatial_distribution_model
+        if 'draw_poisson' not in kwargs_mass_function.keys():
+            kwargs_mass_function['draw_poisson'] = True
         self._kwargs_mass_function = kwargs_mass_function
         self._geometry = geometry
         self._lens_cosmo = lens_cosmo

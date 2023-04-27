@@ -21,14 +21,10 @@ class LineOfSightNoSheet(RenderingClassBase):
         x = np.array([])
         y = np.array([])
         redshifts = np.array([])
-        first_mass_function_moment = []
-        z_mass_function_moment = []
 
         for z, dz in zip(self._lens_plane_redshifts, self._delta_z_list):
             mfunc_model = self._get_mass_function_model(z, dz)
             m = mfunc_model.draw()
-            z_mass_function_moment.append(z)
-            first_mass_function_moment.append(mfunc_model.first_moment)
             nhalos = len(m)
             _x, _y = self.render_positions_at_z(z, nhalos)
             _z = np.array([z] * len(_x))
@@ -55,18 +51,10 @@ class LineOfSightNoSheet(RenderingClassBase):
             kwargs_model['log_mlow'] = log_mlow
         if log_mhigh is not None:
             kwargs_model['log_mhigh'] = log_mhigh
-        line_of_sight_rescaling = self._redshift_dependent_normalization(z, kwargs_model['LOS_normalization'])
-        del kwargs_model['LOS_normalization']
-        if 'delta_power_law_index' in kwargs_model.keys():
-            delta_power_law_index = kwargs_model['delta_power_law_index']
-            del kwargs_model['delta_power_law_index']
-        else:
-            delta_power_law_index = 0.0
         kwargs_model['log_mlow'], kwargs_model['log_mhigh'] = self._redshift_dependent_mass_range(z,
                                                                        kwargs_model['log_mlow'],
                                                                        kwargs_model['log_mhigh'])
-        mfunc_model = self._mass_function_model.from_redshift(z, delta_z, self._geometry, line_of_sight_rescaling,
-                                                              kwargs_model, delta_power_law_index)
+        mfunc_model = self._mass_function_model.from_redshift(z, delta_z, self._geometry, kwargs_model)
         return mfunc_model
 
 
@@ -95,7 +83,7 @@ class LineOfSight(LineOfSightNoSheet):
         if zmin is None:
             zmin = 0.0
         if zmax is None:
-            zmax = self._geometry.zsource
+            zmax = self._geometry._zsource
 
         for z, delta_z in zip(lens_plane_redshifts, delta_zs):
 
@@ -110,16 +98,16 @@ class LineOfSight(LineOfSightNoSheet):
                                                                 log_mlow=log_mass_sheet_correction_min,
                                                                 log_mhigh=log_mass_sheet_correction_max)
             first_moment = mass_function_model.first_moment
-            kappa = self._convergence_at_z(z, self._geometry, self._lens_cosmo, kappa_scale, first_moment)
+            kappa = self._convergence_at_z(z, self._geometry, self._lens_cosmo, first_moment)
             if kappa > 0:
-                kwargs_out.append({'kappa': -kappa})
+                kwargs_out.append({'kappa': - kappa_scale * kappa})
                 profile_names_out += ['CONVERGENCE']
                 redshifts.append(z)
         return kwargs_out, profile_names_out, redshifts
 
     @staticmethod
-    def _convergence_at_z(z, geometry_class, lens_cosmo_class, kappa_scale, mtheory):
+    def _convergence_at_z(z, geometry_class, lens_cosmo_class, mtheory):
 
         area = geometry_class.angle_to_physical_area(0.5 * geometry_class.cone_opening_angle, z)
         sigma_crit_mass = lens_cosmo_class.sigma_crit_mass(z, area)
-        return kappa_scale * mtheory / sigma_crit_mass
+        return mtheory / sigma_crit_mass

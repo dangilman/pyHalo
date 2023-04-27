@@ -11,7 +11,7 @@ class HaloPopulation(object):
     adds to the lens model.
     """
 
-    def __init__(self, model_list, mass_function_class_list, kwargs_mass_function,
+    def __init__(self, model_list, mass_function_class_list, kwargs_mass_function_list,
                  spatial_distribution_class_list, kwargs_spatial_distribution,
                  lens_cosmo, geometry,
                  lens_plane_redshift_list=None, redshift_spacings=None):
@@ -20,7 +20,7 @@ class HaloPopulation(object):
 
         :param model_list: a list of names for different halo populations (e.g. ['LINE_OF_SIGHT', 'SUBHALOS', ...])
         :param mass_function_class_list: a list of non-instatiated mass function classes (see Rendering/MassFunctions)
-        :param kwargs_mass_function: keyword arguments for the mass function classes
+        :param kwargs_mass_function_list: keyword arguments for the mass function classes
         :param spatial_distribution_class_list: a list of non-instantiated spatial distribution classes
         (see Rendering/SpatialDistributions)
         :param kwargs_spatial_distribution: keyword arguments for the spatial distribution classes
@@ -34,8 +34,8 @@ class HaloPopulation(object):
         for i, model_name in enumerate(model_list):
 
             mass_function_model_class = mass_function_class_list[i]
-            kwargs_model = kwargs_mass_function[i]
-            spatial_distribution_model = spatial_distribution_class_list[i](**kwargs_spatial_distribution)
+            kwargs_model = kwargs_mass_function_list[i]
+            spatial_distribution_model = spatial_distribution_class_list[i](**kwargs_spatial_distribution[i])
 
             if model_name == 'LINE_OF_SIGHT':
                 model = LineOfSight(mass_function_model_class, kwargs_model, spatial_distribution_model,
@@ -45,7 +45,7 @@ class HaloPopulation(object):
                  geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
             elif model_name == 'SUBHALOS':
                 model = Subhalos(mass_function_model_class, kwargs_model, spatial_distribution_model,
-                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
+                 geometry, lens_cosmo)
             elif model_name == 'TWO_HALO':
                 model = TwoHaloContribution(mass_function_model_class, kwargs_model, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)

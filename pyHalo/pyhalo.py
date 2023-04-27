@@ -1,8 +1,7 @@
-import numpy as np
 from pyHalo.single_realization import Realization
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Rendering.halo_population import HaloPopulation
-from pyHalo.defaults import lenscone_default
+from pyHalo.utilities import generate_lens_plane_redshifts
 from pyHalo.Halos.lens_cosmo import LensCosmo
 
 
@@ -29,39 +28,10 @@ class pyHalo(object):
         keyword arguments that specify cosmological parameters
         """
         self._cosmology_kwargs = cosmology_kwargs
-        self.reset_redshifts(zlens, zsource)
-        self._lens_cosmo = LensCosmo(self.zlens, self.zsource, self.cosmology)
-
-    @property
-    def lens_plane_redshifts(self):
-
-        """
-        This routine sets up the redshift planes along the line of sight in the lens system
-        :param kwargs_render: keyword arguments, if none are specified default values will be used (see defaults.py)
-        :return: lens plane redshifts and the thickness of each slice
-        """
-
-        zmin = lenscone_default.default_zstart
-        zstep = lenscone_default.default_z_step
-
-        front_z = np.arange(zmin, self.zlens, zstep)
-        back_z = np.arange(self.zlens, self.zsource, zstep)
-        redshifts = np.append(front_z, back_z)
-
-        delta_zs = []
-        for i in range(0, len(redshifts) - 1):
-            delta_zs.append(redshifts[i + 1] - redshifts[i])
-        delta_zs.append(self.zsource - redshifts[-1])
-
-        return list(np.round(redshifts, 2)), np.round(delta_zs, 2)
-
-    def reset_redshifts(self, zlens, zsource):
-
         self.zlens = zlens
         self.zsource = zsource
         self.cosmology = Cosmology(**self._cosmology_kwargs)
-        self.halo_mass_function = None
-        self.geometry = None
+        self._lens_cosmo = LensCosmo(self.zlens, self.zsource, self.cosmology)
 
     @property
     def astropy_cosmo(self):
@@ -118,7 +88,7 @@ class pyHalo(object):
         :return:
         """
 
-        plane_redshifts, redshift_spacing = self.lens_plane_redshifts
+        plane_redshifts, redshift_spacing = generate_lens_plane_redshifts(self.zlens, self.zsource)
         population_model = HaloPopulation(population_model_list,
                                               mass_function_class_list,
                                               kwargs_mass_function,

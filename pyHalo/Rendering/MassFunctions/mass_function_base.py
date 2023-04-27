@@ -71,10 +71,10 @@ class _PowerLawTurnoverBase(object):
         self.n_mean = integrate_power_law_quad(normalization, 10 ** log_mlow, 10 ** log_mhigh,
                                                          0.0, power_law_index, self._turnover,
                                                      self._kwargs_mass_function)
+
         self.first_moment = integrate_power_law_quad(normalization, 10 ** log_mlow, 10 ** log_mhigh,
                                                          1.0, power_law_index, self._turnover,
                                                      self._kwargs_mass_function)
-        print(self.n_mean, self.first_moment)
 
     def draw(self):
         """
@@ -159,7 +159,6 @@ class WDMPowerLaw(_PowerLawTurnoverBase):
         factor = 1 + r
         return factor ** c_mfunc_break
 
-
 class MixedWDMPowerLaw(_PowerLawTurnoverBase):
 
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
@@ -175,11 +174,10 @@ class MixedWDMPowerLaw(_PowerLawTurnoverBase):
        :param a_wdm: coefficient of turnover
        :param b_wdm: exponent of turnover
        :param c_wdm: outer exponent of turnover
-       :param mixed_DM_frac: fraction of dark matter in WDM component
+       :param mixed_DM_frac: fraction of dark matter in CDM component
        """
         kwargs_mass_function = {'log_mc': log_mc, 'a_mfunc_break': a_wdm, 'b_mfunc_break': b_wdm,
                                 'c_mfunc_break': c_wdm, 'mixed_DM_frac': mixed_DM_frac}
-        print(power_law_index)
         super(MixedWDMPowerLaw, self).__init__(log_mlow, log_mhigh, power_law_index, draw_poisson,
                                                normalization, kwargs_mass_function)
 
@@ -201,59 +199,3 @@ class MixedWDMPowerLaw(_PowerLawTurnoverBase):
         wdm_comp = factor ** c_mfunc_break
         suppression_factor = (mixed_DM_frac + (1 - mixed_DM_frac) * np.sqrt(wdm_comp)) ** 2
         return suppression_factor
-
-# mfunc = PowerLawTurnover(6.0, 10.0, 7.5, -1.9, False, 10**12, 1.0, 1.0, -2.0)
-# m = mfunc.draw()
-# import matplotlib.pyplot as plt
-# h, b = np.histogram(np.log10(m), range=(6, 10), bins=20)
-# plt.plot(b[0:-1], np.log10(h))
-# plt.show()
-# print(mfunc.n_mean)
-# print(len(m))
-# print(np.sum(m)/mfunc.first_moment)
-# class Tabulated(object):
-#
-#     """
-#     Samples from an arbitrary mass function by numerically inverting the CDF
-#     """
-#     def __init__(self, log_mlow, log_mhigh, log_m_evaluated, log_massfunc_amplitude, draw_poisson):
-#
-#         self._logmlow = log_mlow
-#         self._logmhigh = log_mhigh
-#         m = 10 ** log_m_evaluated
-#         mfunc = 10 ** log_m_evaluated
-#         cdf = np.cumsum(mfunc)
-#         cdf_inverse = interp1d(cdf, m)
-#
-# norm = 10 ** 9
-# _logm = np.linspace(6, 10, 10000)
-# m = 10 ** _logm
-# dn_dm = norm * (m) ** -1.9
-# n_m = []
-# for i in range(np.min(m), np.max(m), 20):
-#     cond1 =
-#     n_m.append(np)
-#
-#
-# mfunc_differential = np.absolute(np.gradient(norm * (m) ** -1.9, m))
-# log_mfunc_differential = np.log10(_mfunc_differential)
-#
-# differential_mfunc = 10 ** log_mfunc_differential
-# differential_mfunc_pdf = differential_mfunc / np.sum(differential_mfunc)
-# cdf = np.cumsum(differential_mfunc_pdf)
-# u_min = cdf[0]
-# u_max = cdf[-1]
-# print(cdf)
-# cdf_inverse = interp1d(cdf, m)
-# m_sampled = cdf_inverse(np.random.uniform(u_min, u_max, 1000))
-#
-# import matplotlib.pyplot as plt
-# h, x = np.histogram(np.log10(m_sampled), range=(6, 10), bins=20)
-#
-# plt.plot(x[0:-1], np.log10(h), color='r')
-# mfunc_plaw = PowerLaw(6.0, 10.0, -1.9, False, norm)
-# m_sampled_theory = mfunc_plaw.draw()
-# htheory, x_theory = np.histogram(np.log10(m_sampled_theory), range=(6, 10), bins=20)
-# plt.plot(x_theory[0:-1], np.log10(htheory), color='k')
-# plt.show()
-# print(np.polyfit(np.log10(htheory), np.log10(x_theory[0:-1]),1))

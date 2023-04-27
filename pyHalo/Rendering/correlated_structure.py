@@ -12,13 +12,8 @@ class CorrelatedStructure(RenderingClassBase):
     This class generates a population of halos with a spatial distribution that tracks the dark matter density in halos
     at each lens plane
     """
-    def __init__(self, mass_function_model_name, kwargs_mass_function,
-                 geometry, lens_cosmo, lens_plane_redshifts, delta_z_list):
-
-        if mass_function_model_name == 'DELTA':
-            mass_function_model = DeltaFunction
-        else:
-            raise Exception('no other mass function types currently implemented for this class')
+    def __init__(self, mass_function_model, kwargs_mass_function, spatial_distribution_model,
+                 geometry, lens_cosmo, lens_plane_redshifts, delta_z_list, realization):
 
         spatial_distribution_model = Correlated2D(geometry)
         super(CorrelatedStructure, self).__init__(mass_function_model, kwargs_mass_function, spatial_distribution_model,
