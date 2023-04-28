@@ -83,9 +83,9 @@ class TestpyHalo(object):
         npt.assert_equal(colosus_cosmo.sigma8, kwargs_cosmo['sigma8'])
         npt.assert_equal(colosus_cosmo.ns, kwargs_cosmo['ns'])
 #
-# t = TestpyHalo()
-# t.setup_method()
-# t.test_create_realizations()
+t = TestpyHalo()
+t.setup_method()
+t.test_create_realizations()
 # if __name__ == '__main__':
 #
 #     pytest.main()
