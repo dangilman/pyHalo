@@ -23,7 +23,7 @@ class Subhalos(Rendering):
         self.lens_cosmo = lens_cosmo
         self._convergence_sheet_kwargs = self.keys_convergence_sheets(keywords_master)
         self._rendering_kwargs = self.keyword_parse_render(keywords_master)
-  
+
         if 'subhalo_spatial_distribution' not in keywords_master.keys():
             raise Exception('must specify a value for the subhalo_spatial_distribution keyword.'
                             ' Currently only HOST_NFW is implemented.')
@@ -244,4 +244,6 @@ def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone
 
     m_pivot_factor = m_pivot ** -(plaw_index+1)
 
-    return area * a0_per_kpc2 * m_pivot_factor
+    normalization = area * a0_per_kpc2 * m_pivot_factor
+    #print(np.log10(normalization))
+    return normalization
