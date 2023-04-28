@@ -35,7 +35,7 @@ class _PowerLawBase(object):
             ndraw = np.random.poisson(self.n_mean)
         else:
             ndraw = int(round(np.round(self.n_mean)))
-        x = np.random.rand(ndraw)
+        x = np.random.uniform(0, 1, ndraw)
         if self._index == -1:
             norm = np.log(mH / mL)
             X = mL * np.exp(norm * x)

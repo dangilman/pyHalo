@@ -1,6 +1,6 @@
-"""
-default parameters used to create realizations. This should be good for most applications
-"""
+# """
+# default parameters used to create realizations. This should be good for most applications
+# """
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche
 
@@ -31,7 +31,6 @@ class CosmoDefaults(object):
         self.curvature = 'flat'
         self.ns = 0.965
         self.power_law = False
-
         self.cosmo_param_dictionary = {'H0': self.H0, 'Ob0': self.Ob0, 'Om0': self.Om0,
                                         'Odm0': self.omega_DM, 'sigma8': self.sigma8, 'flat': self.curvature,
                                         'ns': self.ns, 'power_law': self.power_law}
@@ -124,118 +123,3 @@ lenscone_default = LensConeDefaults()
 truncation_default = TruncationDefaults()
 halo_default = DMHaloDefaults()
 realization_default = RealizationDefaults()
-print_defaults = False
-
-def set_default_kwargs(profile_params, zsource):
-
-    if 'm_pivot' not in profile_params.keys():
-        profile_params.update({'m_pivot': realization_default.m_pivot})
-
-    if 'subtract_exact_mass_sheets' not in profile_params.keys():
-        profile_params.update({'subtract_exact_mass_sheets': realization_default.subtract_exact_mass_sheets})
-
-    if 'subhalo_mass_sheet_scale' not in profile_params.keys():
-        profile_params.update({'subhalo_mass_sheet_scale': realization_default.subhalo_mass_sheet_scale})
-
-    if 'kappa_scale' not in profile_params.keys():
-        profile_params.update({'kappa_scale': realization_default.kappa_scale})
-
-    if 'draw_poisson' not in profile_params.keys():
-        profile_params.update({'draw_poisson': realization_default.draw_poisson})
-
-    if 'log_mc' in profile_params.keys():
-
-        if 'log_mc' is not None:
-
-            if 'mass_function_turnover_model' not in profile_params.keys():
-                profile_params.update({'mass_function_turnover_model': realization_default.default_turnover_model})
-
-            if profile_params['mass_function_turnover_model'] in ['POLYNOMIAL', 'MIXED_DM']:
-                for param_name in ['a_wdm', 'b_wdm', 'c_wdm']:
-                    if param_name not in profile_params.keys():
-                        raise Exception('If log_mc is specified, must include a_wdm, b_wdm, c_wdm keywords')
-
-                if profile_params['mass_function_turnover_model'] in ['MIXED_DM']:
-                    if 'mixed_DM_frac' not in profile_params.keys():
-                        raise Exception('with MIXED_DM model, must specify mixed_DM_frac keyword')
-
-        else:
-            profile_params.update({'log_mc': None,
-                                   'a_wdm': None,
-                                   'b_wdm': None,
-                                   'c_wdm': None})
-
-    else:
-        profile_params.update({'log_mc': None,
-                               'a_wdm': None,
-                              'b_wdm': None,
-                               'c_wdm': None})
-
-    if 'suppression_model' not in profile_params.keys():
-        if print_defaults:
-            print('suppression_model not specified, assuming ', halo_default.suppression_model)
-        profile_params['suppression_model'] = halo_default.suppression_model
-    if 'kwargs_suppression' not in profile_params.keys():
-        if print_defaults:
-            print('kwargs_suppression not specified, assuming ', halo_default.kwargs_suppression)
-        profile_params.update({'kwargs_suppression': halo_default.kwargs_suppression})
-
-    if 'host_m200' in profile_params.keys():
-        profile_params.update({'host_m200': profile_params['host_m200']})
-    elif 'log_m_host' in profile_params.keys():
-        profile_params.update({'host_m200': 10**profile_params['log_m_host']})
-    else:
-        if print_defaults:
-            print('Warning: halo mass not specified, assuming a parent halo mass of 10^13.')
-        profile_params.update({'host_m200': realization_default.host_m200})
-
-    if 'subhalo_spatial_distribution' not in profile_params.keys():
-        profile_params.update({'subhalo_spatial_distribution':
-                               realization_default.subhalo_spatial_distribution})
-
-    if 'r_tidal' not in profile_params.keys():
-        profile_params.update({'r_tidal': realization_default.default_r_tidal})
-    if 'LOS_normalization' in profile_params.keys():
-        profile_params.update({'LOS_normalization': profile_params['LOS_normalization']})
-    else:
-        profile_params.update({'LOS_normalization':
-                                   realization_default.default_LOS_normalization})
-
-    if 'LOS_normalization_mass_sheet' in profile_params.keys():
-        profile_params.update({'LOS_normalization_mass_sheet': profile_params['LOS_normalization_mass_sheet']})
-    else:
-        profile_params.update({'LOS_normalization_mass_sheet': profile_params['LOS_normalization']})
-
-    if 'evaluate_mc_at_zlens' not in profile_params.keys():
-        profile_params.update({'evaluate_mc_at_zlens': halo_default.evaluate_mc_at_zlens})
-    if 'c_scatter' not in profile_params.keys():
-        profile_params.update({'c_scatter': halo_default.scatter})
-    if 'c_scatter_dex' not in profile_params.keys():
-        profile_params.update({'c_scatter_dex': halo_default.c_scatter_dex})
-
-    if 'zmin' not in profile_params.keys():
-        profile_params.update({'zmin': lenscone_default.default_zstart})
-    if 'zmax' not in profile_params.keys():
-        profile_params.update({'zmax': zsource - lenscone_default.default_zstart})
-
-    if 'log_mass_sheet_min' not in profile_params.keys():
-        profile_params.update({'log_mass_sheet_min': profile_params['log_mlow']})
-    if 'log_mass_sheet_max' not in profile_params.keys():
-        profile_params.update({'log_mass_sheet_max': profile_params['log_mhigh']})
-
-    if 'mass_function_LOS_type' not in profile_params.keys():
-        profile_params.update({'mass_function_LOS_type': 'POWER_LAW'})
-    if 'mass_function_SUB_type' not in profile_params.keys():
-        profile_params.update({'mass_function_SUB_type': 'POWER_LAW'})
-
-    if 'truncation_class_subhalos' not in profile_params.keys():
-        profile_params.update({'truncation_class_subhalos': truncation_default.truncation_class_subhalos})
-    if 'truncation_class_field_halos' not in profile_params.keys():
-        profile_params.update({'truncation_class_field_halos': truncation_default.truncation_class_field_halos})
-    if 'concentration_class_subhalos' not in profile_params.keys():
-        profile_params.update({'concentration_class_subhalos': halo_default.concentration_class_subhalos})
-    if 'concentration_class_field_halos' not in profile_params.keys():
-        profile_params.update({'concentration_class_field_halos': halo_default.concentration_class_field_halos})
-
-
-    return profile_params

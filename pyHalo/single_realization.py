@@ -1,5 +1,4 @@
 from scipy.interpolate import interp1d
-from pyHalo.defaults import lenscone_default
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
@@ -105,7 +104,6 @@ class Realization(object):
         self._kwargs_halo_model = kwargs_halo_model
 
         if halos is None:
-
             for mi, xi, yi, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r3d,
                            mdefs, z, subhalo_flag):
 
@@ -113,23 +111,16 @@ class Realization(object):
                 model = self._load_halo_model(mi, xi, yi, r3di, mdefi, zi, sub_flag, self.lens_cosmo,
                                               kwargs_halo_model, unique_tag)
                 self.halos.append(model)
-
-
         else:
-
             self.halos = halos
-
         self._reset()
-
         self.set_rendering_classes(rendering_classes)
-
         if rendering_center_x is None or rendering_center_y is None:
             _z = np.linspace(0, self._zsource, 100)
             d = [self.lens_cosmo.cosmo.D_C_transverse(zi) for zi in _z]
             angle = np.zeros_like(d)
             rendering_center_x = interp1d(d, angle)
             rendering_center_y = interp1d(d, angle)
-
         self._rendering_center_x = rendering_center_x
         self._rendering_center_y = rendering_center_y
 
@@ -635,21 +626,20 @@ class Realization(object):
         """
 
         kwargs_halo_model_copy = deepcopy(kwargs_halo_model)
-        kwargs_halo = {}
+        kwargs_halo = {'mass': mass, 'x': x, 'y': y, 'r3d': r3d,
+                       'z': z, 'sub_flag': is_subhalo, 'lens_cosmo_instance': lens_cosmo_instance,
+                       'unique_tag': unique_tag}
         if is_subhalo:
             kwargs_halo['truncation_class'] = kwargs_halo_model_copy['truncation_model_subhalos']
-            kwargs_halo['concentration_class'] = kwargs_halo_model_copy['concentration_class_subhalos']
+            kwargs_halo['concentration_class'] = kwargs_halo_model_copy['concentration_model_subhalos']
             del kwargs_halo_model_copy['truncation_model_subhalos']
-            del kwargs_halo_model_copy['concentration_class_subhalos']
+            del kwargs_halo_model_copy['concentration_model_subhalos']
         else:
             kwargs_halo['truncation_class'] = kwargs_halo_model_copy['truncation_model_field_halos']
-            kwargs_halo['concentration_class'] = kwargs_halo_model_copy['concentration_class_field_halos']
+            kwargs_halo['concentration_class'] = kwargs_halo_model_copy['concentration_model_field_halos']
             del kwargs_halo_model_copy['truncation_model_field_halos']
-            del kwargs_halo_model_copy['concentration_class_field_halos']
-
-        kwargs_halo = {'mass': mass, 'x': x, 'y': y, 'r3d': r3d, 'mdef': mdef,
-                       'z': z, 'is_subhalo': is_subhalo, 'lens_cosmo_instance': lens_cosmo_instance,
-                       'args': kwargs_halo_model_copy, 'unique_tag': unique_tag}
+            del kwargs_halo_model_copy['concentration_model_field_halos']
+        kwargs_halo['args'] = kwargs_halo_model_copy['args']
 
         if mdef == 'NFW':
             if is_subhalo:
