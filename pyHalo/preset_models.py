@@ -79,14 +79,19 @@ def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_ang
     (see Cosmology.lensing_mass_function)
     :return: a realization of CDM halos
     """
-
+    if 'host_m200' not in kwargs_other.keys():
+        host_m200 = 10 ** log_m_host
+    else:
+        host_m200 = kwargs_other['host_m200']
+        del kwargs_other['host_m200']
     kwargs_model_field = {'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
                           'mass_func_type': 'POWER_LAW', 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
+                          'LOS_normalization': LOS_normalization, 'host_m200': host_m200}
 
     kwargs_model_subhalos = {'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub,
                              'power_law_index': shmf_log_slope, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                             'mdef_subs': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
+                             'mdef_subs': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal,
+                             'host_m200': host_m200}
 
     if any(x is not None for x in [c0, log10c0, beta, zeta]):
         if c0 is None:
@@ -159,7 +164,11 @@ def CDMFromEmulator(z_lens, z_source, emulator_input, cone_opening_angle_arcsec=
     (see Cosmology.lensing_mass_function)
     :return: a realization of CDM halos
     """
-
+    if 'host_m200' not in kwargs_other.keys():
+        host_m200 = 10 ** log_m_host
+    else:
+        host_m200 = kwargs_other['host_m200']
+        del kwargs_other['host_m200']
     # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
     cdm_halos_LOS = CDM(z_lens, z_source, sigma_sub=0.0, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
                         log_mlow=log_mlow, log_mhigh=log_mhigh, LOS_normalization=LOS_normalization, log_m_host=log_m_host,
@@ -272,7 +281,11 @@ def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_w
     :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
     :return: a realization of WDM halos
     """
-
+    if 'host_m200' not in kwargs_other.keys():
+        host_m200 = 10 ** log_m_host
+    else:
+        host_m200 = kwargs_other['host_m200']
+        del kwargs_other['host_m200']
     mass_definition = 'TNFW' # truncated NFW profile
     kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
@@ -353,7 +366,11 @@ def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross
     :param mdef_collapse: the halo profile for halos that have core collapsed
     :return: an instance of Realization that contains cored and core collapsed halos
     """
-
+    if 'host_m200' not in kwargs_other.keys():
+        host_m200 = 10 ** log_m_host
+    else:
+        host_m200 = kwargs_other['host_m200']
+        del kwargs_other['host_m200']
     kwargs_sidm =  {'cross_section_type': cross_section_name, 'kwargs_cross_section': kwargs_cross_section,
                        'SIDM_rhocentral_function': central_density_function,
                        'numerical_deflection_angle_class': deflection_angle_function}
@@ -484,6 +501,11 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :return: a realization of ULDM halos
     """
     # constants
+    if 'host_m200' not in kwargs_other.keys():
+        host_m200 = 10 ** log_m_host
+    else:
+        host_m200 = kwargs_other['host_m200']
+        del kwargs_other['host_m200']
     m22 = 10**(log10_m_uldm + 22)
     log_m0 = np.log10(1.6e10 * m22**(-4/3))
     M_min0 = 4.4e7 * m22**(-3/2) # M_solar
