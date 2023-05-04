@@ -32,24 +32,15 @@ class TestConcentration(object):
 
     def test_concentration_peak_height(self):
 
-        c_true = 14.24
         m = 10 ** 8
-        z = 0.5
-        c0 = 21.49
-        zeta = -0.5
-        beta = 0.8
-        scatter = False
-        scatter_amplitude_dex = 0.2
-        concentration_model = ConcentrationPeakHeight(self.astropy, c0, zeta, beta, scatter, scatter_amplitude_dex)
-        c1 = concentration_model.nfw_concentration(m, z)
-        npt.assert_almost_equal(c1, c_true, 2)
-
-        scatter = True
-        concentration_model = ConcentrationPeakHeight(self.astropy, c0, zeta, beta, scatter, scatter_amplitude_dex)
-        c = concentration_model.nfw_concentration(m, z)
-        npt.assert_equal(c != c_true, True)
-        args = (self.astropy, c0, 0.5, beta)
-        npt.assert_raises(Exception, ConcentrationPeakHeight, args)
+        concentration_model_1 = ConcentrationPeakHeight(self.astropy, 16.0, -0.2, 0.8, False)
+        concentration_model_2 = ConcentrationPeakHeight(self.astropy, 16.0, -0.2, 4.0, False)
+        concentration_model_3 = ConcentrationPeakHeight(self.astropy, 2.5 * 16.0, -0.2, 4.0, False)
+        c1 = concentration_model_1.nfw_concentration(m, 0.5)
+        c2 = concentration_model_2.nfw_concentration(m, 0.5)
+        c3 = concentration_model_3.nfw_concentration(m, 0.5)
+        npt.assert_equal(c1, c2)
+        npt.assert_almost_equal(c1, c3 / 2.5, 6)
 
     def test_concentration_wdm_polynomial(self):
 

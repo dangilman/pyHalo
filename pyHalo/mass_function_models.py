@@ -51,6 +51,10 @@ def preset_mass_function_models(model_name):
         return CDMPowerLaw, kwargs_model
     elif model_name == 'POWER_LAW_TURNOVER':
         return WDMPowerLaw, kwargs_model
+    elif model_name == 'SHMF_MIXED_WDM_TURNOVER':
+        return MixedWDMPowerLaw, kwargs_model
+    elif model_name == 'MIXED_WDM_TURNOVER':
+        return ShethTormenMixedWDM, kwargs_model
     else:
         raise Exception('model name '+str(model_name)+' not recognized')
 

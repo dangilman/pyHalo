@@ -20,7 +20,7 @@ import numpy as np
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
 
-__all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse']
+__all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed']
 
 def preset_model_from_name(name):
     """
@@ -38,12 +38,14 @@ def preset_model_from_name(name):
         return ULDM
     elif name == 'CDMEmulator':
         return CDMFromEmulator
+    elif name == 'WDM_mixed':
+        return WDM_mixed
     else:
         raise Exception('preset model '+ str(name)+' not recognized!')
 
 def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
-        concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_field={},
+        concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
@@ -56,6 +58,14 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     :param sigma_sub:
     :param log_mlow:
     :param log_mhigh:
+    :param concentration_model_subhalos:
+    :param kwargs_concentration_model_subhalos:
+    :param concentration_model_fieldhalos:
+    :param kwargs_concentration_model_fieldhalos:
+    :param truncation_model_subhalos:
+    :param kwargs_trunction_model_subhalos:
+    :param truncation_model_fieldhalos:
+    :param kwargs_truncation_model_fieldhalos:
     :param shmf_log_slope:
     :param cone_opening_angle_arcsec:
     :param log_m_host:
@@ -88,15 +98,15 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     mdef_field_halos = 'TNFW'
 
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
-    kwargs_concentration_model_field['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
 
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
-    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos)
-    kwargs_mc_subs.update(kwargs_concentration_model_subhalos)
+    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
+                                                                 kwargs_concentration_model_subhalos)
     concentration_model_subhalos = model_subhalos(**kwargs_mc_subs)
 
-    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos)
-    kwargs_mc_field.update(kwargs_concentration_model_field)
+    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
+                                                                    kwargs_concentration_model_fieldhalos)
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
@@ -159,7 +169,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         mass_function_model_subhalos='SHMF_LOVELL2020', kwargs_mass_function_subhalos={},
         mass_function_model_fieldhalos='LOVELL2020', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
-        concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_field={},
+        concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
@@ -181,7 +191,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     :param concentration_model_subhalos:
     :param kwargs_concentration_model_subhalos:
     :param concentration_model_fieldhalos:
-    :param kwargs_concentration_model_field:
+    :param kwargs_concentration_model_fieldhalos:
     :param truncation_model_subhalos:
     :param kwargs_trunction_model_subhalos:
     :param truncation_model_fieldhalos:
@@ -221,17 +231,17 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_subhalos['log_mc'] = log_mc
-    kwargs_concentration_model_field['cosmo'] = pyhalo.astropy_cosmo
-    kwargs_concentration_model_field['log_mc'] = log_mc
+    kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_fieldhalos['log_mc'] = log_mc
 
-    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos)
-    kwargs_mc_subs.update(kwargs_concentration_model_subhalos)
+    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
+                                                                 kwargs_concentration_model_subhalos)
     concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
     kwargs_mc_subs['concentration_cdm_class'] = concentration_model_CDM
     concentration_model_subhalos = model_subhalos(**kwargs_mc_subs)
 
-    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos)
-    kwargs_mc_field.update(kwargs_concentration_model_field)
+    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
+                                                                    kwargs_concentration_model_fieldhalos)
     kwargs_mc_field['cosmo'] = pyhalo.astropy_cosmo
     kwargs_mc_field['log_mc'] = log_mc
     concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
@@ -295,7 +305,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         mass_function_model_subhalos='SHMF_SCHIVE2016', kwargs_mass_function_subhalos={},
         mass_function_model_fieldhalos='SCHIVE2016', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='LAROCHE2022', kwargs_concentration_model_subhalos={},
-        concentration_model_fieldhalos='LAROCHE2022', kwargs_concentration_model_field={},
+        concentration_model_fieldhalos='LAROCHE2022', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
@@ -381,7 +391,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :param concentration_model_subhalos:
     :param kwargs_concentration_model_subhalos:
     :param concentration_model_fieldhalos:
-    :param kwargs_concentration_model_field:
+    :param kwargs_concentration_model_fieldhalos:
     :param truncation_model_subhalos:
     :param kwargs_trunction_model_subhalos:
     :param truncation_model_fieldhalos:
@@ -421,7 +431,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                   'concentration_model_subhalos': concentration_model_subhalos,
                   'kwargs_concentration_model_subhalos': kwargs_concentration_model_subhalos,
                   'concentration_model_fieldhalos': concentration_model_fieldhalos,
-                  'kwargs_concentration_model_field': kwargs_concentration_model_field,
+                  'kwargs_concentration_model_fieldhalos': kwargs_concentration_model_fieldhalos,
                   'truncation_model_subhalos': truncation_model_subhalos,
                   'kwargs_trunction_model_subhalos': kwargs_trunction_model_subhalos,
                   'truncation_model_fieldhalos': truncation_model_fieldhalos,
@@ -492,7 +502,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
         probabilities_subhalos, probabilities_field_halos, kwargs_sub_function=None,
         kwargs_field_function=None, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
-        concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_field={},
+        concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
@@ -516,7 +526,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param concentration_model_subhalos:
     :param kwargs_concentration_model_subhalos:
     :param concentration_model_fieldhalos:
-    :param kwargs_concentration_model_field:
+    :param kwargs_concentration_model_fieldhalos:
     :param truncation_model_subhalos:
     :param kwargs_trunction_model_subhalos:
     :param truncation_model_fieldhalos:
@@ -537,7 +547,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
 
     cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
-        concentration_model_fieldhalos, kwargs_concentration_model_field,
+        concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
         truncation_model_subhalos, kwargs_trunction_model_subhalos,
         truncation_model_fieldhalos, kwargs_truncation_model_fieldhalos,
         shmf_log_slope, cone_opening_angle_arcsec, log_m_host,  r_tidal,
@@ -549,6 +559,81 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
         probabilities_subhalos, probabilities_field_halos, kwargs_sub_function, kwargs_field_function)
     sidm = extension.add_core_collapsed_halos(index_collapsed, collapsed_halo_profile, **kwargs_collapsed_profile)
     return sidm
+
+def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        mass_function_model_subhalos='SHMF_MIXED_WDM_TURNOVER', kwargs_mass_function_subhalos={},
+        mass_function_model_fieldhalos='MIXED_WDM_TURNOVER', kwargs_mass_function_fieldhalos={},
+        concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
+        concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
+        kwargs_density_profile={}):
+
+    """
+    Implements the mixed dark matter model presented by Keely et al. (2023)
+    https://arxiv.org/pdf/2301.07265.pdf
+
+    :param z_lens:
+    :param z_source:
+    :param log_mc:
+    :param mixed_DM_frac: fraction of dark matter in CDM component
+    :param sigma_sub:
+    :param log_mlow:
+    :param log_mhigh:
+    :param mass_function_model_subhalos:
+    :param kwargs_mass_function_subhalos:
+    :param mass_function_model_fieldhalos:
+    :param kwargs_mass_function_fieldhalos:
+    :param concentration_model_subhalos:
+    :param kwargs_concentration_model_subhalos:
+    :param concentration_model_fieldhalos:
+    :param kwargs_concentration_model_fieldhalos:
+    :param truncation_model_subhalos:
+    :param kwargs_trunction_model_subhalos:
+    :param truncation_model_fieldhalos:
+    :param kwargs_truncation_model_fieldhalos:
+    :param shmf_log_slope:
+    :param cone_opening_angle_arcsec:
+    :param log_m_host:
+    :param r_tidal:
+    :param LOS_normalization:
+    :param geometry_type:
+    :param kwargs_cosmo:
+    :param kwargs_density_profile:
+    :return:
+    """
+    params = ['a_wdm', 'b_wdm', 'c_wdm']
+    values_keeley_2023 = [0.5, 0.8, -3.0]
+    for i, param in enumerate(params):
+        if param not in kwargs_mass_function_subhalos.keys():
+            kwargs_mass_function_subhalos[param] = values_keeley_2023[i]
+        if param not in kwargs_mass_function_fieldhalos.keys():
+            kwargs_mass_function_fieldhalos[param] = values_keeley_2023[i]
+    kwargs_mass_function_subhalos['mixed_DM_frac'] = mixed_DM_frac
+    kwargs_mass_function_fieldhalos['mixed_DM_frac'] = mixed_DM_frac
+    kwargs_wdm = {'z_lens': z_lens, 'z_source': z_source, 'log_mc': log_mc, 'sigma_sub': sigma_sub,
+                  'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
+                  'mass_function_model_subhalos': mass_function_model_subhalos,
+                  'kwargs_mass_function_subhalos': kwargs_mass_function_subhalos,
+                  'mass_function_model_fieldhalos': mass_function_model_fieldhalos,
+                  'kwargs_mass_function_fieldhalos': kwargs_mass_function_fieldhalos,
+                  'concentration_model_subhalos': concentration_model_subhalos,
+                  'kwargs_concentration_model_subhalos': kwargs_concentration_model_subhalos,
+                  'concentration_model_fieldhalos': concentration_model_fieldhalos,
+                  'kwargs_concentration_model_fieldhalos': kwargs_concentration_model_fieldhalos,
+                  'truncation_model_subhalos': truncation_model_subhalos,
+                  'kwargs_trunction_model_subhalos': kwargs_trunction_model_subhalos,
+                  'truncation_model_fieldhalos': truncation_model_fieldhalos,
+                  'kwargs_truncation_model_fieldhalos': kwargs_truncation_model_fieldhalos,
+                  'shmf_log_slope': shmf_log_slope, 'cone_opening_angle_arcsec': cone_opening_angle_arcsec,
+                  'log_m_host': log_m_host, 'r_tidal': r_tidal, 'LOS_normalization': LOS_normalization,
+                  'geometry_type': geometry_type, 'kwargs_cosmo': kwargs_cosmo,
+                  'mdef_subhalos': 'ULDM', 'mdef_field_halos': 'ULDM',
+                  'kwargs_density_profile': kwargs_density_profile
+                  }
+    return WDM(**kwargs_wdm)
 
 def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     """

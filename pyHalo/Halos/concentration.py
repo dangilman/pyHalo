@@ -113,8 +113,6 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :param scatter_dex: scatter in concentration in dex
         """
         self._c0 = c0
-        if zeta > 0:
-            raise Exception('positive values of zeta are unphysical')
         self._zeta = zeta
         self._beta = beta
         super(ConcentrationPeakHeight, self).__init__(cosmo, scatter, scatter_dex)
@@ -131,8 +129,9 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         M_h = M * self._cosmo.h
         Mref_h = 10 ** 8 * self._cosmo.h
         nu = peaks.peakHeight(M_h, z)
-        nu_ref = peaks.peakHeight(Mref_h, 0)
-        c = self._c0 * (1 + z) ** self._zeta * (nu / nu_ref) ** -self._beta
+        nu_ref = peaks.peakHeight(Mref_h, z)
+        redshift_factor = peaks.peakHeight(M_h, 0.0) / peaks.peakHeight(M_h, z)
+        c = self._c0 * (nu / nu_ref) ** -self._beta * redshift_factor ** self._zeta
         return c
 
 class ConcentrationWDMPolynomial(_ConcentrationTurnover):

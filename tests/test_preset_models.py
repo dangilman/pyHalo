@@ -34,5 +34,10 @@ class TestPresetModels(object):
         _ = sidm_cc.lensing_quantities()
         _ = preset_model_from_name('SIDM_core_collapse')
 
+    def test_WDM_mixed(self):
+        wdm_mixed = WDM_mixed(0.5, 1.5, 8.0, 0.5)
+        _ = wdm_mixed.lensing_quantities()
+        _ = preset_model_from_name('WDM_mixed')
+
 if __name__ == '__main__':
      pytest.main()
