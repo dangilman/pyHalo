@@ -19,7 +19,7 @@ class TestPjaffeHalo(object):
         self.zsource = 2.0
         self.lens_cosmo = LensCosmo(self.zhalo, self.zsource, cosmo)
         self.truncation_class = TruncationRoche(None, 100000000.0)
-        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo)
+        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
         self.lclenstronomy = LensCosmoLenstronomy(self.zhalo, self.zsource, astropy)
 
         m = 10 ** 8
@@ -27,7 +27,7 @@ class TestPjaffeHalo(object):
         y = 0.0
         r3d = 100.0
         is_subhalo = True
-        kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+        kwargs_profile = {'evaluate_mc_at_zlens': False}
         unique_tag = 1.0
         self.subhalo = PJaffeSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                       self.truncation_class, self.concentration_class, unique_tag)

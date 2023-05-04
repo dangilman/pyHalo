@@ -77,6 +77,20 @@ class PJaffeSubhalo(Halo):
 
         return self._lenstronomy_args, None
 
+    @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
+        if not hasattr(self, '_zeval'):
+
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
+                self._zeval = self.z
+            else:
+                self._zeval = self.z_infall
+
+        return self._zeval
+
     def _rho(self, m, rs, ra, r_match):
 
         """
@@ -104,12 +118,7 @@ class PJaffeSubhalo(Halo):
         """
         if not hasattr(self, '_profile_args'):
 
-            if self._args['evaluate_mc_at_zlens']:
-                z_eval = self.z
-            else:
-                z_eval = self.z_infall
-
-            concentration = self._concentration_class.nfw_concentration(self.mass, z_eval)
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
             self._profile_args = (concentration)
 
         return self._profile_args

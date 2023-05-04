@@ -1,7 +1,7 @@
 import numpy as np
+from pyHalo.Rendering.SpatialDistributions.base import SpatialDistributionBase
 
-
-class LensConeUniform(object):
+class LensConeUniform(SpatialDistributionBase):
 
     """
     This class generates samples drawn uniformly in two dimensions out to maximum radius
@@ -28,8 +28,8 @@ class LensConeUniform(object):
         :param geometry: an instance of Geometry (Cosmology.geometry)
         """
         self._cosmo_geometry = geometry
-
         self._uni = Uniform(0.5 * cone_opening_angle, geometry)
+        super(LensConeUniform, self).__init__()
 
     def draw(self, N, z_plane, center_x=0, center_y=0):
 
@@ -52,7 +52,7 @@ class LensConeUniform(object):
 
         return x_kpc, y_kpc
 
-class Uniform(object):
+class Uniform(SpatialDistributionBase):
 
     """
     This class generates samples distributed uniformly in two dimensions out to a radius 0.5 * cone_opening_angle
@@ -67,6 +67,17 @@ class Uniform(object):
         """
         self.rmax2d_arcsec = rmax2d_arcsec
         self._geo = geometry
+        super(Uniform, self).__init__()
+
+    @classmethod
+    def from_Mhost(cls, rmax2d_arcsec, geometry):
+        """
+
+        :param rmax2d_arcsec:
+        :param geometry:
+        :return:
+        """
+        return Uniform(rmax2d_arcsec, geometry)
 
     def draw(self, N, z_plane, rescale=1.0, center_x=0, center_y=0):
 

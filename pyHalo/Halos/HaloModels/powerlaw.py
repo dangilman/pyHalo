@@ -7,7 +7,7 @@ class PowerLawSubhalo(Halo):
     """
     The base class for a halo modeled as a power law profile
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
+    def __init__(self, mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
@@ -16,6 +16,7 @@ class PowerLawSubhalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._truncation_class = truncation_class
         self._concentration_class = concentration_class
+        mdef = 'SPL_CORE'
         super(PowerLawSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                               lens_cosmo_instance, args, unique_tag)
 
@@ -99,18 +100,27 @@ class PowerLawSubhalo(Halo):
         return ['SPL_CORE']
 
     @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
+        if not hasattr(self, '_zeval'):
+
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
+                self._zeval = self.z
+            else:
+                self._zeval = self.z_infall
+
+        return self._zeval
+
+    @property
     def profile_args(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_profile_args'):
 
-            if self._args['evaluate_mc_at_zlens']:
-                z_eval = self.z
-            else:
-                z_eval = self.z_infall
-
-            concentration = self._concentration_class.nfw_concentration(self.mass, z_eval)
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
             gamma = self._args['log_slope_halo']
             x_core_halo = self._args['x_core_halo']
             self._profile_args = (concentration, gamma, x_core_halo)
@@ -135,3 +145,10 @@ class PowerLawFieldHalo(PowerLawSubhalo):
             self._profile_args = (concentration, gamma, x_core_halo)
 
         return self._profile_args
+
+    @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evaluate the concentration-mass relation
+        """
+        return self.z

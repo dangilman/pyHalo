@@ -7,8 +7,6 @@ from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, General
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawFieldHalo, PowerLawSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
-from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWFieldHalo, coreTNFWSubhalo
-from pyHalo.Halos.HaloModels.coreNFW import coreNFWFieldHalo, coreNFWSubhalo
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
 import numpy as np
@@ -45,9 +43,9 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
         indexes = _indexes
 
     centerx, centery = realization.rendering_center
-
+    kwargs_halo_model = realization.kwargs_halo_model
     return Realization.from_halos(halos, realization.lens_cosmo,
-                                  realization._prof_params,
+                                  kwargs_halo_model,
                                   mass_sheet_correction,
                                   realization.rendering_classes,
                                   centerx, centery), indexes
@@ -101,7 +99,7 @@ class Realization(object):
         self.halos = []
         self._loaded_models = {}
         self._has_been_shifted = False
-        self._kwargs_halo_model = kwargs_halo_model
+        self.kwargs_halo_model = kwargs_halo_model
 
         if halos is None:
             for mi, xi, yi, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r3d,
@@ -151,7 +149,6 @@ class Realization(object):
                                   rendering_center_x=rendering_center_x,
                                   rendering_center_y=rendering_center_y,
                                   geometry=geometry)
-
         return realization
 
     @property
@@ -277,7 +274,7 @@ class Realization(object):
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 
-        return Realization.from_halos(halos, self.lens_cosmo, self._kwargs_halo_model,
+        return Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model,
                                       self.apply_mass_sheet_correction, self.rendering_classes,
                                       self._rendering_center_x, self._rendering_center_y, self.geometry)
 
@@ -339,7 +336,7 @@ class Realization(object):
             rendering_classes = self.rendering_classes
 
         centerx, centery = self.rendering_center
-        return Realization.from_halos(halos, self.lens_cosmo, self._kwargs_halo_model,
+        return Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model,
                                       self.apply_mass_sheet_correction, rendering_classes,
                                       centerx, centery, self.geometry)
 
@@ -376,22 +373,18 @@ class Realization(object):
             halo.y += yshift
             halos.append(halo)
 
-        new_realization = Realization.from_halos(halos, self.lens_cosmo, self._kwargs_halo_model, self.apply_mass_sheet_correction,
+        new_realization = Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model, self.apply_mass_sheet_correction,
                                                  self.rendering_classes, ray_interp_x, ray_interp_y, self.geometry)
 
         new_realization._has_been_shifted = True
 
         return new_realization
 
-    def lensing_quantities(self, add_mass_sheet_correction=True, z_mass_sheet_max=None,
-                           kwargs_mass_sheet_correction=None):
+    def lensing_quantities(self, add_mass_sheet_correction=True, kwargs_mass_sheet={}):
 
         """
         :param add_mass_sheet_correction: include sheets of negative convergence to correct for mass added subhalos/field halos
-        :param z_mass_sheet_max: don't include negative convergence sheets at z>z_mass_sheet_max (this does nothing
-        if the previous argument is False
-        :pararm kwargs_mass_sheet_correction: additional keyword arguments for the mass sheet correction
-        (changes the default setting)
+        :param kwargs_mass_sheet: keyword arguments for the mass sheets, see the method _mass_sheet_correction
         :return: the lens_model_list, redshift_list, kwargs_lens, and numerical_alpha_class keywords that can be plugged
         directly into a lenstronomy LensModel class
         """
@@ -413,16 +406,11 @@ class Realization(object):
                 numerical_interp = interp_class
 
         if self.apply_mass_sheet_correction and add_mass_sheet_correction:
-
             if self.rendering_classes is None:
                 raise Exception('if applying a convergence sheet correction, must specify '
                                 'the rendering classes used to determine them.')
-            if kwargs_mass_sheet_correction is None:
-                kwargs_mass_sheet_correction = lenscone_default.kwargs_mass_sheet_default
-
             kwargs_mass_sheets, profile_list, z_sheets = self._mass_sheet_correction(self.rendering_classes,
-                                                                                     z_mass_sheet_max,
-                                                                                     kwargs_mass_sheet_correction)
+                                                                                     **kwargs_mass_sheet)
             kwargs_lens += kwargs_mass_sheets
             lens_model_list += profile_list
             redshift_array = np.append(redshift_array, z_sheets)
@@ -448,10 +436,10 @@ class Realization(object):
 
         centerx, centery = self.rendering_center
         realization_1 = Realization.from_halos(halos_1, self.lens_cosmo,
-                                               self._kwargs_halo_model, self.apply_mass_sheet_correction, self.rendering_classes,
+                                               self.kwargs_halo_model, self.apply_mass_sheet_correction, self.rendering_classes,
                                                centerx, centery, self.geometry)
         realization_2 = Realization.from_halos(halos_2, self.lens_cosmo,
-                                               self._kwargs_halo_model, self.apply_mass_sheet_correction, self.rendering_classes,
+                                               self.kwargs_halo_model, self.apply_mass_sheet_correction, self.rendering_classes,
                                                centerx, centery, self.geometry)
 
         return realization_1, realization_2
@@ -543,33 +531,35 @@ class Realization(object):
                 n += 1
         return n
 
-    def _mass_sheet_correction(self, rendering_classes, z_mass_sheet_max, kwargs_mass_sheet_correction):
+    def _mass_sheet_correction(self, rendering_classes, subtract_exact_sheets=False,
+                               kappa_scale=1.0, log_mlow_sheets=7.0, log_mhigh_sheets=10.0, zmin=None, zmax=None):
 
         """
         This routine adds the negative mass sheet corrections along the LOS and in the main lens plane.
         The actual physics that determines the amount of negative convergence to add is encoded in the rendering_classes
         (see for example Rendering.Field.PowerLaw.powerlaw_base.py)
 
-        :param rendering_classes: the rendering class associated with each realization
-        :param z_mass_sheet_max: don't add mass sheets at lens planes with redshift > z_mass_sheet_max
-        :param kwargs_mass_sheet_correction: keyword arguments for the convergence sheet correction
-        :return: the kwargs_lens, lens_model_list, and redshift_list of the mass sheets that can be plugged into lenstronomy
+        :param rendering_classes:
+        :param subtract_exact_sheets:
+        :param kappa_scale:
+        :param log_mlow_sheets:
+        :param log_mhigh_sheets:
+        :param zmin:
+        :param zmax:
+        :return:
         """
 
-        kwargs_mass_sheets = []
+        kwargs_mass_sheets_out = []
+        redshifts_out = []
+        profiles_out = []
 
-        redshifts = []
-
-        profiles = []
-
-        if kwargs_mass_sheet_correction['subtract_exact_mass_sheets']:
+        if subtract_exact_sheets:
 
             for zi in self.unique_redshifts:
                 area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, zi)
-                kwargs_mass_sheets += [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)}]
-
-            redshifts = self.unique_redshifts
-            profiles = ['CONVERGENCE'] * len(kwargs_mass_sheets)
+                kwargs_mass_sheets_out += [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)}]
+            redshifts_out = self.unique_redshifts
+            profiles_out = ['CONVERGENCE'] * len(kwargs_mass_sheets_out)
 
         else:
 
@@ -579,30 +569,15 @@ class Realization(object):
                     continue
 
                 kwargs_new, profiles_new, redshifts_new = \
-                    rendering_class.convergence_sheet_correction(kwargs_mass_sheet_correction)
+                    rendering_class.convergence_sheet_correction(kappa_scale, log_mlow_sheets,
+                                                                 log_mhigh_sheets, zmin, zmax)
 
-                kwargs_mass_sheets += kwargs_new
-                redshifts += redshifts_new
-                profiles += profiles_new
-
-        if z_mass_sheet_max is not None:
-            kwargs_mass_sheets_out = []
-            profiles_out = []
-            redshifts_out = []
-
-            inds_keep = np.where(np.array(redshifts) <= z_mass_sheet_max)[0]
-
-            for i in range(0, len(kwargs_mass_sheets)):
-                if i in inds_keep:
-                    kwargs_mass_sheets_out.append(kwargs_mass_sheets[i])
-                    profiles_out.append(profiles[i])
-                    redshifts_out.append(redshifts[i])
-        else:
-            kwargs_mass_sheets_out, profiles_out, redshifts_out = kwargs_mass_sheets, profiles, redshifts
+                kwargs_mass_sheets_out += kwargs_new
+                redshifts_out += redshifts_new
+                profiles_out += profiles_new
 
         # define the center of mass sheet to be the center of the rendering volume
         centerx_interp, centery_interp = self.rendering_center
-
         for i, (zi, profile_name) in enumerate(zip(redshifts_out, profiles_out)):
             di = self.lens_cosmo.cosmo.D_C_z(zi)
             x_center, y_center = centerx_interp(di), centery_interp(di)
@@ -625,22 +600,25 @@ class Realization(object):
         :return: the specific Halo class corresponding to mass definition mdef
         """
 
-        kwargs_halo_model_copy = deepcopy(kwargs_halo_model)
         kwargs_halo = {'mass': mass, 'x': x, 'y': y, 'r3d': r3d,
                        'z': z, 'sub_flag': is_subhalo, 'lens_cosmo_instance': lens_cosmo_instance,
                        'unique_tag': unique_tag}
-        if is_subhalo:
-            kwargs_halo['truncation_class'] = kwargs_halo_model_copy['truncation_model_subhalos']
-            kwargs_halo['concentration_class'] = kwargs_halo_model_copy['concentration_model_subhalos']
-            del kwargs_halo_model_copy['truncation_model_subhalos']
-            del kwargs_halo_model_copy['concentration_model_subhalos']
-        else:
-            kwargs_halo['truncation_class'] = kwargs_halo_model_copy['truncation_model_field_halos']
-            kwargs_halo['concentration_class'] = kwargs_halo_model_copy['concentration_model_field_halos']
-            del kwargs_halo_model_copy['truncation_model_field_halos']
-            del kwargs_halo_model_copy['concentration_model_field_halos']
-        kwargs_halo['args'] = kwargs_halo_model_copy['args']
 
+        if 'truncation_model' in kwargs_halo_model.keys():
+            kwargs_halo['truncation_class'] = kwargs_halo_model['truncation_model']
+        else:
+            if is_subhalo:
+                kwargs_halo['truncation_class'] = kwargs_halo_model['truncation_model_subhalos']
+            else:
+                kwargs_halo['truncation_class'] = kwargs_halo_model['truncation_model_field_halos']
+        if 'concentration_model' in kwargs_halo_model.keys():
+            kwargs_halo['concentration_class'] = kwargs_halo_model['concentration_model']
+        else:
+            if is_subhalo:
+                kwargs_halo['concentration_class'] = kwargs_halo_model['concentration_model_subhalos']
+            else:
+                kwargs_halo['concentration_class'] = kwargs_halo_model['concentration_model_field_halos']
+        kwargs_halo['args'] = kwargs_halo_model['kwargs_density_profile']
         if mdef == 'NFW':
             if is_subhalo:
                 model = NFWSubhhalo
@@ -655,16 +633,6 @@ class Realization(object):
             model = PTMass
         elif mdef == 'PJAFFE':
             model = PJaffeSubhalo
-        elif mdef == 'coreTNFW':
-            if is_subhalo:
-                model = coreTNFWSubhalo
-            else:
-                model = coreTNFWFieldHalo
-        elif mdef == 'coreNFW':
-            if is_subhalo:
-                model = coreNFWSubhalo
-            else:
-                model = coreNFWFieldHalo
         elif mdef == 'ULDM':
             if is_subhalo:
                 model = ULDMSubhalo
@@ -828,7 +796,7 @@ class Realization(object):
 class SingleHalo(Realization):
 
     def __init__(self, halo_mass, x, y, mdef, z, zlens, zsource, r3d=None, subhalo_flag=False,
-                 kwargs_halo={}, cosmo=None, lens_cosmo=None):
+                 kwargs_halo_model={}, astropy_instance=None, lens_cosmo=None):
 
         """
        Useful for generating a realization with a single or a few
@@ -843,16 +811,15 @@ class SingleHalo(Realization):
         :param r3d: three dimensional coordinate of halo inside the host in kpc
         (only relevant for tidally-truncated subhalos, for field halos this can be None)
         :param subhalo_flag: bool, sets whether or not a halo is a subhalo
-        :param kwargs_halo: keyword arguments for the halo
-        :param cosmo: an instance of Cosmology(); if none is provided a default cosmology will be used
-        :param lens_cosmo: an instance of LensCosmo; if none is provided loads the default class
+        :param kwargs_halo_model: keyword arguments for the halo
+        :param astropy_instance: an instance of astropy
+        :param lens_cosmo: an instance of LensCosmo; if none is provided a new one is generated
         """
-        if cosmo is None:
-            cosmo = Cosmology()
-        if lens_cosmo is None:
-            lens_cosmo = LensCosmo(zlens, zsource, cosmo)
 
-        # these are redundant keywords for a single halo, but we need to specify them anyways
+        if lens_cosmo is None:
+            cosmo = Cosmology(astropy_instance)
+            lens_cosmo = LensCosmo(zlens, zsource, cosmo)
         super(SingleHalo, self).__init__([halo_mass], [x], [y],
                                          [r3d], [mdef], [z], [subhalo_flag], lens_cosmo,
-                                         kwargs_halo_model=kwargs_halo, mass_sheet_correction=False)
+                                         kwargs_halo_model=kwargs_halo_model, mass_sheet_correction=False)
+

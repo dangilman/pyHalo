@@ -12,25 +12,25 @@ class CorrelatedStructure(RenderingClassBase):
     This class generates a population of halos with a spatial distribution that tracks the dark matter density in halos
     at each lens plane
     """
-    def __init__(self, mass_function_model, kwargs_mass_function, spatial_distribution_model,
+    def __init__(self, mass_function_model, kwargs_mass_function,
                  geometry, lens_cosmo, lens_plane_redshifts, delta_z_list, realization):
 
-        spatial_distribution_model = Correlated2D(geometry)
+        self._cylinder_geometry = Geometry(lens_cosmo.cosmo, lens_cosmo.z_lens, lens_cosmo.z_source,
+                                           1.0, 'CYLINDER')
+        spatial_distribution_model = Correlated2D(self._cylinder_geometry)
         super(CorrelatedStructure, self).__init__(mass_function_model, kwargs_mass_function, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshifts, delta_z_list)
-        self._cylinder_geometry = Geometry(self._lens_cosmo.cosmo, self._lens_cosmo.z_lens, self._lens_cosmo.z_source,
-                                     self._geometry.cone_opening_angle, 'CYLINDER')
-        self._realization = kwargs_mass_function['realization']
+        self._realization = realization
 
-    def render(self, x_center_interp_list, y_center_interp_list, arcsec_per_pixel):
+    def render(self, rmax, x_center_interp, y_center_interp, arcsec_per_pixel):
 
         """
         Generates halo masses and positions for correlated structure along the line of sight around
         the angular coordinate of each light ray
-
-        :param x_center_interp_list: a list of interp1d functions that return the x angular position of a
+        :r_max: the maximum radius in arcsec around (x_center, y_center) around which to generate halos
+        :param x_center_interp: an interp1d function that returns the x angular position of a
         ray given a comoving distance
-        :param y_center_interp_list: a list of interp1d functions that return the y angular position of a
+        :param y_center_interp: an interp1d function that returns the y angular position of a
         ray given a comoving distance
         :param arcsec_per_pixel: sets the spatial resolution for the rendering of correlated structure
         :return: mass (in Msun), x (arcsec), y (arcsec), r3d (kpc), redshift
@@ -50,28 +50,22 @@ class CorrelatedStructure(RenderingClassBase):
             delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
         delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
 
-        r_max_rendering = self._kwargs_mass_function['r_max']
+        for z, dz in zip(plane_redshifts, delta_z):
 
-        for x_image_interp, y_image_interp in zip(x_center_interp_list, y_center_interp_list):
-
-            for z, dz in zip(plane_redshifts, delta_z):
-                if dz > 0.2:
-                    print('WARNING: redshift spacing is possibly too large due to the few number of halos '
-                          'in the lens model!')
-                rendering_radius = r_max_rendering * self._cylinder_geometry.rendering_scale(z)
-                d = self._lens_cosmo.cosmo.D_C_transverse(z)
-                x_angle = x_image_interp(d)
-                y_angle = y_image_interp(d)
-                _m, _x, _y, halo_inds, rescale_factor = self.render_at_z(z, x_angle, y_angle,
-                                                    rendering_radius, arcsec_per_pixel)
-                if len(_m) > 0:
-                    _z = np.array([z] * len(_x))
-                    masses = np.append(masses, _m)
-                    x = np.append(x, _x)
-                    y = np.append(y, _y)
-                    redshifts = np.append(redshifts, _z)
-                    rescale_inds += halo_inds
-                    rescale_factors += [rescale_factor] * len(halo_inds)
+            #rendering_radius = rmax * self._cylinder_geometry.rendering_scale(z)
+            d = self._lens_cosmo.cosmo.D_C_transverse(z)
+            x_angle = x_center_interp(d)
+            y_angle = y_center_interp(d)
+            _m, _x, _y, halo_inds, rescale_factor = self.render_at_z(z, x_angle, y_angle,
+                                                rmax, arcsec_per_pixel)
+            if len(_m) > 0:
+                _z = np.array([z] * len(_x))
+                masses = np.append(masses, _m)
+                x = np.append(x, _x)
+                y = np.append(y, _y)
+                redshifts = np.append(redshifts, _z)
+                rescale_inds += halo_inds
+                rescale_factors += [rescale_factor] * len(halo_inds)
 
         subhalo_flag = [False] * len(masses)
         r3d = np.array([None] * len(masses))
@@ -92,6 +86,7 @@ class CorrelatedStructure(RenderingClassBase):
         """
 
         kpc_per_asec = self._cylinder_geometry.kpc_per_arcsec(z)
+
         pdf, mass_in_area, halo_indexes = self._kappa_at_lens_plane(z, angular_coordinate_x, angular_coordinate_y, rendering_radius,
                                                       arcsec_per_pixel)
 
@@ -120,11 +115,15 @@ class CorrelatedStructure(RenderingClassBase):
         original halo profiles
         """
 
-        rescale_factor = 1.-self._kwargs_mass_function['mass_fraction']
-        rho = self._kwargs_mass_function['mass_fraction'] * mass_in_area
-        volume = 1.
-        mass = 10 ** self._kwargs_mass_function['logM']
-        mass_function = self._mass_function_model(mass, volume, rho, self._kwargs_mass_function['draw_poisson'])
+        if self._mass_function_model.name == 'DELTA_FUNCTION':
+            rescale_factor = 1.-self._kwargs_mass_function['mass_fraction']
+            volume = 1.
+            rho = self._kwargs_mass_function['mass_fraction'] * mass_in_area
+            mass = 10 ** self._kwargs_mass_function['logM']
+            mass_function = self._mass_function_model(mass, volume, rho, self._kwargs_mass_function['draw_poisson'])
+        else:
+            raise Exception('this class is only implemented for a delta function mass function')
+
         return mass_function.draw(), rescale_factor
 
     def _kappa_at_lens_plane(self, z, angular_coordinate_x, angular_coordinate_y,
@@ -186,3 +185,4 @@ class CorrelatedStructure(RenderingClassBase):
             z, self._realization.lens_cosmo.z_source)
         mass_in_area = np.sum(kappa_pdf * sigma_crit) * area
         return mass_in_area
+

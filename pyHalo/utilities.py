@@ -466,3 +466,37 @@ def nfw_velocity_dispersion_fromfit(m):
     coeffs = [0.31575757, -1.74259129]
     log_vrms = coeffs[0] * np.log10(m) + coeffs[1]
     return 10 ** log_vrms
+
+class MinHaloMassULDM(object):
+
+    def __init__(self, log10_m_uldm, astropy_instance, log_mlow):
+        """
+        This class implements the minimum halo mass for ultra-light dark matter, given the particle mass and a cosmology
+
+        The call method returns the maximum of log_mlow, and the resulting minimum ULDM halo mass to ensure that one does
+        not inadvertently generate halos down to extremely low masses for heavy particles
+        :param log10_m_uldm: particle mass
+        :param astropy_instance: an instannce of astropy
+        :param log_mlow: minimum halo mass to render, regardless of ULDM computation
+        """
+        m22 = 10**(log10_m_uldm + 22)
+        self._Mmin0 = 4.4e7 * m22**(-3/2)
+        self._astropy_instance = astropy_instance
+        self._log_mlow = log_mlow
+
+    def __call__(self, z):
+        m_min = self.m_min(z)
+        log10_m_min = np.log10(m_min)
+        return max(log10_m_min, self._log_mlow)
+
+    def m_min(self, z):
+        return self._a(z) ** (-3 / 4) * (self._zeta(z) / self._zeta(0)) ** (1 / 4) * self._Mmin0
+
+    def _a(self, z):
+        return (1 + z) ** -1
+
+    def _Om(self, z):
+        return self._astropy_instance.Om(z)
+
+    def _zeta(self, z):
+        return (18 * np.pi ** 2 + 82 * (self._Om(z) - 1) - 39 * (self._Om(z) - 1) ** 2) / self._Om(z)

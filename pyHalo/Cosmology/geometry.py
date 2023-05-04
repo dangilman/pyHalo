@@ -98,9 +98,7 @@ class Geometry(object):
         :return: integrand element in comoving Mpc (for use in scipy.integrate quad)
         """
         area_comoving = self.angle_to_comoving_area(radius_arcsec, z)
-
         dR = self.cosmo.astropy.hubble_distance.value * self.cosmo.astropy.efunc(z) ** -1
-
         return area_comoving * dR
 
     def _angle_to_arcsec_area(self, radius_arcsec, z):

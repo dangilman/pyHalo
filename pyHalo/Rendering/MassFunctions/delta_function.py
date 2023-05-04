@@ -9,7 +9,7 @@ class DeltaFunction(object):
 
     number of objects = density * volume / mass
     """
-
+    name = 'DELTA_FUNCTION'
     def __init__(self, mass, volume, rho, draw_poisson, *args, **kwargs):
         """
 

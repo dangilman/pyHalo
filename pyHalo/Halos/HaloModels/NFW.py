@@ -92,7 +92,7 @@ class NFWSubhhalo(NFWFieldHalo):
         """
         if not hasattr(self, '_zeval'):
 
-            if self._args['evaluate_mc_at_zlens']:
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
                 self._zeval = self.z
             else:
                 self._zeval = self.z_infall

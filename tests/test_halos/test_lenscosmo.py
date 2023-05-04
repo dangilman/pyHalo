@@ -5,10 +5,12 @@ import numpy as np
 import pytest
 from astropy.cosmology import FlatLambdaCDM
 from astropy.constants import G, c
+from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 import astropy.units as un
 from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
 from pyHalo.Cosmology.cosmology import Cosmology
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo as LensCosmoLenstronomy
+from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo
 
 class TestLensCosmo(object):
 
@@ -19,37 +21,6 @@ class TestLensCosmo(object):
         zlens, zsource = 0.3, 1.7
         self.lens_cosmo = LensCosmo(zlens, zsource, self.cosmo)
         self.h = self.cosmo.h
-        self._colossus_nfw = NFWProfile
-
-    def test_lenstronomy_params(self):
-
-        m = 10 ** 8
-        x = 0.5
-        y = 1.0
-        r3d = 100
-        is_subhalo = False
-        gamma_inner = 1.0001
-        gamma_outer = 3.0001
-        x_match = 2.5
-        unique_tag = 1.0
-        kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match}
-        nfw_field = NFWSubhhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
-                                   self.truncation_class, self.concentration_class, unique_tag)
-
-        nfw = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
-                                   self.truncation_class, self.concentration_class, unique_tag)
-        model_list, redshifts, kwargs_nfw_profile, _ = nfw.lenstronomy_params[0][0]
-        kwargs_gnfw_profile = gnfw.lenstronomy_params[0][0]
-        alpha_Rs = kwargs_gnfw_profile['alpha_Rs']
-        npt.assert_almost_equal(alpha_Rs/kwargs_nfw_profile['alpha_Rs'], 1.0, 2)
-        rs = kwargs_nfw_profile['Rs']
-        npt.assert_almost_equal(rs/kwargs_gnfw_profile['Rs'], 1.0, 4)
-
-        id = gnfw.lenstronomy_ID
-        npt.assert_string_equal('GNFW', id[0])
-        npt.assert_almost_equal(model_list[0], id)
-
-        npt.assert_almost_equal(self.zhalo, redshifts[0])
 
     def test_const(self):
 
@@ -73,11 +44,6 @@ class TestLensCosmo(object):
         sigma_crit_mass = self.lens_cosmo.sigma_crit_mass(0.7, area)
         sigma_crit = self.lens_cosmo.get_sigma_crit_lensing(0.7, 1.7)
         npt.assert_almost_equal(sigma_crit_mass, sigma_crit * area)
-
-    def test_colossus(self):
-
-        colossus = self.lens_cosmo.colossus
-        npt.assert_almost_equal(colossus.Om0, 0.2)
 
     def test_subhalo_accretion(self):
 

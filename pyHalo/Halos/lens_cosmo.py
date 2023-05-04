@@ -1,5 +1,6 @@
 import numpy
 from scipy.interpolate import interp1d
+from scipy.optimize import minimize
 from scipy.special import erfc
 from lenstronomy.Cosmo.nfw_param import NFWParam
 import astropy.units as un
@@ -132,6 +133,18 @@ class LensCosmo(object):
     ######################################################
     """ACCESS ROUTINES IN STRUCTURAL PARAMETERS CLASS"""
     ######################################################
+
+    def mthermal_to_halfmode(self, m_thermal):
+        """
+        Convert thermal relic particle mass to half-mode mass
+        :param m_thermaal:
+        :return:
+        """
+
+        # too lazy for algebra
+        def _func(m):
+            return abs(self.halfmode_to_thermal(m)-m_thermal)/0.01
+        return minimize(_func, x0=10**8, method='Nelder-Mead')['x']
 
     def halfmode_to_thermal(self, m_half_mode):
 

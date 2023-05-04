@@ -5,12 +5,22 @@ act as a how-to guide if one wants to explore more complicated descriptions of t
 presented here show what each keyword argument accepted by pyHalo does.
 """
 from pyHalo.pyhalo import pyHalo
-from pyHalo.realization_extensions import RealizationExtensions
-from pyHalo.Cosmology.cosmology import Cosmology
-import numpy as np
-from pyHalo.utilities import de_broglie_wavelength
+from pyHalo.Cosmology.geometry import Geometry
+from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw
 from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
+from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen
+from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
+from pyHalo.Rendering.SpatialDistributions.nfw import ProjectedNFW
+from pyHalo.truncation_models import truncation_models
+from pyHalo.concentration_models import preset_concentration_models
+from pyHalo.mass_function_models import preset_mass_function_models
 from pyHalo.single_realization import Realization
+from copy import copy
+import numpy as np
+from pyHalo.realization_extensions import RealizationExtensions
+from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
+
+__all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse']
 
 def preset_model_from_name(name):
     """
@@ -22,8 +32,8 @@ def preset_model_from_name(name):
         return CDM
     elif name == 'WDM':
         return WDM
-    elif name == 'SIDM':
-        return SIDM
+    elif name == 'SIDM_core_collapse':
+        return SIDM_core_collapse
     elif name == 'ULDM':
         return ULDM
     elif name == 'CDMEmulator':
@@ -31,354 +41,267 @@ def preset_model_from_name(name):
     else:
         raise Exception('preset model '+ str(name)+' not recognized!')
 
-def CDM(z_lens, z_source, sigma_sub=0.025, shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_mlow=6.,
-        log_mhigh=10., LOS_normalization=1., log_m_host=13.3, r_tidal='0.25Rs',
-        mass_definition='TNFW', c0=None, log10c0=None,
-        beta=None, zeta=None, two_halo_contribution=True, kwargs_halo_mass_function={}, **kwargs_other):
-
-    """
-    This specifies the keywords for a CDM halo mass function model with a subhalo mass function described by a power law
-    and a line of sight halo mass function described by Sheth-Tormen.
-
-    The subhalo mass function is parameterized as
-    d^N / dmdA = shmf_norm / m0 * (m/m0)^power_law_index * F(M_host, z)
-
-    with a pivot mass m0=10^8. In this parameterization, shmf_norm has units of 1/area, or kpc^-2. CDM prediction is
-    something like 0.01 - 0.05, but this depends on the efficiency of stripping and what objects around the host
-    halo you consider a subhalos (are splashback halos subhalos?).
-
-    The function F(M_host, z) factors the evolution of the projected number density of subhalos with host halo mass
-    and redshift out of the projected number density, so sigma_sub should be common to each host halo. The function
-    F(M_host, z) is calibrated with the semi-analytic modeling tool galacticus (https://arxiv.org/pdf/1008.1786.pdf):
-
-    F(M_host, z) = a * log10(M_host / 10^13) + b * (1+z)
-    with a = 0.88 and b = 1.7.
-
-    :param z_lens: main deflector redshift
-    :param z_source: sourcee redshift
-    :param sigma_sub: normalization of the subhalo mass function
-    :param shmf_log_slope: logarithmic slope of the subhalo mass function
-    :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
-    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
-    :param log_m_host: log10 host halo mass in M_sun
-    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
-    to account for tidal stripping of halos that pass close to the central galaxy
-    :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
-    :param mass_definition: mass profile model for halos (TNFW is truncated NFW)
-
-    The following optional keywords specify a concentration-mass relation parameterized as a power law in peak height.
-    If they are not set in the function call, pyHalo assumes a default concentration-mass relation from Diemer&Joyce
-    :param c0: amplitude of the mass-concentration relation at 10^8
-    :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
-    :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
-    :param zeta: modifies the redshift evolution of the mass-concentration-relation
-    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
-    :param kwargs_halo_mass_function: keyword arguments passed to the LensingMassFunction class
-    (see Cosmology.lensing_mass_function)
-    :return: a realization of CDM halos
+def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
+        concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_field={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
+        LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
+        geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
     """
 
-    kwargs_model_field = {'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
-                          'mass_func_type': 'POWER_LAW', 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
+    :param z_lens:
+    :param z_source:
+    :param sigma_sub:
+    :param log_mlow:
+    :param log_mhigh:
+    :param shmf_log_slope:
+    :param cone_opening_angle_arcsec:
+    :param log_m_host:
+    :param r_tidal:
+    :param LOS_normalization:
+    :param two_halo_contribution:
+    :param delta_power_law_index:
+    :param geometry_type:
+    :param kwargs_cosmo:
+    :return:
+    """
 
-    kwargs_model_subhalos = {'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub,
-                             'power_law_index': shmf_log_slope, 'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                             'mdef_subs': mass_definition, 'mass_func_type': 'POWER_LAW', 'r_tidal': r_tidal}
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
 
-    if any(x is not None for x in [c0, log10c0, beta, zeta]):
-        if c0 is None:
-            assert log10c0 is not None
-            c0 = 10 ** log10c0
-        assert beta is not None
-        assert zeta is not None
-        mc_model = {'custom': True,
-                       'c0': c0, 'beta': beta, 'zeta': zeta}
-        kwargs_mc_relation = {'mc_model': mc_model}
-        kwargs_model_field.update(kwargs_mc_relation)
-        kwargs_model_subhalos.update(kwargs_mc_relation)
+    # NOW WE SET THE MASS FUNCTION CLASSES FOR SUBHALOS AND FIELD HALOS
+    # NOTE: MASS FUNCTION CLASSES SHOULD NOT BE INSTANTIATED HERE
+    mass_function_model_subhalos = CDMPowerLaw
+    mass_function_model_fieldhalos = ShethTormen
 
-    kwargs_model_field.update(kwargs_other)
-    kwargs_model_subhalos.update(kwargs_other)
+    # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
+    subhalo_spatial_distribution = ProjectedNFW
+    fieldhalo_spatial_distribution = LensConeUniform
 
-    # this will use the default cosmology. parameters can be found in defaults.py
-    pyhalo = pyHalo(z_lens, z_source, kwargs_halo_mass_function=kwargs_halo_mass_function)
-    # Using the render method will result a list of realizations
-    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
+    # set the density profile definition
+    mdef_subhalos = 'TNFW'
+    mdef_field_halos = 'TNFW'
+
+    kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_field['cosmo'] = pyhalo.astropy_cosmo
+
+    # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
+    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos)
+    kwargs_mc_subs.update(kwargs_concentration_model_subhalos)
+    concentration_model_subhalos = model_subhalos(**kwargs_mc_subs)
+
+    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos)
+    kwargs_mc_field.update(kwargs_concentration_model_field)
+    concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
+
+    # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
+    kwargs_trunction_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
+
+    model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
+    kwargs_trunc_subs.update(kwargs_trunction_model_subhalos)
+    truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
+
+    model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
+    kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
+    truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
+
+    # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
+    population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT']
+    mass_function_class_list = [mass_function_model_subhalos, mass_function_model_fieldhalos]
+    kwargs_subhalos = {'log_mlow': log_mlow,
+                       'log_mhigh': log_mhigh,
+                       'm_pivot': 10 ** 8,
+                       'power_law_index': shmf_log_slope,
+                       'delta_power_law_index': delta_power_law_index,
+                       'log_m_host': log_m_host,
+                       'sigma_sub': sigma_sub}
+    kwargs_los = {'log_mlow': log_mlow,
+                       'log_mhigh': log_mhigh,
+                  'LOS_normalization': LOS_normalization,
+                       'm_pivot': 10 ** 8,
+                       'delta_power_law_index': delta_power_law_index,
+                       'log_m_host': log_m_host}
+    kwargs_mass_function_list = [kwargs_subhalos, kwargs_los]
+    spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution]
+    kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens,
+                               'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,
+                               'lens_cosmo': pyhalo.lens_cosmo}
+    kwargs_los_spatial = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}
+    kwargs_spatial_distribution_list = [kwargs_subhalos_spatial, kwargs_los_spatial]
+
     if two_halo_contribution:
-        los_components = ['LINE_OF_SIGHT', 'TWO_HALO']
-    else:
-        los_components = ['LINE_OF_SIGHT']
-    realization_line_of_sight = pyhalo.render(los_components, kwargs_model_field, nrealizations=1)[0]
+        population_model_list += ['TWO_HALO']
+        kwargs_two_halo = copy(kwargs_los)
+        kwargs_mass_function_list += [kwargs_two_halo]
+        spatial_distribution_class_list += [LensConeUniform]
+        kwargs_spatial_distribution_list += [kwargs_los_spatial]
+        mass_function_class_list += [ShethTormen]
 
-    cdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
+    kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
+                         'concentration_model_subhalos': concentration_model_subhalos,
+                         'truncation_model_field_halos': truncation_model_fieldhalos,
+                         'concentration_model_field_halos': concentration_model_fieldhalos,
+                         'kwargs_density_profile': {}}
 
-    return cdm_realization
-
-def CDMFromEmulator(z_lens, z_source, emulator_input, cone_opening_angle_arcsec=6., log_mlow=6., log_mhigh=10.,
-                 LOS_normalization=1., log_m_host=13.3, c0=None,
-                 log10c0=None, beta=None, zeta=None, two_halo_contribution=True,
-                 kwargs_halo_mass_function={}, **kwargs_other):
-    """
-    This generates a realization of subhalos using an emulator of the semi-analytic modeling code Galacticus, and
-     generates line-of-sight halos from a mass function parameterized as Sheth-Tormen.
-
-    :param z_lens: main deflector redshift
-    :param z_source: sourcee redshift
-    :param emulator_input: either an array or a callable function
-
-    if callable: a function that returns an array of
-    1) subhalo masses at infall [M_sun]
-    2) subhalo projected x position [kpc]
-    3) subhalo projected y position [kpc]
-    4) subhalo final_bound_mass [M_sun]
-    5) subhalo concentrations at infall
-
-    if not callable: an array with shape (N_subhalos 5) that contains masses, positions x, positions y, etc.
-
-    Mass convention is m200 with respect to the critical density of the Universe at redshift Z_infall, where Z_infall is
-    the infall redshift (not necessarily the redshift at the time of lensing).
-
-    :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
-    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
-    :param log_m_host: log10 host halo mass in M_sun
-    :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
-
-    The following optional keywords specify a concentration-mass relation for field halos parameterized as a power law
-    in peak height. If they are not set in the function call, pyHalo assumes a default concentration-mass relation from Diemer&Joyce
-    :param c0: amplitude of the mass-concentration relation at 10^8
-    :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
-    :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
-    :param zeta: modifies the redshift evolution of the mass-concentration-relation
-    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
-    :param kwargs_halo_mass_function: keyword arguments passed to the LensingMassFunction class
-    (see Cosmology.lensing_mass_function)
-    :return: a realization of CDM halos
-    """
-
-    # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
-    cdm_halos_LOS = CDM(z_lens, z_source, sigma_sub=0.0, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
-                        log_mlow=log_mlow, log_mhigh=log_mhigh, LOS_normalization=LOS_normalization, log_m_host=log_m_host,
-                        c0=c0, log10c0=log10c0, beta=beta, zeta=zeta, two_halo_contribution=two_halo_contribution,
-                        kwargs_halo_mass_function=kwargs_halo_mass_function, **kwargs_other)
-    # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
-    lens_cosmo = cdm_halos_LOS.lens_cosmo
-
-    # now create subhalos from the specified properties using the TNFWSubhaloEmulator class
-    halo_list = []
-    if callable(emulator_input):
-        subhalo_infall_masses, subhalo_x_kpc, subhalo_y_kpc, subhalo_final_bound_masses, \
-        subhalo_infall_concentrations = emulator_input()
-    else:
-        subhalo_infall_masses = emulator_input[:, 0]
-        subhalo_x_kpc = emulator_input[:, 1]
-        subhalo_y_kpc = emulator_input[:, 2]
-        subhalo_final_bound_masses = emulator_input[:, 3]
-        subhalo_infall_concentrations = emulator_input[:, 4]
-
-    for i in range(0, len(subhalo_infall_masses)):
-        halo = TNFWSubhaloEmulator(subhalo_infall_masses[i],
-                                   subhalo_x_kpc[i],
-                                   subhalo_y_kpc[i],
-                                   subhalo_final_bound_masses[i],
-                                   subhalo_infall_concentrations[i],
-                                   z_lens, lens_cosmo)
-        halo_list.append(halo)
-
-    # grab the default keyword arguments from whatever is in the default pyHalo code from LOS halo class
-    profile_params = cdm_halos_LOS._prof_params
-    # combine the subhalos with line-of-sight halos
-    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, profile_params, msheet_correction=False,
-                                         rendering_classes=None)
-    return cdm_halos_LOS.join(subhalos_from_emulator)
+    realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
+                                          spatial_distribution_class_list, kwargs_spatial_distribution_list,
+                                          geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1)
+    return realization_list[0]
 
 
-def WDM(z_lens, z_source, log_mc, log_mlow=6., log_mhigh=10., a_wdm_los=2.3, b_wdm_los=0.8, c_wdm_los=-1.,
-                  a_wdm_sub=4.2, b_wdm_sub=2.5, c_wdm_sub=-0.2, cone_opening_angle_arcsec=6.,
-                  sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                    kwargs_suppression_mc_relation_field=None, suppression_model_field=None, kwargs_suppression_mc_relation_sub=None,
-                  suppression_model_sub=None, two_halo_contribution=True, **kwargs_other):
+def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        mass_function_model_subhalos='SHMF_LOVELL2020', kwargs_mass_function_subhalos={},
+        mass_function_model_fieldhalos='LOVELL2020', kwargs_mass_function_fieldhalos={},
+        concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
+        concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_field={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
+        mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={}):
 
     """
 
-    This specifies the keywords for the Warm Dark Matter (WDM) halo mass function model presented by Lovell 2020
-    (https://arxiv.org/pdf/2003.01125.pdf)
-
-    The differential halo mass function is described by four parameters:
-    1) log_mc - the log10 value of the half-mode mass, or the scale where the WDM mass function begins to deviate from CDM
-    2) a_wdm - scale factor for the characteristic mass scale (see below)
-    3) b_wdm - modifies the logarithmic slope of the WDM mass function (see below)
-    4) c_wdm - modifies the logarithmic slope of the WDM mass function (see below)
-
-    The defult parameterization for the mass function is:
-
-    n_wdm / n_cdm = (1 + (a_wdm * m_c / m)^b_wdm) ^ c_wdm
-
-    where m_c = 10**log_mc is the half-mode mass, and n_wdm and n_cdm are differential halo mass functions. Lovell 2020 find different fits
-    to subhalos and field halos. For field halos, (a_wdm, b_wdm, c_wdm) = (2.3, 0.8, -1) while for subhalos
-    (a_wdm_sub, b_wdm_sub, c_wdm_sub) = (4.2, 2.5, -0.2).
-
-    WDM models also have reduced concentrations relative to CDM halos because WDM structure collapse later, when the Universe
-    is less dense. The default suppresion to halo concentrations is implemented using the fitting function (Eqn. 17) presented by
-    Bose et al. (2016) (https://arxiv.org/pdf/1507.01998.pdf), where the concentration relative to CDM is given by
-
-    c_wdm / c_cdm = (1+z)^B(z) * (1 + c_scale * (m_c / m) ** c_power_inner) ^ c_power
-
-    where m_c is the same as the definition for the halo mass function and (c_scale, c_power) = (60, -0.17). Note that the
-    factor of 60 makes the effect on halo concentrations kick in on mass scales > m_c. This routine assumes the
-    a mass-concentration for CDM halos given by Diemer & Joyce 2019 (https://arxiv.org/pdf/1809.07326.pdf)
-
-    :param z_lens: the lens redshift
-    :param z_source: the source redshift
-    :param log_mc: log10(half mode mass) in units M_sun (no little h)
-    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param a_wdm_los: describes the line of sight WDM halo mass function (see above)
-    :param b_wdm_los: describes the line of sight WDM halo mass function (see above)
-    :param c_wdm_los: describes the line of sight WDM halo mass function (see above)
-    :param a_wdm_sub: defines the WDM subhalo mass function (see above)
-    :param b_wdm_sub: defines the WDM subhalo mass function (see above)
-    :param c_wdm_sub: defines the WDM subhalo mass function (see above)
-    :param cone_opening_angle_arcsec: the opening angle in arcsec of the volume where halos are added
-    :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
-    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
-    :param log_m_host: log10 host halo mass in M_sun
-    :param power_law_index: logarithmic slope of the subhalo mass function
-    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
-    to account for tidal stripping of halos that pass close to the central galaxy
-
-    ###################################################################################################
-    The following keywords define how the WDM mass-concentration relation is suppressed relative to CDM
-
-    :param kwargs_suppression_mc_relation_field: keyword arguments for the suppression function for field halo concentrations
-    :param suppression_model_field: the type of suppression of the MC relation for field halos, either 'polynomial' or 'hyperbolic'. Default form is polynomial
-    :param kwargs_suppression_mc_relation_sub: keyword arguments for the suppression function for subhalos
-    :param suppression_model_sub: the type of suppression of the MC relation for subhalos, either 'polynomial' or 'hyperbolic'
-
-    The form of the polynomial suppression function, f, is defined in terms of x = half-mode-mass / mass:
-
-    f = (1 + c_scale * x ^ c_power_inner) ^ c_power
-
-    The form of the hyperbolic suppression function, f, is (see functions in Halos.HaloModels.concentration)
-
-    f = 1/2 [1 + tanh( (x - a_wdm)/2b_wdm ) ) ]
-    ###################################################################################################
-
-    :param kwargs_other: any other optional keyword arguments
-    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
-    :return: a realization of WDM halos
+    :param z_lens:
+    :param z_source:
+    :param log_mc:
+    :param sigma_sub:
+    :param log_mlow:
+    :param log_mhigh:
+    :param mass_function_model_subhalos:
+    :param kwargs_mass_function_subhalos:
+    :param mass_function_model_fieldhalos:
+    :param kwargs_mass_function_fieldhalos:
+    :param concentration_model_subhalos:
+    :param kwargs_concentration_model_subhalos:
+    :param concentration_model_fieldhalos:
+    :param kwargs_concentration_model_field:
+    :param truncation_model_subhalos:
+    :param kwargs_trunction_model_subhalos:
+    :param truncation_model_fieldhalos:
+    :param kwargs_truncation_model_fieldhalos:
+    :param shmf_log_slope:
+    :param cone_opening_angle_arcsec:
+    :param log_m_host:
+    :param r_tidal:
+    :param LOS_normalization:
+    :param geometry_type:
+    :param kwargs_cosmo:
+    :param mdef_subhalos:
+    :param mdef_field_halos:
+    :param kwargs_density_profile:
+    :return:
     """
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
 
-    mass_definition = 'TNFW' # truncated NFW profile
-    kwargs_model_field = {'a_wdm': a_wdm_los, 'b_wdm': b_wdm_los, 'c_wdm': c_wdm_los, 'log_mc': log_mc,
-                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
-                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host,
-                          }
+    # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
+    subhalo_spatial_distribution = ProjectedNFW
+    fieldhalo_spatial_distribution = LensConeUniform
 
-    if suppression_model_field is not None:
-        kwargs_model_field['suppression_model'] = suppression_model_field
-        kwargs_model_field['kwargs_suppression'] = kwargs_suppression_mc_relation_field
+    # SET THE MASS FUNCTION MODELS FOR SUBHALOS AND FIELD HALOS
+    # NOTE: MASS FUNCTIONS SHOULD NOT BE INSTANTIATED HERE
+    mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models(mass_function_model_subhalos)
+    kwargs_mfunc_subs.update(kwargs_mass_function_subhalos)
+    kwargs_mfunc_subs['log_mc'] = log_mc
 
-    kwargs_model_subhalos = {'a_wdm': a_wdm_sub, 'b_wdm': b_wdm_sub, 'c_wdm': c_wdm_sub, 'log_mc': log_mc,
-                           'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
-                             'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
+    mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models(mass_function_model_fieldhalos)
+    kwargs_mfunc_field.update(kwargs_mass_function_fieldhalos)
+    kwargs_mfunc_field['log_mc'] = log_mc
 
-    if suppression_model_sub is not None:
+    # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
+    kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_subhalos['log_mc'] = log_mc
+    kwargs_concentration_model_field['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_field['log_mc'] = log_mc
 
-        kwargs_model_subhalos['suppression_model'] = suppression_model_sub
-        kwargs_model_subhalos['kwargs_suppression'] = kwargs_suppression_mc_relation_sub
+    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos)
+    kwargs_mc_subs.update(kwargs_concentration_model_subhalos)
+    concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
+    kwargs_mc_subs['concentration_cdm_class'] = concentration_model_CDM
+    concentration_model_subhalos = model_subhalos(**kwargs_mc_subs)
 
-    kwargs_model_field.update(kwargs_other)
-    kwargs_model_subhalos.update(kwargs_other)
+    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos)
+    kwargs_mc_field.update(kwargs_concentration_model_field)
+    kwargs_mc_field['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_mc_field['log_mc'] = log_mc
+    concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
+    kwargs_mc_field['concentration_cdm_class'] = concentration_model_CDM
+    concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
 
-    # this will use the default cosmology. parameters can be found in defaults.py
-    pyhalo = pyHalo(z_lens, z_source)
-    # Using the render method will result a list of realizations
-    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
-    if two_halo_contribution:
-        los_components = ['LINE_OF_SIGHT', 'TWO_HALO']
-    else:
-        los_components = ['LINE_OF_SIGHT']
-    realization_line_of_sight = pyhalo.render(los_components, kwargs_model_field, nrealizations=1)[0]
+    # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
+    kwargs_trunction_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
 
-    wdm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
+    model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
+    kwargs_trunc_subs.update(kwargs_trunction_model_subhalos)
+    kwargs_trunc_subs['lens_cosmo'] = pyhalo.lens_cosmo
+    truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
 
-    return wdm_realization
+    model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
+    kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
+    kwargs_trunc_field['lens_cosmo'] = pyhalo.lens_cosmo
+    truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
 
+    # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
+    population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT', 'TWO_HALO']
 
-def SIDM(z_lens, z_source, cross_section_name, cross_section_class, kwargs_cross_section,
-         kwargs_core_collapse_profile, deflection_angle_function, central_density_function, collapse_probability_function,
-         t_sub=10, t_field=100, collapse_time_width=0.5, log_mlow=6., log_mhigh=10., cone_opening_angle_arcsec=6., sigma_sub=0.025,
-         LOS_normalization=1., log_m_host=13.3, power_law_index=-1.9, r_tidal='0.25Rs', mdef='coreTNFW', mdef_collapse='SPL_CORE',
-         realization_no_core_collapse=None,
-         **kwargs_other):
+    mass_function_class_list = [mass_function_model_subhalos,
+                                mass_function_model_fieldhalos,
+                                mass_function_model_fieldhalos]
+    kwargs_mfunc_subs.update({'log_mlow': log_mlow,
+                       'log_mhigh': log_mhigh,
+                       'm_pivot': 10 ** 8,
+                       'power_law_index': shmf_log_slope,
+                       'log_m_host': log_m_host,
+                       'sigma_sub': sigma_sub,
+                       'delta_power_law_index': 0.0})
+    kwargs_mfunc_field.update({'log_mlow': log_mlow,
+                  'log_mhigh': log_mhigh,
+                  'LOS_normalization': LOS_normalization,
+                  'm_pivot': 10 ** 8,
+                  'log_m_host': log_m_host,
+                  'delta_power_law_index': 0.0})
+    kwargs_mass_function_list = [kwargs_mfunc_subs, kwargs_mfunc_field, kwargs_mfunc_field]
+    spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution, fieldhalo_spatial_distribution]
+    kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens,
+                               'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,
+                               'lens_cosmo': pyhalo.lens_cosmo}
+    kwargs_los_spatial = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}
+    kwargs_spatial_distribution_list = [kwargs_subhalos_spatial, kwargs_los_spatial, kwargs_los_spatial]
 
-    """
-    This generates realizations of self-interacting dark matter (SIDM) halos, inluding both cored and core-collapsed
-    objects.
+    kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
+                         'concentration_model_subhalos': concentration_model_subhalos,
+                         'truncation_model_field_halos': truncation_model_fieldhalos,
+                         'concentration_model_field_halos': concentration_model_fieldhalos,
+                         'kwargs_density_profile': kwargs_density_profile}
 
-    :param z_lens: the lens redshift
-    :param z_source: the source redshift
-    :param cross_section_name: the name of the cross section implemented in SIDMpy
-    :param cross_section_class: the class defined in SIDMpy for the SIDM cross section
-    :param kwargs_cross_section: keyword arguments for the SIDM cross section class
-    :param kwargs_core_collapse_profile: keyword arguments for the core collapse profile; possibilities include x_core_halo,
-    x_match, and log_slope_halo, which are the core size in units of Rs, the radius (in units of Rs) where the core collapse
-    profile encloses the same mass as the NFW profile, and the logarithmic slope of the core collapse profile
-    (convention is for this to be a positive number)
-    :param deflection_angle_function: a function that returns the deflection angles, to be passed into lenstronomy
-    :param central_density_function: a function that computes the central density of cored halos
-    :param collapse_probability_function: a function that computes the probability of core collapse for a given cross section
-    :param velocity_dispersion_function: a function that computes the central velocity dispersion of an SIDM halo
-    :param t_sub: core collapse timescale for subhalos
-    :param t_field: core collapse timescale for field halos
-    :param collapse_time_width: scatter in collapse times
-    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
-    :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
-    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
-    :param log_m_host: log10 host halo mass in M_sun
-    :param power_law_index: logarithmic slope of the subhalo mass function
-    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
-    to account for tidal stripping of halos that pass close to the central galaxy
-    :param kwargs_other: any addition keyword arguments
-    :param mdef: the halo profile for halos that have not core collapsed
-    :param mdef_collapse: the halo profile for halos that have core collapsed
-    :return: an instance of Realization that contains cored and core collapsed halos
-    """
-
-    kwargs_sidm =  {'cross_section_type': cross_section_name, 'kwargs_cross_section': kwargs_cross_section,
-                       'SIDM_rhocentral_function': central_density_function,
-                       'numerical_deflection_angle_class': deflection_angle_function}
-    kwargs_sidm.update(kwargs_other)
-
-    if realization_no_core_collapse is None:
-        realization_no_core_collapse = CDM(z_lens, z_source, sigma_sub, power_law_index, cone_opening_angle_arcsec, log_mlow,
-                              log_mhigh, LOS_normalization, log_m_host, r_tidal, mdef, **kwargs_sidm)
-
-    ext = RealizationExtensions(realization_no_core_collapse)
-
-    inds = ext.find_core_collapsed_halos(collapse_probability_function, cross_section_class,
-                                  t_sub=t_sub, t_field=t_field, collapse_time_width=collapse_time_width)
-
-    realization = ext.add_core_collapsed_halos(inds, mdef_collapse, **kwargs_core_collapse_profile)
-
-    return realization
+    realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
+                                     spatial_distribution_class_list, kwargs_spatial_distribution_list,
+                                     geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1)
+    return realization_list[0]
 
 def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_size_scale=0.05,
-         fluctuation_size_dispersion=0.2, n_fluc_scale=1.0, velocity_scale=200, log_mlow=6., log_mhigh=10., b_uldm=1.1, c_uldm=-2.2,
-                  c_scale=21.42, c_power=-0.42, c_power_inner=1.62, cone_opening_angle_arcsec=6.,
-                  sigma_sub=0.025, LOS_normalization=1., log_m_host= 13.3, power_law_index=-1.9, r_tidal='0.25Rs',
-                  mass_definition='ULDM', uldm_plaw=1/3, scale_nfw=False, flucs=True,
-                  flucs_shape='aperture', flucs_args={}, n_cut=50000, rescale_fluc_amp=True, r_ein=1.0, two_halo_contribution=True,
-         **kwargs_other):
+          fluctuation_size_dispersion=0.2, n_fluc_scale=1.0, velocity_scale=200, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        mass_function_model_subhalos='SHMF_SCHIVE2016', kwargs_mass_function_subhalos={},
+        mass_function_model_fieldhalos='SCHIVE2016', kwargs_mass_function_fieldhalos={},
+        concentration_model_subhalos='LAROCHE2022', kwargs_concentration_model_subhalos={},
+        concentration_model_fieldhalos='LAROCHE2022', kwargs_concentration_model_field={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, kwargs_density_profile={},
+         uldm_plaw=1 / 3, scale_nfw=False, flucs=True, flucs_shape='aperture', flucs_args={}, n_cut=50000,
+         rescale_fluc_amp=True, r_ein=1.0):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -440,107 +363,80 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
 
     where Om(z) is the matter density parameter.
 
-    :param z_lens: the lens redshift
-    :param z_source: the source redshift
-    :param log10_m_uldm: ULDM particle mass in log units, typically 1e-22 eV
-    :param log10_fluc_amplitude: sets the amplitude of the fluctuations in the host dark matter halo.
-    fluctuations are generated from a Guassian distriubtion with mean 0 and variance 10^log10_fluc_amplitude
-    :param fluctuation_size_scale: half the size of an individual fluctuation; fluctuations are modeled as Gaussians with variance
-    fluctuation_size_scale * lambda_dB, so their diameter is approximately 2 * fluctuation_size_scale * lambda_dB.
-    To fit an overdenisty and an underdensiity inside one lambda_dB, you therefore need fluctuation_size_scale = 1/4
-    :param fluctuation_size_dispersion: sets the variance of the distribution of fluctuation sizes, in units of fluctuation size:
-
-    variance = fluctuation_size_dispersion * lambda_dB * fluctuation_size_scale
-
-    To sumamrize, individual fluctuations are modeled as Gaussians with a mean fluctuation_size_scale * lambda_dB and a
-    variance fluctuation_size_dispersion * lambda_dB
-    :param n_fluc_scale: rescales the total number of fluctuations
-    :param velocity_scale: velocity for de Broglie wavelength calculation in km/s
-    :param log_mhigh: log10(maximum halo mass) rendered (mass definition is M200 w.r.t. critical density)
-    :param b_uldm: defines the ULDM mass function (see above)
-    :param c_uldm: defines the ULDM mass function (see above)
-    :param c_scale: scale where concentrations in ULDM deviate from CDM (see WDMLovell2020)
-    :param c_power: modification to logarithmic slope of mass-concentration relation (see WDMLovell2020)
-    :param cone_opening_angle: the opening angle in arcsec of the double cone geometry where halos are added
-    :param sigma_sub: normalization of the subhalo mass function (see description in CDM preset model)
-    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
-    :param log_m_host: log10 host halo mass in M_sun
-    :param power_law_index: logarithmic slope of the subhalo mass function
-    :param r_tidal: subhalos are distributed following a cored NFW profile with a core radius r_tidal. This is intended
-    to account for tidal stripping of halos that pass close to the central galaxy
-    :param mass_definition: mass profile model for halos
-    :param uldm_plaw: ULDM core radius-halo mass power law exponent, typically 1/3
-    :param scale_nfw: boolean specifiying whether or not to scale the NFW component (can improve mass accuracy)
-    :param flucs: Boolean specifying whether or not to include density fluctuations in the main deflector halo
-    :param flucs_shape: String specifying how to place fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
-    :param fluc_args: Keyword arguments for specifying the fluctuations, see docs in realization_extensions.add_ULDM_fluctuations
-    :param rescale_fluc_amp: Boolean specifying whether re-scale fluctuation amplitudes by sqrt(n_cut / n), where n
-    is the total number of fluctuations in the given area and n_cut (defined below) is the maximum number to generate
-    :param einstein_radius: Einstein radius of main deflector halo in kpc
-    :param n_cut: Number of fluctuations above which to start cancelling
-    :param r_ein: the Einstein radius in arcseconds
-    :param kwargs_other: any other optional keyword arguments
-    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
-    :return: a realization of ULDM halos
+    :param z_lens:
+    :param z_source:
+    :param log10_m_uldm:
+    :param log10_fluc_amplitude:
+    :param fluctuation_size_scale:
+    :param fluctuation_size_dispersion:
+    :param n_fluc_scale:
+    :param velocity_scale:
+    :param sigma_sub:
+    :param log_mlow:
+    :param log_mhigh:
+    :param mass_function_model_subhalos:
+    :param kwargs_mass_function_subhalos:
+    :param mass_function_model_fieldhalos:
+    :param kwargs_mass_function_fieldhalos:
+    :param concentration_model_subhalos:
+    :param kwargs_concentration_model_subhalos:
+    :param concentration_model_fieldhalos:
+    :param kwargs_concentration_model_field:
+    :param truncation_model_subhalos:
+    :param kwargs_trunction_model_subhalos:
+    :param truncation_model_fieldhalos:
+    :param kwargs_truncation_model_fieldhalos:
+    :param shmf_log_slope:
+    :param cone_opening_angle_arcsec:
+    :param log_m_host:
+    :param r_tidal:
+    :param LOS_normalization:
+    :param geometry_type:
+    :param kwargs_cosmo:
+    :param kwargs_density_profile:
+    :return:
     """
     # constants
     m22 = 10**(log10_m_uldm + 22)
     log_m0 = np.log10(1.6e10 * m22**(-4/3))
-    M_min0 = 4.4e7 * m22**(-3/2) # M_solar
 
-    a_uldm = 1 # set to unity since Schive et al. 2016 do not have an analogous parameter
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
 
     #compute M_min as described in documentation
-    a = lambda z: (1+z)**(-1)
-    O_m = lambda z: Cosmology().astropy.Om(z)
-    zeta = lambda z: (18*np.pi**2 + 82*(O_m(z)-1) - 39*(O_m(z)-1)**2) / O_m(z)
-    m_min = lambda z: a(z)**(-3/4) * (zeta(z)/zeta(0))**(1/4) * M_min0
-    log_m_min = lambda z: np.log10(m_min(z))
+    log_m_min = MinHaloMassULDM(log10_m_uldm, pyhalo.astropy_cosmo, log_mlow)
 
-    if log_m_min(z_lens) >= log_mlow:
-        log_mlow = log_m_min(z_lens) # only use M_min for minimum halo mass if it is above input 'log_mlow'
-    kwargs_model_field = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
-                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle_arcsec, 'mdef_los': mass_definition,
-                          'mass_func_type': 'POWER_LAW', 'LOS_normalization': LOS_normalization, 'log_m_host': log_m_host}
+    kwargs_density_profile['log10_m_uldm'] = log10_m_uldm
+    kwargs_density_profile['scale_nfw'] = scale_nfw
+    kwargs_density_profile['uldm_plaw'] = uldm_plaw
+    kwargs_wdm = {'z_lens': z_lens, 'z_source': z_source, 'log_mc': log_m0, 'sigma_sub': sigma_sub,
+                  'log_mlow': log_m_min, 'log_mhigh': log_mhigh,
+                  'mass_function_model_subhalos': mass_function_model_subhalos,
+                  'kwargs_mass_function_subhalos': kwargs_mass_function_subhalos,
+                  'mass_function_model_fieldhalos': mass_function_model_fieldhalos,
+                  'kwargs_mass_function_fieldhalos': kwargs_mass_function_fieldhalos,
+                  'concentration_model_subhalos': concentration_model_subhalos,
+                  'kwargs_concentration_model_subhalos': kwargs_concentration_model_subhalos,
+                  'concentration_model_fieldhalos': concentration_model_fieldhalos,
+                  'kwargs_concentration_model_field': kwargs_concentration_model_field,
+                  'truncation_model_subhalos': truncation_model_subhalos,
+                  'kwargs_trunction_model_subhalos': kwargs_trunction_model_subhalos,
+                  'truncation_model_fieldhalos': truncation_model_fieldhalos,
+                  'kwargs_truncation_model_fieldhalos': kwargs_truncation_model_fieldhalos,
+                  'shmf_log_slope': shmf_log_slope, 'cone_opening_angle_arcsec': cone_opening_angle_arcsec,
+                  'log_m_host': log_m_host, 'r_tidal': r_tidal, 'LOS_normalization': LOS_normalization,
+                  'geometry_type': geometry_type, 'kwargs_cosmo': kwargs_cosmo,
+                  'mdef_subhalos': 'ULDM', 'mdef_field_halos': 'ULDM',
+                  'kwargs_density_profile': kwargs_density_profile
+                  }
 
-    kwargs_model_subhalos = {'a_wdm': a_uldm, 'b_wdm': b_uldm, 'c_wdm': c_uldm, 'log_mc': log_m0,
-                          'log_mlow': log_mlow, 'log_mhigh': log_mhigh,
-                          'cone_opening_angle': cone_opening_angle_arcsec, 'sigma_sub': sigma_sub, 'mdef_subs': mass_definition,
-                             'mass_func_type': 'POWER_LAW', 'power_law_index': power_law_index, 'r_tidal': r_tidal}
-
-    kwargs_model_subhalos.update({'suppression_model': 'polynomial'})
-    kwargs_model_field.update({'suppression_model': 'polynomial'})
-
-    kwargs_suppression_mcrelation = {'c_scale': c_scale,
-                                     'c_power': c_power,
-                                     'c_power_inner': c_power_inner,
-                                     'mc_suppression_redshift_evolution': False}
-
-    kwargs_model_subhalos.update({'kwargs_suppression': kwargs_suppression_mcrelation})
-    kwargs_model_field.update({'kwargs_suppression': kwargs_suppression_mcrelation})
-
-    kwargs_uldm = {'log10_m_uldm': log10_m_uldm, 'uldm_plaw': uldm_plaw, 'scale_nfw':scale_nfw}
-
-    kwargs_model_field.update(kwargs_uldm)
-    kwargs_model_subhalos.update(kwargs_uldm)
-
-    kwargs_model_field.update(kwargs_other)
-    kwargs_model_subhalos.update(kwargs_other)
-
-    # this will use the default cosmology. parameters can be found in defaults.py
-    pyhalo = pyHalo(z_lens, z_source)
-    # Using the render method will result a list of realizations
-    realization_subs = pyhalo.render(['SUBHALOS'], kwargs_model_subhalos, nrealizations=1)[0]
-    if two_halo_contribution:
-        los_components = ['LINE_OF_SIGHT', 'TWO_HALO']
-    else:
-        los_components = ['LINE_OF_SIGHT']
-    realization_line_of_sight = pyhalo.render(los_components, kwargs_model_field, nrealizations=1)[0]
-    uldm_realization = realization_line_of_sight.join(realization_subs, join_rendering_classes=True)
+    uldm_no_fluctuations = WDM(**kwargs_wdm)
 
     if flucs: # add fluctuations to realization
-        ext = RealizationExtensions(uldm_realization)
+        ext = RealizationExtensions(uldm_no_fluctuations)
         lambda_dB = de_broglie_wavelength(log10_m_uldm, velocity_scale) # de Broglie wavelength in kpc
 
         if flucs_args=={}:
@@ -552,11 +448,13 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         zlens_ref, zsource_ref = 0.5, 2.0
         mhost_ref = 10**13.3
         rein_ref = 1.0
-        r_perp_ref = rein_ref * uldm_realization.lens_cosmo.cosmo.kpc_proper_per_asec(zlens_ref)
+        r_perp_ref = rein_ref * uldm_no_fluctuations.lens_cosmo.cosmo.kpc_proper_per_asec(zlens_ref)
 
-        sigma_crit_ref = uldm_realization.lens_cosmo.get_sigma_crit_lensing(zlens_ref, zsource_ref)
-        c_host_ref = uldm_realization.lens_cosmo.NFW_concentration(mhost_ref, z_lens, scatter=False)
-        rhos_ref, rs_ref, _ = uldm_realization.lens_cosmo.NFW_params_physical(mhost_ref, c_host_ref, zlens_ref)
+        model, _ = preset_concentration_models('DIEMERJOYCE19')
+        concentration_model_for_host = model(pyhalo.astropy_cosmo)
+        sigma_crit_ref = uldm_no_fluctuations.lens_cosmo.get_sigma_crit_lensing(zlens_ref, zsource_ref)
+        c_host_ref = concentration_model_for_host.nfw_concentration(mhost_ref, z_lens)
+        rhos_ref, rs_ref, _ = uldm_no_fluctuations.lens_cosmo.NFW_params_physical(mhost_ref, c_host_ref, zlens_ref)
         xref = r_perp_ref/rs_ref
         if xref < 1:
             Fxref = np.arctanh(np.sqrt(1 - xref ** 2)) / np.sqrt(1 - xref ** 2)
@@ -564,10 +462,10 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
             Fxref = np.arctan(np.sqrt(-1 + xref ** 2)) / np.sqrt(-1 + xref ** 2)
         sigma_host_ref = 2 * rhos_ref * rs_ref * (1-Fxref)/(xref**2 - 1)
 
-        r_perp = r_ein * uldm_realization.lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
-        sigma_crit = uldm_realization.lens_cosmo.get_sigma_crit_lensing(z_lens, z_source)
-        c_host = uldm_realization.lens_cosmo.NFW_concentration(10**log_m_host, z_lens, scatter=True)
-        rhos, rs, _ = uldm_realization.lens_cosmo.NFW_params_physical(10**log_m_host, c_host, z_lens)
+        r_perp = r_ein * uldm_no_fluctuations.lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
+        sigma_crit = uldm_no_fluctuations.lens_cosmo.get_sigma_crit_lensing(z_lens, z_source)
+        c_host = concentration_model_for_host.nfw_concentration(10**log_m_host, z_lens)
+        rhos, rs, _ = uldm_no_fluctuations.lens_cosmo.NFW_params_physical(10**log_m_host, c_host, z_lens)
         x = r_perp / rs
         if x < 1:
             Fx = np.arctanh(np.sqrt(1 - x ** 2)) / np.sqrt(1 - x ** 2)
@@ -581,11 +479,146 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         uldm_realization = ext.add_ULDM_fluctuations(de_Broglie_wavelength=lambda_dB,
                                 fluctuation_amplitude=fluctuation_amplitude,
                                 fluctuation_size=lambda_dB * fluctuation_size_scale,
-                                fluctuation_size_variance=lambda_dB * fluctuation_size_scale *
-                                                          fluctuation_size_dispersion,
+                                fluctuation_size_variance=lambda_dB * fluctuation_size_scale * fluctuation_size_dispersion,
                                 n_fluc_scale=n_fluc_scale,
                                 shape=flucs_shape,
                                 args=flucs_args,
                                 n_cut=n_cut, rescale_fluc_amp=rescale_fluc_amp)
+        return uldm_realization
+    else:
+        return uldm_no_fluctuations
 
-    return uldm_realization
+def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field_halos,
+        probabilities_subhalos, probabilities_field_halos, kwargs_sub_function=None,
+        kwargs_field_function=None, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
+        concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_field={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
+        LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
+        geometry_type='DOUBLE_CONE', kwargs_cosmo=None, collapsed_halo_profile='SPL_CORE',
+        kwargs_collapsed_profile={'x_core_halo': 0.05, 'x_match': 3.0, 'log_slope_halo': 3.0}):
+
+    """
+
+    :param z_lens:
+    :param z_source:
+    :param mass_ranges_subhalos:
+    :param mass_ranges_field_halos:
+    :param probabilities_subhalos:
+    :param probabilities_field_halos:
+    :param kwargs_sub_function:
+    :param kwargs_field_function:
+    :param sigma_sub:
+    :param log_mlow:
+    :param log_mhigh:
+    :param concentration_model_subhalos:
+    :param kwargs_concentration_model_subhalos:
+    :param concentration_model_fieldhalos:
+    :param kwargs_concentration_model_field:
+    :param truncation_model_subhalos:
+    :param kwargs_trunction_model_subhalos:
+    :param truncation_model_fieldhalos:
+    :param kwargs_truncation_model_fieldhalos:
+    :param shmf_log_slope:
+    :param cone_opening_angle_arcsec:
+    :param log_m_host:
+    :param r_tidal:
+    :param LOS_normalization:
+    :param two_halo_contribution:
+    :param delta_power_law_index:
+    :param geometry_type:
+    :param kwargs_cosmo:
+    :param collapsed_halo_profile:
+    :param kwargs_collapsed_profile:
+    :return:
+    """
+
+    cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh,
+        concentration_model_subhalos, kwargs_concentration_model_subhalos,
+        concentration_model_fieldhalos, kwargs_concentration_model_field,
+        truncation_model_subhalos, kwargs_trunction_model_subhalos,
+        truncation_model_fieldhalos, kwargs_truncation_model_fieldhalos,
+        shmf_log_slope, cone_opening_angle_arcsec, log_m_host,  r_tidal,
+        LOS_normalization, two_halo_contribution, delta_power_law_index,
+        geometry_type, kwargs_cosmo)
+
+    extension = RealizationExtensions(cdm)
+    index_collapsed = extension.core_collapse_by_mass(mass_ranges_subhalos, mass_ranges_field_halos,
+        probabilities_subhalos, probabilities_field_halos, kwargs_sub_function, kwargs_field_function)
+    sidm = extension.add_core_collapsed_halos(index_collapsed, collapsed_halo_profile, **kwargs_collapsed_profile)
+    return sidm
+
+def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
+    """
+    This generates a realization of subhalos using an emulator of the semi-analytic modeling code Galacticus, and
+     generates line-of-sight halos from a mass function parameterized as Sheth-Tormen.
+
+    :param z_lens: main deflector redshift
+    :param z_source: sourcee redshift
+    :param emulator_input: either an array or a callable function
+
+    if callable: a function that returns an array of
+    1) subhalo masses at infall [M_sun]
+    2) subhalo projected x position [kpc]
+    3) subhalo projected y position [kpc]
+    4) subhalo final_bound_mass [M_sun]
+    5) subhalo concentrations at infall
+
+    if not callable: an array with shape (N_subhalos 5) that contains masses, positions x, positions y, etc.
+
+    Mass convention is m200 with respect to the critical density of the Universe at redshift Z_infall, where Z_infall is
+    the infall redshift (not necessarily the redshift at the time of lensing).
+
+    :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
+    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
+    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
+    :param log_m_host: log10 host halo mass in M_sun
+    :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
+
+    The following optional keywords specify a concentration-mass relation for field halos parameterized as a power law
+    in peak height. If they are not set in the function call, pyHalo assumes a default concentration-mass relation from Diemer&Joyce
+    :param c0: amplitude of the mass-concentration relation at 10^8
+    :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
+    :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
+    :param zeta: modifies the redshift evolution of the mass-concentration-relation
+    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
+    :param kwargs_halo_mass_function: keyword arguments passed to the LensingMassFunction class
+    (see Cosmology.lensing_mass_function)
+    :return: a realization of CDM halos
+    """
+
+    # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
+    kwargs_cdm['sigma_sub'] = 0.0
+    cdm_halos_LOS = CDM(z_lens, z_source, **kwargs_cdm)
+    # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
+    lens_cosmo = cdm_halos_LOS.lens_cosmo
+
+    # now create subhalos from the specified properties using the TNFWSubhaloEmulator class
+    halo_list = []
+    if callable(emulator_input):
+        subhalo_infall_masses, subhalo_x_kpc, subhalo_y_kpc, subhalo_final_bound_masses, \
+        subhalo_infall_concentrations = emulator_input()
+    else:
+        subhalo_infall_masses = emulator_input[:, 0]
+        subhalo_x_kpc = emulator_input[:, 1]
+        subhalo_y_kpc = emulator_input[:, 2]
+        subhalo_final_bound_masses = emulator_input[:, 3]
+        subhalo_infall_concentrations = emulator_input[:, 4]
+
+    for i in range(0, len(subhalo_infall_masses)):
+        halo = TNFWSubhaloEmulator(subhalo_infall_masses[i],
+                                   subhalo_x_kpc[i],
+                                   subhalo_y_kpc[i],
+                                   subhalo_final_bound_masses[i],
+                                   subhalo_infall_concentrations[i],
+                                   z_lens, lens_cosmo)
+        halo_list.append(halo)
+
+    # combine the subhalos with line-of-sight halos
+    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model={},
+                                                    msheet_correction=False, rendering_classes=None)
+    return cdm_halos_LOS.join(subhalos_from_emulator)
+

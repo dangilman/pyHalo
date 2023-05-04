@@ -1,6 +1,6 @@
 import numpy as np
 from lenstronomy.LensModel.Profiles.cnfw import CNFW
-from pyHalo.Rendering.SpatialDistributions.compute_nfw_fast import FastNFW
+from pyHalo.Rendering.SpatialDistributions.base import SpatialDistributionBase
 import inspect
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from pyHalo.utilities import inverse_transform_sampling
@@ -8,7 +8,7 @@ from pyHalo.utilities import inverse_transform_sampling
 
 local_path = inspect.getfile(inspect.currentframe())[0:-11] + 'nfw_tables/'
 #
-class ProjectedNFW(object):
+class ProjectedNFW(SpatialDistributionBase):
 
     """
     This class approximates sampling from a full 3D NFW profile by
@@ -33,6 +33,7 @@ class ProjectedNFW(object):
         self._rcore_arcsec = r_core_arcsec
         self._cnfw_profile = CNFW()
         self._arcsec_to_kpc = arcsec_to_kpc
+        super(ProjectedNFW, self).__init__()
 
     @classmethod
     def from_Mhost(cls, m_host, zlens, rmax2d_arcsec, r_core_units_rs, lens_cosmo):
@@ -54,10 +55,10 @@ class ProjectedNFW(object):
         r_core_arcsec = r_core_units_rs * rs_arcsec
         return ProjectedNFW(rmax2d_arcsec, rs_arcsec, r_core_arcsec, r_200_arcsec, arcsec_to_kpc)
 
-    def draw(self, N, rescale=1.0, center_x=0., center_y=0.):
+    def draw(self, N, z_plane):
 
         if N == 0:
-            return [], [], [], []
+            return [], [], []
 
         x2d = np.linspace(1e-3 * self._rmax2d, self._rmax2d, 50000)
         function_2d = self._cnfw_profile.density_2d

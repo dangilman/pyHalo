@@ -35,7 +35,7 @@ class GeneralNFWSubhalo(Halo):
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
             if 'x_match' in self._args.keys():
-                if self._args['x_match'] == 'r200':
+                if self._args['x_match'] == 'c':
                     x_match = concentration
                 else:
                     x_match = self._args['x_match']
@@ -71,20 +71,27 @@ class GeneralNFWSubhalo(Halo):
         return ['GNFW']
 
     @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
+        if not hasattr(self, '_zeval'):
+
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
+                self._zeval = self.z
+            else:
+                self._zeval = self.z_infall
+
+        return self._zeval
+
+    @property
     def profile_args(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_profile_args'):
 
-            if self._args['evaluate_mc_at_zlens']:
-                z_eval = self.z
-            else:
-                z_eval = self.z_infall
-
-            concentration = self._concentration_class.nfw_concentration(self.mass, z_eval,
-                                                                        self._args['c_scatter'],
-                                                                        self._args['c_scatter_dex'])
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
             gamma_inner = self._args['gamma_inner']
             gamma_outer = self._args['gamma_outer']
             self._profile_args = (concentration, gamma_inner, gamma_outer)
@@ -103,9 +110,7 @@ class GeneralNFWFieldHalo(GeneralNFWSubhalo):
         """
         if not hasattr(self, '_profile_args'):
 
-            concentration = self._concentration_class.nfw_concentration(self.mass, self.z,
-                                                               self._args['c_scatter'],
-                                                               self._args['c_scatter_dex'])
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z)
             gamma_inner = self._args['gamma_inner']
             gamma_outer = self._args['gamma_outer']
             self._profile_args = (concentration, gamma_inner, gamma_outer)

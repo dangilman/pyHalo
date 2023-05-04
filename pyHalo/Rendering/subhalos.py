@@ -38,24 +38,23 @@ class Subhalos(RenderingClassBase):
         """
         mfunc_model = self._get_mass_function_model()
         m = mfunc_model.draw()
-        x, y, r3d_kpc = self.render_positions_at_z(self._lens_cosmo.z_lens, len(m))
+        x, y, r3d_kpc = self.render_positions_at_z(len(m))
         z = np.array([self._lens_cosmo.z_lens] * len(m))
         subhalo_flag = [True] * len(m)
         return m, x, y, r3d_kpc, z, subhalo_flag
 
-    def render_positions_at_z(self, z, nhalos):
+    def render_positions_at_z(self, nhalos):
 
         """
-        :param z: redshift
         :param nhalos: number of halos or objects to generate
         :return: the x, y coordinate of objects in arcsec, and a 3 dimensional coordinate in kpc
         The 3d coordinate only has a clear physical interpretation for subhalos, and is used to compute truncation raddi.
         For line of sight halos it is set to None.
         """
 
-        x_kpc, y_kpc, r3d_kpc = self._spatial_distribution_model.draw(nhalos, z)
+        x_kpc, y_kpc, r3d_kpc = self._spatial_distribution_model.draw(nhalos, None)
         if len(x_kpc) > 0:
-            kpc_per_asec = self._geometry.kpc_per_arcsec(z)
+            kpc_per_asec = self._geometry.kpc_per_arcsec(self._lens_cosmo.z_lens)
             x_arcsec = x_kpc * kpc_per_asec ** -1
             y_arcsec = y_kpc * kpc_per_asec ** -1
             return x_arcsec, y_arcsec, r3d_kpc
@@ -141,10 +140,4 @@ def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone
     area = np.pi * R_kpc ** 2
     m_pivot_factor = m_pivot ** -(plaw_index+1)
     normalization = area * a0_per_kpc2 * m_pivot_factor
-    print(sigma_sub)
-    print(host_scaling)
-    print(R_kpc)
-    print(area)
-    print(np.log10(m_pivot_factor))
-    print(np.log10(normalization))
-    return area * a0_per_kpc2 * m_pivot_factor
+    return normalization

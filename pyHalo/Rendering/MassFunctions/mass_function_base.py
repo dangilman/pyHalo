@@ -2,9 +2,10 @@ import numpy as np
 from pyHalo.Rendering.MassFunctions.util import integrate_power_law_analytic, integrate_power_law_quad
 from scipy.interpolate import interp1d
 
+__all__ = ['CDMPowerLaw', 'WDMPowerLaw', 'MixedWDMPowerLaw']
 
 class _PowerLawBase(object):
-
+    name = 'BASE_POWER_LAW'
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization):
         """
         :param log_mlow: log10(minimum halo mass)
@@ -46,7 +47,7 @@ class _PowerLawBase(object):
         return np.array(X)
 
 class _PowerLawTurnoverBase(object):
-
+    name = 'BASE_POWER_LAW_TURNOVER'
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson,
                  normalization, kwargs_mass_function):
         """
@@ -95,7 +96,7 @@ class _PowerLawTurnoverBase(object):
 
 
 class CDMPowerLaw(_PowerLawBase):
-
+    name = 'CDM_POWER_LAW'
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization, *args, **kwargs):
         """
 
@@ -109,7 +110,7 @@ class CDMPowerLaw(_PowerLawBase):
 
 
 class WDMPowerLaw(_PowerLawTurnoverBase):
-
+    name = 'WDM_POWER_LAW'
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
                  log_mc, a_wdm, b_wdm, c_wdm, *args, **kwargs):
         """
@@ -160,7 +161,7 @@ class WDMPowerLaw(_PowerLawTurnoverBase):
         return factor ** c_mfunc_break
 
 class MixedWDMPowerLaw(_PowerLawTurnoverBase):
-
+    name = 'MIXED_DM_POWER_LAW'
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization,
                  log_mc, a_wdm, b_wdm, c_wdm, mixed_DM_frac, *args, **kwargs):
         """

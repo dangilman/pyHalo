@@ -149,8 +149,9 @@ class ULDMFieldHalo(Halo):
         initial_guess = np.array([0.9,1.1])
         bounds = ((0.5, 10), (0.5, 1.5))
         method = 'Nelder-Mead'
-        beta, q = minimize(self._function_to_minimize, initial_guess,
-                           args, method=method, bounds=bounds, tol=0.1)['x']
+        out = minimize(self._function_to_minimize, initial_guess,
+                           args, method=method, bounds=bounds, tol=0.001)
+        beta, q = out['x']
 
         if beta<0:
             raise ValueError('Negative CNFW core radius, tweak your parameters.')
@@ -246,11 +247,11 @@ class ULDMSubhalo(ULDMFieldHalo):
     @property
     def z_eval(self):
         """
-        Returns the redshift at which to evaluate the concentration-mass relation
+        Returns the redshift at which to evalate the concentration-mass relation
         """
         if not hasattr(self, '_zeval'):
 
-            if self._args['evaluate_mc_at_zlens']:
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
                 self._zeval = self.z
             else:
                 self._zeval = self.z_infall

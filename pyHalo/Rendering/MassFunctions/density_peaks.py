@@ -3,6 +3,7 @@ import numpy as np
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw, WDMPowerLaw, MixedWDMPowerLaw
 from colossus.lss.mass_function import massFunction
 
+__all__ = ['ShethTormen', 'ShethTormenMixedWDM', 'ShethTormenTurnover']
 
 class ShethTormen(CDMPowerLaw):
     """
@@ -15,7 +16,7 @@ class ShethTormen(CDMPowerLaw):
     4) LOS_normalization: rescales the ammplitude of the mass function at the pivot scale
     5) delta_power_law_index: adjusts the logarithmic slope of the mass function around the pivot scale
     """
-
+    name = 'SHETH_TORMEN'
     @classmethod
     def from_redshift(cls, z, delta_z, geometry_class, kwargs_model):
         """
@@ -62,7 +63,7 @@ class ShethTormenTurnover(WDMPowerLaw):
     cutoff has the functional form (1 + a_wdm * (m_c/m) ^ b_wdm) ^ c_wdm
     where m_c = 10^log_mc
     """
-
+    name = 'SHETH_TORMEN'
     @classmethod
     def from_redshift(cls, z, delta_z, geometry_class, kwargs_model):
         """
@@ -110,7 +111,7 @@ class ShethTormenMixedWDM(MixedWDMPowerLaw):
     cutoff has the functional form (1 + a_wdm * (m_c/m) ^ b_wdm) ^ c_wdm
     where m_c = 10^log_mc
     """
-
+    name = 'SHETH_TORMEN'
     @classmethod
     def from_redshift(cls, z, delta_z, geometry_class, kwargs_model):
         """
@@ -121,7 +122,7 @@ class ShethTormenMixedWDM(MixedWDMPowerLaw):
         :param kwargs_model:
         :return:
         """
-        _ = geometry_class.cosmo.colossus
+        colossus_cosmo = geometry_class.cosmo.colossus
         m_pivot = kwargs_model['m_pivot']
         h = geometry_class.cosmo.h
         # To M_sun / h units

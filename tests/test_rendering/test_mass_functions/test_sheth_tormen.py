@@ -6,7 +6,10 @@ import numpy.testing as npt
 from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen, ShethTormenTurnover, ShethTormenMixedWDM
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw, WDMPowerLaw, MixedWDMPowerLaw
 from colossus.lss.mass_function import massFunction
-
+from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
+from pyHalo.pyhalo import pyHalo
+from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche
+from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 
 class TestShethTormen(object):
 
@@ -254,7 +257,6 @@ class TestSampling(object):
         log10m = b[0:-1]
         coefs = np.polyfit(log10m, log10h, 1)
         npt.assert_almost_equal((self._plaw_index_theory+1)/coefs[0], 1, 2)
-
 
 if __name__ == '__main__':
    pytest.main()

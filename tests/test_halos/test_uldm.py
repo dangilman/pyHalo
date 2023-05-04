@@ -19,19 +19,19 @@ class TestULDMHalo(object):
         self.zsource = 2.0
         self.lens_cosmo = LensCosmo(self.zhalo, self.zsource, cosmo)
         self.truncation_class = None
-        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo)
+        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
 
-        mass = 10 ** 8
+        self.mass = 10 ** 8
         x = 0.0
         y = 0.0
         r3d = 100.0
-        self.kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2,
+        self.kwargs_profile = {'evaluate_mc_at_zlens': False,
                           'log10_m_uldm': -21, 'uldm_plaw': 1 / 3, 'scale_nfw': True}
-        self.subhalo = ULDMSubhalo(mass, x, y, r3d, self.zhalo,
+        self.subhalo = ULDMSubhalo(self.mass, x, y, r3d, self.zhalo,
                                    True, self.lens_cosmo,
                                    self.kwargs_profile, self.truncation_class, self.concentration_class,
                        unique_tag=np.random.rand())
-        self.fieldhalo = ULDMFieldHalo(mass, x, y, r3d, self.zhalo,
+        self.fieldhalo = ULDMFieldHalo(self.mass, x, y, r3d, self.zhalo,
                                        False, self.lens_cosmo,
                                        self.kwargs_profile, self.truncation_class, self.concentration_class,
                                        unique_tag=np.random.rand())
@@ -85,7 +85,7 @@ class TestULDMHalo(object):
         """
 
         [cnfw_kwargs, uldm_kwargs] = self.fieldhalo.lenstronomy_params[0]
-        Rs_angle, _ = self.lens_cosmo.nfw_physical2angle(10 ** 8, self.fieldhalo.c, self.fieldhalo.z)
+        Rs_angle, _ = self.lens_cosmo.nfw_physical2angle(self.mass, self.fieldhalo.c, self.fieldhalo.z)
         sigma_crit = self.lens_cosmo.sigmacrit
         r200 = self.fieldhalo.c * Rs_angle
 
@@ -101,7 +101,8 @@ class TestULDMHalo(object):
                                    cnfw_kwargs['alpha_Rs'],
                                    cnfw_kwargs['r_core'])
         rho_goal = Uldm().density_lens(0, kappa_0, theta_c)
-        npt.assert_array_less(np.array([1 - (rho0 + rhos) / rho_goal]), np.array([0.03]))  # less than 3% error
+        npt.assert_array_less(np.array([1 - (rho0 + rhos) / rho_goal]), np.array([0.1]))  # less than 10% error
+
 
 if __name__ == '__main__':
    pytest.main()

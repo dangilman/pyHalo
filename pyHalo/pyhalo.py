@@ -32,6 +32,7 @@ class pyHalo(object):
         self.zsource = zsource
         self.cosmology = Cosmology(astropy_instance, kwargs_cosmo)
         self.lens_cosmo = LensCosmo(self.zlens, self.zsource, self.cosmology)
+        self.colossus_cosmo = self.cosmology.colossus
 
     @property
     def astropy_cosmo(self):

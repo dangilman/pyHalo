@@ -35,7 +35,11 @@ class HaloPopulation(object):
 
             mass_function_model_class = mass_function_class_list[i]
             kwargs_model = kwargs_mass_function_list[i]
-            spatial_distribution_model = spatial_distribution_class_list[i](**kwargs_spatial_distribution[i])
+
+            if model_name == 'SUBHALOS':
+                spatial_distribution_model = spatial_distribution_class_list[i].from_Mhost(**kwargs_spatial_distribution[i])
+            else:
+                spatial_distribution_model = spatial_distribution_class_list[i](**kwargs_spatial_distribution[i])
 
             if model_name == 'LINE_OF_SIGHT':
                 model = LineOfSight(mass_function_model_class, kwargs_model, spatial_distribution_model,

@@ -22,7 +22,7 @@ class TestGeneralNFW(object):
         self.nfw_profile_lenstronomy = NFW()
         self.gnfw_profile_lenstronomy = GNFW()
         self.truncation_class = None
-        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo)
+        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
 
     def test_lenstronomy_params(self):
 
@@ -33,15 +33,15 @@ class TestGeneralNFW(object):
         is_subhalo = False
         gamma_inner = 1.0001
         gamma_outer = 3.0001
-        x_match = 2.5
+        x_match = 2.9
         unique_tag = 1.0
         kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match,
-                          'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+                          'evaluate_mc_at_zlens': True}
         gnfw = GeneralNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                    self.truncation_class, self.concentration_class, unique_tag)
         nfw = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                    self.truncation_class, self.concentration_class, unique_tag)
-        kwargs_nfw_profile = nfw.lenstronomy_params[0]
+        kwargs_nfw_profile = nfw.lenstronomy_params[0][0]
         kwargs_gnfw_profile = gnfw.lenstronomy_params[0][0]
         alpha_Rs = kwargs_gnfw_profile['alpha_Rs']
         npt.assert_almost_equal(alpha_Rs/kwargs_nfw_profile['alpha_Rs'], 1.0, 2)
@@ -62,8 +62,7 @@ class TestGeneralNFW(object):
         gamma_outer = 3.2
         x_match = 3.5
         unique_tag = 1.0
-        kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match,
-                          'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+        kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match}
         gnfw = GeneralNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                    self.truncation_class, self.concentration_class, unique_tag)
         nfw = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,

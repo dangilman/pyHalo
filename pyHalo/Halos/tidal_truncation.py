@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class TruncationRN(object):
 
     def __init__(self, lens_cosmo, LOS_truncation_factor=50):

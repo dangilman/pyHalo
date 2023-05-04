@@ -84,4 +84,4 @@ class RenderingClassBase(object):
         return log_mlow, log_mhigh
 
     def convergence_sheet_correction(self, *args, **kwargs):
-        return [{}], [], []
+        return [], [], []

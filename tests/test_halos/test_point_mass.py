@@ -16,6 +16,8 @@ class TestPTMass(object):
         self.lens_cosmo = LensCosmo(self.zhalo, self.zsource, cosmo)
         self.truncation_class = None
         self.concentration_class = None
+        kwargs_profile = {}
+        self.ptmass = PTMass(10**9, 1.0, 1.0, None, self.zhalo, False, self.lens_cosmo, kwargs_profile, None, None, 1.0)
 
     def test_lenstronomy_ID(self):
 
