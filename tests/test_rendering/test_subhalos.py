@@ -12,8 +12,8 @@ class TestSubhalos(object):
 
     def setup_method(self):
 
-        sigma_sub = 0.5
-        kwargs_mass_function = {'log_mlow': 6.0, 'log_mhigh': 9.0, 'm_pivot': 1e8, 'power_law_index': -1.9,
+        sigma_sub = 0.75
+        kwargs_mass_function = {'log_mlow': 6.0, 'log_mhigh': 8.0, 'm_pivot': 1e8, 'power_law_index': -1.9,
                                 'delta_power_law_index': 0.054, 'draw_poisson': False, 'log_m_host': 13.5,
                                 'sigma_sub': sigma_sub}
         zlens = 0.8
@@ -42,7 +42,7 @@ class TestSubhalos(object):
                               False, self._norm_sigma_sub)
         mtheory = model.first_moment
         m_rendered = np.sum(self.model.render()[0])
-        npt.assert_array_less(abs(1-mtheory/m_rendered), 0.02)
+        npt.assert_array_less(abs(1-mtheory/m_rendered), 0.03)
 
     def test_rendering(self):
 

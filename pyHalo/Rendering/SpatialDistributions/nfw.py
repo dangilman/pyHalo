@@ -55,7 +55,7 @@ class ProjectedNFW(SpatialDistributionBase):
         r_core_arcsec = r_core_units_rs * rs_arcsec
         return ProjectedNFW(rmax2d_arcsec, rs_arcsec, r_core_arcsec, r_200_arcsec, arcsec_to_kpc)
 
-    def draw(self, N, z_plane):
+    def draw(self, N, z_plane=None):
 
         if N == 0:
             return [], [], []

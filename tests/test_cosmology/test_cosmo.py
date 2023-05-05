@@ -7,7 +7,7 @@ import pytest
 
 class TestCosmology(object):
 
-    def setup(self):
+    def setup_method(self):
 
         self.arcsec = 2 * np.pi / 360 / 3600
         self.zlens = 1

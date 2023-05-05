@@ -630,7 +630,6 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
                   'shmf_log_slope': shmf_log_slope, 'cone_opening_angle_arcsec': cone_opening_angle_arcsec,
                   'log_m_host': log_m_host, 'r_tidal': r_tidal, 'LOS_normalization': LOS_normalization,
                   'geometry_type': geometry_type, 'kwargs_cosmo': kwargs_cosmo,
-                  'mdef_subhalos': 'ULDM', 'mdef_field_halos': 'ULDM',
                   'kwargs_density_profile': kwargs_density_profile
                   }
     return WDM(**kwargs_wdm)

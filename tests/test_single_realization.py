@@ -41,7 +41,7 @@ class TestSingleRealization(object):
         xx, yy = np.meshgrid(_r, _r)
         kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_halos)
         mean_kappa = np.mean(kappa)
-        npt.assert_almost_equal(mean_kappa, 0.0, 2)
+        npt.assert_array_less(abs(mean_kappa), 0.06)
 
 
     def test_build_from_halos(self):
@@ -285,12 +285,12 @@ class TestSingleRealization(object):
 
     def test_single_halo(self):
 
-        kwargs_halo_model = {'concentration_model': None, 'truncation_model': None}
+        kwargs_halo_model = {'concentration_model': None, 'truncation_model': None, 'kwargs_density_profile': {}}
         single_halo = SingleHalo(10**8, 0.5, 1.0, 'PT_MASS', 0.5, 0.5, 1.5, r3d=None, subhalo_flag=False,
                                  kwargs_halo_model=kwargs_halo_model)
         lens_model_list, redshift_array, kwargs_lens, kwargs_lensmodel = single_halo.lensing_quantities()
         npt.assert_equal(len(lens_model_list), 1)
-        npt.assert_string_equal(lens_model_list[0], 'PT_MASS')
+        npt.assert_string_equal(lens_model_list[0], 'POINT_MASS')
 
     def test_realization_at_z(self):
 

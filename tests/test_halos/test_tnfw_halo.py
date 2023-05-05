@@ -18,7 +18,7 @@ class TestTNFWHalos(object):
         self.zsource = 2.0
         self.lens_cosmo = LensCosmo(self.zhalo, self.zsource, cosmo)
         self.truncation_class = TruncationRoche(None, 100000000.0)
-        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo)
+        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
         self.lclenstronomy = LensCosmoLenstronomy(self.zhalo, self.zsource, astropy)
 
     def test_lenstronomy_params(self):
@@ -28,9 +28,8 @@ class TestTNFWHalos(object):
         y = 1.0
         r3d = 100
         unique_tag = 1.0
-        kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
         is_subhalo = False
-        nfw_field_halo = TNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+        nfw_field_halo = TNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, {},
                                       self.truncation_class, self.concentration_class, unique_tag)
 
         kwargs_halo, _ = nfw_field_halo.lenstronomy_params
@@ -42,6 +41,7 @@ class TestTNFWHalos(object):
         npt.assert_almost_equal(M200/m, 1.0, 3)
 
         is_subhalo = True
+        kwargs_profile = {'evaluate_mc_at_zlens': False}
         nfw_subhalo = TNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                   self.truncation_class, self.concentration_class, unique_tag)
         c_subhalo = nfw_subhalo.c

@@ -6,7 +6,7 @@ import numpy as np
 
 class TestConeGeometry(object):
 
-    def setup(self):
+    def setup_method(self):
 
         self.arcsec = 2 * np.pi / 360 / 3600
         self.zlens = 1
@@ -33,11 +33,11 @@ class TestConeGeometry(object):
         npt.assert_almost_equal(scale, 1.)
 
         scale = self.geometry_cylinder.rendering_scale(self.zlens + 0.35)
-        dratio = self.geometry_cylinder._cosmo.D_C_z(self.zlens) / self.geometry_cylinder._cosmo.D_C_z(self.zlens + 0.35)
+        dratio = self.geometry_cylinder.cosmo.D_C_z(self.zlens) / self.geometry_cylinder.cosmo.D_C_z(self.zlens + 0.35)
         val = 0.5 * self.geometry_cylinder.cone_opening_angle * self.arcsec * dratio
         npt.assert_almost_equal(scale, val, 3)
 
-        dratio = self.geometry_cylinder._cosmo.D_C_z(self.zlens) / self.geometry_cylinder._cosmo.D_C_z(self.zsource)
+        dratio = self.geometry_cylinder.cosmo.D_C_z(self.zlens) / self.geometry_cylinder.cosmo.D_C_z(self.zsource)
         val = 0.5 * self.geometry_cylinder.cone_opening_angle * self.arcsec * dratio
         npt.assert_almost_equal(self.geometry_cylinder.rendering_scale(self.zsource), val)
 
@@ -45,8 +45,8 @@ class TestConeGeometry(object):
 
         z = 0.3
         radius_physical = self.geometry_cylinder.angle_to_physicalradius(self.angle_radius, z)
-        dratio = self.geometry_cylinder._cosmo.D_C_z(self.zlens) / self.geometry_cylinder._cosmo.D_C_z(z)
-        radius = self.geometry_cylinder._cosmo.D_A_z(z) * self.angle_radius * self.arcsec * dratio
+        dratio = self.geometry_cylinder.cosmo.D_C_z(self.zlens) / self.geometry_cylinder.cosmo.D_C_z(z)
+        radius = self.geometry_cylinder.cosmo.D_A_z(z) * self.angle_radius * self.arcsec * dratio
         npt.assert_almost_equal(radius_physical, radius, 0)
 
         comoving_radius = self.geometry_cylinder.angle_to_comovingradius(self.angle_radius, z)
@@ -54,8 +54,8 @@ class TestConeGeometry(object):
 
         z = 1
         radius_physical = self.geometry_cylinder.angle_to_physicalradius(self.angle_radius, z)
-        dratio = self.geometry_cylinder._cosmo.D_C_z(self.zlens) / self.geometry_cylinder._cosmo.D_C_z(z)
-        radius = self.geometry_cylinder._cosmo.D_A_z(z) * self.angle_radius * self.arcsec * dratio
+        dratio = self.geometry_cylinder.cosmo.D_C_z(self.zlens) / self.geometry_cylinder.cosmo.D_C_z(z)
+        radius = self.geometry_cylinder.cosmo.D_A_z(z) * self.angle_radius * self.arcsec * dratio
         npt.assert_almost_equal(radius_physical, radius, 0)
 
         comoving_radius = self.geometry_cylinder.angle_to_comovingradius(self.angle_radius, z)
@@ -63,8 +63,8 @@ class TestConeGeometry(object):
 
         z = 1.25
         radius_physical = self.geometry_cylinder.angle_to_physicalradius(self.angle_radius, z)
-        dratio = self.geometry_cylinder._cosmo.D_C_z(self.zlens) / self.geometry_cylinder._cosmo.D_C_z(z)
-        radius = self.geometry_cylinder._cosmo.D_A_z(z) * self.angle_radius * self.arcsec * dratio
+        dratio = self.geometry_cylinder.cosmo.D_C_z(self.zlens) / self.geometry_cylinder.cosmo.D_C_z(z)
+        radius = self.geometry_cylinder.cosmo.D_A_z(z) * self.angle_radius * self.arcsec * dratio
         npt.assert_almost_equal(radius_physical, radius, 0)
 
         comoving_radius = self.geometry_cylinder.angle_to_comovingradius(self.angle_radius, z)
@@ -78,8 +78,8 @@ class TestConeGeometry(object):
             dV_pyhalo = self.geometry_cylinder.volume_element_comoving(zi, delta_z)
             volume_pyhalo += dV_pyhalo
 
-        r = self.geometry_cylinder._cosmo.D_C_z(self.zlens) * self.geometry_cylinder.cone_opening_angle * 0.5 * self.arcsec
-        d = self.geometry_cylinder._cosmo.D_C_z(self.zsource)
+        r = self.geometry_cylinder.cosmo.D_C_z(self.zlens) * self.geometry_cylinder.cone_opening_angle * 0.5 * self.arcsec
+        d = self.geometry_cylinder.cosmo.D_C_z(self.zsource)
         volume = np.pi * r ** 2 * d
         npt.assert_almost_equal(volume/volume_pyhalo, 1, 3)
 

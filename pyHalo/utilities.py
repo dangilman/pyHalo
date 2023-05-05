@@ -6,6 +6,7 @@ from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.special import jv
 from scipy.integrate import simps
+from pyHalo.concentration_models import preset_concentration_models
 
 def inverse_transform_sampling(x, function, args, n_samples):
     """
@@ -318,8 +319,11 @@ def delta_sigmaNFW(z_lens, m, rein, de_Broglie_wavelength):
     :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
     '''
 
-    l = LensCosmo(None, None)
-    c = l.NFW_concentration(m, z_lens, scatter=False)
+    cosmo = Cosmology()
+    l = LensCosmo(z_lens, 2.0, cosmo)
+    model, _ = preset_concentration_models('DIEMERJOYCE19')
+    cmodel = model(cosmo.astropy, scatter=False)
+    c = cmodel.nfw_concentration(m, z_lens)
     rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
     kappa_host = projected_squared_density(rein, rhos, rs, c) ** 0.5
     ds = delta_sigma(m, z_lens, rein, de_Broglie_wavelength)
@@ -334,8 +338,11 @@ def delta_sigma(m, z, rein, de_Broglie_wavelength):
     :param de_Broglie_wavelength:
     :return:
     """
-    l = LensCosmo(None, None)
-    c = l.NFW_concentration(m, z, scatter=False)
+    cosmo = Cosmology()
+    l = LensCosmo(z, 2.0, cosmo)
+    model, _ = preset_concentration_models('DIEMERJOYCE19')
+    cmodel = model(cosmo.astropy, scatter=False)
+    c = cmodel.nfw_concentration(m, z)
     rhos, rs, _ = l.NFW_params_physical(m, c, z)
     nfw_rho_squared = projected_density_squared(rein, rhos, rs, c)
     delta_sigma = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5
@@ -350,8 +357,11 @@ def delta_sigma_kawai(r, mhost, zhost, lambda_dB, dm_density_over_stellar_densit
     :return:
     """
 
-    l = LensCosmo()
-    c = l.NFW_concentration(mhost, zhost, scatter=False)
+    cosmo = Cosmology()
+    l = LensCosmo(zhost, 2.0, cosmo)
+    model, _ = preset_concentration_models('DIEMERJOYCE19')
+    cmodel = model(cosmo.astropy, scatter=False)
+    c = cmodel.nfw_concentration(mhost, zhost)
     rhos, rs, _ = l.NFW_params_physical(mhost, c, zhost)
     reff = effective_halo_size(r, rhos, rs, c)
     f = dm_density_over_stellar_density / (dm_density_over_stellar_density + 1)
