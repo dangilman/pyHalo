@@ -17,10 +17,11 @@ If you would like to use this package and have questions, please get in touch wi
 
 Installation
 ------------
-Clone the repository, navigate into the main pyHalo directory and run python3 setup.py develop --user. (in the process of making this pip-installable) 
+Download from pypi: pip install pyhalo
 
-In order to use this package you'll need to install colossus http://www.benediktdiemer.com/code/colossus/ 
+For earlier releases: clone the repository, select the version you want to download from the commit history (first code release is 8302393), clone it, run python3 setup.py develop --user. 
 
+In order to use this package when not installing via pip, you'll need to install colossus http://www.benediktdiemer.com/code/colossus/ 
 
 Features
 --------
