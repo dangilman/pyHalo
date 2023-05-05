@@ -24,9 +24,8 @@ before_script: # configure a headless display to test plot generation
 - sleep 3 # give xvfb some time to start
 # command to run tests
 script:
-#  - py.test
-  - pip install coveralls
-  - coverage run --source=pyHalo -m pytest tests/
-  - coveralls
+  #- py.test
+  - coverage run --source pyHalo setup.py test
+
 after_success:
     coveralls
