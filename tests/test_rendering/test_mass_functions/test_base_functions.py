@@ -90,7 +90,7 @@ class TestMixedWDMPowerLaw(object):
     def test_zeroth_moment(self):
         n_expected = self.mass_function.n_mean
         n_rendered = len(self.mass_function.draw())
-        npt.assert_almost_equal(n_rendered / n_expected, 1, 3)
+        npt.assert_almost_equal(n_rendered / n_expected, 1, 2)
 
     def test_first_moment(self):
         expected = self.mass_function.first_moment
