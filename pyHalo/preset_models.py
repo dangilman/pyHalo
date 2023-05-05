@@ -408,6 +408,11 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :return:
     """
     # constants
+    if 'host_m200' not in kwargs_other.keys():
+        host_m200 = 10 ** log_m_host
+    else:
+        host_m200 = kwargs_other['host_m200']
+        del kwargs_other['host_m200']
     m22 = 10**(log10_m_uldm + 22)
     log_m0 = np.log10(1.6e10 * m22**(-4/3))
 
