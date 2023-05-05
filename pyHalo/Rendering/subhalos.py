@@ -122,6 +122,7 @@ def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7):
 
     return 10 ** logscaling
 
+
 def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone_opening_angle, plaw_index, m_pivot):
     """
 
@@ -134,7 +135,7 @@ def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone
     :param m_pivot:
     :return:
     """
-    
+
     host_scaling = host_scaling_function(host_m200, zlens)
     a0_per_kpc2 = sigma_sub * host_scaling
     R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
