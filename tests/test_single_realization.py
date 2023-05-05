@@ -404,7 +404,7 @@ class TestSingleRealization(object):
                  kwargs_halo_model={'concentration_model': concentration_model,
                                     'truncation_model': None,
                                     'kwargs_density_profile': {}})
-        npt.assert_equal(realization.halos[0].m, realization.mass_at_z_exact(halo_z))
+        npt.assert_equal(realization.halos[0].mass, realization.mass_at_z_exact(halo_z))
         npt.assert_equal(0.0, realization.mass_at_z_exact(z_lens))
 
     def test_number_of_halos_before_after_z(self):

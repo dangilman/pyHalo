@@ -46,7 +46,6 @@ class TestPopulation(object):
         npt.assert_equal(len(masses), len(r3d))
         npt.assert_equal(len(masses), len(redshifts))
         npt.assert_equal(len(masses), len(is_subhalo_flag))
-        _ = self.model.convergence_sheet_correction()
-
+        
 if __name__ == '__main__':
    pytest.main()
