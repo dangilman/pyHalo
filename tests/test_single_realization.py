@@ -9,6 +9,8 @@ from pyHalo.Halos.concentration import ConcentrationDiemerJoyce, ConcentrationPe
 from pyHalo.Halos.tidal_truncation import TruncationRN
 from pyHalo.preset_models import CDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
+import matplotlib.pyplot as plt
+
 
 class TestSingleRealization(object):
 
@@ -43,6 +45,23 @@ class TestSingleRealization(object):
         mean_kappa = np.mean(kappa)
         npt.assert_array_less(abs(mean_kappa), 0.06)
 
+        kwargs_mass_sheets, profile_list, z_sheets = self.realization._mass_sheet_correction(self.rendering_classes,
+                                                                                             subtract_exact_sheets=True,
+                                                                                             kappa_scale=1.0,
+                                                                                             log_mlow_sheets=self._logmlow,
+                                                                                             log_mhigh_sheets=self._logmhigh)
+
+        npt.assert_equal(len(kwargs_mass_sheets), len(profile_list))
+        npt.assert_equal(len(kwargs_mass_sheets), len(z_sheets))
+        profile_list, lens_redshift_list, kwargs_halos, _ = self.realization.lensing_quantities()
+        lens_model = LensModel(profile_list, lens_redshift_list=list(lens_redshift_list),
+                               z_source=self.realization.lens_cosmo.z_source,
+                               multi_plane=True, cosmo=self.realization.lens_cosmo.cosmo.astropy)
+        _r = np.linspace(-2.5, 2.5, 100)
+        xx, yy = np.meshgrid(_r, _r)
+        kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_halos)
+        mean_kappa = np.mean(kappa)
+        npt.assert_array_less(abs(mean_kappa), 0.04)
 
     def test_build_from_halos(self):
 
@@ -374,6 +393,51 @@ class TestSingleRealization(object):
         npt.assert_string_equal('PEAK_HEIGHT_POWERLAW', fieldhalo_peak_height._concentration_class.name)
         npt.assert_string_equal('DIEMERJOYCE19', kwargs_halo_model['concentration_model_subhalos'].name)
         npt.assert_string_equal('PEAK_HEIGHT_POWERLAW', kwargs_halo_model['concentration_model_field_halos'].name)
+
+    def test_mass_at_z_exact(self):
+
+        astropy = self.realization.lens_cosmo.cosmo.astropy
+        concentration_model = ConcentrationDiemerJoyce(astropy)
+        halo_z = 0.3
+        z_lens = 0.5
+        realization = SingleHalo(10**8, 0.5, 1.0, 'NFW', halo_z, z_lens, 1.5, r3d=None, subhalo_flag=False,
+                 kwargs_halo_model={'concentration_model': concentration_model,
+                                    'truncation_model': None,
+                                    'kwargs_density_profile': {}})
+        npt.assert_equal(realization.halos[0].m, realization.mass_at_z_exact(halo_z))
+        npt.assert_equal(0.0, realization.mass_at_z_exact(z_lens))
+
+    def test_number_of_halos_before_after_z(self):
+
+        astropy = self.realization.lens_cosmo.cosmo.astropy
+        concentration_model = ConcentrationDiemerJoyce(astropy)
+        halo_z = 0.3
+        z_lens = 0.5
+        halo_1 = SingleHalo(10 ** 8, 0.5, 1.0, 'NFW', halo_z, z_lens, 1.5, r3d=None, subhalo_flag=False,
+                                 kwargs_halo_model={'concentration_model': concentration_model,
+                                                    'truncation_model': None,
+                                                    'kwargs_density_profile': {}})
+        halo_z = 0.3
+        halo_2 = SingleHalo(10 ** 8, 0.5, 1.0, 'NFW', halo_z, z_lens, 1.5, r3d=None, subhalo_flag=False,
+                            kwargs_halo_model={'concentration_model': concentration_model,
+                                               'truncation_model': None,
+                                               'kwargs_density_profile': {}})
+        halo_z = 0.7
+        halo_3 = SingleHalo(10 ** 8, 0.5, 1.0, 'NFW', halo_z, z_lens, 1.5, r3d=None, subhalo_flag=False,
+                            kwargs_halo_model={'concentration_model': concentration_model,
+                                               'truncation_model': None,
+                                               'kwargs_density_profile': {}})
+        realization = halo_1.join(halo_2).join(halo_3)
+        npt.assert_equal(realization.number_of_halos_after_redshift(0.1), 3)
+        npt.assert_equal(realization.number_of_halos_after_redshift(z_lens), 1)
+        npt.assert_equal(realization.number_of_halos_before_redshift(2.0), 3)
+        npt.assert_equal(realization.number_of_halos_at_redshift(0.7), 1)
+
+    def test_plot(self):
+
+        fig = plt.figure(1)
+        ax1 = plt.subplot(111, projection='3d')
+        self.realization.plot(ax1)
 
 if __name__ == '__main__':
     pytest.main()

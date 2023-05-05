@@ -20,7 +20,8 @@ import numpy as np
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
 
-__all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed']
+__all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed',
+           'CDMFromEmulator']
 
 def preset_model_from_name(name):
     """
@@ -412,9 +413,6 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
 
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
     pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
-    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
-    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
-                        cone_opening_angle_arcsec, geometry_type)
 
     #compute M_min as described in documentation
     log_m_min = MinHaloMassULDM(log10_m_uldm, pyhalo.astropy_cosmo, log_mlow)

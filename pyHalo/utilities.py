@@ -222,66 +222,6 @@ def sample_density(probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax, s
 
     return x_out, y_out
 
-def sample_circle(max_rendering_range, Nsmooth, center_x, center_y):
-    """
-    This function distributes points smoothly accross a plane.
-
-    Parameters
-    ----------
-    max_rendering_range : radius of rendering area (already scaled) (arcsec)
-    Nsmooth : number of points to render
-    center_x : center x coordinate of image
-    center_y : center y coordinate of image
-
-
-    Returns
-    -------
-    coord_x_smooth : x-coordinate of point (arcsec)
-    coord_y_smooth : y-coordinate of point (arcsec)
-
-
-    """
-    # SAMPLE UNIFORM POINTS IN A CIRCLE
-    radii = np.random.uniform(0, max_rendering_range ** 2, Nsmooth)
-    # note you have to sample out to r^2 and then take sqrt
-    angles = np.random.uniform(0, 2 * np.pi, Nsmooth)
-    coord_x_smooth = radii ** 0.5 * np.cos(angles) + center_x
-    coord_y_smooth = radii ** 0.5 * np.sin(angles) + center_y
-    return coord_x_smooth, coord_y_smooth
-
-def sample_clustered(lens_model, kwargs_lens, center_x, center_y, n_samples, max_rendering_range, npix):
-    """
-    This function distributes points to cluster in areas of higher mass.
-
-    Parameters
-    ----------
-    lens_model_list_at_plane : model at lensing plane
-    center_x : center x coordinate of image
-    center_y : center y coordinate of image
-    kwargs_lens_at_plane : arguments from realization instance
-    Nclumpy : number of points to render
-    max_rendering_range : radius of rendering area (already scaled) (arcsec)
-    npix : number of pixels on one axis
-
-
-    Returns
-    -------
-    coord_x_clumpy : x-coordinate of point (arcsec)
-    coord_y_clumpy : y-coordinate of point (arcsec)
-
-    """
-    grid_x_base = np.linspace(-max_rendering_range, max_rendering_range, npix)
-    grid_y_base = np.linspace(-max_rendering_range, max_rendering_range, npix)
-    pixel_scale = 2 * max_rendering_range / npix
-    xx_base, yy_base = np.meshgrid(grid_x_base, grid_y_base)
-    shape0 = xx_base.shape
-
-    xcoords, ycoords = xx_base + center_x, yy_base + center_y
-    projected_mass = lens_model.kappa(xcoords.ravel() + center_x, ycoords.ravel() + center_y, kwargs_lens).reshape(shape0)
-    coord_x, coord_y = sample_density(projected_mass, n_samples, pixel_scale,
-                                                     center_x, center_y, max_rendering_range)
-    return coord_x, coord_y
-
 def de_broglie_wavelength(log10_m_uldm,v):
     '''
     Returns de Broglie wavelength of the ultra-light axion in kpc.
@@ -348,37 +288,6 @@ def delta_sigma(m, z, rein, de_Broglie_wavelength):
     delta_sigma = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5
     return delta_sigma
 
-def delta_sigma_kawai(r, mhost, zhost, lambda_dB, dm_density_over_stellar_density):
-    """
-    https://arxiv.org/pdf/2109.04704.pdf
-    :param lambda_dB:
-    :param effective_halo_size:
-    :param baryon_fraction:
-    :return:
-    """
-
-    cosmo = Cosmology()
-    l = LensCosmo(zhost, 2.0, cosmo)
-    model, _ = preset_concentration_models('DIEMERJOYCE19')
-    cmodel = model(cosmo.astropy, scatter=False)
-    c = cmodel.nfw_concentration(mhost, zhost)
-    rhos, rs, _ = l.NFW_params_physical(mhost, c, zhost)
-    reff = effective_halo_size(r, rhos, rs, c)
-    f = dm_density_over_stellar_density / (dm_density_over_stellar_density + 1)
-
-    window_function = lambda x: jv(1, x)/x # FFT of circular tophat
-    dB_volume = 4 * np.pi * lambda_dB / 3
-    integrand = lambda k: 2 * np.pi * k * np.exp(-0.25 * k ** 2 * lambda_dB ** 2) * window_function(lambda_dB * k) ** 2
-    integral = quad(integrand, 0, 100 * lambda_dB)[0] / (4 * np.pi ** 2)  # has units length^-2
-    prefactor = f ** 2 * dB_volume / reff  # has units length^2
-    return np.sqrt(prefactor * integral)
-
-def nfwF(x):
-    if x < 1:
-        return np.arctanh(np.sqrt(1-x**2))/(np.sqrt(1-x**2))
-    else:
-        return np.arctan(np.sqrt(x ** 2 - 1)) / (np.sqrt(x ** 2 - 1))
-
 def projected_density_squared(R_ein, rhos, rs, concentration):
 
     '''
@@ -398,56 +307,6 @@ def projected_density_squared(R_ein, rhos, rs, concentration):
     nfw_density_square = lambda z: rhos**2 / (x(z) * (1+x(z))**2)**2
 
     return 2 * quad(nfw_density_square, 0, zmax)[0]
-
-def projected_squared_density(R_ein, rhos, rs, concentration):
-    '''
-    Returns integral along the line of sight of the NFW profile squared
-    i.e. (integral rho_nfw(z) dz)^2
-
-    :param R_ein: Einstein radius in kpc
-    :param rhos: scale radius density of main deflector halo
-    :param rs: scale radius of main deflector halo
-    :param concentration: concentration of main deflector halo
-    '''
-
-    r200 = concentration * rs
-    zmax = np.sqrt(r200 ** 2 - R_ein ** 2)
-
-    x = lambda z: np.sqrt(R_ein ** 2 + z ** 2) / rs
-    nfw_density = lambda z: rhos / (x(z) * (1 + x(z)) ** 2)
-    integral = 2 * quad(nfw_density, 0, zmax)[0]
-    return integral ** 2
-
-def effective_halo_size(r, rhos, rs, concentration):
-    """
-    Computes the effective halo size as defined in Equation 17 of Kawai et al. (2021)
-    :param r: the radius at which to evaluate the size
-    [can be any unit of length or an angle, as long the definition is
-    consistent also between rhos, and rs]
-    :param rhos: the density parameter the host NFW halo [units M_sun / length^3]
-    :param rs: the scale radius of host halo [in the same units as r]
-    :param concentration: host halo concentration
-    :return: the effective halo size in the same units as r
-    """
-    denom = projected_density_squared(r, rhos, rs, concentration)
-    num = projected_squared_density(r, rhos, rs, concentration)
-    return num/denom
-
-def nfw_halo_projected_mass(r, m, z):
-
-    """
-    Evaluates the projected mass on an NFW halo at a particular radius
-    :param r: radius [kpc]
-    :param m: halo mass [M_sun]
-    :param z: halo redshift
-    :return: projected mass in M_sun/kpc^2
-    """
-    l = LensCosmo()
-    c = l.NFW_concentration(m, z, scatter=False)
-    rhos, rs, _ = l.NFW_params_physical(m, c, z)
-    x = r/rs
-    sigma = 2 * rhos * rs * (1-nfwF(x)) / (x**2-1)
-    return sigma
 
 def nfw_velocity_dispersion(rhos, rs, c, x=1):
     """
