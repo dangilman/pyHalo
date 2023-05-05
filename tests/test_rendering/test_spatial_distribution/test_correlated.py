@@ -15,7 +15,7 @@ class GeometryDummy(object):
 
 class TestCorrelated(object):
 
-    def setup(self):
+    def setup_method(self):
 
         geometry = GeometryDummy()
         self.correlated = Correlated2D(geometry, 1.)

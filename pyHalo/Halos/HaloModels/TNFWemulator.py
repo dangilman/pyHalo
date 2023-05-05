@@ -1,5 +1,4 @@
 from pyHalo.Halos.halo_base import Halo
-from pyHalo.Halos.concentration import Concentration
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.interpolate import RegularGridInterpolator

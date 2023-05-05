@@ -1,21 +1,21 @@
 from pyHalo.Halos.halo_base import Halo
-from pyHalo.Halos.concentration import Concentration
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.interpolate import RegularGridInterpolator
 
 class TNFWFieldHalo(Halo):
 
     """
     The base class for a truncated NFW halo
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+    def __init__(self, mass, x, y, r3d, z,
+                 sub_flag, lens_cosmo_instance, args,
+                 truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         self._lens_cosmo = lens_cosmo_instance
-        self._concentration = Concentration(lens_cosmo_instance)
+        self._concentration_class = concentration_class
+        self._truncation_class = truncation_class
+        mdef = 'TNFW'
         super(TNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
 
@@ -34,15 +34,7 @@ class TNFWFieldHalo(Halo):
         """
 
         if not hasattr(self, '_c'):
-            self._c = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  self.z_eval,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
+            self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
         return self._c
 
     @property
@@ -96,10 +88,8 @@ class TNFWFieldHalo(Halo):
         """
         if not hasattr(self, '_profile_args'):
 
-            truncation_radius = self._lens_cosmo.LOS_truncation_rN(self.mass, self.z_eval,
-                                                             self._args['LOS_truncation_factor'])
-
-            self._profile_args = (self.c, truncation_radius)
+            truncation_radius_kpc = self._truncation_class.truncation_radius_halo(self)
+            self._profile_args = (self.c, truncation_radius_kpc)
 
         return self._profile_args
 
@@ -115,7 +105,7 @@ class TNFWSubhalo(TNFWFieldHalo):
         """
         if not hasattr(self, '_zeval'):
 
-            if self._args['evaluate_mc_at_zlens']:
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
                 self._zeval = self.z
             else:
                 self._zeval = self.z_infall
@@ -133,17 +123,3 @@ class TNFWSubhalo(TNFWFieldHalo):
             self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
 
         return self._params_physical
-
-    @property
-    def profile_args(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
-        if not hasattr(self, '_profile_args'):
-
-            truncation_radius = self._lens_cosmo.truncation_roche(self.mass, self.r3d,
-                                                                  self._args['RocheNorm'], self._args['RocheNu'])
-
-            self._profile_args = (self.c, truncation_radius)
-
-        return self._profile_args

@@ -5,13 +5,15 @@ class PTMass(Halo):
     """
     Class that defines a point mass object in the lens model
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+    def __init__(self, mass, x, y, r3d, z,
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         self._lens_cosmo = lens_cosmo_instance
-
+        self._truncation_class = truncation_class
+        self._concentration_clss = concentration_class
+        mdef = 'PT_MASS'
         super(PTMass, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 

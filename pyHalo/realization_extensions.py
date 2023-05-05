@@ -4,8 +4,9 @@ from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNF
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
+from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Cosmology.geometry import Geometry
-from pyHalo.Rendering.MassFunctions.delta import DeltaFunction
+from pyHalo.utilities import generate_lens_plane_redshifts
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
 from copy import deepcopy
 
@@ -25,40 +26,6 @@ class RealizationExtensions(object):
         """
 
         self._realization = realization
-
-    def change_mass_definition(self, mdef, new_mdef, kwargs_new):
-
-        kwargs_realization = self._realization._prof_params
-        kwargs_realization.update(kwargs_new)
-        halos = self._realization.halos
-        new_halos = []
-
-        if new_mdef == 'coreTNFW':
-            from pyHalo.Halos.HaloModels.coreTNFW import coreTNFWSubhalo, coreTNFWFieldHalo
-
-            for halo in halos:
-                if halo.mdef == mdef:
-                    if halo.is_subhalo:
-                        new_halo = coreTNFWSubhalo.fromTNFW(halo, kwargs_realization)
-                    else:
-                        new_halo = coreTNFWFieldHalo.fromTNFW(halo, kwargs_realization)
-                    new_halos.append(new_halo)
-                else:
-                    new_halos.append(halo)
-
-        else:
-            raise Exception('changing to mass definition '+new_mdef + ' not implemented')
-
-        lens_cosmo = self._realization.lens_cosmo
-        prof_params = self._realization._prof_params
-        msheet_correction = self._realization._mass_sheet_correction
-        rendering_classes = self._realization.rendering_classes
-        rendering_center_x, rendering_center_y = self._realization.rendering_center
-
-        return Realization.from_halos(new_halos, lens_cosmo, prof_params,
-                                      msheet_correction, rendering_classes,
-                                      rendering_center_x, rendering_center_y,
-                                      self._realization.geometry)
 
     def core_collapse_by_mass(self, mass_ranges_subhalos, mass_ranges_field_halos,
                               probabilities_subhalos, probabilities_field_halos,
@@ -99,77 +66,26 @@ class RealizationExtensions(object):
             u = np.random.rand()
 
             if halo.is_subhalo:
-
                 for i, mrange in enumerate(mass_ranges_subhalos):
                     if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
                         if callable(probabilities_subhalos[i]):
                             prob = probabilities_subhalos[i](halo.z, **kwargs_sub[i])
                         else:
                             prob = probabilities_subhalos[i]
-
                         if u <= prob:
                             indexes.append(i_halo)
                         break
-
             else:
                 for i, mrange in enumerate(mass_ranges_field_halos):
                     if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
-
                         if callable(probabilities_field_halos[i]):
                             prob = probabilities_field_halos[i](halo.z, **kwargs_field[i])
                         else:
                             prob = probabilities_field_halos[i]
-
                         if u <= prob:
                             indexes.append(i_halo)
                         break
-
         return indexes
-
-    def find_core_collapsed_halos(self, collapse_probability_function, cross_section_class,
-                                  t_sub=10., t_field=300., collapse_time_width=0.5):
-
-        """
-        This class is meant to be used with the software SIDMpy, but you can also write your own functions/classes to
-        use with this routine
-
-        :param collapse_probability_function: a function that computes the probability of core collapse for a halo. There
-        are functions in sidmpy/core_collapse_timescale that can be passed in directly (e.g. collapse_probability)
-
-        The collapse_probability_function must have a certain signature:
-        probability = collapse_probability(time, density, distance, cross_section, number, number)
-        where time is measured in Gyr, the density is in solar mass/kpc^3, the distance is in kpc; again, this is all
-        automatically implemented in SIDMpy, but in principle any routine could be passed through this function
-
-        :param cross_section_class: a class that describes a self-interaction cross section, for examples see classes in
-        SIDMpy/CrossSections
-        :param t_sub: the timescale for core-collapse for subhalos; this is a dimensionless number that scales the evolution timescale
-        :param t_field: same as t_sub, but for line-of-sight (field) halos
-        :param collapse_time_width: sets the width of the collapse window; passing in a tiny number reults in a delta-function
-        :return: the indexes of halos in the realization that are core-collaapsed
-        """
-        inds = []
-
-        for i, halo in enumerate(self._realization.halos):
-
-            if halo.mdef not in ['NFW', 'TNFW', 'coreTNFW']:
-                continue
-
-            rho_s, r_s = halo.params_physical['rhos'], halo.params_physical['rs']
-
-            if halo.is_subhalo:
-                p = collapse_probability_function(rho_s, r_s, halo.z, cross_section_class,
-                                                  self._realization.lens_cosmo, t_sub,
-                                                  collapse_time_width, None)
-            else:
-                p = collapse_probability_function(rho_s, r_s, halo.z, cross_section_class,
-                                                  self._realization.lens_cosmo, t_field,
-                                                  collapse_time_width, None)
-
-            if np.random.rand() < p:
-                inds.append(i)
-
-        return inds
 
     def add_core_collapsed_halos(self, indexes, halo_profile='SPL_CORE',**kwargs_halo):
 
@@ -199,30 +115,28 @@ class RealizationExtensions(object):
                             'implemented for collapsed objects')
 
         for i, halo in enumerate(halos):
-
             if i in indexes:
-
                 halo._args.update(kwargs_halo)
                 if halo.is_subhalo:
-                    new_halo = subhalo_model(halo.mass, halo.x, halo.y, halo.r3d, halo_profile,
-                                                 halo.z, True, halo.lens_cosmo, halo._args, halo.unique_tag)
+                    new_halo = subhalo_model(halo.mass, halo.x, halo.y, halo.r3d,
+                                                 halo.z, True, halo.lens_cosmo, halo._args,
+                                             halo._truncation_class,
+                                             halo._concentration_class,
+                                             halo.unique_tag)
                 else:
-                    new_halo = fieldhalo_model(halo.mass, halo.x, halo.y, halo.r3d, halo_profile,
-                                                 halo.z, False, halo.lens_cosmo, halo._args, halo.unique_tag)
+                    new_halo = fieldhalo_model(halo.mass, halo.x, halo.y, halo.r3d,
+                                                 halo.z, False, halo.lens_cosmo, halo._args,
+                                               halo._truncation_class,
+                                               halo._concentration_class,
+                                               halo.unique_tag)
                 new_halos.append(new_halo)
-
             else:
                 new_halos.append(halo)
 
-        lens_cosmo = self._realization.lens_cosmo
-        prof_params = self._realization._prof_params
-        msheet_correction = self._realization._mass_sheet_correction
-        rendering_classes = self._realization.rendering_classes
-        rendering_center_x, rendering_center_y = self._realization.rendering_center
-
-        return Realization.from_halos(new_halos, lens_cosmo, prof_params,
-                                      msheet_correction, rendering_classes,
-                                      rendering_center_x, rendering_center_y,
+        return Realization.from_halos(new_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,
+                                      self._realization.apply_mass_sheet_correction,
+                                      self._realization.rendering_classes,
+                                      self._realization._rendering_center_x, self._realization._rendering_center_y,
                                       self._realization.geometry)
 
     def add_ULDM_fluctuations(self, de_Broglie_wavelength, fluctuation_amplitude,
@@ -256,26 +170,32 @@ class RealizationExtensions(object):
         """
 
         if (shape != 'ring') and (shape != 'ellipse') and (shape != 'aperture'): # check shape keyword
-
             raise Exception('shape must be ring or ellipse or aperture!')
 
         # get number of fluctuations
-        n_flucs = _get_number_flucs(self._realization,de_Broglie_wavelength,
-                                    fluctuation_size/de_Broglie_wavelength,n_fluc_scale,shape,args)
+        n_flucs = _get_number_flucs(self._realization, de_Broglie_wavelength,
+                                    fluctuation_size/de_Broglie_wavelength, n_fluc_scale, shape, args)
 
         # if zero fluctuations, return original realization
-        if shape!='aperture':
-            if n_flucs==0:
+
+        if shape == 'aperture':
+            for i in range(0, len(n_flucs)):
+                if n_flucs[i] != 0:
+                    break
+            else:
                 return self._realization
-            if rescale_fluc_amp and n_flucs > n_cut: #supress amplitudes by # of cancellations if above n_cut
-                fluctuation_amplitude /= np.sqrt(n_flucs/n_cut)
+
+        else:
+            if n_flucs == 0:
+                return self._realization
+
+        if rescale_fluc_amp:
+            if shape == 'aperture' and np.mean(n_flucs) > n_cut:
+                fluctuation_amplitude /= np.sqrt(np.mean(n_flucs) / n_cut)
+                n_flucs = np.array([int(n_cut)] * 4)
+            elif shape != 'aperture' and n_flucs > n_cut:
+                fluctuation_amplitude /= np.sqrt(n_flucs / n_cut)
                 n_flucs = int(n_cut)
-        if shape=='aperture':
-            if len(n_flucs)==0: #empty array if all apertures have zero fluctuations
-                return self._realization
-            if rescale_fluc_amp and np.mean(n_flucs) > n_cut: #supress amplitudes by # of cancellations if average above n_cut
-                fluctuation_amplitude /= np.sqrt(np.mean(n_flucs)/n_cut)
-                n_flucs = np.array([int(n_cut)]*4)
 
         # create fluctuations
         fluctuations = _get_fluctuation_halos(self._realization,
@@ -288,13 +208,12 @@ class RealizationExtensions(object):
 
         # realization args
         lens_cosmo = self._realization.lens_cosmo
-        prof_params = self._realization._prof_params
         msheet_correction = self._realization._mass_sheet_correction
         rendering_classes = self._realization.rendering_classes
         rendering_center_x, rendering_center_y = self._realization.rendering_center
-
+        kwargs_halo_model = None
         # realization containing only fluctuations
-        fluc_realization = Realization.from_halos(fluctuations, lens_cosmo, prof_params,
+        fluc_realization = Realization.from_halos(fluctuations, lens_cosmo, kwargs_halo_model,
                                       msheet_correction, rendering_classes,
                                       rendering_center_x, rendering_center_y,
                                       self._realization.geometry)
@@ -302,44 +221,43 @@ class RealizationExtensions(object):
         # join realization to dark substructure realization
         return self._realization.join(fluc_realization)
 
-    def add_correlated_structure(self, kwargs_mass_function,
+    def add_correlated_structure(self, mass_function_model,
+                                 kwargs_mass_function,
                                  mass_definition,
                                    x_image_interp_list,
                                    y_image_interp_list,
-                                   r_max_arcsec, arcsec_per_pixel,
+                                   arcsec_per_pixel, r_max,
                                  rescale_normalizations=True):
 
         """
         Adds structure along the line of sight with a spatial distribution that tracks the dark matter density at each
         lens plane
-        :param kwargs_mass_function: keyword arguments for the mass function
-        :param mass_definition: the mass definition for the objects to be rendered
-        :param x_image_interp_list: a list of interp1d functions that return the angular x coordinate of a light ray
-        given a comoving distance
-        :param y_image_interp_list: a list of interp1d functions that return the angular y coordinate of a light ray
-        given a comoving distance
-        :param r_max_arcsec: the radius of the rendering region in arcsec
-        :param arcsec_per_pixel: the resolution of the grid used to compute the population of PBH whose spatial
-        distribution tracks the dark matter density along the LOS specific by the instance of Realization used to
-        instantiate the class
-        :return: a new realization that includes correlated structure along the line of sight
+
         """
 
         realization_copy = deepcopy(self._realization)
+        lens_plane_redshifts, delta_z_list = generate_lens_plane_redshifts(self._realization.lens_cosmo.z_lens,
+                                                                           self._realization.lens_cosmo.z_source)
+        correlated_structure = CorrelatedStructure(mass_function_model, kwargs_mass_function,
+                 self._realization.geometry, self._realization.lens_cosmo, lens_plane_redshifts,
+                                                   delta_z_list, self._realization)
 
-        correlated_structure = CorrelatedStructure(kwargs_mass_function, self._realization, r_max_arcsec)
+        for image_index, (x_image_interp, y_image_interp) in enumerate(zip(x_image_interp_list, y_image_interp_list)):
+            masses, x, y, r3d, redshifts, subhalo_flag, rescale_indicies, rescale_factors = correlated_structure.render(
+                r_max, x_image_interp, y_image_interp, arcsec_per_pixel)
 
-        masses, x, y, r3d, redshifts, subhalo_flag, rescale_indicies, rescale_factors = correlated_structure.render(x_image_interp_list, y_image_interp_list,
-                                                                                 arcsec_per_pixel)
+            if rescale_normalizations:
+                for i, index in enumerate(rescale_indicies):
+                    realization_copy.halos[index].rescale_normalization(rescale_factors[i])
 
-        if rescale_normalizations:
-            for i, index in enumerate(rescale_indicies):
-                realization_copy.halos[index].rescale_normalization(rescale_factors[i])
-
-        mdefs = [mass_definition] * len(masses)
-        realization_pbh = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
-                                           self._realization.lens_cosmo,
-                               kwargs_realization=self._realization._prof_params)
+            mdefs = [mass_definition] * len(masses)
+            kwargs_halo_model = {'truncation_model': None, 'concentration_model': None, 'kwargs_density_profile': {}}
+            if image_index==0:
+                realization_pbh = Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
+                                           self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model)
+            elif image_index>0:
+                realization_pbh = realization_pbh.join(Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
+                                           self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model))
 
         new_realization = realization_copy.join(realization_pbh)
 
@@ -392,7 +310,7 @@ class RealizationExtensions(object):
                                         'DOUBLE_CONE')
             for zi, delta_zi in zip(plane_redshifts, delta_z):
 
-                d = geometry._cosmo.D_C_transverse(zi)
+                d = self._realization.lens_cosmo.cosmo.D_C_transverse(zi)
                 angle_x, angle_y = x_image_interp(d), y_image_interp(d)
                 rendering_radius = r_max * geometry.rendering_scale(zi)
                 spatial_distribution_model_smooth = Uniform(rendering_radius, geometry)
@@ -401,7 +319,7 @@ class RealizationExtensions(object):
                     rho_smooth = mass_fraction_smooth * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
                     volume = geometry.volume_element_comoving(zi, delta_zi)
                     mass_function_smooth = DeltaFunction(10 ** kwargs_pbh_mass_function['logM'],
-                                                         volume, rho_smooth)
+                                                         volume, rho_smooth, draw_poisson=True)
                 else:
                     raise Exception('no mass function type for PBH currently implemented besides DELTA')
 
@@ -419,14 +337,21 @@ class RealizationExtensions(object):
         mdefs = [mass_definition] * len(masses)
         r3d = np.array([None] * len(masses))
         subhalo_flag = [False] * len(masses)
+        kwargs_halo_model = {'truncation_model': None, 'concentration_model': None, 'kwargs_density_profile': {}}
         realization_smooth = Realization(masses, xcoords, ycoords, r3d, mdefs, redshifts, subhalo_flag,
-                                          self._realization.lens_cosmo, kwargs_realization=self._realization._prof_params)
+                                         self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model,
+                                         mass_sheet_correction=False)
+
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
 
         for ii, (x_image_interp, y_image_interp, r_max) in enumerate(zip(x_image_interp_list, y_image_interp_list, r_max_arcsec)):
-            realization_with_clustering_temp = self.add_correlated_structure(kwargs_pbh_mass_function, mass_definition,
-                                                                             [x_image_interp], [y_image_interp], r_max,
-                                                                             arcsec_per_pixel, rescale_normalizations)
+            realization_with_clustering_temp = self.add_correlated_structure(DeltaFunction,
+                                 kwargs_pbh_mass_function,
+                                 mass_definition,
+                                   [x_image_interp],
+                                   [y_image_interp],
+                                   arcsec_per_pixel, r_max,
+                                 rescale_normalizations)
             if ii == 0:
                 realization_with_clustering = realization_with_clustering_temp
                 continue # first time through loop
@@ -498,21 +423,17 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
     if shape != 'aperture':
 
         sigs = np.abs(np.random.normal(fluc_var_angle,fluctuation_size_variance_angle,n_flucs)) #random widths
-
         kappa0 = np.random.normal(0, fluctuation_amplitude, n_flucs)
-
         # kappa0 = amp / (2 * np.pi * sigma ** 2)
         amps = kappa0 * 2 * np.pi * sigs ** 2
 
     if shape=='ring':
-
         angles = np.random.uniform(0,2*np.pi,n_flucs)  # random angles
         radii = args['rmin'] + np.sqrt(np.random.uniform(0,1,n_flucs))*(args['rmax']-args['rmin']) #random radii
         xs = radii*np.cos(angles) #random x positions
         ys = radii*np.sin(angles) #random y positions
 
     if shape=='ellipse':
-
         angles = np.random.uniform(0,2*np.pi,n_flucs)  # random angles
         aa = np.sqrt(np.random.uniform(0,1,n_flucs))*(args['amax']-args['amin']) + args['amin'] #random axis 1
         bb = np.sqrt(np.random.uniform(0,1,n_flucs))*(args['bmax']-args['bmin']) + args['bmin'] #random axis 1
@@ -542,7 +463,9 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
     #sigma_crit = realization.lens_cosmo.sigmacrit # in units M_sun / arcsec^2
     masses = np.absolute(amps)
     #masses = [10 ** 8.0] * len(xs)
-    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, 'GAUSSIAN', realization._zlens,
-                             True, realization.lens_cosmo,args_fluc[i],np.random.rand()) for i in range(len(amps))]
+    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, realization.lens_cosmo.z_lens,
+                             True, realization.lens_cosmo, args_fluc[i],
+                             truncation_class=None, concentration_class=None,
+                             unique_tag=np.random.rand()) for i in range(len(amps))]
 
     return fluctuations

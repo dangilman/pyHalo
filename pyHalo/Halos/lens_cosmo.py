@@ -1,8 +1,11 @@
 import numpy
 from scipy.interpolate import interp1d
+from scipy.optimize import minimize
 from scipy.special import erfc
-from pyHalo.Halos.concentration import Concentration
+from lenstronomy.Cosmo.nfw_param import NFWParam
 import astropy.units as un
+from colossus.lss.bias import twoHaloTerm
+from scipy.integrate import quad
 
 class LensCosmo(object):
 
@@ -13,8 +16,8 @@ class LensCosmo(object):
             cosmology = Cosmology()
 
         self.cosmo = cosmology
-        self.z_lens, self.z_source = z_lens, z_source
-
+        self._arcsec = 2 * numpy.pi / 360 / 3600
+        self.h = self.cosmo.h
         # critical density of the universe in M_sun h^2 Mpc^-3
         rhoc = un.Quantity(self.cosmo.astropy.critical_density(0), unit=un.Msun / un.Mpc ** 3).value
         self.rhoc = rhoc / self.cosmo.h ** 2
@@ -29,10 +32,88 @@ class LensCosmo(object):
             # lensing distances
             self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
                 z_lens, z_source)
-
-        self._concentration = Concentration(self)
-
         self._computed_zacc_pdf = False
+        self._nfw_param = NFWParam(self.cosmo.astropy)
+        self.z_lens = z_lens
+        self.z_source = z_source
+
+    def two_halo_boost(self, m200, z, rmin=0.5, rmax=10):
+
+        """
+        Computes the average contribution of the two halo term in a redshift slice adjacent
+        the main deflector. Returns a rescaling factor applied to the mass function normalization
+
+        :param m200: host halo mass
+        :param z: redshift
+        :param rmin: lower limit of the integral, something like the virial radius ~500 kpc
+        :param rmax: Upper limit of the integral, this is computed based on redshift spacing during
+        the rendering of halos
+        :return: scaling factor applied to the normalization of the LOS mass function
+        """
+
+        mean_boost = 2 * quad(self.twohaloterm, rmin, rmax, args=(m200, z))[0] / (rmax - rmin)
+        # factor of two for symmetry in front/behind host halo
+
+        return 1. + mean_boost
+
+    def twohaloterm(self, r, M, z, mdef='200c'):
+
+        """
+        Computes the boost to the background density of the Universe
+        from correlated structure around a host of mass M
+        :param r:
+        :param M:
+        :param z:
+        :param mdef:
+        :return:
+        """
+
+        h = self.cosmo.h
+        M_h = M * h
+        r_h = r * h
+        rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self.cosmo._colossus_cosmo.rho_m(z)
+        return rho_2h
+
+    def nfw_physical2angle(self, m, c, z):
+        """
+        converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
+        updates lenstronomy implementation with arbitrary redshift
+
+        :param m: mass enclosed 200 rho_crit in units of M_sun (physical units, meaning no little h)
+        :param c: NFW concentration parameter (r200/r_s)
+        :return: Rs_angle (angle at scale radius) (in units of arcsec), alpha_Rs (observed bending angle at the scale radius
+        """
+        dd = self.cosmo.D_A_z(z)
+        rho0, Rs, r200 = self.nfwParam_physical(m, c, z)
+        Rs_angle = Rs / dd / self._arcsec  # Rs in arcsec
+        alpha_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
+        sigma_crit = self.get_sigma_crit_lensing(z, self.z_source)
+        return Rs_angle, alpha_Rs / sigma_crit / dd / self._arcsec
+
+    def nfwParam_physical(self, m, c, z):
+        """
+        returns the NFW parameters in physical units
+        updates lenstronomy implementation with arbitrary redshift
+
+        :param m: physical mass in M_sun
+        :param c: concentration
+        :return: rho0 [Msun/Mpc^3], Rs [Mpc], r200 [Mpc]
+        """
+        r200 = self._nfw_param.r200_M(m * self.h, z) / self.h  # physical radius r200
+        rho0 = self._nfw_param.rho0_c(c, z) * self.h**2  # physical density in M_sun/Mpc**3
+        Rs = r200/c
+        return rho0, Rs, r200
+
+    def NFW_params_physical(self, m, c, z):
+        """
+        returns the NFW parameters in physical units
+
+        :param M: physical mass in M_sun
+        :param c: concentration
+        :return: rho0 [Msun/kpc^3], Rs [kpc], r200 [kpc]
+        """
+        rho0, Rs, r200 = self.nfwParam_physical(m, c, z)
+        return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
     def sigma_crit_mass(self, z, area):
 
@@ -43,7 +124,6 @@ class LensCosmo(object):
         """
 
         sigma_crit_mpc = self.get_sigma_crit_lensing(z, self.z_source)
-
         return area * sigma_crit_mpc
 
     @property
@@ -54,73 +134,17 @@ class LensCosmo(object):
     """ACCESS ROUTINES IN STRUCTURAL PARAMETERS CLASS"""
     ######################################################
 
-    @staticmethod
-    def truncation_roche(M, r3d, k, nu):
-
+    def mthermal_to_halfmode(self, m_thermal):
         """
-        :param M: m200
-        :param r3d: 3d radial position in the halo (kpc)
-        :return: truncation radius in Kpc (physical)
-        """
-        m_units_7 = M / 10 ** 7
-        radius_units_50 = r3d / 50
-        rtrunc_kpc = k * m_units_7 ** (1. / 3) * radius_units_50 ** nu
-        return numpy.round(rtrunc_kpc, 3)
-
-    def LOS_truncation_rN(self, M, z, N):
-        """
-        Truncate LOS halos at r50
-        :param M:
-        :param c:
-        :param z:
-        :param N:
+        Convert thermal relic particle mass to half-mode mass
+        :param m_thermaal:
         :return:
         """
-        a_z = self.cosmo.scale_factor(z)
-        h = self.cosmo.h
-        r50_physical_Mpc = self.rN_M_nfw_comoving(M * h, N, z) * a_z / h
-        rN_physical_kpc = r50_physical_Mpc * 1000
-        return rN_physical_kpc
 
-    def NFW_concentration(self, M, z, model='diemer19', mdef='200c', logmhm=None,
-                          scatter=True, scatter_amplitude=0.2, kwargs_suppresion=None, suppression_model=None):
-
-        """
-        Returns the concentration of an NFW halo (see method in the class Concentration)
-        :param M: mass in units M_solar (no little h)
-        :param z: redshift
-        :param model: the model for the concentration-mass relation
-        if type dict, will assume a custom MC relation parameterized by c0, beta, zeta (see _NFW_concentration_custom)
-        if string, will use the corresponding concentration model in colossus (see http://www.benediktdiemer.com/code/colossus/)
-
-        :param mdef: mass defintion for use in colossus modules. Default is '200c', or 200 times rho_crit(z)
-        :param logmhm: log10 of the half-mode mass in units M_sun, specific to warm dark matter models.
-        This parameter defaults to 0. in the code, which leaves observables unaffected for the mass scales of interest ~10^7
-        :param scatter: bool; if True will induce lognormal scatter in the MC relation with amplitude
-        scatter_amplitude in dex
-        :param kwargs_suppresion: keyword arguments for the suppression function
-        :param suppression_model: the type of suppression, either 'polynomial' or 'hyperbolic'
-        :param scatter_amplitude: the amplitude of the scatter in the mass-concentration relation in dex
-        :return: the concentration of the NFW halo
-
-        """
-        return self._concentration.nfw_concentration(M, z, model, mdef, logmhm,
-                                                     scatter,scatter_amplitude, kwargs_suppresion, suppression_model)
-
-    ###############################################################
-    """ROUTINES BASED ON CERTAIN COSMOLOGICAL MODELS (E.G. WDM)"""
-    ###############################################################
-    def mthermal_to_halfmode(self, m_thermal):
-
-        """
-        Converts a (fully thermalized) thermal relic particle of mass m [keV] to
-        the half-mode mass scale in solar masses (no little h)
-        :param m: thermal relic particle mass in keV
-        :return: half mode mass in solar masses
-        """
-        # scaling of 3.3 keV from Viel et al
-        omega_matter = self.cosmo.astropy.Om0
-        return 10**9 * ((omega_matter/0.25)**-0.4 * (self.cosmo.h/0.7)**-0.8 *m_thermal / 2.32) ** (-3.33)
+        # too lazy for algebra
+        def _func(m):
+            return abs(self.halfmode_to_thermal(m)-m_thermal)/0.01
+        return minimize(_func, x0=10**8, method='Nelder-Mead')['x']
 
     def halfmode_to_thermal(self, m_half_mode):
 
@@ -144,11 +168,8 @@ class LensCosmo(object):
         """
 
         rhoc = self.rhoc * self.cosmo.h ** 2
-
         l_hm = 2 * (3 * m_hm / (4 * numpy.pi * rhoc)) ** (1. / 3)
-
         l_fs = l_hm / 13.93
-
         return l_fs
 
     ##################################################################################
@@ -163,117 +184,98 @@ class LensCosmo(object):
         :param z2: redshift source
         :return: critical density for lensing in units of M_sun / Mpc ^ 2
         """
-
         D_ds = self.cosmo.D_A(z1, z2)
         D_d = self.cosmo.D_A_z(z1)
         D_s = self.cosmo.D_A_z(z2)
-
         d_inv = D_s*D_ds**-1*D_d**-1
-
         # (Mpc ^2 / sec^2) * (Mpc^-3 M_sun^1 sec ^ 2) * Mpc ^-1 = M_sun / Mpc ^2
         epsilon_crit = (self.cosmo.c**2*(4*numpy.pi*self.cosmo.G)**-1)*d_inv
-
         return epsilon_crit
 
-    ##################################################################################
-    """Routines relevant for NFW profiles"""
-    ##################################################################################
-    def NFW_params_physical(self, M, c, z):
-        """
-
-        :param M: physical M200
-        :param c: concentration
-        :param z: halo redshift
-        :return: physical NFW parameters in kpc units
-        """
-
-        rho0, Rs, r200 = self.nfwParam_physical_Mpc(M, c, z)
-        return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
-
-    def nfw_physical2angle_fromNFWparams(self, rhos, rs, z):
-
-        """
-        computes the deflection angle properties of an NFW halo from the density normalization mass and scale radius
-        :param rhos: central density normalization in M_sun / Mpc^3
-        :param rs: scale radius in Mpc
-        :param z: redshift
-        :return: theta_Rs (deflection angle at the scale radius) [arcsec], scale radius [arcsec]
-        """
-
-        D_d = self.cosmo.D_A_z(z)
-        Rs_angle = rs / D_d / self.cosmo.arcsec  # Rs in arcsec
-        theta_Rs = rhos * (4 * rs ** 2 * (1 + numpy.log(1. / 2.)))
-        eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
-
-        return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
-
-    def nfw_physical2angle(self, M, c, z):
-        """
-        converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
-        :param M: mass enclosed 200 \rho_crit
-        :param c: NFW concentration parameter (r200/r_s)
-        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
-        """
-
-        rhos, rs, _ = self.nfwParam_physical_Mpc(M, c, z)
-        return self.nfw_physical2angle_fromNFWparams(rhos, rs, z)
-
-    def nfw_physical2angle_fromM(self, M, z, **mc_kwargs):
-        """
-        converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
-        (with no scatter in MC relation)
-        :param M: mass enclosed 200 \rho_crit(z)
-        :param z: redshift
-        :param mc_kwargs: keyword arguments for NFW_concentration
-        :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
-        """
-
-        c = self.NFW_concentration(M, z, scatter=False, **mc_kwargs)
-        return self.nfw_physical2angle(M, c, z)
-
-    def rho0_c_NFW(self, c, z_eval_rho=0., N=200):
-        """
-        computes density normalization as a function of concentration parameter
-
-        :param c: concentration
-        :param z_eval_rho: redshift at which to evaluate the critical density
-        :param N: the density contrast used to define the halo mass
-        :return: density normalization in h^2/Mpc^3 (comoving)
-        """
-
-        rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
-        return N / 3 * rho_crit * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
-
-    def rN_M_nfw_comoving(self, M, N, z):
-        """
-        computes the radius R_N of a halo of mass M in comoving distances
-        :param M: halo mass in M_sun/h
-        :type M: float or numpy array
-        :return: radius R_200 in comoving Mpc/h
-        """
-
-        rho_crit = self.cosmo.rho_crit(z) / self.cosmo.h ** 2
-
-        return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
-
-    def nfwParam_physical_Mpc(self, M, c, z, N=200):
-
-        """
-
-        :param M: halo mass in units M_sun (no little h)
-        :param c: concentration parameter
-        :param z: redshift
-        :return: physical rho_s, rs for the NFW profile in physical units M_sun (no little h), Mpc
-
-        Mass definition critical density of Universe with respect to critical density at redshift z
-        Also specified in colossus as 200c
-        """
-
-        h = self.cosmo.h
-        r200 = self.rN_M_nfw_comoving(M * h, N, z) / h  # comoving virial radius
-        rhos = self.rho0_c_NFW(c, z, N) * h ** 2  # density in M_sun/Mpc**3
-        rs = r200 / c
-        return rhos, rs, r200
+    # ##################################################################################
+    # """Routines relevant for NFW profiles"""
+    # ##################################################################################
+    # def NFW_params_physical(self, M, c, z):
+    #     """
+    #
+    #     :param M: physical M200
+    #     :param c: concentration
+    #     :param z: halo redshift
+    #     :return: physical NFW parameters in kpc units
+    #     """
+    #
+    #     rho0, Rs, r200 = self.nfwParam_physical_Mpc(M, c, z)
+    #     return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
+    #
+    # def nfw_physical2angle_fromNFWparams(self, rhos, rs, z):
+    #
+    #     """
+    #     computes the deflection angle properties of an NFW halo from the density normalization mass and scale radius
+    #     :param rhos: central density normalization in M_sun / Mpc^3
+    #     :param rs: scale radius in Mpc
+    #     :param z: redshift
+    #     :return: theta_Rs (deflection angle at the scale radius) [arcsec], scale radius [arcsec]
+    #     """
+    #
+    #     D_d = self.cosmo.D_A_z(z)
+    #     Rs_angle = rs / D_d / self.cosmo.arcsec  # Rs in arcsec
+    #     theta_Rs = rhos * (4 * rs ** 2 * (1 + numpy.log(1. / 2.)))
+    #     eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
+    #
+    #     return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
+    #
+    # def nfw_physical2angle(self, M, c, z):
+    #     """
+    #     converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
+    #     :param M: mass enclosed 200 \rho_crit
+    #     :param c: NFW concentration parameter (r200/r_s)
+    #     :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
+    #     """
+    #
+    #     rhos, rs, _ = self.nfwParam_physical_Mpc(M, c, z)
+    #     return self.nfw_physical2angle_fromNFWparams(rhos, rs, z)
+    #
+    # def rho0_c_NFW(self, c, z_eval_rho=0., N=200):
+    #     """
+    #     computes density normalization as a function of concentration parameter
+    #
+    #     :param c: concentration
+    #     :param z_eval_rho: redshift at which to evaluate the critical density
+    #     :param N: the density contrast used to define the halo mass
+    #     :return: density normalization in h^2/Mpc^3 (comoving)
+    #     """
+    #
+    #     rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
+    #     return N / 3 * rho_crit * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
+    #
+    # def rN_M_nfw_comoving(self, M, N, z):
+    #     """
+    #     computes the radius R_N of a halo of mass M in comoving distances
+    #     :param M: halo mass in M_sun/h
+    #     :type M: float or numpy array
+    #     :return: radius R_200 in comoving Mpc/h
+    #     """
+    #
+    #     rho_crit = self.cosmo.rho_crit(z) / self.cosmo.h ** 2
+    #     return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
+    #
+    # def nfwParam_physical_Mpc(self, M, c, z, N=200):
+    #
+    #     """
+    #
+    #     :param M: halo mass in units M_sun (no little h)
+    #     :param c: concentration parameter
+    #     :param z: redshift
+    #     :return: physical rho_s, rs for the NFW profile in comoving units
+    #     Mass definition critical density of Universe with respect to critical density at redshift z
+    #     Also specified in colossus as 200c
+    #     """
+    #
+    #     h = self.cosmo.h
+    #     r200 = self.rN_M_nfw_comoving(M * h, N, z) / h  # comoving virial radius
+    #     rhos = self.rho0_c_NFW(c, z, N) * h ** 2  # density in M_sun/Mpc**3
+    #     rs = r200 / c
+    #     return rhos, rs, r200
 
     ##################################################################################
     """Routines relevant for other lensing by other mass profiles"""
@@ -291,16 +293,13 @@ class LensCosmo(object):
 
         """
         factor = 4 * self.cosmo.G * self.cosmo.c ** -2
-
         dds = self.cosmo.D_A(z, self.z_source)
         dd = self.cosmo.D_A_z(z)
         ds = self.D_s
-
         factor *= dds / dd / ds
-
         return factor ** 0.5 / self.cosmo.arcsec
 
-    def halo_dynamical_time(self, m_host, z, c_host=None):
+    def halo_dynamical_time(self, m_host, z, c_host):
         """
         This routine computes the dynamical timescale for a halo of mass M defined as
         t = 0.5427 / sqrt(G*rho)
@@ -310,8 +309,7 @@ class LensCosmo(object):
         :param c_host: host halo concentration
         :return: the dynamical timescale in Gyr
         """
-        if c_host is None:
-            c_host = self.NFW_concentration(m_host, z, scatter=False)
+
         _, _, rvir = self.NFW_params_physical(m_host, c_host, z)
         volume = (4/3)*numpy.pi*rvir**3
         rho_average = m_host / volume

@@ -161,11 +161,7 @@ class Cosmology(object):
                 if key not in cosmo_kwargs.keys():
                     colossus_kwargs.update({key: cosmo_defaults(key)})
                 else:
-
                     colossus_kwargs.update({key: cosmo_kwargs[key]})
-                    if key == 'power_law':
-                        colossus_kwargs.update({'power_law_n': cosmo_kwargs['power_law_n']})
-
             self._colossus_cosmo = cosmology.setCosmology('custom', colossus_kwargs)
 
         return self._colossus_cosmo

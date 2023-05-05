@@ -6,8 +6,44 @@ from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.special import jv
 from scipy.integrate import simps
-from multiprocessing.pool import Pool
+from pyHalo.concentration_models import preset_concentration_models
 
+def inverse_transform_sampling(x, function, args, n_samples):
+    """
+
+    :param x: the domain of the function across which you want to obtain samples
+    :param function: the function or probability density you want to sample from
+    :param args: arguments passed to function after x
+    :param n_samples: number of samples to draw
+    :return: samples from the probability density described by function
+    """
+    y = function(x, *args)
+    cdf = np.cumsum(y)
+    cdf /= np.max(cdf)
+    cdf_inverse = interp1d(cdf, x)
+    u = np.random.uniform(cdf[0], cdf[-1], n_samples)
+    return cdf_inverse(u)
+
+def generate_lens_plane_redshifts(zlens, zsource):
+    """
+    This routine sets up the redshift planes along the line of sight in the lens system
+    :param zlens: main deflector plane redshift (if there is no main lens plane, then this can be set as None)
+    :param zsource: source plane redshift
+    :return: lens plane redshifts and the thickness of each slice
+    """
+    zmin = lenscone_default.default_zstart
+    zstep = lenscone_default.default_z_step
+    if zlens is None:
+        redshifts = np.arange(zmin, zsource, zstep)
+    else:
+        front_z = np.arange(zmin, zlens, zstep)
+        back_z = np.arange(zlens, zsource, zstep)
+        redshifts = np.append(front_z, back_z)
+    delta_zs = []
+    for i in range(0, len(redshifts) - 1):
+        delta_zs.append(redshifts[i + 1] - redshifts[i])
+    delta_zs.append(zsource - redshifts[-1])
+    return list(np.round(redshifts, 2)), np.round(delta_zs, 2)
 
 def interpolate_ray_paths(x_coordinates, y_coordinates, lens_model, kwargs_lens, zsource,
                           terminate_at_source=False, source_x=None, source_y=None, evaluate_at_mean=False,
@@ -184,7 +220,6 @@ def sample_density(probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax, s
         x_out = np.append(x_out, x_sample_arcsec[keep])
         y_out = np.append(y_out, y_sample_arcsec[keep])
 
-    # originally this returned coord_x and coord_y, shouldn't it return x_out and y_out?
     return x_out, y_out
 
 def sample_circle(max_rendering_range, Nsmooth, center_x, center_y):
@@ -284,8 +319,11 @@ def delta_sigmaNFW(z_lens, m, rein, de_Broglie_wavelength):
     :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
     '''
 
-    l = LensCosmo(None, None)
-    c = l.NFW_concentration(m, z_lens, scatter=False)
+    cosmo = Cosmology()
+    l = LensCosmo(z_lens, 2.0, cosmo)
+    model, _ = preset_concentration_models('DIEMERJOYCE19')
+    cmodel = model(cosmo.astropy, scatter=False)
+    c = cmodel.nfw_concentration(m, z_lens)
     rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
     kappa_host = projected_squared_density(rein, rhos, rs, c) ** 0.5
     ds = delta_sigma(m, z_lens, rein, de_Broglie_wavelength)
@@ -300,8 +338,11 @@ def delta_sigma(m, z, rein, de_Broglie_wavelength):
     :param de_Broglie_wavelength:
     :return:
     """
-    l = LensCosmo(None, None)
-    c = l.NFW_concentration(m, z, scatter=False)
+    cosmo = Cosmology()
+    l = LensCosmo(z, 2.0, cosmo)
+    model, _ = preset_concentration_models('DIEMERJOYCE19')
+    cmodel = model(cosmo.astropy, scatter=False)
+    c = cmodel.nfw_concentration(m, z)
     rhos, rs, _ = l.NFW_params_physical(m, c, z)
     nfw_rho_squared = projected_density_squared(rein, rhos, rs, c)
     delta_sigma = (np.sqrt(np.pi) * nfw_rho_squared * de_Broglie_wavelength)**0.5
@@ -316,8 +357,11 @@ def delta_sigma_kawai(r, mhost, zhost, lambda_dB, dm_density_over_stellar_densit
     :return:
     """
 
-    l = LensCosmo()
-    c = l.NFW_concentration(mhost, zhost, scatter=False)
+    cosmo = Cosmology()
+    l = LensCosmo(zhost, 2.0, cosmo)
+    model, _ = preset_concentration_models('DIEMERJOYCE19')
+    cmodel = model(cosmo.astropy, scatter=False)
+    c = cmodel.nfw_concentration(mhost, zhost)
     rhos, rs, _ = l.NFW_params_physical(mhost, c, zhost)
     reff = effective_halo_size(r, rhos, rs, c)
     f = dm_density_over_stellar_density / (dm_density_over_stellar_density + 1)
@@ -432,3 +476,37 @@ def nfw_velocity_dispersion_fromfit(m):
     coeffs = [0.31575757, -1.74259129]
     log_vrms = coeffs[0] * np.log10(m) + coeffs[1]
     return 10 ** log_vrms
+
+class MinHaloMassULDM(object):
+
+    def __init__(self, log10_m_uldm, astropy_instance, log_mlow):
+        """
+        This class implements the minimum halo mass for ultra-light dark matter, given the particle mass and a cosmology
+
+        The call method returns the maximum of log_mlow, and the resulting minimum ULDM halo mass to ensure that one does
+        not inadvertently generate halos down to extremely low masses for heavy particles
+        :param log10_m_uldm: particle mass
+        :param astropy_instance: an instannce of astropy
+        :param log_mlow: minimum halo mass to render, regardless of ULDM computation
+        """
+        m22 = 10**(log10_m_uldm + 22)
+        self._Mmin0 = 4.4e7 * m22**(-3/2)
+        self._astropy_instance = astropy_instance
+        self._log_mlow = log_mlow
+
+    def __call__(self, z):
+        m_min = self.m_min(z)
+        log10_m_min = np.log10(m_min)
+        return max(log10_m_min, self._log_mlow)
+
+    def m_min(self, z):
+        return self._a(z) ** (-3 / 4) * (self._zeta(z) / self._zeta(0)) ** (1 / 4) * self._Mmin0
+
+    def _a(self, z):
+        return (1 + z) ** -1
+
+    def _Om(self, z):
+        return self._astropy_instance.Om(z)
+
+    def _zeta(self, z):
+        return (18 * np.pi ** 2 + 82 * (self._Om(z) - 1) - 39 * (self._Om(z) - 1) ** 2) / self._Om(z)

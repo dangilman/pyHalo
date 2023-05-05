@@ -10,13 +10,18 @@ class PJaffeSubhalo(Halo):
     M200. The scale radius of the Psuedo-Jafee profile is the same as the NFW profile
 
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+    def __init__(self, mass, x, y, r3d, z,
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
+
+        This profile is defined to have the same total mass as an NFW profile; rs = rs_pjaffe
         """
         self._lens_cosmo = lens_cosmo_instance
         self._prof = PJaffe()
+        self._concentration_class = concentration_class
+        self._truncation_class = truncation_class
+        mdef = 'PJAFFE'
         super(PJaffeSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
@@ -72,6 +77,20 @@ class PJaffeSubhalo(Halo):
 
         return self._lenstronomy_args, None
 
+    @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
+        if not hasattr(self, '_zeval'):
+
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
+                self._zeval = self.z
+            else:
+                self._zeval = self.z_infall
+
+        return self._zeval
+
     def _rho(self, m, rs, ra, r_match):
 
         """
@@ -99,21 +118,7 @@ class PJaffeSubhalo(Halo):
         """
         if not hasattr(self, '_profile_args'):
 
-            if self._args['evaluate_mc_at_zlens']:
-                z_eval = self.z
-            else:
-                z_eval = self.z_infall
-
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  z_eval,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
-
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
             self._profile_args = (concentration)
 
         return self._profile_args
@@ -127,16 +132,7 @@ class PJaffeFieldhalo(PJaffeSubhalo):
 
         if not hasattr(self, '_profile_args'):
 
-            concentration = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  self.z,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
-
+            concentration = self._concentration_class.nfw_concentration(self.mass, self.z)
             self._profile_args = (concentration)
 
         return self._profile_args

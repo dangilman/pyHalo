@@ -1,243 +1,65 @@
 import numpy.testing as npt
-import numpy as np
-from pyHalo.single_realization import SingleHalo
-from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
+from lenstronomy.Cosmo.lens_cosmo import LensCosmo as LensCosmoLenstronomy
+from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo, TNFWFieldHalo
+from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
+from pyHalo.Halos.tidal_truncation import TruncationRoche
+from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
-from colossus.halo.concentration import concentration, peaks
-from copy import deepcopy
 import pytest
-
 
 class TestTNFWHalos(object):
 
-    def setup(self):
+    def setup_method(self):
 
-        mass = 10**8.
+        astropy = FlatLambdaCDM(70.0, 0.3)
+        cosmo = Cosmology(astropy_instance=astropy)
+        self.zhalo = 0.5
+        self.zsource = 2.0
+        self.lens_cosmo = LensCosmo(self.zhalo, self.zsource, cosmo)
+        self.truncation_class = TruncationRoche(None, 100000000.0)
+        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
+        self.lclenstronomy = LensCosmoLenstronomy(self.zhalo, self.zsource, astropy)
+
+    def test_lenstronomy_params(self):
+
+        m = 10 ** 8
         x = 0.5
-        y = 1.
-        r3d = np.sqrt(1 + 0.5 ** 2 + 70**2)
-        self.r3d = r3d
-        mdef = 'TNFW'
-        self.z = 0.25
-        sub_flag = True
+        y = 1.0
+        r3d = 100
+        unique_tag = 1.0
+        is_subhalo = False
+        nfw_field_halo = TNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, {},
+                                      self.truncation_class, self.concentration_class, unique_tag)
 
-        self.H0 = 70
-        self.omega_baryon = 0.03
-        self.omega_DM = 0.25
-        self.sigma8 = 0.82
-        curvature = 'flat'
-        self.ns = 0.9608
-        cosmo_params = {'H0': self.H0, 'Om0': self.omega_baryon + self.omega_DM, 'Ob0': self.omega_baryon,
-                        'sigma8': self.sigma8, 'ns': self.ns, 'curvature': curvature}
-        self._dm, self._bar = self.omega_DM, self.omega_baryon
-        cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-        self.lens_cosmo = LensCosmo(self.z, 2., cosmo)
+        kwargs_halo, _ = nfw_field_halo.lenstronomy_params
+        id = nfw_field_halo.lenstronomy_ID
+        npt.assert_string_equal('TNFW', id[0])
 
-        kwargs_suppression = {'a_mc': 0.5, 'b_mc': 1.9}
-        suppression_model = 'hyperbolic'
-        profile_args = {'RocheNorm': 1.2, 'RocheNu': 2/3,
-                        'evaluate_mc_at_zlens': True,
-                        'log_mc': None, 'kwargs_suppression': kwargs_suppression,
-                        'suppression_model': suppression_model,
-                        'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
-                        'c_scatter': False,
-                        'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
+        rho0, Rs, c, r200, M200 = self.lclenstronomy.nfw_angle2physical(kwargs_halo[0]['Rs'],
+                                                                        kwargs_halo[0]['alpha_Rs'])
+        npt.assert_almost_equal(M200/m, 1.0, 3)
 
-        self.profile_args_WDM = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
-                        'evaluate_mc_at_zlens': True,
-                        'log_mc': 7.6,
-                        'kwargs_suppression': kwargs_suppression,
-                        'suppression_model': suppression_model,
-                        'mc_model': 'diemer19', 'LOS_truncation_factor': 40,
-                                 'c_scatter': False,
-                        'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
-
-        self._profile_args = profile_args
-
-        self.mass_subhalo = mass
-        self.subhalo = TNFWSubhalo(mass, x, y, r3d, mdef, self.z,
-                                   sub_flag, self.lens_cosmo,
-                                   profile_args, unique_tag=np.random.rand())
-        self.subhalo_WDM = TNFWSubhalo(mass, x, y, r3d, mdef, self.z,
-                                       sub_flag, self.lens_cosmo,
-                                       self.profile_args_WDM, unique_tag=np.random.rand())
-
-        mass_field_halo = 10 ** 7.
-        sub_flag = False
-        self.mass_field_halo = mass_field_halo
-        self.field_halo = TNFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
-                            sub_flag, self.lens_cosmo,
-                            profile_args, unique_tag=np.random.rand())
-        self.field_halo_WDM = TNFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
-                                        sub_flag, self.lens_cosmo,
-                                        self.profile_args_WDM, unique_tag=np.random.rand())
-
-        self.profile_args_custom = {'RocheNorm': 1.2, 'RocheNu': 2/3,
-                        'evaluate_mc_at_zlens': True,
-                        'log_mc': None, 'c_scatter': False,
-                                    'kwargs_suppression': kwargs_suppression,
-                                    'suppression_model': suppression_model,
-                        'mc_model': {'custom': True, 'c0': 6., 'beta': 0.2, 'zeta': -0.3},
-                               'LOS_truncation_factor': 40,
-                                    'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
-
-        mdef = 'TNFW'
-        sub_flag = False
-        self.field_halo_custom = TNFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
-                               sub_flag, self.lens_cosmo,
-                               self.profile_args_custom, unique_tag=np.random.rand())
-
-        sub_flag = True
-        self.subhalo_custom = TNFWSubhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
-                                          sub_flag, self.lens_cosmo,
-                                          self.profile_args_custom, unique_tag=np.random.rand())
-
-        self.profile_args_WDM_custom = {'RocheNorm': 1.2, 'RocheNu': 2 / 3,
-                                    'evaluate_mc_at_zlens': True,
-                                    'log_mc': 8., 'kwargs_suppression': kwargs_suppression,
-                        'suppression_model': suppression_model, 'c_scatter': False,
-                                    'mc_model': {'custom': True, 'c0': 6., 'beta': 0.2, 'zeta': -0.3},
-                                    'LOS_truncation_factor': 40,
-                                    'c_scatter_dex': 0.1, 'mc_mdef': '200c'}
-        sub_flag = True
-        self.subhalo_custom_WDM = TNFWSubhalo(self.mass_subhalo, x, y, r3d, mdef, self.z,
-                                              sub_flag, self.lens_cosmo,
-                                              self.profile_args_WDM_custom, unique_tag=np.random.rand())
-        sub_flag = False
-        self.field_halo_custom_WDM = TNFWFieldHalo(self.mass_field_halo, x, y, r3d, mdef, self.z,
-                                               sub_flag, self.lens_cosmo,
-                                               self.profile_args_WDM_custom, unique_tag=np.random.rand())
-
-
-    def test_lenstronomy_kwargs(self):
-
-        for prof in [self.subhalo_custom, self.subhalo, self.field_halo, self.field_halo_custom]:
-
-            (c, rtrunc_kpc) = prof.profile_args
-            kwargs, other = prof.lenstronomy_params
-            rs, theta_rs = self.lens_cosmo.nfw_physical2angle(prof.mass, c, self.z)
-            names = ['center_x', 'center_y', 'alpha_Rs', 'Rs', 'r_trunc']
-            rtrunc_angle = rtrunc_kpc / self.lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-            values = [prof.x, prof.y, theta_rs, rs, rtrunc_angle]
-            for name, value in zip(names, values):
-                npt.assert_almost_equal(kwargs[0][name], value)
-
-
-    def test_lenstronomy_ID(self):
-        id = self.subhalo_custom.lenstronomy_ID
-        npt.assert_string_equal(id[0], 'TNFW')
+        is_subhalo = True
+        kwargs_profile = {'evaluate_mc_at_zlens': False}
+        nfw_subhalo = TNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                  self.truncation_class, self.concentration_class, unique_tag)
+        c_subhalo = nfw_subhalo.c
+        c_field = nfw_field_halo.c
+        npt.assert_equal(True, c_subhalo <= c_field)
 
     def test_z_infall(self):
-
-        z_infall = self.subhalo.z_infall
-        npt.assert_equal(True, self.z <= z_infall)
-
-    def test_rescale_norm(self):
-
-        kwargs_halo = {'c_scatter': True}
-        realization = SingleHalo(10 ** 9, 0., 0., 'TNFW', 0.6, 0.5, 1.5,
-                                 subhalo_flag=False, kwargs_halo=kwargs_halo)
-
-        lens_model_list, zlist, kwargs_init, _ = realization.lensing_quantities(False)
-        realization_copy = deepcopy(realization)
-        lens_model_list, zlist, kwargs_copy, _ = realization_copy.lensing_quantities(False)
-        npt.assert_equal(kwargs_init[0]['alpha_Rs'], kwargs_copy[0]['alpha_Rs'])
-
-        rescale = 0.7
-        realization.halos[0].rescale_normalization(rescale)
-        realization_copy.halos[0].rescale_normalization(rescale)
-        lens_model_list, zlist, kwargs, _ = realization.lensing_quantities(False)
-        lens_model_list, zlist, kwargs_copy, _ = realization.lensing_quantities(False)
-        npt.assert_equal(kwargs_init[0]['alpha_Rs'] * rescale, kwargs[0]['alpha_Rs'])
-        npt.assert_equal(kwargs_init[0]['alpha_Rs'] * rescale, kwargs_copy[0]['alpha_Rs'])
-
-    def test_profile_args(self):
-
-        profile_args = self.subhalo.profile_args
-        (c, rt) = profile_args
-        con = concentration(self.lens_cosmo.cosmo.h * self.mass_subhalo, '200c', self.z,
-                            model='diemer19')
-        npt.assert_almost_equal(c/con, 1, 2)
-        trunc = self._profile_args['RocheNorm'] * (10 ** 8 / 10 ** 7) ** (1./3) * \
-                (self.r3d / 50) ** self._profile_args['RocheNu']
-        npt.assert_almost_equal(trunc, rt, 3)
-
-        profile_args = self.subhalo_WDM.profile_args
-        (c, rt) = profile_args
-        con = concentration(self.lens_cosmo.cosmo.h * self.mass_subhalo, '200c', self.z,
-                            model='diemer19')
-        amc, bmc = self.profile_args_WDM['kwargs_suppression']['a_mc'], \
-                   self.profile_args_WDM['kwargs_suppression']['b_mc']
-        u = self.mass_subhalo/10**self.profile_args_WDM['log_mc']
-        argument = (np.log10(u) - amc) / (2 * bmc)
-
-        wdm_suppresion = 0.5 * (1 + np.tanh(argument))
-        npt.assert_almost_equal(con * wdm_suppresion, c)
-
-        profile_args = self.field_halo.profile_args
-        (c, rt) = profile_args
-        con = concentration(self.lens_cosmo.cosmo.h * self.mass_field_halo, '200c', self.z,
-                            model='diemer19')
-        npt.assert_almost_equal(c / con, 1, 2)
-        m_h = self.mass_field_halo * self.lens_cosmo.cosmo.h
-        r50_comoving = self.lens_cosmo.rN_M_nfw_comoving(m_h, self._profile_args['LOS_truncation_factor'], self.z)
-        r50_physical = r50_comoving * self.lens_cosmo.cosmo.scale_factor(self.z) / self.lens_cosmo.cosmo.h
-        r50_physical_kpc = r50_physical * 1000
-        npt.assert_almost_equal(r50_physical_kpc, rt)
-
-        profile_args = self.field_halo_WDM.profile_args
-        (c, rt) = profile_args
-        con = concentration(self.lens_cosmo.cosmo.h * self.mass_field_halo, '200c', self.z,
-                            model='diemer19')
-        amc, bmc = self.profile_args_WDM['kwargs_suppression']['a_mc'], \
-                   self.profile_args_WDM['kwargs_suppression']['b_mc']
-        u = self.mass_field_halo / 10 ** self.profile_args_WDM['log_mc']
-        argument = (np.log10(u) - amc) / (2 * bmc)
-        wdm_suppresion = 0.5 * (1 + np.tanh(argument))
-        npt.assert_almost_equal(con * wdm_suppresion, c)
-
-        profile_args = self.subhalo_custom.profile_args
-        (c, _) = profile_args
-        c0 = self.profile_args_custom['mc_model']['c0']
-        beta = self.profile_args_custom['mc_model']['beta']
-        zeta = self.profile_args_custom['mc_model']['zeta']
-
-        h = self.lens_cosmo.cosmo.h
-        mh_sub = self.mass_subhalo * h
-        nu = peaks.peakHeight(mh_sub, self.z)
-        nu_ref = peaks.peakHeight(h * 10 ** 8, 0.)
-        con_subhalo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
-        npt.assert_almost_equal(con_subhalo/c, 1)
-
-        profile_args = self.field_halo_custom.profile_args
-        (c, _) = profile_args
-        c0 = self.profile_args_custom['mc_model']['c0']
-        beta = self.profile_args_custom['mc_model']['beta']
-        zeta = self.profile_args_custom['mc_model']['zeta']
-
-        h = self.lens_cosmo.cosmo.h
-        mh_sub = self.mass_field_halo * h
-        nu = peaks.peakHeight(mh_sub, self.z)
-        nu_ref = peaks.peakHeight(h * 10 ** 8, 0.)
-        con_field_halo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
-        npt.assert_almost_equal(con_field_halo / c, 1)
-
-        profile_args = self.field_halo_custom_WDM.profile_args
-        (c, _) = profile_args
-        c0 = self.profile_args_custom['mc_model']['c0']
-        beta = self.profile_args_custom['mc_model']['beta']
-        zeta = self.profile_args_custom['mc_model']['zeta']
-        u = self.mass_field_halo / 10**self.profile_args_WDM_custom['log_mc']
-        argument = (np.log10(u) - amc) / (2 * bmc)
-        wdm_suppresion = 0.5 * (1 + np.tanh(argument))
-
-        h = self.lens_cosmo.cosmo.h
-        mh_field = self.mass_field_halo * h
-        nu = peaks.peakHeight(mh_field, self.z)
-        nu_ref = peaks.peakHeight(h * 10 ** 8, 0.)
-        con_field_halo = c0 * (1 + self.z) ** zeta * (nu / nu_ref) ** -beta
-        npt.assert_almost_equal(wdm_suppresion * con_field_halo, c)
+        m = 10 ** 8
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        unique_tag = 1.0
+        kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+        is_subhalo = True
+        tnfw_subhalo = TNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                  self.truncation_class, self.concentration_class, unique_tag)
+        z_infall = tnfw_subhalo.z_infall
+        npt.assert_equal(True, self.zhalo <= z_infall)
 
 if __name__ == '__main__':
     pytest.main()

@@ -1,7 +1,7 @@
 import numpy as np
+from pyHalo.Rendering.SpatialDistributions.base import SpatialDistributionBase
 
-
-class Correlated2D(object):
+class Correlated2D(SpatialDistributionBase):
     """
     This class generates points from an arbitrary 2D probability distribution
     """
@@ -14,6 +14,7 @@ class Correlated2D(object):
         """
         self._geo = geometry
         self._smooth_scale = smooth_scale
+        super(Correlated2D, self).__init__()
 
     def draw(self, n, r_max, density, z_plane, shift_x=0., shift_y=0.):
 

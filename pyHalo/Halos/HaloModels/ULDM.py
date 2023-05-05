@@ -10,13 +10,15 @@ class ULDMFieldHalo(Halo):
     """
     The base class for a truncated NFW halo
     """
-    def __init__(self, mass, x, y, r3d, mdef, z,
-                 sub_flag, lens_cosmo_instance, args, unique_tag):
+    def __init__(self, mass, x, y, r3d, z,
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         self._lens_cosmo = lens_cosmo_instance
-
+        self._truncation_class = truncation_class
+        self._concentration_class = concentration_class
+        mdef = 'ULDM'
         super(ULDMFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
@@ -33,15 +35,7 @@ class ULDMFieldHalo(Halo):
         Computes the NFW halo concentration (once)
         """
         if not hasattr(self, '_c'):
-            self._c = self._lens_cosmo.NFW_concentration(self.mass,
-                                                                  self.z_eval,
-                                                                  self._args['mc_model'],
-                                                                  self._args['mc_mdef'],
-                                                                  self._args['log_mc'],
-                                                                  self._args['c_scatter'],
-                                                                  self._args['c_scatter_dex'],
-                                                                self._args['kwargs_suppression'],
-                                                                self._args['suppression_model'])
+            self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
         return self._c
 
     @property
@@ -59,7 +53,7 @@ class ULDMFieldHalo(Halo):
         kwargs_uldm_temporary = {'theta_c': theta_c, 'kappa_0': kappa_0,
             'center_x': x, 'center_y': y}
         kwargs = self._rescaled_cnfw_params(kwargs_cnfw_temporary,
-                                                kwargs_uldm_temporary)                   
+                                                kwargs_uldm_temporary)
         return kwargs, None
 
     @property
@@ -155,8 +149,9 @@ class ULDMFieldHalo(Halo):
         initial_guess = np.array([0.9,1.1])
         bounds = ((0.5, 10), (0.5, 1.5))
         method = 'Nelder-Mead'
-        beta, q = minimize(self._function_to_minimize, initial_guess,
-                           args, method=method, bounds=bounds, tol=0.1)['x']
+        out = minimize(self._function_to_minimize, initial_guess,
+                           args, method=method, bounds=bounds, tol=0.001)
+        beta, q = out['x']
 
         if beta<0:
             raise ValueError('Negative CNFW core radius, tweak your parameters.')
@@ -252,11 +247,11 @@ class ULDMSubhalo(ULDMFieldHalo):
     @property
     def z_eval(self):
         """
-        Returns the redshift at which to evaluate the concentration-mass relation
+        Returns the redshift at which to evalate the concentration-mass relation
         """
         if not hasattr(self, '_zeval'):
 
-            if self._args['evaluate_mc_at_zlens']:
+            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
                 self._zeval = self.z
             else:
                 self._zeval = self.z_infall

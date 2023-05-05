@@ -7,12 +7,11 @@ import pytest
 
 class TestUniform(object):
 
-    def setup(self):
+    def setup_method(self):
 
         cosmo = Cosmology()
         self.geometry = Geometry(cosmo, 0.5, 1.5, 6., 'DOUBLE_CONE')
         self.uni = Uniform(3, self.geometry)
-
         self.lenscone_uni = LensConeUniform(6., self.geometry)
 
     def test_uniform(self):

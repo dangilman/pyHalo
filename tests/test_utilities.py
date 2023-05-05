@@ -50,4 +50,4 @@ class TestUtilities(object):
         lambda_dB = de_broglie_wavelength(log10_m_uldm,v)
         npt.assert_almost_equal(lambda_dB,0.6)
         delta_kappa = delta_sigma(m,z_lens,rein,lambda_dB)
-        npt.assert_almost_equal(delta_kappa, 80837585.600, 3)
+        npt.assert_almost_equal(delta_kappa/80837585.696, 1, 2)

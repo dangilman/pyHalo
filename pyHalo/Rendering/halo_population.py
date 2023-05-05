@@ -11,36 +11,50 @@ class HaloPopulation(object):
     adds to the lens model.
     """
 
-    def __init__(self, model_list, keywords_master, lens_cosmo, geometry, halo_mass_function=None,
+    def __init__(self, model_list, mass_function_class_list, kwargs_mass_function_list,
+                 spatial_distribution_class_list, kwargs_spatial_distribution,
+                 lens_cosmo, geometry,
                  lens_plane_redshift_list=None, redshift_spacings=None):
 
         """
 
-        :param model_list: A list of population models (e.g. ['SUBHALOS', 'LINE_OF_SIGHT']
-        :param keywords_master: a dictionary of keyword arguments to be passed to each model class
+        :param model_list: a list of names for different halo populations (e.g. ['LINE_OF_SIGHT', 'SUBHALOS', ...])
+        :param mass_function_class_list: a list of non-instatiated mass function classes (see Rendering/MassFunctions)
+        :param kwargs_mass_function_list: keyword arguments for the mass function classes
+        :param spatial_distribution_class_list: a list of non-instantiated spatial distribution classes
+        (see Rendering/SpatialDistributions)
+        :param kwargs_spatial_distribution: keyword arguments for the spatial distribution classes
         :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
-        :param geometry: an instance of Geometry (see Cosmology.geometry)
-        :param halo_mass_function: an instance of LensingMassFunction (see Cosmology.lensing_mass_function)
-        :param lens_plane_redshift_list: a list of redshifts at which to render halos
-        :param redshift_spacings: a list of redshift increments between each lens plane (should be the same length as
-        lens_plane_redshifts)
+        :param geometry: an instance of Geometry class (see Cosmology.geometry)
+        :param lens_plane_redshift_list: redshifts at which to render line-of-sight halos
+        :param redshift_spacings: spacing between redshift planes
         """
-        self.rendering_classes = []
 
-        for population_model in model_list:
-            if population_model == 'LINE_OF_SIGHT':
-                model = LineOfSight(keywords_master, halo_mass_function, geometry, lens_cosmo,
-                                    lens_plane_redshift_list, redshift_spacings)
-            elif population_model == 'LINE_OF_SIGHT_NOSHEET':
-                model = LineOfSightNoSheet(keywords_master, halo_mass_function, geometry, lens_cosmo,
-                                    lens_plane_redshift_list, redshift_spacings)
-            elif population_model == 'SUBHALOS':
-                model = Subhalos(keywords_master, geometry, lens_cosmo)
-            elif population_model == 'TWO_HALO':
-                model = TwoHaloContribution(keywords_master, halo_mass_function, geometry, lens_cosmo,
-                                            lens_plane_redshift_list, redshift_spacings)
+        self.rendering_classes = []
+        for i, model_name in enumerate(model_list):
+
+            mass_function_model_class = mass_function_class_list[i]
+            kwargs_model = kwargs_mass_function_list[i]
+
+            if model_name == 'SUBHALOS':
+                spatial_distribution_model = spatial_distribution_class_list[i].from_Mhost(**kwargs_spatial_distribution[i])
             else:
-                raise Exception('model '+str(population_model)+' not recognized. ')
+                spatial_distribution_model = spatial_distribution_class_list[i](**kwargs_spatial_distribution[i])
+
+            if model_name == 'LINE_OF_SIGHT':
+                model = LineOfSight(mass_function_model_class, kwargs_model, spatial_distribution_model,
+                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
+            elif model_name == 'LINE_OF_SIGHT_NOSHEET':
+                model = LineOfSightNoSheet(mass_function_model_class, kwargs_model, spatial_distribution_model,
+                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
+            elif model_name == 'SUBHALOS':
+                model = Subhalos(mass_function_model_class, kwargs_model, spatial_distribution_model,
+                 geometry, lens_cosmo)
+            elif model_name == 'TWO_HALO':
+                model = TwoHaloContribution(mass_function_model_class, kwargs_model, spatial_distribution_model,
+                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
+            else:
+                raise Exception('model '+str(model_name)+' not recognized. ')
 
             self.rendering_classes.append(model)
 

@@ -6,7 +6,7 @@ import numpy as np
 
 class TestConeGeometry(object):
 
-    def setup(self):
+    def setup_method(self):
 
         self.arcsec = 2 * np.pi / 360 / 3600
         self.zlens = 1
@@ -30,8 +30,8 @@ class TestConeGeometry(object):
 
     def test_angle_scale(self):
 
-        reduced_to_phys = self.geometry_double_cone._cosmo.D_A(0, self.zsource) / \
-                          self.geometry_double_cone._cosmo.D_A(self.zlens, self.zsource)
+        reduced_to_phys = self.geometry_double_cone.cosmo.D_A(0, self.zsource) / \
+                          self.geometry_double_cone.cosmo.D_A(self.zlens, self.zsource)
 
         ratio_double_cone = reduced_to_phys * \
                             self.cosmo.D_A(self.zlens, self.zsource)/self.cosmo.D_A_z(self.zsource)
@@ -46,7 +46,7 @@ class TestConeGeometry(object):
 
         z = 0.3
         radius_physical = self.geometry_double_cone.angle_to_physicalradius(self.angle_radius, z)
-        radius = self.geometry_double_cone._cosmo.D_A(0., z) * self.angle_radius * self.arcsec
+        radius = self.geometry_double_cone.cosmo.D_A(0., z) * self.angle_radius * self.arcsec
         npt.assert_almost_equal(radius_physical, radius, 0)
 
         comoving_radius = self.geometry_double_cone.angle_to_comovingradius(self.angle_radius, z)
@@ -54,7 +54,7 @@ class TestConeGeometry(object):
 
         z = 1
         radius_physical = self.geometry_double_cone.angle_to_physicalradius(self.angle_radius, z)
-        radius = self.geometry_double_cone._cosmo.D_A(0., z) * self.angle_radius * self.arcsec
+        radius = self.geometry_double_cone.cosmo.D_A(0., z) * self.angle_radius * self.arcsec
         npt.assert_almost_equal(radius_physical, radius, 0)
 
         comoving_radius = self.geometry_double_cone.angle_to_comovingradius(self.angle_radius, z)
@@ -62,13 +62,13 @@ class TestConeGeometry(object):
 
         z = 1.25
         radius_physical = self.geometry_double_cone.angle_to_physicalradius(self.angle_radius, z)
-        D_dz = self.geometry_double_cone._cosmo.D_A(self.zlens, z)
-        D_s = self.geometry_double_cone._cosmo.D_A(0, self.zsource)
-        D_z = self.geometry_double_cone._cosmo.D_A(0, z)
-        D_ds = self.geometry_double_cone._cosmo.D_A(self.zlens, self.zsource)
+        D_dz = self.geometry_double_cone.cosmo.D_A(self.zlens, z)
+        D_s = self.geometry_double_cone.cosmo.D_A(0, self.zsource)
+        D_z = self.geometry_double_cone.cosmo.D_A(0, z)
+        D_ds = self.geometry_double_cone.cosmo.D_A(self.zlens, self.zsource)
 
         rescale = 1 - self._angle_pad * D_dz * D_s / (D_z * D_ds)
-        radius = self.geometry_double_cone._cosmo.D_A(0., z) * self.angle_radius * self.arcsec * rescale
+        radius = self.geometry_double_cone.cosmo.D_A(0., z) * self.angle_radius * self.arcsec * rescale
 
         npt.assert_almost_equal(radius_physical, radius, 0)
 
@@ -84,7 +84,7 @@ class TestConeGeometry(object):
         zlens = 1.
         zsrc = 1.8
         geo = Geometry(self.cosmo, zlens, zsrc, cone_arcsec, 'DOUBLE_CONE', angle_pad=angle_pad)
-        astropy = geo._cosmo.astropy
+        astropy = geo.cosmo.astropy
 
         delta_z = 1e-3
 
