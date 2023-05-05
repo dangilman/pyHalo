@@ -134,7 +134,11 @@ def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone
     :param m_pivot:
     :return:
     """
-
-    m_pivot_factor = m_pivot ** -(plaw_index+1)
+    
+    host_scaling = host_scaling_function(host_m200, zlens)
+    a0_per_kpc2 = sigma_sub * host_scaling
+    R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
+    area = np.pi * R_kpc ** 2
+    m_pivot_factor = m_pivot ** -(plaw_index + 1)
     normalization = area * a0_per_kpc2 * m_pivot_factor
     return normalization
