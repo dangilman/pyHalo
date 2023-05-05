@@ -93,7 +93,7 @@ class TNFWSubhaloEmulator(Halo):
             # evaluate density parameters at the time of lensing
             _rhos_mpc, _rs_mpc, _ = self._lens_cosmo.nfwParam_physical(self.mass, concentration, self.z_eval)
             # convert to angles at the time of lensing (deflector redshift)
-            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(_rhos_mpc, _rs_mpc, self.z_eval)
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z_eval)
             x, y = np.round(self.x, 4), np.round(self.y, 4)
             Rs_angle = np.round(Rs_angle, 10)
             theta_Rs = np.round(theta_Rs, 10)
