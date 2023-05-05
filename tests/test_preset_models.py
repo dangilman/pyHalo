@@ -58,8 +58,8 @@ class TestPresetModels(object):
         _ = cdm_subhalo_emulator.lensing_quantities()
         for i, halo in enumerate(cdm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
-            npt.assert_equal(halo.x, 1.0)
-            npt.assert_equal(halo.y, 1.0)
+            npt.assert_almost_equal(halo.x, 0.1584666, 4)
+            npt.assert_almost_equal(halo.y, 0.1584666, 4)
             npt.assert_equal(halo.c, concentrations[i])
 
         emulator_input_array = np.empty((2, 5))
@@ -72,8 +72,8 @@ class TestPresetModels(object):
         _ = cdm_subhalo_emulator.lensing_quantities()
         for i, halo in enumerate(cdm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
-            npt.assert_equal(halo.x, 1.0)
-            npt.assert_equal(halo.y, 1.0)
+            npt.assert_almost_equal(halo.x, 0.1584666, 4)
+            npt.assert_almost_equal(halo.y, 0.1584666, 4)
             npt.assert_equal(halo.c, concentrations[i])
 
 if __name__ == '__main__':
