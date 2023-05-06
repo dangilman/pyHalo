@@ -86,7 +86,7 @@ class AdiabaticTidesTruncation(object):
     An example of the type of class we want to create and implement in pyHalo
     """
 
-    def __init__(self, lens_cosmo, m_host, z_host, log10_galaxy_rs, log10_galaxy_m):
+    def __init__(self, lens_cosmo, m_host, z_host, log10_galaxy_rs, log10_galaxy_m, mass_loss_interp=None):
         """
 
         :param lens_cosmo:
@@ -96,23 +96,25 @@ class AdiabaticTidesTruncation(object):
         :param log10_galaxy_m:
         """
 
-        m_host_list = np.array([13.0])
-        z_host_list = np.array([0.5])
-        fnames = ['13.0_z0.5']
+        if mass_loss_interp is None:
+            m_host_list = np.array([13.0])
+            z_host_list = np.array([0.5])
+            fnames = ['13.0_z0.5']
+
+            fname_base = 'subhalo_mass_loss_interp_mhost'
+            dmhost = abs(m_host_list - np.log10(m_host)) / 0.1
+            d_zhost = abs(z_host_list - z_host) / 0.2
+            penalty = dmhost + d_zhost
+            idx_min = np.argsort(penalty)[0]
+            fname = fname_base + fnames[idx_min]
+            f = open(_path + fname, 'rb')
+            self._mass_loss_interp = pickle.load(f)
+            f.close()
+        else:
+            self._mass_loss_interp = mass_loss_interp
 
         min_max_c = [1.0, 10 ** 2.7]
         min_max_rperi = [10 ** -2.5, 1.0]
-
-        fname_base = 'subhalo_mass_loss_interp_mhost'
-        dmhost = abs(m_host_list - np.log10(m_host)) / 0.1
-        d_zhost = abs(z_host_list - z_host) / 0.2
-        penalty = dmhost + d_zhost
-        idx_min = np.argsort(penalty)[0]
-        fname = fname_base + fnames[idx_min]
-        f = open(_path + fname, 'rb')
-        self._mass_loss_interp = pickle.load(f)
-        f.close()
-
         self._lens_cosmo = lens_cosmo
         cmodel = ConcentrationDiemerJoyce(self._lens_cosmo.cosmo.astropy, scatter=False)
         c_host = cmodel.nfw_concentration(m_host, z_host)
@@ -148,6 +150,7 @@ class AdiabaticTidesTruncation(object):
 
         # evaluate the mass loss
         log10mass_loss_fraction_asymptotic = float(self._mass_loss_interp(point))
+
         time_since_infall = halo.time_since_infall
         n_orbits = time_since_infall / self._host_dynamical_time
         mass_loss_fraction = self._temporal_mass_loss(10 ** log10mass_loss_fraction_asymptotic, n_orbits)
@@ -157,7 +160,6 @@ class AdiabaticTidesTruncation(object):
         log10c = np.log10(c)
         point = (log10c, log10mass_loss_fraction)
         point = self._make_params_in_bounds_tau_evaluate(point)
-
         log10tau = float(self._tau_mf_interpolation(point))
         tau = 10 ** log10tau
         _, rs, _ = self._lens_cosmo.NFW_params_physical(halo.mass, halo.c, halo.z_eval)
