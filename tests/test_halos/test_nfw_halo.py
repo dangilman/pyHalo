@@ -17,7 +17,7 @@ class TestNFWHalos(object):
         self.zsource = 2.0
         self.lens_cosmo = LensCosmo(self.zhalo, self.zsource, cosmo)
         self.truncation_class = None
-        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo)
+        self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
         self.lclenstronomy = LensCosmoLenstronomy(self.zhalo, self.zsource, astropy)
 
     def test_lenstronomy_params(self):
