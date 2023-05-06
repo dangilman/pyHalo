@@ -1,4 +1,12 @@
 import numpy as np
+import inspect
+import pickle
+import inspect
+from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
+from scipy.interpolate import RegularGridInterpolator
+from pyHalo.Halos.util import tau_mf_interpolation
+_path = inspect.getfile(inspect.currentframe())[0:-29]+'/adiabatic_tides_data/'
+
 
 class TruncationRN(object):
 
@@ -72,3 +80,133 @@ class TruncationRoche(object):
         radius_units_50 = subhalo_r3d / 50
         rtrunc_kpc = self._norm * m_units_7 ** self._m_power * radius_units_50 ** self._r3d_power
         return np.round(rtrunc_kpc, 3)
+
+class AdiabaticTidesTruncation(object):
+    """
+    An example of the type of class we want to create and implement in pyHalo
+    """
+
+    def __init__(self, lens_cosmo, m_host, z_host, log10_galaxy_rs, log10_galaxy_m):
+        """
+
+        :param lens_cosmo:
+        :param m_host:
+        :param z_host:
+        :param log10_galaxy_rs:
+        :param log10_galaxy_m:
+        """
+
+        m_host_list = np.array([13.0])
+        z_host_list = np.array([0.5])
+        fnames = ['13.0_z0.5']
+
+        min_max_c = [1.0, 10 ** 2.7]
+        min_max_rperi = [10 ** -2.5, 1.0]
+
+        fname_base = 'subhalo_mass_loss_interp_mhost'
+        dmhost = abs(m_host_list - np.log10(m_host)) / 0.1
+        d_zhost = abs(z_host_list - z_host) / 0.2
+        penalty = dmhost + d_zhost
+        idx_min = np.argsort(penalty)[0]
+        fname = fname_base + fnames[idx_min]
+        f = open(_path + fname, 'rb')
+        self._mass_loss_interp = pickle.load(f)
+        f.close()
+
+        self._lens_cosmo = lens_cosmo
+        cmodel = ConcentrationDiemerJoyce(self._lens_cosmo.cosmo.astropy, scatter=False)
+        c_host = cmodel.nfw_concentration(m_host, z_host)
+        self._host_dynamical_time = self._lens_cosmo.halo_dynamical_time(m_host, z_host, c_host)
+        self._min_c = min_max_c[0]
+        self._max_c = min_max_c[1]
+        self._min_rperi = min_max_rperi[0]
+        self._max_rperi = min_max_rperi[1]
+        self._log10_galaxy_rs = log10_galaxy_rs
+        self._log10_galaxy_m = log10_galaxy_m
+        self._tau_mf_interpolation = tau_mf_interpolation()
+
+    def truncation_radius_halo(self, halo):
+        """
+        This function solves for the truncation radius divided by the halo scale radius (tau) given an instance of
+        Halo (see pyhalo.HaloModels.TNFW) and other arguments for the interpolation function
+
+        :param halo: an instance of the Halo class (should be TNFW)
+
+        :return tau: the truncation radius divided by the halo's scale radius
+        """
+
+        # compute the halo parameeters
+        c = halo.c
+        # now make sure that the points are inside the region where we computed the interpolation
+        r_pericenter_over_r200 = np.absolute(halo.rperi_units_r200)
+        if r_pericenter_over_r200 > self._max_rperi:
+            r_pericenter_over_r200 = self._max_rperi
+        if r_pericenter_over_r200 < self._min_rperi:
+            r_pericenter_over_r200 = self._min_rperi
+        point = (np.log10(c), np.log10(r_pericenter_over_r200), self._log10_galaxy_rs, self._log10_galaxy_m)
+        point = self._make_params_in_bounds(point)
+
+        # evaluate the mass loss
+        log10mass_loss_fraction_asymptotic = float(self._mass_loss_interp(point))
+        time_since_infall = halo.time_since_infall
+        n_orbits = time_since_infall / self._host_dynamical_time
+        mass_loss_fraction = self._temporal_mass_loss(10 ** log10mass_loss_fraction_asymptotic, n_orbits)
+        log10mass_loss_fraction = np.log10(mass_loss_fraction)
+
+        # solve for tau
+        log10c = np.log10(c)
+        point = (log10c, log10mass_loss_fraction)
+        point = self._make_params_in_bounds_tau_evaluate(point)
+
+        log10tau = float(self._tau_mf_interpolation(point))
+        tau = 10 ** log10tau
+        _, rs, _ = self._lens_cosmo.NFW_params_physical(halo.mass, halo.c, halo.z_eval)
+        return tau * rs
+
+    @staticmethod
+    def _temporal_mass_loss(mass_loss_asymptotic, n_orbits):
+        """
+        This routine interpolates between zero mass loss at infall and the asymptotic value
+        predicted by the adiabatic tides model
+        """
+        mass_loss = mass_loss_asymptotic * (1 / mass_loss_asymptotic) ** (1. / (1. + 0.6 * n_orbits))
+        return mass_loss
+
+    def _make_params_in_bounds_tau_evaluate(self, point):
+        """
+        This routine makes sure the arguments for the initerpolation are inside the domain of the function.
+        """
+        (log10c, log10mass_loss_fraction) = point
+        if 10 ** log10c < self._min_c:
+            log10c = np.log10(self._min_c)
+        elif 10 ** log10c > self._max_c:
+            log10c = np.log10(self._max_c)
+        if log10mass_loss_fraction < -1.5:
+            log10mass_loss_fraction = -1.5
+        elif log10mass_loss_fraction > -0.01:
+            log10mass_loss_fraction = -0.01
+        return (log10c, log10mass_loss_fraction)
+
+    def _make_params_in_bounds(self, point):
+        """
+        This routine makes sure the arguments for the initerpolation are inside the domain of the function.
+        """
+        (log10c, log10r_pericenter_over_r200, log10_galaxy_rs, log10_galaxy_m) = point
+        if log10c < np.log10(self._min_c):
+            log10c = np.log10(self._min_c)
+        elif log10c > np.log10(self._max_c):
+            log10c = np.log10(self._min_c)
+        if log10r_pericenter_over_r200 < -2.5:
+            log10r_pericenter_over_r200 = -2.5
+        elif log10r_pericenter_over_r200 > 0.0:
+            log10r_pericenter_over_r200 = 0.0
+        if log10_galaxy_rs < -2.0:
+            log10_galaxy_rs = -2.0
+        elif log10_galaxy_rs > 0.3:
+            log10_galaxy_rs = 0.3
+        if log10_galaxy_m < -2.5:
+            log10_galaxy_m = -2.5
+        elif log10_galaxy_m > -0.25:
+            log10_galaxy_m = -0.25
+        new_point = (log10c, log10r_pericenter_over_r200, log10_galaxy_rs, log10_galaxy_m)
+        return new_point

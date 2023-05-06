@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import numpy as np
+
 
 class Halo(ABC):
 
@@ -12,7 +14,7 @@ class Halo(ABC):
         :param mass: halo mass in M_sun
         :param x: angular coordinate x in arcsec
         :param y: angular coordinate y in arcsec
-        :param r3d: three dimensional position of halo in kpc (used to compute the truncation radius for subhalos)
+        :param r3d: 3D position of halo in kpc (used to compute the truncation radius for subhalos)
         For field halos this is not relevant and is set to None
         :param mdef: mass definition for the halo
         :param z: halo redshift
@@ -117,6 +119,22 @@ class Halo(ABC):
         if not hasattr(self, '_time_since_infall'):
             self._time_since_infall = self.lens_cosmo.cosmo.halo_age(self.z, self.z_infall)
         return self._time_since_infall
+
+    @property
+    def rperi_units_r200(self):
+        """
+        Returns the orbital pericenter of a subhalo in units of the host halo virial radius. This method
+        uses output from the semi-analytic model Galacticus
+        :return:
+        """
+        if not self.is_subhalo:
+            print("Orbital pericenter is a meaningless concept for field halos. It is possible you assigned a tidal "
+                  "truncation model that requires this information to field halos.")
+            return None
+        if not hasattr(self, '_rperi_units_r200'):
+            'TODO: REPLACE THIS WITH AN ACTUAL SAMPLING'
+            self._rperi_units_r200 = np.random.uniform(0.1, 0.9)
+        return self._rperi_units_r200
 
 
 
