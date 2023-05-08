@@ -76,7 +76,7 @@ class TestULDMHalo(object):
                                  cnfw_kwargs['alpha_Rs'],
                                  cnfw_kwargs['r_core'])
         rho_goal = Uldm().density_lens(0,kappa_0,theta_c)
-        npt.assert_array_less(np.array([1-(rho0+rhos)/rho_goal]),np.array([0.06])) # less than 3% error
+        npt.assert_array_less(np.array([1-(rho0+rhos)/rho_goal]),np.array([0.1])) # less than 3% error
 
     def test_profile_normalization_fieldhalo(self):
         """

@@ -18,9 +18,9 @@ class TestTruncation(object):
     def test_load_models(self):
 
         model_name_list = ['TRUNCATION_R50', 'TRUNCATION_RN', 'TRUNCATION_ROCHE', 'TRUNCATION_ROCHE_GILMAN2020',
-                           'ADIABATIC_TIDES']
+                           'ADIABATIC_TIDES', 'SPLASHBACK']
         kwargs_model_list = [{}, {'LOS_truncation_factor': 50.}, {'RocheNorm': 1.0, 'm_power': 1./3, 'RocheNu': 2.0/3.0}, {},
-                             {'log_m_host': 13.0, 'z_host': 0.5}]
+                             {'log_m_host': 13.0, 'z_host': 0.5}, {}]
         for model,kwargs in zip(model_name_list, kwargs_model_list):
             mod, kw = truncation_models(model)
             kwargs.update(kw)

@@ -1,4 +1,4 @@
-from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, AdiabaticTidesTruncation
+from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, AdiabaticTidesTruncation, TruncationSplashBack
 
 
 def truncation_models(model_name):
@@ -21,4 +21,8 @@ def truncation_models(model_name):
         return TruncationRoche, kwargs_model
     elif model_name == 'ADIABATIC_TIDES':
         return AdiabaticTidesTruncation, kwargs_model
+    elif model_name == 'SPLASHBACK':
+        return TruncationSplashBack, kwargs_model
+    else:
+        raise Exception('model '+str(model_name)+' not recognized')
 

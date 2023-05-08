@@ -5,8 +5,44 @@ import inspect
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from scipy.interpolate import RegularGridInterpolator
 from pyHalo.Halos.util import tau_mf_interpolation
+from colossus.lss import peaks
+from colossus.halo import splashback
 _path_testing = inspect.getfile(inspect.currentframe())[0:-29]+'/adiabatic_tides_data/'
 _path_run = inspect.getfile(inspect.currentframe())[0:-20]+'/adiabatic_tides_data/'
+
+class TruncationSplashBack(object):
+
+    def __init__(self, lens_cosmo):
+        """
+        This computes the splashback radius of a halo as the truncation radius (appropriate for field halos)
+        See Diemer (2020)
+        :param lens_cosmo: an instance of LensCosmo
+        """
+        self._lens_cosmo = lens_cosmo
+
+    def truncation_radius_halo(self, halo):
+        """
+        Thiis method computes the truncation radius using the class attributes of an instance of Halo
+        :param halo: an instance of halo
+        :return: the truncation radius in physical kpc
+        """
+        return self.truncation_radius(halo.mass, halo.c, halo.z)
+
+    def truncation_radius(self, halo_mass, halo_concentration, z):
+        """
+        Computes the radius r_N of an NFW halo
+        :param halo_mass: halo mass (m200 with respect to critical density at z)
+        :param z: redshift
+        :param halo_concentration: the halo concentration
+        :param lens_cosmo: an instance of LensCosmo
+        :return: the truncation radius
+        """
+        # TODO: compute r200 for M200c mass definition
+        nu200m = peaks.peakHeight(halo_mass, z)
+        RspR200m_units_rvir, _ = splashback.splashbackModel('RspR200m', nu200m=nu200m, z=z, rspdef='sp-apr-mn')
+        _, _, r200m_kpc = self._lens_cosmo.NFW_params_physical(halo_mass, halo_concentration, z)
+        rt_kpc = RspR200m_units_rvir * r200m_kpc
+        return rt_kpc
 
 class TruncationRN(object):
 
