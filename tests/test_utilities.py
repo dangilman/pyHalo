@@ -1,9 +1,9 @@
 from lenstronomy.LensModel.lens_model import LensModel
 import numpy.testing as npt
 import numpy as np
-from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma
+from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma, ITSampling, inverse_transform_sampling
 from pyHalo.Cosmology.cosmology import Cosmology
-
+import pytest
 
 class TestUtilities(object):
 
@@ -51,3 +51,28 @@ class TestUtilities(object):
         npt.assert_almost_equal(lambda_dB,0.6)
         delta_kappa = delta_sigma(m,z_lens,rein,lambda_dB)
         npt.assert_almost_equal(delta_kappa/80837585.696, 1, 2)
+
+    def test_inverse_transform_sampling(self):
+
+        mu = 2.0
+        sigma = 1.5
+        func = lambda x: np.exp(-0.5 * (x - mu) ** 2 / sigma**2)
+        x = np.linspace(mu - 5*sigma, mu + 5*sigma, 1000)
+        x_samples = inverse_transform_sampling(x, func, (), 100000)
+        npt.assert_almost_equal(np.mean(x_samples)/mu, 1.0, 2)
+        npt.assert_almost_equal(np.std(x_samples)/sigma, 1.0, 2)
+
+    def test_ITSampling(self):
+
+        mu = 2.14
+        sigma = 0.35
+        x = np.random.normal(mu, sigma, 250000)
+        sampler = ITSampling(x)
+        x_samples = sampler(100000)
+        npt.assert_almost_equal(np.mean(x_samples)/mu, 1.0, 2)
+        npt.assert_almost_equal(np.std(x_samples)/sigma, 1.0, 2)
+
+
+if __name__ == '__main__':
+
+    pytest.main()

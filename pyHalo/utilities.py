@@ -4,9 +4,37 @@ from scipy.interpolate import interp1d
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from scipy.special import jv
 from scipy.integrate import simps
 from pyHalo.concentration_models import preset_concentration_models
+
+class ITSampling(object):
+
+    def __init__(self, samples):
+        """
+        This class performs inverse transform sampling of a distribution given samples from the distribution
+        :param samples: samples from the distribution
+        """
+        ran = (np.min(samples), np.max(samples))
+        h, x = np.histogram(samples, range=ran, bins=150)
+        x = x[0:-1] + (x[1] - x[0])/2
+        cdf = np.cumsum(h)
+        cdf = cdf / float(np.max(cdf))
+        self._cdf_inverse = interp1d(cdf, x)
+        self._umin = cdf[0]
+        self._umax = cdf[-1]
+
+    def __call__(self, n_samples):
+        """
+        Generates samples from the distribution
+        :param n_samples: number of samples to draw
+        :return: the samples
+        """
+        u = np.random.uniform(self._umin, self._umax, n_samples)
+        samples_out = self._cdf_inverse(u)
+        if n_samples == 1:
+            return float(samples_out)
+        else:
+            return np.squeeze(samples_out)
 
 def inverse_transform_sampling(x, function, args, n_samples):
     """

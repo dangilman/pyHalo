@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
-
+import inspect
+from pyHalo.utilities import ITSampling
+_path = inspect.getfile(inspect.currentframe())[0:-13]+'/adiabatic_tides_data/galacticus_data.txt'
+_rperi_sampling = ITSampling(np.loadtxt(_path)[:,0])
 
 class Halo(ABC):
 
@@ -132,8 +135,7 @@ class Halo(ABC):
                   "truncation model that requires this information to field halos.")
             return None
         if not hasattr(self, '_rperi_units_r200'):
-            'TODO: REPLACE THIS WITH AN ACTUAL SAMPLING'
-            self._rperi_units_r200 = np.random.uniform(0.1, 0.9)
+            self._rperi_units_r200 = _rperi_sampling(n_samples=1.0)
         return self._rperi_units_r200
 
 
