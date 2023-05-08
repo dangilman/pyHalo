@@ -2,8 +2,12 @@ from abc import ABC, abstractmethod
 import numpy as np
 import inspect
 from pyHalo.utilities import ITSampling
-_path = inspect.getfile(inspect.currentframe())[0:-13]+'/adiabatic_tides_data/galacticus_data.txt'
-_rperi_sampling = ITSampling(np.loadtxt(_path)[:,0])
+_path_galacticus_data_testing = inspect.getfile(inspect.currentframe())[0:-13]+'/adiabatic_tides_data/galacticus_data.txt'
+_path_galacticus_data_run = inspect.getfile(inspect.currentframe())[0:-8]+'/adiabatic_tides_data/galacticus_data.txt'
+try:
+    _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_run)[:,0])
+except:
+    _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_testing)[:,0])
 
 class Halo(ABC):
 

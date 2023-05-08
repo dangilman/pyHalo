@@ -29,7 +29,7 @@ class ITSampling(object):
         :param n_samples: number of samples to draw
         :return: the samples
         """
-        u = np.random.uniform(self._umin, self._umax, n_samples)
+        u = np.random.uniform(self._umin, self._umax, int(n_samples))
         samples_out = self._cdf_inverse(u)
         if n_samples == 1:
             return float(samples_out)

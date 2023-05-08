@@ -21,7 +21,7 @@ class TestAdiabaticTides(object):
         self.lens_cosmo_instance = LensCosmo(0.5, 1.5)
         log10_galaxy_rs, log10_galaxy_m, host_dynamical_time = np.log10(0.5), np.log10(0.25), 1.0
         self.att = AdiabaticTidesTruncation(self.lens_cosmo_instance,
-                                            10**13.3, 0.5, log10_galaxy_rs, log10_galaxy_m, mass_loss_interp=DummyInterp())
+                                            13.3, 0.5, log10_galaxy_rs, log10_galaxy_m, mass_loss_interp=DummyInterp())
 
 
     def test_rt(self):

@@ -5,8 +5,8 @@ import inspect
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from scipy.interpolate import RegularGridInterpolator
 from pyHalo.Halos.util import tau_mf_interpolation
-_path = inspect.getfile(inspect.currentframe())[0:-29]+'/adiabatic_tides_data/'
-
+_path_testing = inspect.getfile(inspect.currentframe())[0:-29]+'/adiabatic_tides_data/'
+_path_run = inspect.getfile(inspect.currentframe())[0:-20]+'/adiabatic_tides_data/'
 
 class TruncationRN(object):
 
@@ -86,11 +86,12 @@ class AdiabaticTidesTruncation(object):
     An example of the type of class we want to create and implement in pyHalo
     """
 
-    def __init__(self, lens_cosmo, m_host, z_host, log10_galaxy_rs, log10_galaxy_m, mass_loss_interp=None):
+    def __init__(self, lens_cosmo, log_m_host, z_host, log10_galaxy_rs=np.log10(0.5),
+                 log10_galaxy_m=np.log10(0.1), mass_loss_interp=None):
         """
 
         :param lens_cosmo:
-        :param m_host:
+        :param log_m_host:
         :param z_host:
         :param log10_galaxy_rs:
         :param log10_galaxy_m:
@@ -102,14 +103,19 @@ class AdiabaticTidesTruncation(object):
             fnames = ['13.0_z0.5']
 
             fname_base = 'subhalo_mass_loss_interp_mhost'
-            dmhost = abs(m_host_list - np.log10(m_host)) / 0.1
+            dmhost = abs(m_host_list - log_m_host) / 0.1
             d_zhost = abs(z_host_list - z_host) / 0.2
             penalty = dmhost + d_zhost
             idx_min = np.argsort(penalty)[0]
             fname = fname_base + fnames[idx_min]
-            f = open(_path + fname, 'rb')
-            self._mass_loss_interp = pickle.load(f)
-            f.close()
+            try:
+                f = open(_path_run + fname, 'rb')
+                self._mass_loss_interp = pickle.load(f)
+                f.close()
+            except:
+                f = open(_path_testing + fname, 'rb')
+                self._mass_loss_interp = pickle.load(f)
+                f.close()
         else:
             self._mass_loss_interp = mass_loss_interp
 
@@ -117,8 +123,8 @@ class AdiabaticTidesTruncation(object):
         min_max_rperi = [10 ** -2.5, 1.0]
         self._lens_cosmo = lens_cosmo
         cmodel = ConcentrationDiemerJoyce(self._lens_cosmo.cosmo.astropy, scatter=False)
-        c_host = cmodel.nfw_concentration(m_host, z_host)
-        self._host_dynamical_time = self._lens_cosmo.halo_dynamical_time(m_host, z_host, c_host)
+        c_host = cmodel.nfw_concentration(10**log_m_host, z_host)
+        self._host_dynamical_time = self._lens_cosmo.halo_dynamical_time(10**log_m_host, z_host, c_host)
         self._min_c = min_max_c[0]
         self._max_c = min_max_c[1]
         self._min_rperi = min_max_rperi[0]
