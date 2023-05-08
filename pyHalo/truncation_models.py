@@ -7,7 +7,7 @@ def truncation_models(model_name):
     """
     kwargs_model = {}
     if model_name == 'TRUNCATION_R50':
-        kwargs_model['N'] = 50
+        kwargs_model['LOS_truncation_factor'] = 50
         # truncates NFW halos at r50 (for field halos, this is comparable to the splashback radius)
         return TruncationRN, kwargs_model
     elif model_name == 'TRUNCATION_RN':
