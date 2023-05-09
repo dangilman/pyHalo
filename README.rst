@@ -6,7 +6,7 @@ pyHalo
         :target: https://travis-ci.com/dangilman/pyHalo
 
 .. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
-        :target: <a href='https://coveralls.io/github/dangilman/pyHalo?branch=master'><img src='https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master' alt='Coverage Status' /></a>
+        :target: 
 
         
 .. image:: https://badge.fury.io/py/pyhalo.svg
