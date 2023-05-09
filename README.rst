@@ -5,8 +5,8 @@ pyHalo
 .. image:: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
         :target: https://travis-ci.com/dangilman/pyHalo
 
-.. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
-        :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
+.. image:: <a href='https://coveralls.io/github/dangilman/pyHalo?branch=master'><img src='https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master' alt='Coverage Status' /></a>
+
         
 .. image:: https://badge.fury.io/py/pyhalo.svg
         :target: https://badge.fury.io/py/pyhalo.svg
