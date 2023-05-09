@@ -1,8 +1,10 @@
 import numpy as np
 from pyHalo.Rendering.MassFunctions.util import integrate_power_law_analytic, integrate_power_law_quad
+from pyHalo.utilities import inverse_transform_sampling
 from scipy.interpolate import interp1d
 
 __all__ = ['CDMPowerLaw', 'WDMPowerLaw', 'MixedWDMPowerLaw']
+
 
 class _PowerLawBase(object):
     name = 'BASE_POWER_LAW'
@@ -200,3 +202,44 @@ class MixedWDMPowerLaw(_PowerLawTurnoverBase):
         wdm_comp = factor ** c_mfunc_break
         suppression_factor = (mixed_DM_frac + (1 - mixed_DM_frac) * np.sqrt(wdm_comp)) ** 2
         return suppression_factor
+
+class Tabulated(object):
+    """
+    This class generates samples from an mass function given an array of halo masses and the amplitude of the differential
+    mass function at these masses
+    """
+    def __init__(self, log_mlow, log_mhigh, draw_poisson, m, dndm):
+        """
+
+        :param log_mlow: minimum halo mass to render
+        :param log_mhigh: maximum halo mass to render
+        :param draw_poisson: bool; draw from a poisson distribution
+        :param m: numpy array containing halo masses
+        :param dndm: differential mass function amplitudes corresponding to m
+        """
+
+        self._logmlow = log_mlow
+        self._logmhigh = log_mhigh
+        self._draw_poisson = draw_poisson
+        cond1 = m >= 10 ** log_mlow
+        cond2 = m <= 10 ** log_mhigh
+        inds_keep = np.where(np.logical_and(cond1, cond2))[0]
+        self._m = m[inds_keep]
+        self._dndm = dndm[inds_keep]
+        self.n_mean = np.trapz(self._dndm, self._m)
+        self.first_moment = np.trapz(self._m * self._dndm, self._m)
+        self._interp_dndm = interp1d(self._m, self._dndm)
+
+    def draw(self):
+        """
+        Samples from the mass function
+        :return: an array of masses
+        """
+        if self._draw_poisson:
+            n_draw = int(np.random.poisson(self.n_mean))
+        else:
+            n_draw = int(self.n_mean)
+
+        samples = inverse_transform_sampling(self._m, self._interp_dndm, (), n_draw)
+        return samples
+
