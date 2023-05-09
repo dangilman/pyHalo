@@ -48,6 +48,5 @@ class TestTruncation(object):
         r200_kpc_true = norm * (halo_mass/10**7) ** m_power * (r3d_subhalo/50)**nu
         npt.assert_almost_equal(r200_kpc, r200_kpc_true, 3)
 
-
 if __name__ == '__main__':
     pytest.main()

@@ -37,9 +37,10 @@ class TruncationSplashBack(object):
         :param lens_cosmo: an instance of LensCosmo
         :return: the truncation radius
         """
-        nu200m = peaks.peakHeight(halo_mass, z)
+        h = self._lens_cosmo.cosmo.h
+        nu200m = peaks.peakHeight(halo_mass * h, z)
         RspR200m_units_rvir, _ = splashback.splashbackModel('RspR200m', nu200m=nu200m, z=z, rspdef='sp-apr-mn')
-        r200m_mpc = self._lens_cosmo.rN_M(halo_mass, z, 200.0) / self._lens_cosmo.cosmo.astropy.Om0 ** (1./3)
+        r200m_mpc = self._lens_cosmo.rN_M(halo_mass * h, z, 200.0) / self._lens_cosmo.cosmo.astropy.Om0 ** (1./3)
         rt_kpc = RspR200m_units_rvir * r200m_mpc * 1e3
         return rt_kpc
 
@@ -72,7 +73,8 @@ class TruncationRN(object):
         :param lens_cosmo: an instance of LensCosmo
         :return: the truncation radius
         """
-        rN_physical_mpc = self._lens_cosmo.rN_M(halo_mass, z, self._N)
+        h = self._lens_cosmo.cosmo.h
+        rN_physical_mpc = self._lens_cosmo.rN_M(halo_mass * h, z, self._N)
         return rN_physical_mpc*1000
 
 class TruncationRoche(object):
