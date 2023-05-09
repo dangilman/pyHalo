@@ -198,58 +198,6 @@ def compute_comoving_ray_path(x_coordinate, y_coordinate, lens_model, kwargs_len
 
         return np.array(x_list), np.array(y_list), np.array(distances)
 
-def sample_density(probability_density, Nsamples, pixel_scale, x_0, y_0, Rmax, smoothing_scale=4):
-    """
-
-    :param probability_density:
-    :param Nsamples:
-    :param pixel_scale:
-    :param x_0:
-    :param y_0:
-    :param Rmax:
-    :param smoothing_scale:
-    :return:
-    """
-
-    probnorm = probability_density / probability_density.sum()
-
-    s = probnorm.shape[0]
-    p = probnorm.ravel()
-
-    values = np.arange(s ** 2)
-
-    x_out, y_out = np.array([]), np.array([])
-
-    ndraw = Nsamples
-
-    while ndraw > 0:
-        ndraw = Nsamples - len(x_out)
-
-        inds = np.random.choice(values, p=p, size=ndraw, replace=True)
-
-        pairs = np.indices(dimensions=(s, s)).T
-
-        locations = pairs.reshape(-1, 2)[inds]
-        x_sample_pixel, y_sample_pixel = locations[:, 0], locations[:, 1]
-
-        # transform to arcsec
-        x_sample_arcsec = (x_sample_pixel - s / 2) * pixel_scale
-        y_sample_arcsec = (y_sample_pixel - s / 2) * pixel_scale
-
-        # smooth on sub-pixel scale
-        pixel_smoothing_kernel = pixel_scale / smoothing_scale
-        # apply smoothing to remove artificial tiling
-        x_sample_arcsec += np.random.normal(0, pixel_smoothing_kernel, ndraw)
-        y_sample_arcsec += np.random.normal(0, pixel_smoothing_kernel, ndraw)
-
-        # keep circular symmetry
-        r = np.sqrt(x_sample_arcsec ** 2 + y_sample_arcsec ** 2)
-        keep = np.where(r <= Rmax)
-        x_out = np.append(x_out, x_sample_arcsec[keep])
-        y_out = np.append(y_out, y_sample_arcsec[keep])
-
-    return x_out, y_out
-
 def de_broglie_wavelength(log10_m_uldm,v):
     '''
     Returns de Broglie wavelength of the ultra-light axion in kpc.
