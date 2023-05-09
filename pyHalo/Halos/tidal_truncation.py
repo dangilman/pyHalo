@@ -26,9 +26,9 @@ class TruncationSplashBack(object):
         :param halo: an instance of halo
         :return: the truncation radius in physical kpc
         """
-        return self.truncation_radius(halo.mass, halo.c, halo.z)
+        return self.truncation_radius(halo.mass, halo.z)
 
-    def truncation_radius(self, halo_mass, halo_concentration, z):
+    def truncation_radius(self, halo_mass, z):
         """
         Computes the radius r_N of an NFW halo
         :param halo_mass: halo mass (m200 with respect to critical density at z)
@@ -37,11 +37,10 @@ class TruncationSplashBack(object):
         :param lens_cosmo: an instance of LensCosmo
         :return: the truncation radius
         """
-        # TODO: compute r200 for M200c mass definition
         nu200m = peaks.peakHeight(halo_mass, z)
         RspR200m_units_rvir, _ = splashback.splashbackModel('RspR200m', nu200m=nu200m, z=z, rspdef='sp-apr-mn')
-        _, _, r200m_kpc = self._lens_cosmo.NFW_params_physical(halo_mass, halo_concentration, z)
-        rt_kpc = RspR200m_units_rvir * r200m_kpc
+        r200m_mpc = self._lens_cosmo.rN_M(halo_mass, z, 200.0) / self._lens_cosmo.cosmo.astropy.Om0 ** (1./3)
+        rt_kpc = RspR200m_units_rvir * r200m_mpc * 1e3
         return rt_kpc
 
 class TruncationRN(object):
@@ -73,8 +72,7 @@ class TruncationRN(object):
         :param lens_cosmo: an instance of LensCosmo
         :return: the truncation radius
         """
-        # concentration doesn't matter here
-        _, _, rN_physical_mpc = self._lens_cosmo.nfwParam_physical(halo_mass, 16.0, z)
+        rN_physical_mpc = self._lens_cosmo.rN_M(halo_mass, z, self._N)
         return rN_physical_mpc*1000
 
 class TruncationRoche(object):

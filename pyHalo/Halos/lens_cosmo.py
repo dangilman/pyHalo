@@ -90,6 +90,19 @@ class LensCosmo(object):
         sigma_crit = self.get_sigma_crit_lensing(z, self.z_source)
         return Rs_angle, alpha_Rs / sigma_crit / dd / self._arcsec
 
+    def rN_M(self, M, z, N):
+        """
+        computes the radius R_N of a halo of mass M in physical mass M/h, where N is a number multiplying the critical
+        density of the Universe at z
+
+        :param M: halo mass in M_sun/h
+        :param z: redshift
+        :param N: number, e.g. N=200 computes r200
+        :return: radius R_N in physical Mpc/h
+        """
+        rn_mpc_over_h = (3 * M / (4 * numpy.pi * self._nfw_param.rhoc_z(z) * N)) ** (1. / 3.)
+        return rn_mpc_over_h / self.cosmo.h
+
     def nfwParam_physical(self, m, c, z):
         """
         returns the NFW parameters in physical units
