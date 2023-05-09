@@ -6,7 +6,7 @@ pyHalo
         :target: https://travis-ci.com/dangilman/pyHalo
 
 .. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=main
-        :target: https://coveralls.io/github/pyHalo/pyhalo?branch=main
+        :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
         
 .. image:: https://badge.fury.io/py/pyhalo.svg
         :target: https://badge.fury.io/py/pyhalo.svg
