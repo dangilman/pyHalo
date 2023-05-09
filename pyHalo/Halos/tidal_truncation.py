@@ -221,14 +221,10 @@ class AdiabaticTidesTruncation(object):
         This routine makes sure the arguments for the initerpolation are inside the domain of the function.
         """
         (log10c, log10mass_loss_fraction) = point
-        if 10 ** log10c < self._min_c:
-            log10c = np.log10(self._min_c)
-        elif 10 ** log10c > self._max_c:
-            log10c = np.log10(self._max_c)
-        if log10mass_loss_fraction < -1.5:
-            log10mass_loss_fraction = -1.5
-        elif log10mass_loss_fraction > -0.01:
-            log10mass_loss_fraction = -0.01
+        log10c = max(self._min_c, log10c)
+        log10c = min(self._max_c, log10c)
+        log10mass_loss_fraction = max(-1.5, log10mass_loss_fraction)
+        log10mass_loss_fraction = min(-0.01, log10mass_loss_fraction)
         return (log10c, log10mass_loss_fraction)
 
     def _make_params_in_bounds(self, point):
@@ -236,21 +232,13 @@ class AdiabaticTidesTruncation(object):
         This routine makes sure the arguments for the initerpolation are inside the domain of the function.
         """
         (log10c, log10r_pericenter_over_r200, log10_galaxy_rs, log10_galaxy_m) = point
-        if log10c < np.log10(self._min_c):
-            log10c = np.log10(self._min_c)
-        elif log10c > np.log10(self._max_c):
-            log10c = np.log10(self._min_c)
-        if log10r_pericenter_over_r200 < -2.5:
-            log10r_pericenter_over_r200 = -2.5
-        elif log10r_pericenter_over_r200 > 0.0:
-            log10r_pericenter_over_r200 = 0.0
-        if log10_galaxy_rs < -2.0:
-            log10_galaxy_rs = -2.0
-        elif log10_galaxy_rs > 0.3:
-            log10_galaxy_rs = 0.3
-        if log10_galaxy_m < -2.5:
-            log10_galaxy_m = -2.5
-        elif log10_galaxy_m > -0.25:
-            log10_galaxy_m = -0.25
+        log10c = max(self._min_c, log10c)
+        log10c = min(self._max_c, log10c)
+        log10r_pericenter_over_r200 = max(-2.5, log10r_pericenter_over_r200)
+        log10r_pericenter_over_r200 = min(0.0, log10r_pericenter_over_r200)
+        log10_galaxy_rs = max(-2.0, log10_galaxy_rs)
+        log10_galaxy_rs = min(0.3, log10_galaxy_rs)
+        log10_galaxy_m = max(-2.5, log10_galaxy_m)
+        log10_galaxy_m = min(-0.25, log10_galaxy_m)
         new_point = (log10c, log10r_pericenter_over_r200, log10_galaxy_rs, log10_galaxy_m)
         return new_point

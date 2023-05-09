@@ -1,9 +1,8 @@
 import pytest
-from pyHalo.truncation_models import truncation_models
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
-from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche
+from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack
 from pyHalo.truncation_models import truncation_models
 from astropy.cosmology import FlatLambdaCDM
 
@@ -47,6 +46,19 @@ class TestTruncation(object):
         r200_kpc = truncation_roche.truncation_radius(halo_mass, r3d_subhalo)
         r200_kpc_true = norm * (halo_mass/10**7) ** m_power * (r3d_subhalo/50)**nu
         npt.assert_almost_equal(r200_kpc, r200_kpc_true, 3)
+
+    def test_truncation_splashback(self):
+
+        class DummyHalo(object):
+            def __init__(self, m, z):
+                self.mass = m
+                self.z = z
+        truncation_splashback = TruncationSplashBack(self.lenscosmo)
+        rt = truncation_splashback.truncation_radius(10**8, 0.4)
+        halo = DummyHalo(10**8, 0.4)
+        rt_halo = truncation_splashback.truncation_radius_halo(halo)
+        npt.assert_almost_equal(rt, rt_halo)
+
 
 if __name__ == '__main__':
     pytest.main()
