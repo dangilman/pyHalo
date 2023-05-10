@@ -109,38 +109,34 @@ class TestMixedWDMPowerLaw(object):
         first_moment_mixed_pure_cdm = self.mass_function_pure_cdm.first_moment
         npt.assert_almost_equal(first_moment_cdm/first_moment_mixed_pure_cdm, 1.0, 8)
 
-class TestTabulated(object):
-
-    def setup_method(self):
-
-        self.log_mlow = 6.0
-        self.log_mhigh = 8.0
-        self.power_law_index = -1.9
-        self.draw_poisson = False
-        self.normalization = 1e10
-        self.mass_function_powerlaw = CDMPowerLaw(self.log_mlow, self.log_mhigh, self.power_law_index,
-                                         self.draw_poisson, self.normalization)
-
-        m = np.logspace(6, 8, 1000)
-        dndm = self.normalization * m ** self.power_law_index
-        self.mass_function_tabulated = Tabulated(self.log_mlow, self.log_mhigh, self.draw_poisson,
-                                                 m, dndm)
-
-    def test_zeroth_moment(self):
-
-        npt.assert_almost_equal(self.mass_function_powerlaw.n_mean/self.mass_function_tabulated.n_mean, 1.0, 3)
-
-    def test_first_moment(self):
-
-        npt.assert_almost_equal(self.mass_function_powerlaw.first_moment/self.mass_function_tabulated.first_moment, 1.0, 3)
-        rendered = np.sum(self.mass_function_tabulated.draw())
-        expected = np.sum(self.mass_function_powerlaw.draw())
-        npt.assert_almost_equal(rendered/expected,1.0)
-
-
-t = TestTabulated()
-t.setup_method()
-t.test_first_moment()
+# class TestTabulated(object):
 #
-# if __name__ == '__main__':
-#    pytest.main()
+#     def setup_method(self):
+#
+#         self.log_mlow = 6.0
+#         self.log_mhigh = 8.0
+#         self.power_law_index = -1.9
+#         self.draw_poisson = False
+#         self.normalization = 1e10
+#         self.mass_function_powerlaw = CDMPowerLaw(self.log_mlow, self.log_mhigh, self.power_law_index,
+#                                          self.draw_poisson, self.normalization)
+#
+#         m = np.logspace(6, 8, 1000)
+#         dndm = self.normalization * m ** self.power_law_index
+#         self.mass_function_tabulated = Tabulated(self.log_mlow, self.log_mhigh, self.draw_poisson,
+#                                                  m, dndm)
+#
+#     def test_zeroth_moment(self):
+#
+#         npt.assert_almost_equal(self.mass_function_powerlaw.n_mean/self.mass_function_tabulated.n_mean, 1.0, 3)
+#
+#     def test_first_moment(self):
+#
+#         npt.assert_almost_equal(self.mass_function_powerlaw.first_moment/self.mass_function_tabulated.first_moment, 1.0, 3)
+#         rendered = np.sum(self.mass_function_tabulated.draw())
+#         expected = np.sum(self.mass_function_powerlaw.draw())
+#         npt.assert_almost_equal(rendered/expected,1.0)
+
+
+if __name__ == '__main__':
+   pytest.main()
