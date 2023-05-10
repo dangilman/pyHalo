@@ -53,30 +53,39 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
         geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
     """
+    This class generates realizations of dark matter structure in Cold Dark Matter
 
-    :param z_lens:
-    :param z_source:
-    :param sigma_sub:
-    :param log_mlow:
-    :param log_mhigh:
-    :param concentration_model_subhalos:
-    :param kwargs_concentration_model_subhalos:
-    :param concentration_model_fieldhalos:
-    :param kwargs_concentration_model_fieldhalos:
-    :param truncation_model_subhalos:
-    :param kwargs_trunction_model_subhalos:
-    :param truncation_model_fieldhalos:
-    :param kwargs_truncation_model_fieldhalos:
-    :param shmf_log_slope:
-    :param cone_opening_angle_arcsec:
-    :param log_m_host:
-    :param r_tidal:
-    :param LOS_normalization:
-    :param two_halo_contribution:
-    :param delta_power_law_index:
-    :param geometry_type:
-    :param kwargs_cosmo:
-    :return:
+    :param z_lens: main deflector redshift
+    :param z_source: source redshift
+    :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log_mlow: log base 10 of the minimum halo mass to render
+    :param log_mhigh: log base 10 of the maximum halo mass to render
+    :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_subhalos: keyword arguments for the subhalo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param concentration_model_subhalos: the concentration-mass relation applied to field halos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
+    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
+    complete list
+    :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
+    :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
+    :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
+    :param log_m_host: log base 10 of the host halo mass [M_sun]
+    :param r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed
+    in 3D with a cored NFW profile with this core radius
+    :param LOS_normalization: rescales the amplitude of the line-of-sight halo mass function
+    :param two_halo_contribution: bool; turns on and off the two-halo term
+    :param delta_power_law_index: tilts the logarithmic slope of the subhalo and field halo mass functions around pivot
+    at 10^8 M_sun
+    :param geometry_type: string that specifies the geometry of the rendering volume; options include
+    DOUBLE_CONE, CONE, CYLINDER
+    :param kwargs_cosmo: keyword arguments that specify the cosmology (see pyHalo.Cosmology.cosmology)
+    :return: a realization of dark matter halos
     """
 
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -178,36 +187,43 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={}):
 
     """
+    This class generates realizations of dark matter structure in Warm Dark Matter
 
-    :param z_lens:
-    :param z_source:
-    :param log_mc:
-    :param sigma_sub:
-    :param log_mlow:
-    :param log_mhigh:
-    :param mass_function_model_subhalos:
-    :param kwargs_mass_function_subhalos:
-    :param mass_function_model_fieldhalos:
-    :param kwargs_mass_function_fieldhalos:
-    :param concentration_model_subhalos:
-    :param kwargs_concentration_model_subhalos:
-    :param concentration_model_fieldhalos:
-    :param kwargs_concentration_model_fieldhalos:
-    :param truncation_model_subhalos:
-    :param kwargs_trunction_model_subhalos:
-    :param truncation_model_fieldhalos:
-    :param kwargs_truncation_model_fieldhalos:
-    :param shmf_log_slope:
-    :param cone_opening_angle_arcsec:
-    :param log_m_host:
-    :param r_tidal:
-    :param LOS_normalization:
-    :param geometry_type:
-    :param kwargs_cosmo:
-    :param mdef_subhalos:
-    :param mdef_field_halos:
-    :param kwargs_density_profile:
-    :return:
+    :param z_lens: main deflector redshift
+    :param z_source: source redshift
+    :param log_mc: the log base 10 of the half-mode mass
+    :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log_mlow: log base 10 of the minimum halo mass to render
+    :param log_mhigh: log base 10 of the maximum halo mass to render
+    :param mass_function_model_subhalos: mass function model for subhalos, see mass_function_models.py for a list
+    :param kwargs_mass_function_subhalos: keyword arguments for the mass function model
+    :param mass_function_model_fieldhalos: mass function model for field halos, see mass_function_models.py for a list
+    :param kwargs_mass_function_fieldhalos: keyword arguments for the mass function model
+    :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_subhalos: keyword arguments for the subhalo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param concentration_model_subhalos: the concentration-mass relation applied to field halos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
+    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
+    complete list
+    :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
+    :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
+    :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
+    :param log_m_host: log base 10 of the host halo mass [M_sun]
+    :param r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed
+    in 3D with a cored NFW profile with this core radius
+    :param geometry_type: string that specifies the geometry of the rendering volume; options include
+    DOUBLE_CONE, CONE, CYLINDER
+    :param kwargs_cosmo: keyword arguments that specify the cosmology (see pyHalo.Cosmology.cosmology)
+    :param mdef_subhalos: mass definition for subhalos
+    :param mdef_field_halos: mass definition for field halos
+    :param kwargs_density_profile: keyword arguments for the specified mass profile
+    :return: a realization of dark matter halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
     pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
@@ -310,9 +326,8 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
-        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, kwargs_density_profile={},
-         uldm_plaw=1 / 3, scale_nfw=False, flucs=True, flucs_shape='aperture', flucs_args={}, n_cut=50000,
-         rescale_fluc_amp=True, r_ein=1.0):
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
+         uldm_plaw=1 / 3, flucs=True, flucs_shape='aperture', flucs_args={}, n_cut=50000, r_ein=1.0):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -374,39 +389,53 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
 
     where Om(z) is the matter density parameter.
 
-    :param z_lens:
-    :param z_source:
-    :param log10_m_uldm:
-    :param log10_fluc_amplitude:
-    :param fluctuation_size_scale:
-    :param fluctuation_size_dispersion:
-    :param n_fluc_scale:
-    :param velocity_scale:
-    :param sigma_sub:
-    :param log_mlow:
-    :param log_mhigh:
-    :param mass_function_model_subhalos:
-    :param kwargs_mass_function_subhalos:
-    :param mass_function_model_fieldhalos:
-    :param kwargs_mass_function_fieldhalos:
-    :param concentration_model_subhalos:
-    :param kwargs_concentration_model_subhalos:
-    :param concentration_model_fieldhalos:
-    :param kwargs_concentration_model_fieldhalos:
-    :param truncation_model_subhalos:
-    :param kwargs_trunction_model_subhalos:
-    :param truncation_model_fieldhalos:
-    :param kwargs_truncation_model_fieldhalos:
-    :param shmf_log_slope:
-    :param cone_opening_angle_arcsec:
-    :param log_m_host:
-    :param r_tidal:
-    :param LOS_normalization:
-    :param geometry_type:
-    :param kwargs_cosmo:
-    :param kwargs_density_profile:
-    :return:
+    :param z_lens: main deflector redshift
+    :param z_source: source redshift
+    :param log10_m_uldm: log base 10 of the ULDM particle mass
+    :param log10_fluc_amplitude: log base 10 of the fluctuation amplitude in the host halo density profile
+    :param fluctuation_size_scale: sets the size of the fluctuations in host halo in units of de-Broglie wavelength
+    :param fluctuation_size_dispersion: sets the variance of the size of the fluctuations
+    :param n_fluc_scale: rescales the number of fluctuations
+    :param velocity_scale: the velocity scale of the host halo used to convert particle mass to de-Broglie wavelength
+    :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log_mlow: log base 10 of the minimum halo mass to render
+    :param log_mhigh: log base 10 of the maximum halo mass to render
+    :param mass_function_model_subhalos: mass function model for subhalos, see mass_function_models.py for a list
+    :param kwargs_mass_function_subhalos: keyword arguments for the mass function model
+    :param mass_function_model_fieldhalos: mass function model for field halos, see mass_function_models.py for a list
+    :param kwargs_mass_function_fieldhalos: keyword arguments for the mass function model
+    :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_subhalos: keyword arguments for the subhalo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param concentration_model_subhalos: the concentration-mass relation applied to field halos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
+    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
+    complete list
+    :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
+    :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
+    :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
+    :param log_m_host: log base 10 of the host halo mass [M_sun]
+    :param r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed
+    in 3D with a cored NFW profile with this core radius
+    :param geometry_type: string that specifies the geometry of the rendering volume; options include
+    DOUBLE_CONE, CONE, CYLINDER
+    :param kwargs_cosmo: keyword arguments that specify the cosmology, see Cosmology/cosmology.py
+    :param uldm_plaw: sets the exponent for the core size/halo mass relation in ULDM
+    :param flucs: bool; turns of/off fluctuations in the host halo density profile
+    :param flucs_shape: the geometry in which to render fluctuations, options include 'aperture', 'ring', 'ellipse'
+    :param flucs_args: keyword arguments for the specified geometry, see realization_extensions
+    :param n_cut: maximum number of fluctuations to render; amplitudes of individual fluctuations get suppressed by
+    sqrt(n_cut / n_total) if n_total > n_cut, where n_total is the number of expected fluctuations given the de-Broglie
+    wavelength and the area in which the fluctuations area rendered
+    :param r_ein: The characteristic angular used to convert fluctuations in convergence to fluctuations in mass
+    :return: a realization of halos and fluctuations modeled as Gaussians in ULDM
     """
+
     # constants
     m22 = 10**(log10_m_uldm + 22)
     log_m0 = np.log10(1.6e10 * m22**(-4/3))
@@ -416,9 +445,9 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
 
     #compute M_min as described in documentation
     log_m_min = MinHaloMassULDM(log10_m_uldm, pyhalo.astropy_cosmo, log_mlow)
-
+    kwargs_density_profile = {}
     kwargs_density_profile['log10_m_uldm'] = log10_m_uldm
-    kwargs_density_profile['scale_nfw'] = scale_nfw
+    kwargs_density_profile['scale_nfw'] = False
     kwargs_density_profile['uldm_plaw'] = uldm_plaw
     kwargs_wdm = {'z_lens': z_lens, 'z_source': z_source, 'log_mc': log_m0, 'sigma_sub': sigma_sub,
                   'log_mlow': log_m_min, 'log_mhigh': log_mhigh,
@@ -491,7 +520,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                                 n_fluc_scale=n_fluc_scale,
                                 shape=flucs_shape,
                                 args=flucs_args,
-                                n_cut=n_cut, rescale_fluc_amp=rescale_fluc_amp)
+                                n_cut=n_cut)
         return uldm_realization
     else:
         return uldm_no_fluctuations
@@ -504,45 +533,62 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
-        LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
-        geometry_type='DOUBLE_CONE', kwargs_cosmo=None, collapsed_halo_profile='SPL_CORE',
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, collapsed_halo_profile='SPL_CORE',
         kwargs_collapsed_profile={'x_core_halo': 0.05, 'x_match': 3.0, 'log_slope_halo': 3.0}):
 
     """
+    Generates realizations of SIDM given the fraction of core-collapsed halos as a function of halo mass
 
-    :param z_lens:
-    :param z_source:
-    :param mass_ranges_subhalos:
-    :param mass_ranges_field_halos:
-    :param probabilities_subhalos:
-    :param probabilities_field_halos:
-    :param kwargs_sub_function:
-    :param kwargs_field_function:
-    :param sigma_sub:
-    :param log_mlow:
-    :param log_mhigh:
-    :param concentration_model_subhalos:
-    :param kwargs_concentration_model_subhalos:
-    :param concentration_model_fieldhalos:
-    :param kwargs_concentration_model_fieldhalos:
-    :param truncation_model_subhalos:
-    :param kwargs_trunction_model_subhalos:
-    :param truncation_model_fieldhalos:
-    :param kwargs_truncation_model_fieldhalos:
-    :param shmf_log_slope:
-    :param cone_opening_angle_arcsec:
-    :param log_m_host:
-    :param r_tidal:
-    :param LOS_normalization:
-    :param two_halo_contribution:
-    :param delta_power_law_index:
-    :param geometry_type:
-    :param kwargs_cosmo:
-    :param collapsed_halo_profile:
-    :param kwargs_collapsed_profile:
-    :return:
+    :param z_lens: main deflector redshift
+    :param z_source: source redshift
+    :param mass_ranges_subhalos: a list of mass ranges for subhalo collapse, e.g.
+    mass_ranges_subhalos = [[6, 8], [8, 9], ...]
+    :param mass_ranges_field_halos: a list of mass ranges for subhalo collapse, e.g.
+    mass_ranges_field_halos = [[6, 8], [8, 9], ...]
+    :param probabilities_subhalos: a list of functions, or a list of the fraction of collapsed subhalos in each mass bin
+    :param probabilities_field_halos: a list of functions, or a list of the fraction of collapsed field halos in each
+    mass bin
+    :param kwargs_sub_function: if probabilities_subhalos is a list of functions, specifies keyword arguments
+    for each function
+    :param kwargs_field_function: if probabilities_field_halos is a list of functions, specifies keyword arguments
+    for each function
+    :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log_mlow: log base 10 of the minimum halo mass to render
+    :param log_mhigh: log base 10 of the maximum halo mass to render
+    :param mass_function_model_subhalos: mass function model for subhalos, see mass_function_models.py for a list
+    :param kwargs_mass_function_subhalos: keyword arguments for the mass function model
+    :param mass_function_model_fieldhalos: mass function model for field halos, see mass_function_models.py for a list
+    :param kwargs_mass_function_fieldhalos: keyword arguments for the mass function model
+    :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_subhalos: keyword arguments for the subhalo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param concentration_model_subhalos: the concentration-mass relation applied to field halos,
+    see concentration_models.py for a complete list of available models
+    :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
+    NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
+    :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
+    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
+    complete list
+    :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
+    :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
+    :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
+    :param log_m_host: log base 10 of the host halo mass [M_sun]
+    :param r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed
+    in 3D with a cored NFW profile with this core radius
+    :param LOS_normalization: rescales the amplitude of the line-of-sight mass function
+    :param geometry_type: string that specifies the geometry of the rendering volume; options include
+    DOUBLE_CONE, CONE, CYLINDER
+    :param kwargs_cosmo: keyword arguments that specify the cosmology, see Cosmology/cosmology.py
+    :param collapsed_halo_profile: string that sets the density profile of core-collapsed halos
+    currently implemented models are SPL_CORE and GNFW (see example notebook)
+    :param kwargs_collapsed_profile: keyword arguments for the collapsed profile (see example notebook)
+    :return: a realization of dark matter structure in SIDM
     """
-
+    
+    two_halo_contribution = True
+    delta_power_law_index = 0.0
     cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
