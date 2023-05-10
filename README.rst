@@ -9,7 +9,7 @@ pyHalo
         :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
         
 .. image:: https://badge.fury.io/py/pyhalo.svg
-        :target: https://badge.fury.io/py/pyhalo.svg
+    :target: https://badge.fury.io/py/pyhalo
         
 .. image:: https://github.com/dangilman/pyHalo/blob/master/readme_fig.jpg
         :target: https://github.com/dangilman/pyHalo/blob/master/readme_fig
