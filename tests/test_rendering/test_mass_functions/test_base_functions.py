@@ -1,8 +1,7 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
-from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw, WDMPowerLaw, MixedWDMPowerLaw, Tabulated
+from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw, WDMPowerLaw, MixedWDMPowerLaw
 
 
 class TestCDMPowerLaw(object):
