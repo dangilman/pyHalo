@@ -20,9 +20,7 @@ If you would like to use this package and have questions, please get in touch wi
 
 Installation
 ------------
-Download from pypi: pip install pyhalo
-
-Or clone the repository, navigate into the directory that contains the setup.py file and run "python setup.py install"
+Clone the repository, navigate into the directory that contains the setup.py file and run "python setup.py install"
 
 The first code release, before majoring refactoring, is 8302393. 
 
