@@ -176,7 +176,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
 
 
 def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
-        mass_function_model_subhalos='SHMF_LOVELL2020', kwargs_mass_function_subhalos={},
+        mass_function_model_subhalos='LOVELL2020', kwargs_mass_function_subhalos={},
         mass_function_model_fieldhalos='LOVELL2020', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
@@ -586,7 +586,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param kwargs_collapsed_profile: keyword arguments for the collapsed profile (see example notebook)
     :return: a realization of dark matter structure in SIDM
     """
-    
+
     two_halo_contribution = True
     delta_power_law_index = 0.0
     cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh,
