@@ -123,7 +123,7 @@ class AdiabaticTidesTruncation(object):
     """
 
     def __init__(self, lens_cosmo, log_m_host, z_host, log10_galaxy_rs=np.log10(0.5),
-                 log10_galaxy_m=np.log10(0.1), mass_loss_interp=None):
+                 log10_galaxy_m=np.log10(0.1), mass_loss_interp=None, pyhalo_home_directory=None):
         """
 
         :param lens_cosmo:
@@ -131,27 +131,22 @@ class AdiabaticTidesTruncation(object):
         :param z_host:
         :param log10_galaxy_rs:
         :param log10_galaxy_m:
+        :param mass_loss_interp:
+        :param pyhalo_home_directory:
         """
-
         if mass_loss_interp is None:
             m_host_list = np.array([13.0])
             z_host_list = np.array([0.5])
             fnames = ['13.0_z0.5']
-
-            fname_base = 'subhalo_mass_loss_interp_mhost'
+            fname_base = pyhalo_home_directory + '/pyHalo/Halos/adiabatic_tides_data/subhalo_mass_loss_interp_mhost'
             dmhost = abs(m_host_list - log_m_host) / 0.1
             d_zhost = abs(z_host_list - z_host) / 0.2
             penalty = dmhost + d_zhost
             idx_min = np.argsort(penalty)[0]
             fname = fname_base + fnames[idx_min]
-            try:
-                f = open(_path_run + fname, 'rb')
-                self._mass_loss_interp = pickle.load(f)
-                f.close()
-            except:
-                f = open(_path_testing + fname, 'rb')
-                self._mass_loss_interp = pickle.load(f)
-                f.close()
+            f = open(fname, 'rb')
+            self._mass_loss_interp = pickle.load(f)
+            f.close()
         else:
             self._mass_loss_interp = mass_loss_interp
 
