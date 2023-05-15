@@ -5,6 +5,8 @@ import numpy.testing as npt
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack
 from pyHalo.truncation_models import truncation_models
 from astropy.cosmology import FlatLambdaCDM
+import os
+
 
 class TestTruncation(object):
 
@@ -18,8 +20,9 @@ class TestTruncation(object):
 
         model_name_list = ['TRUNCATION_R50', 'TRUNCATION_RN', 'TRUNCATION_ROCHE', 'TRUNCATION_ROCHE_GILMAN2020',
                            'ADIABATIC_TIDES', 'SPLASHBACK']
+        pyhalo_home_dir = os.getenv('HOME')+'/pyHalo/'
         kwargs_model_list = [{}, {'LOS_truncation_factor': 50.}, {'RocheNorm': 1.0, 'm_power': 1./3, 'RocheNu': 2.0/3.0}, {},
-                             {'log_m_host': 13.0, 'z_host': 0.5}, {}]
+                             {'log_m_host': 13.0, 'z_host': 0.5, 'pyhalo_home_directory': pyhalo_home_dir}, {}]
         for model,kwargs in zip(model_name_list, kwargs_model_list):
             mod, kw = truncation_models(model)
             kwargs.update(kw)

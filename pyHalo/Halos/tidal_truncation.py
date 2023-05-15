@@ -134,7 +134,7 @@ class AdiabaticTidesTruncation(object):
         :param mass_loss_interp:
         :param pyhalo_home_directory:
         """
-        
+
         if mass_loss_interp is None:
             m_host_list = np.array([13.0])
             z_host_list = np.array([0.5])
