@@ -123,7 +123,7 @@ class AdiabaticTidesTruncation(object):
     """
 
     def __init__(self, lens_cosmo, log_m_host, z_host, log10_galaxy_rs=np.log10(0.5),
-                 log10_galaxy_m=np.log10(0.1), mass_loss_interp=None, pyhalo_home_directory=None):
+                 log10_galaxy_m=np.log10(0.1), mass_loss_interp=None, pyhalo_home_directory=''):
         """
 
         :param lens_cosmo:
@@ -134,6 +134,7 @@ class AdiabaticTidesTruncation(object):
         :param mass_loss_interp:
         :param pyhalo_home_directory:
         """
+        
         if mass_loss_interp is None:
             m_host_list = np.array([13.0])
             z_host_list = np.array([0.5])
