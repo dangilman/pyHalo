@@ -139,7 +139,7 @@ class AdiabaticTidesTruncation(object):
             m_host_list = np.array([13.0])
             z_host_list = np.array([0.5])
             fnames = ['13.0_z0.5']
-            fname_base = pyhalo_home_directory + '/pyHalo/Halos/adiabatic_tides_data/subhalo_mass_loss_interp_mhost'
+            fname_base = pyhalo_home_directory + '/Halos/adiabatic_tides_data/subhalo_mass_loss_interp_mhost'
             dmhost = abs(m_host_list - log_m_host) / 0.1
             d_zhost = abs(z_host_list - z_host) / 0.2
             penalty = dmhost + d_zhost
