@@ -74,7 +74,7 @@ class PowerLawSubhalo(Halo):
                     x_match = self._args['x_match']
             else:
                 # r_vmax = 2.16 * rs
-                x_match = 2.16
+                x_match = 2.16 # r_vmax
 
             r_match_arcsec = x_match * rs / kpc_per_arcsec
             fx = np.log(1+x_match) - x_match/(1 + x_match)

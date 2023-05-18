@@ -62,7 +62,8 @@ class TestGeneralNFW(object):
         gamma_outer = 3.2
         x_match = 3.5
         unique_tag = 1.0
-        kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match}
+        kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match,
+                          'evaluate_mc_at_zlens': True}
         gnfw = GeneralNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                    self.truncation_class, self.concentration_class, unique_tag)
         nfw = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
@@ -76,7 +77,32 @@ class TestGeneralNFW(object):
         m3d = self.gnfw_profile_lenstronomy.mass_3d_lens(rmatch, kwargs_gnfw['Rs'],
                                                          kwargs_gnfw['alpha_Rs'],
                                                          kwargs_gnfw['gamma_inner'], kwargs_gnfw['gamma_outer'])
-        npt.assert_almost_equal(m3d_nfw/m3d, 1.0, 2)
+        npt.assert_almost_equal(m3d_nfw/m3d, 1.0, 4)
+
+        m = 10 ** 7.3
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        is_subhalo = False
+        gamma_inner = 1.5
+        gamma_outer = 2.89
+        x_match = 4.0
+        unique_tag = 1.0
+        kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match}
+        gnfw = GeneralNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                   self.truncation_class, self.concentration_class, unique_tag)
+        nfw = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                           self.truncation_class, self.concentration_class, unique_tag)
+
+        kwargs_gnfw = gnfw.lenstronomy_params[0][0]
+        kwargs_nfw = nfw.lenstronomy_params[0][0]
+        rmatch = x_match * kwargs_nfw['Rs']
+        m3d_nfw = self.nfw_profile_lenstronomy.mass_3d_lens(rmatch, kwargs_nfw['Rs'],
+                                                            kwargs_nfw['alpha_Rs'])
+        m3d = self.gnfw_profile_lenstronomy.mass_3d_lens(rmatch, kwargs_gnfw['Rs'],
+                                                         kwargs_gnfw['alpha_Rs'],
+                                                         kwargs_gnfw['gamma_inner'], kwargs_gnfw['gamma_outer'])
+        npt.assert_almost_equal(m3d_nfw / m3d, 1.0, 4)
 
     def test_concentration_redshift_eval(self):
         m = 10 ** 8
@@ -89,7 +115,7 @@ class TestGeneralNFW(object):
         x_match = 2.5
         unique_tag = 1.0
         kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match,
-                          'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+                          'evaluate_mc_at_zlens': False,}
         gnfw = GeneralNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                    self.truncation_class, self.concentration_class, unique_tag)
         gnfw_subhalo = GeneralNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
@@ -97,7 +123,6 @@ class TestGeneralNFW(object):
         c = gnfw.profile_args[0]
         c_sub = gnfw_subhalo.profile_args[0]
         npt.assert_equal(False, c==c_sub)
-
 
 if __name__ == '__main__':
     pytest.main()
