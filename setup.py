@@ -19,10 +19,11 @@ test_requirements = [ ]
 
 setup(
     author="Daniel Gilman",
-    author_email='gilmanda@ucla.edu',
+    version='0.3.0',
+    author_email='daniel.gilman@utoronto.ca',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
+        'Development Status :: 5 - Stable',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.4',
@@ -45,11 +46,11 @@ setup(
     keywords='pyHalo',
     name='pyhalo',
     packages=find_packages(),
+    package_dir={'lenstronomy': 'lenstronomy'},
     #packages=find_packages(include=['pyHalo']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/dangilman/pyHalo',
-    version='0.2.1',
     zip_safe=False,
 )
