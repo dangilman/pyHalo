@@ -20,7 +20,9 @@ If you would like to use this package and have questions, please get in touch wi
 
 Installation
 ------------
-Clone the repository, navigate into the directory that contains the setup.py file and run "python setup.py install"
+"python3 -m pip install pyhalo==0.2.1"
+
+Or clone the repository, navigate into the directory that contains the setup.py file and run "python setup.py install"
 
 The first code release, before majoring refactoring, is 8302393. 
 
