@@ -192,11 +192,11 @@ class ConcentrationWDMHyperbolic(_ConcentrationTurnover):
 
     name = 'WDM_HYPERBOLIC'
 
-    def __init__(self, lens_cosmo, concentration_cdm_class, log_mc, a,  b, scatter=True,
+    def __init__(self, cosmo, concentration_cdm_class, log_mc, a,  b, scatter=True,
                  scatter_dex=0.2, kwargs_cdm={}):
         """
 
-        :param lens_cosmo:
+        :param cosmo:
         :param concentration_cdm_class:
         :param kwargs_cdm:
         """
@@ -204,7 +204,7 @@ class ConcentrationWDMHyperbolic(_ConcentrationTurnover):
             kwargs_cdm['scatter'] = scatter
         if 'scatter_dex' not in kwargs_cdm.keys():
             kwargs_cdm['scatter_dex'] = scatter_dex
-        cdm_concentration = concentration_cdm_class(lens_cosmo, **kwargs_cdm)
+        cdm_concentration = concentration_cdm_class(cosmo, **kwargs_cdm)
         self._a = a
         self._b = b
         self._log_mc = log_mc

@@ -1,14 +1,11 @@
 import numpy as np
-import inspect
 import pickle
-import inspect
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from scipy.interpolate import RegularGridInterpolator
 from pyHalo.Halos.util import tau_mf_interpolation
 from colossus.lss import peaks
 from colossus.halo import splashback
-_path_testing = inspect.getfile(inspect.currentframe())[0:-29]+'/adiabatic_tides_data/'
-_path_run = inspect.getfile(inspect.currentframe())[0:-20]+'/adiabatic_tides_data/'
+
 
 class TruncationSplashBack(object):
 
