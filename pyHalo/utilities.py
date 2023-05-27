@@ -47,7 +47,17 @@ def inverse_transform_sampling(x, function, args, n_samples):
     """
     y = function(x, *args)
     cdf = np.cumsum(y)
-    cdf /= np.max(cdf)
+    return inverse_transform_sampling_from_cdf(x, cdf, n_samples)
+
+def inverse_transform_sampling_from_cdf(x, cdf, n_samples):
+    """
+
+    :param x: the domain of the function across which you want to obtain samples
+    :param cdf: the cumulative distribution function of the pdf
+    :param n_samples: number of samples to draw
+    :return: samples from the probability density that corresponds to cdf
+    """
+    cdf = cdf * float(np.max(cdf)) **-1
     cdf_inverse = interp1d(cdf, x)
     u = np.random.uniform(cdf[0], cdf[-1], n_samples)
     return cdf_inverse(u)
