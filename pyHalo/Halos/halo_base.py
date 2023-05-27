@@ -2,12 +2,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 import inspect
 from pyHalo.utilities import ITSampling
-_path_galacticus_data_testing = inspect.getfile(inspect.currentframe())[0:-13]+'/adiabatic_tides_data/galacticus_data.txt'
-_path_galacticus_data_run = inspect.getfile(inspect.currentframe())[0:-8]+'/adiabatic_tides_data/galacticus_data.txt'
-try:
-    _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_run)[:,0])
-except:
-    _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_testing)[:,0])
 
 class Halo(ABC):
 
@@ -139,6 +133,14 @@ class Halo(ABC):
                   "truncation model that requires this information to field halos.")
             return None
         if not hasattr(self, '_rperi_units_r200'):
+            _path_galacticus_data_testing = inspect.getfile(inspect.currentframe())[
+                                            0:-13] + '/adiabatic_tides_data/galacticus_data.txt'
+            _path_galacticus_data_run = inspect.getfile(inspect.currentframe())[
+                                        0:-8] + '/adiabatic_tides_data/galacticus_data.txt'
+            try:
+                _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_run)[:, 0])
+            except:
+                _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_testing)[:, 0])
             self._rperi_units_r200 = _rperi_sampling(n_samples=1.0)
         return self._rperi_units_r200
 
