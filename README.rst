@@ -20,7 +20,7 @@ If you would like to use this package and have questions, please get in touch wi
 
 Installation
 ------------
-"python3 -m pip install pyhalo==0.2.1"
+"python3 -m pip install pyhalo"
 
 Or clone the repository, navigate into the directory that contains the setup.py file and run "python setup.py install"
 
