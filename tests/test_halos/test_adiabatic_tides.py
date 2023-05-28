@@ -10,7 +10,7 @@ class DummyInterp(object):
 
     def __call__(self, x):
         #np.log10(c), np.log10(r_pericenter_over_r200), self._log10_galaxy_rs, self._log10_galaxy_m
-        (log10c, log10_rperi_r200, log10_galrs, log10_galm) = x
+        (log10c, log10_rperi_r200, chost) = x
         rperi_term = (10**log10_rperi_r200 / 1.0) ** 2
         c_term = (10**log10c / 500) **0.5
         return np.log10(c_term * rperi_term)
@@ -19,10 +19,8 @@ class TestAdiabaticTides(object):
 
     def setup_method(self):
         self.lens_cosmo_instance = LensCosmo(0.5, 1.5)
-        log10_galaxy_rs, log10_galaxy_m, host_dynamical_time = np.log10(0.5), np.log10(0.25), 1.0
         self.att = AdiabaticTidesTruncation(self.lens_cosmo_instance,
-                                            13.3, 0.5, log10_galaxy_rs, log10_galaxy_m,
-                                            mass_loss_interp=DummyInterp())
+                                            13.3, 0.5, mass_loss_interp=DummyInterp())
 
 
     def test_rt(self):

@@ -9,19 +9,29 @@ from pyHalo.concentration_models import preset_concentration_models
 
 class ITSampling(object):
 
-    def __init__(self, samples):
+    def __init__(self, x, cdf):
         """
         This class performs inverse transform sampling of a distribution given samples from the distribution
         :param samples: samples from the distribution
         """
-        ran = (np.min(samples), np.max(samples))
-        h, x = np.histogram(samples, range=ran, bins=150)
-        x = x[0:-1] + (x[1] - x[0])/2
-        cdf = np.cumsum(h)
         cdf = cdf / float(np.max(cdf))
         self._cdf_inverse = interp1d(cdf, x)
         self._umin = cdf[0]
         self._umax = cdf[-1]
+
+    @classmethod
+    def from_samples(cls, samples):
+        """
+        samples from the target distribution
+        :param samples:
+        :return:
+        """
+        ran = (np.min(samples), np.max(samples))
+        h, x = np.histogram(samples, range=ran, bins=150)
+        x = x[0:-1] + (x[1] - x[0]) / 2
+        cdf = np.cumsum(h)
+        cdf = cdf / float(np.max(cdf))
+        return ITSampling(x, cdf)
 
     def __call__(self, n_samples):
         """
@@ -47,7 +57,17 @@ def inverse_transform_sampling(x, function, args, n_samples):
     """
     y = function(x, *args)
     cdf = np.cumsum(y)
-    cdf /= np.max(cdf)
+    return inverse_transform_sampling_from_cdf(x, cdf, n_samples)
+
+def inverse_transform_sampling_from_cdf(x, cdf, n_samples):
+    """
+
+    :param x: the domain of the function across which you want to obtain samples
+    :param cdf: the cumulative distribution function of the pdf
+    :param n_samples: number of samples to draw
+    :return: samples from the probability density that corresponds to cdf
+    """
+    cdf = cdf * float(np.max(cdf)) ** -1
     cdf_inverse = interp1d(cdf, x)
     u = np.random.uniform(cdf[0], cdf[-1], n_samples)
     return cdf_inverse(u)

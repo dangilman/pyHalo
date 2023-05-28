@@ -119,47 +119,29 @@ class AdiabaticTidesTruncation(object):
     An example of the type of class we want to create and implement in pyHalo
     """
 
-    def __init__(self, lens_cosmo, log_m_host, z_host, log10_galaxy_rs=np.log10(0.5),
-                 log10_galaxy_m=np.log10(0.1), mass_loss_interp=None, pyhalo_home_directory=''):
+    def __init__(self, lens_cosmo, log_m_host, z_host, mass_loss_interp):
         """
 
-        :param lens_cosmo:
-        :param log_m_host:
-        :param z_host:
-        :param log10_galaxy_rs:
-        :param log10_galaxy_m:
-        :param mass_loss_interp:
-        :param pyhalo_home_directory:
+        :param lens_cosmo: an instacee of the LensCosmo class
+        :param log_m_host: the host halo mass
+        :param z_host: the redshift of the host halo
+        :param mass_loss_interp: an instance of RegularGridInterpolator
+        The interpolator should take as input a point
+        (log10(concentration), log10(r_pericenter), c_host) and return the
+        asymptotic final bound mass divided by the infall mass
         """
-
-        if mass_loss_interp is None:
-            m_host_list = np.array([13.0])
-            z_host_list = np.array([0.5])
-            fnames = ['13.0_z0.5']
-            fname_base = pyhalo_home_directory + '/pyHalo/Halos/adiabatic_tides_data/subhalo_mass_loss_interp_mhost'
-            dmhost = abs(m_host_list - log_m_host) / 0.1
-            d_zhost = abs(z_host_list - z_host) / 0.2
-            penalty = dmhost + d_zhost
-            idx_min = np.argsort(penalty)[0]
-            fname = fname_base + fnames[idx_min]
-            f = open(fname, 'rb')
-            self._mass_loss_interp = pickle.load(f)
-            f.close()
-        else:
-            self._mass_loss_interp = mass_loss_interp
-
+        self._mass_loss_interp = mass_loss_interp
         min_max_c = [1.0, 10 ** 2.7]
-        min_max_rperi = [10 ** -2.5, 1.0]
+        min_max_rperi = [10 ** -2.0, 10 ** 0.2]
         self._lens_cosmo = lens_cosmo
         cmodel = ConcentrationDiemerJoyce(self._lens_cosmo.cosmo.astropy, scatter=False)
         c_host = cmodel.nfw_concentration(10**log_m_host, z_host)
+        self._chost = c_host
         self._host_dynamical_time = self._lens_cosmo.halo_dynamical_time(10**log_m_host, z_host, c_host)
         self._min_c = min_max_c[0]
         self._max_c = min_max_c[1]
         self._min_rperi = min_max_rperi[0]
         self._max_rperi = min_max_rperi[1]
-        self._log10_galaxy_rs = log10_galaxy_rs
-        self._log10_galaxy_m = log10_galaxy_m
         self._tau_mf_interpolation = tau_mf_interpolation()
 
     def truncation_radius_halo(self, halo):
@@ -176,13 +158,11 @@ class AdiabaticTidesTruncation(object):
         c = halo.c
         # now make sure that the points are inside the region where we computed the interpolation
         r_pericenter_over_r200 = np.absolute(halo.rperi_units_r200)
-        if r_pericenter_over_r200 > self._max_rperi:
-            r_pericenter_over_r200 = self._max_rperi
-        if r_pericenter_over_r200 < self._min_rperi:
-            r_pericenter_over_r200 = self._min_rperi
-        point = (np.log10(c), np.log10(r_pericenter_over_r200), self._log10_galaxy_rs, self._log10_galaxy_m)
-        point = self._make_params_in_bounds(point)
-
+        r_pericenter_over_r200 = max(self._min_rperi, r_pericenter_over_r200)
+        r_pericenter_over_r200 = min(self._max_rperi, r_pericenter_over_r200)
+        c = max(self._min_c, c)
+        c = min(self._max_c, c)
+        point = (np.log10(c), np.log10(r_pericenter_over_r200), self._chost)
         # evaluate the mass loss
         log10mass_loss_fraction_asymptotic = float(self._mass_loss_interp(point))
 
@@ -219,19 +199,3 @@ class AdiabaticTidesTruncation(object):
         log10mass_loss_fraction = max(-1.5, log10mass_loss_fraction)
         log10mass_loss_fraction = min(-0.01, log10mass_loss_fraction)
         return (log10c, log10mass_loss_fraction)
-
-    def _make_params_in_bounds(self, point):
-        """
-        This routine makes sure the arguments for the initerpolation are inside the domain of the function.
-        """
-        (log10c, log10r_pericenter_over_r200, log10_galaxy_rs, log10_galaxy_m) = point
-        log10c = max(self._min_c, log10c)
-        log10c = min(self._max_c, log10c)
-        log10r_pericenter_over_r200 = max(-2.5, log10r_pericenter_over_r200)
-        log10r_pericenter_over_r200 = min(0.0, log10r_pericenter_over_r200)
-        log10_galaxy_rs = max(-2.0, log10_galaxy_rs)
-        log10_galaxy_rs = min(0.3, log10_galaxy_rs)
-        log10_galaxy_m = max(-2.5, log10_galaxy_m)
-        log10_galaxy_m = min(-0.25, log10_galaxy_m)
-        new_point = (log10c, log10r_pericenter_over_r200, log10_galaxy_rs, log10_galaxy_m)
-        return new_point

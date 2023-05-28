@@ -1,7 +1,14 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import inspect
 from pyHalo.utilities import ITSampling
+
+_log10_rperi_bins = np.array([-2.   , -1.885, -1.77 , -1.655, -1.54 , -1.425, -1.31 , -1.195,
+       -1.08 , -0.965, -0.85 , -0.735, -0.62 , -0.505, -0.39 , -0.275,
+       -0.16 , -0.045,  0.07 ,  0.185])
+_log10_prob = np.array([  18,   23,   37,   33,   42,   78,  139,  181,  321,  538,  749,
+       1018, 1268, 1501, 1577, 1232,  569,  207,   23,    7])
+_cdf = np.cumsum(_log10_prob)
+_log10_rpericenter_sampling = ITSampling(_log10_rperi_bins, _cdf)
 
 class Halo(ABC):
 
@@ -133,15 +140,7 @@ class Halo(ABC):
                   "truncation model that requires this information to field halos.")
             return None
         if not hasattr(self, '_rperi_units_r200'):
-            _path_galacticus_data_testing = inspect.getfile(inspect.currentframe())[
-                                            0:-13] + '/adiabatic_tides_data/galacticus_data.txt'
-            _path_galacticus_data_run = inspect.getfile(inspect.currentframe())[
-                                        0:-8] + '/adiabatic_tides_data/galacticus_data.txt'
-            try:
-                _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_run)[:, 0])
-            except:
-                _rperi_sampling = ITSampling(np.loadtxt(_path_galacticus_data_testing)[:, 0])
-            self._rperi_units_r200 = _rperi_sampling(n_samples=1.0)
+            self._rperi_units_r200 = 10**float(_log10_rpericenter_sampling(n_samples=1.0))
         return self._rperi_units_r200
 
 
