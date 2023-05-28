@@ -1,7 +1,8 @@
 from lenstronomy.LensModel.lens_model import LensModel
 import numpy.testing as npt
 import numpy as np
-from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma, ITSampling, inverse_transform_sampling
+from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma, ITSampling, \
+    inverse_transform_sampling, inverse_transform_sampling_from_cdf
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
 
@@ -61,13 +62,13 @@ class TestUtilities(object):
         x_samples = inverse_transform_sampling(x, func, (), 100000)
         npt.assert_almost_equal(np.mean(x_samples)/mu, 1.0, 2)
         npt.assert_almost_equal(np.std(x_samples)/sigma, 1.0, 2)
-
+        
     def test_ITSampling(self):
 
         mu = 2.14
         sigma = 0.35
         x = np.random.normal(mu, sigma, 250000)
-        sampler = ITSampling(x)
+        sampler = ITSampling.from_samples(x)
         x_samples = sampler(100000)
         npt.assert_almost_equal(np.mean(x_samples)/mu, 1.0, 2)
         npt.assert_almost_equal(np.std(x_samples)/sigma, 1.0, 2)
