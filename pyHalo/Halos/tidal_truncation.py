@@ -199,3 +199,44 @@ class AdiabaticTidesTruncation(object):
         log10mass_loss_fraction = max(-1.5, log10mass_loss_fraction)
         log10mass_loss_fraction = min(-0.01, log10mass_loss_fraction)
         return (log10c, log10mass_loss_fraction)
+
+class TruncateMeanDensity(object):
+
+    def __init__(self, lens_cosmo, median_rt_over_rs=1.0, c_power=3.0):
+        """
+
+        :param lens_cosmo:
+        :param median_rt_over_rs:
+        :param c_power:
+        """
+        self._norm = median_rt_over_rs
+        self._cpower = c_power
+        self.lens_cosmo = lens_cosmo
+        self._concentration_cdm = ConcentrationDiemerJoyce(lens_cosmo.cosmo,
+                                                           scatter=False)
+
+    def truncation_radius_halo(self, halo):
+
+        """
+        Thiis method computess the truncation radius using the class attributes of an instance of Halo
+        :param halo: an instance of halo
+        :return: the truncation radius in physical kpc
+        """
+        c_median = self._concentration_cdm.nfw_concentration(halo.mass, halo.z_eval)
+        c_actual = halo.c
+        halo_rpericenter = halo.rperi_units_r200
+        return self.truncation_radius(halo.mass, halo.z, c_median, c_actual, halo_rpericenter)
+
+    def truncation_radius(self, halo_mass, halo_redshift, c_median, c_actual, r_peri):
+        """
+
+        :param halo_mass:
+        :param halo_redshift:
+        :param c_median:
+        :param c_actual:
+        :param r_peri:
+        :return:
+        """
+        rt_over_rs = self._norm * (c_actual / c_median) ** self._cpower * (r_peri / 0.5)
+        _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, halo_redshift)
+        return rs * rt_over_rs

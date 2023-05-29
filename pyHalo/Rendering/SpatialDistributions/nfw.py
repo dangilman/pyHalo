@@ -1,13 +1,11 @@
 import numpy as np
 from lenstronomy.LensModel.Profiles.cnfw import CNFW
 from pyHalo.Rendering.SpatialDistributions.base import SpatialDistributionBase
-import inspect
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from pyHalo.utilities import inverse_transform_sampling
+from scipy.interpolate import interp1d
 
 
-local_path = inspect.getfile(inspect.currentframe())[0:-11] + 'nfw_tables/'
-#
 class ProjectedNFW(SpatialDistributionBase):
 
     """
@@ -26,6 +24,7 @@ class ProjectedNFW(SpatialDistributionBase):
         :param rmax3d: the virial radius of the host dark matter halo [kpc]
         :param r_core_parent: the core radius of the host dark matter halo [kpc]
         """
+
         self._rs_arcsec = rs_arcsec
         self._rmax2d = rmax2d_arcsec
         self._rmax3d = r_200_arcsec
@@ -60,18 +59,44 @@ class ProjectedNFW(SpatialDistributionBase):
         if N == 0:
             return [], [], []
 
-        x2d = np.linspace(1e-3 * self._rmax2d, self._rmax2d, 50000)
-        function_2d = self._cnfw_profile.density_2d
+        x2d = np.linspace(1e-3 * self._rmax2d, self._rmax2d, 20000)
         args = (0.0, self._rs_arcsec, 1.0, self._rcore_arcsec)
-        r2d_arcsec = inverse_transform_sampling(x2d, function_2d, args, N)
+        rho2d = self._cnfw_profile.density_2d(x2d, *args)
+        rho2d_integral = [rho2d[i] * (x2d[i+1]**2 - x2d[i]**2) for i in range(0, len(x2d)-1)]
+        function_2d = interp1d(x2d[0:-1], rho2d_integral)
+        r2d_arcsec = inverse_transform_sampling(x2d[0:-1], function_2d, (), N)
         r2d_kpc = r2d_arcsec * self._arcsec_to_kpc
         theta = np.random.uniform(0, 2*np.pi, N)
         x_kpc, y_kpc = r2d_kpc * np.cos(theta), r2d_kpc * np.sin(theta)
 
-        x3d = np.linspace(1e-3 * self._rmax2d, self._rmax3d, 50000)
-        function_3d = self._cnfw_profile.density
+        x3d = np.linspace(1e-3 * self._rmax2d, self._rmax3d, 20000)
         args = (self._rs_arcsec, 1.0, self._rcore_arcsec)
-        r3d_arcsec = inverse_transform_sampling(x3d, function_3d, args, N)
+        rho3d = self._cnfw_profile.density(x3d, *args)
+        rho3d_integral = [rho3d[i] * (x3d[i+1]**3 - x3d[i]**3) for i in range(0, len(x3d)-1)]
+        function_3d = interp1d(x3d[0:-1], rho3d_integral)
+        r3d_arcsec = inverse_transform_sampling(x3d[0:-1], function_3d, (), N)
         r3d_kpc = r3d_arcsec * self._arcsec_to_kpc
 
         return x_kpc, y_kpc, r3d_kpc
+
+    # def draw(self, N, z_plane=None):
+    #
+    #     if N == 0:
+    #         return [], [], []
+    #
+    #     x2d = np.linspace(1e-3 * self._rmax2d, self._rmax2d, 50000)
+    #     function_2d = self._cnfw_profile.density_2d
+    #     args = (0.0, self._rs_arcsec, 1.0, self._rcore_arcsec)
+    #     r2d_arcsec = inverse_transform_sampling(x2d, function_2d, args, N)
+    #     r2d_kpc = r2d_arcsec * self._arcsec_to_kpc
+    #     theta = np.random.uniform(0, 2*np.pi, N)
+    #     x_kpc, y_kpc = r2d_kpc * np.cos(theta), r2d_kpc * np.sin(theta)
+    #
+    #     x3d = np.linspace(1e-3 * self._rmax2d, self._rmax3d, 50000)
+    #     function_3d = self._cnfw_profile.density
+    #     args = (self._rs_arcsec, 1.0, self._rcore_arcsec)
+    #     r3d_arcsec = inverse_transform_sampling(x3d, function_3d, args, N)
+    #     r3d_kpc = r3d_arcsec * self._arcsec_to_kpc
+    #
+    #     return x_kpc, y_kpc, r3d_kpc
+

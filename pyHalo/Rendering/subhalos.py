@@ -52,7 +52,7 @@ class Subhalos(RenderingClassBase):
         For line of sight halos it is set to None.
         """
 
-        x_kpc, y_kpc, r3d_kpc = self._spatial_distribution_model.draw(nhalos, None)
+        x_kpc, y_kpc, r3d_kpc = self._spatial_distribution_model.draw(nhalos, self._lens_cosmo.z_lens)
         if len(x_kpc) > 0:
             kpc_per_asec = self._geometry.kpc_per_arcsec(self._lens_cosmo.z_lens)
             x_arcsec = x_kpc * kpc_per_asec ** -1

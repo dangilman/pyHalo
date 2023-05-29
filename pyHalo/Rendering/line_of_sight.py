@@ -74,8 +74,8 @@ class LineOfSight(LineOfSightNoSheet):
         :return:
         """
 
-        lens_plane_redshifts = self._lens_plane_redshifts[0::2]
-        delta_zs = 2 * self._delta_z_list[0::2]
+        lens_plane_redshifts = self._lens_plane_redshifts
+        delta_zs = self._delta_z_list
         kwargs_out = []
         profile_names_out = []
         redshifts = []

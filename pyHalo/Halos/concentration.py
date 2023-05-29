@@ -24,8 +24,6 @@ class _ConcentrationCDM(object):
         Evaluates the concentration of a halo of mass 'm' at redshift z
         :param M: halo mass [M_sun]
         :param z: halo redshift
-        :param scatter: bool; add log-normal scatter to concentration
-        :param scatter_amplitude: the amount of scatter in dex, assumes log-normal distribution
         :return:
         """
         c = self._evaluate_concentration(m, z)

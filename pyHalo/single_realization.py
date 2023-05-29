@@ -44,11 +44,12 @@ def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordina
 
     centerx, centery = realization.rendering_center
     kwargs_halo_model = realization.kwargs_halo_model
+    geometry = realization.geometry
     return Realization.from_halos(halos, realization.lens_cosmo,
                                   kwargs_halo_model,
                                   mass_sheet_correction,
                                   realization.rendering_classes,
-                                  centerx, centery), indexes
+                                  centerx, centery, geometry), indexes
 
 class Realization(object):
 
@@ -554,11 +555,13 @@ class Realization(object):
         profiles_out = []
 
         if subtract_exact_sheets:
-
+            redshifts_out = []
             for zi in self.unique_redshifts:
+                redshifts_out.append(zi)
                 area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, zi)
-                kwargs_mass_sheets_out += [{'kappa_ext': -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)}]
-            redshifts_out = self.unique_redshifts
+                kappa_ext = -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)
+                kwargs_sheet = {'kappa_ext': kappa_ext}
+                kwargs_mass_sheets_out.append(kwargs_sheet)
             profiles_out = ['CONVERGENCE'] * len(kwargs_mass_sheets_out)
 
         else:

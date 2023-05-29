@@ -31,6 +31,16 @@ class LensConeUniform(SpatialDistributionBase):
         self._uni = Uniform(0.5 * cone_opening_angle, geometry)
         super(LensConeUniform, self).__init__()
 
+    @classmethod
+    def from_Mhost(cls, *args, **kwargs):
+        """
+
+        :param rmax2d_arcsec:
+        :param geometry:
+        :return:
+        """
+        raise Exception('Spatial distribution class LensConeUniform not currently implemented for subhalos')
+
     def draw(self, N, z_plane, center_x=0, center_y=0):
 
         """
@@ -70,14 +80,14 @@ class Uniform(SpatialDistributionBase):
         super(Uniform, self).__init__()
 
     @classmethod
-    def from_Mhost(cls, rmax2d_arcsec, geometry):
+    def from_Mhost(cls, *args, **kwargs):
         """
 
         :param rmax2d_arcsec:
         :param geometry:
         :return:
         """
-        return Uniform(rmax2d_arcsec, geometry)
+        raise Exception('Spatial distribution class Uniform not currently implemented for subhalos')
 
     def draw(self, N, z_plane, rescale=1.0, center_x=0, center_y=0):
 
@@ -104,6 +114,7 @@ class Uniform(SpatialDistributionBase):
 
         x_arcsec += center_x
         y_arcsec += center_y
+
         kpc_per_asec = self._geo.kpc_per_arcsec(z_plane)
         x_kpc, y_kpc = x_arcsec * kpc_per_asec, y_arcsec * kpc_per_asec
 
