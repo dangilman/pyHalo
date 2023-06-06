@@ -41,7 +41,7 @@ class TestPresetModels(object):
         _ = wdm_mixed.lensing_quantities()
         _ = preset_model_from_name('WDM_mixed')
 
-    def test_CDM_emulator_(self):
+    def test_CDM_emulator(self):
 
         def emulator_input_callable(*args, **kwargs):
             subhalo_infall_masses = np.array([10**7,10**8])

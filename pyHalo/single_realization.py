@@ -804,6 +804,7 @@ class Realization(object):
         ax.view_init(view_init_1, view_init_2)
         plt.xticks(rotation=45)
 
+
 class SingleHalo(Realization):
 
     def __init__(self, halo_mass, x, y, mdef, z, zlens, zsource, r3d=None, subhalo_flag=False,

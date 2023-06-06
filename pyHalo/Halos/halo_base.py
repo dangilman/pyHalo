@@ -143,6 +143,11 @@ class Halo(ABC):
             self._rperi_units_r200 = 10**float(_log10_rpericenter_sampling(n_samples=1.0))
         return self._rperi_units_r200
 
+    @property
+    def bound_mass(self):
+        raise Exception('this halo class does not have a bound mass attribute because the profile does not have '
+                        'a tidal truncation radius')
+
 
 
 

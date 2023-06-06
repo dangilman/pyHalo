@@ -61,6 +61,19 @@ class TestTNFWHalos(object):
         z_infall = tnfw_subhalo.z_infall
         npt.assert_equal(True, self.zhalo <= z_infall)
 
+    def test_bound_mass(self):
+        m = 10 ** 8
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        unique_tag = 1.0
+        kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+        is_subhalo = True
+        tnfw_subhalo = TNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                  self.truncation_class, self.concentration_class, unique_tag)
+        bound_mass = tnfw_subhalo.bound_mass
+        npt.assert_equal(True, bound_mass/10**8 < 1)
+
 if __name__ == '__main__':
     pytest.main()
 

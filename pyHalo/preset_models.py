@@ -47,7 +47,7 @@ def preset_model_from_name(name):
 def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
@@ -69,7 +69,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
     NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
     :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
-    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
@@ -120,11 +120,11 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
-    kwargs_trunction_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
 
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
-    kwargs_trunc_subs.update(kwargs_trunction_model_subhalos)
+    kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
 
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
@@ -179,7 +179,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         mass_function_model_fieldhalos='LOVELL2020', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
@@ -207,7 +207,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
     NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
     :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
-    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
@@ -265,11 +265,11 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
-    kwargs_trunction_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
 
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
-    kwargs_trunc_subs.update(kwargs_trunction_model_subhalos)
+    kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
     kwargs_trunc_subs['lens_cosmo'] = pyhalo.lens_cosmo
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
 
@@ -322,7 +322,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         mass_function_model_fieldhalos='SCHIVE2016', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='LAROCHE2022', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='LAROCHE2022', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
@@ -412,7 +412,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
     NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
     :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
-    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
@@ -459,7 +459,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                   'concentration_model_fieldhalos': concentration_model_fieldhalos,
                   'kwargs_concentration_model_fieldhalos': kwargs_concentration_model_fieldhalos,
                   'truncation_model_subhalos': truncation_model_subhalos,
-                  'kwargs_trunction_model_subhalos': kwargs_trunction_model_subhalos,
+                  'kwargs_truncation_model_subhalos': kwargs_truncation_model_subhalos,
                   'truncation_model_fieldhalos': truncation_model_fieldhalos,
                   'kwargs_truncation_model_fieldhalos': kwargs_truncation_model_fieldhalos,
                   'shmf_log_slope': shmf_log_slope, 'cone_opening_angle_arcsec': cone_opening_angle_arcsec,
@@ -529,7 +529,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
         kwargs_field_function=None, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, collapsed_halo_profile='SPL_CORE',
@@ -554,10 +554,6 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
     :param log_mlow: log base 10 of the minimum halo mass to render
     :param log_mhigh: log base 10 of the maximum halo mass to render
-    :param mass_function_model_subhalos: mass function model for subhalos, see mass_function_models.py for a list
-    :param kwargs_mass_function_subhalos: keyword arguments for the mass function model
-    :param mass_function_model_fieldhalos: mass function model for field halos, see mass_function_models.py for a list
-    :param kwargs_mass_function_fieldhalos: keyword arguments for the mass function model
     :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
     see concentration_models.py for a complete list of available models
     :param kwargs_concentration_model_subhalos: keyword arguments for the subhalo MC relation
@@ -567,7 +563,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param kwargs_concentration_model_fieldhalos: keyword arguments for the field halo MC relation
     NOTE: keyword args returned by the load_concentration_model override these keywords with duplicate arguments
     :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
-    :param kwargs_trunction_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
@@ -591,7 +587,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
-        truncation_model_subhalos, kwargs_trunction_model_subhalos,
+        truncation_model_subhalos, kwargs_truncation_model_subhalos,
         truncation_model_fieldhalos, kwargs_truncation_model_fieldhalos,
         shmf_log_slope, cone_opening_angle_arcsec, log_m_host,  r_tidal,
         LOS_normalization, two_halo_contribution, delta_power_law_index,
@@ -608,7 +604,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
         mass_function_model_fieldhalos='MIXED_WDM_TURNOVER', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_trunction_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
@@ -634,7 +630,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
     :param concentration_model_fieldhalos:
     :param kwargs_concentration_model_fieldhalos:
     :param truncation_model_subhalos:
-    :param kwargs_trunction_model_subhalos:
+    :param kwargs_truncation_model_subhalos:
     :param truncation_model_fieldhalos:
     :param kwargs_truncation_model_fieldhalos:
     :param shmf_log_slope:
@@ -667,7 +663,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
                   'concentration_model_fieldhalos': concentration_model_fieldhalos,
                   'kwargs_concentration_model_fieldhalos': kwargs_concentration_model_fieldhalos,
                   'truncation_model_subhalos': truncation_model_subhalos,
-                  'kwargs_trunction_model_subhalos': kwargs_trunction_model_subhalos,
+                  'kwargs_truncation_model_subhalos': kwargs_truncation_model_subhalos,
                   'truncation_model_fieldhalos': truncation_model_fieldhalos,
                   'kwargs_truncation_model_fieldhalos': kwargs_truncation_model_fieldhalos,
                   'shmf_log_slope': shmf_log_slope, 'cone_opening_angle_arcsec': cone_opening_angle_arcsec,

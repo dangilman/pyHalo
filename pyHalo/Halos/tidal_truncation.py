@@ -209,6 +209,7 @@ class TruncateMeanDensity(object):
         :param median_rt_over_rs:
         :param c_power:
         """
+
         self._norm = median_rt_over_rs
         self._cpower = c_power
         self.lens_cosmo = lens_cosmo
