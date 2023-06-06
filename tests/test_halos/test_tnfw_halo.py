@@ -69,8 +69,9 @@ class TestTNFWHalos(object):
         unique_tag = 1.0
         kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
         is_subhalo = True
+        truncation_class = TruncationRoche(None, 2.0)
         tnfw_subhalo = TNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
-                                  self.truncation_class, self.concentration_class, unique_tag)
+                                  truncation_class, self.concentration_class, unique_tag)
         bound_mass = tnfw_subhalo.bound_mass
         npt.assert_equal(True, bound_mass/10**8 < 1)
 
