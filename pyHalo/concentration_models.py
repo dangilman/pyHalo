@@ -1,6 +1,6 @@
 from pyHalo.Halos.concentration import *
 from copy import deepcopy
-
+import numpy as np
 
 def preset_concentration_models(model_name, kwargs_model=None):
     """
@@ -40,6 +40,15 @@ def preset_concentration_models(model_name, kwargs_model=None):
         kwargs_model_return['c_power'] = -0.42
         kwargs_model_return['c_power_inner'] = 1.62
         return ConcentrationWDMPolynomial, kwargs_model_return
+    elif model_name == 'FROM_FORMATION_HISTORY':
+        norm, slope = 0.75, 0.4
+        a = norm * (0.7 / kwargs_model['dlogT_dlogk']) ** slope
+        norm, slope, shift = 0.94, 0.7, 0.6
+        b = norm * abs(np.log(1.76 + shift) / np.log(kwargs_model['dlogT_dlogk'] + shift)) ** slope
+        kwargs_model_return['a'] = a
+        kwargs_model_return['b'] = b
+        del kwargs_model_return['dlogT_dlogk']
+        return ConcentrationWDMHyperbolic, kwargs_model_return
     elif model_name == 'CUSTOM':
         if not hasattr(kwargs_model_return['custom_class'], 'nfw_concentration'):
             raise Exception('a custom concentration-mass relation class must have a method nfw_concentration that'

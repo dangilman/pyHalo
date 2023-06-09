@@ -6,10 +6,6 @@ import numpy.testing as npt
 from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen, ShethTormenTurnover, ShethTormenMixedWDM
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw, WDMPowerLaw, MixedWDMPowerLaw
 from colossus.lss.mass_function import massFunction
-from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
-from pyHalo.pyhalo import pyHalo
-from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche
-from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 
 class TestShethTormen(object):
 
