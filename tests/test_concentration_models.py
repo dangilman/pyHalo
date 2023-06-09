@@ -45,5 +45,11 @@ class TestConcentrationModels(object):
         args = ('CUSTOM', kwargs_model)
         npt.assert_raises(Exception, preset_concentration_models, args)
 
+    def test_formation_history(self):
+
+        kwargs_model = {'dlogT_dlogk': 2.0}
+        mod, kw = preset_concentration_models('FROM_FORMATION_HISTORY', kwargs_model)
+        concentration_model = mod(**kw)
+
 if __name__ == '__main__':
      pytest.main()

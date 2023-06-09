@@ -17,8 +17,18 @@ class TestStucker(object):
         npt.assert_almost_equal(b, b_wdm)
         npt.assert_almost_equal(c, c_wdm)
 
+        kwargs_model = {}
+        args = ('STUCKER', kwargs_model)
+        npt.assert_raises(Exception, preset_mass_function_models, *args)
         kwargs_model = {'dlogT_dlogk': 2.0, 'a_wdm': 1.0}
-        npt.assert_raises(Exception, preset_mass_function_models, ('STUCKER', kwargs_model))
+        args = ('STUCKER', kwargs_model)
+        npt.assert_raises(Exception, preset_mass_function_models, *args)
+        kwargs_model = {'dlogT_dlogk': 2.0, 'b_wdm': 1.0}
+        args = ('STUCKER', kwargs_model)
+        npt.assert_raises(Exception, preset_mass_function_models, *args)
+        kwargs_model = {'dlogT_dlogk': 2.0, 'c_wdm': 1.0}
+        args = ('STUCKER', kwargs_model)
+        npt.assert_raises(Exception, preset_mass_function_models, *args)
 
     def test_abc_params(self):
         dlogT_dlogk = 2.0
@@ -65,6 +75,7 @@ class TestStucker(object):
         npt.assert_almost_equal(suppression_model, 0.5)
         suppression_model = (1 + (a_wdm / theory_mass_scale_m80) ** b_wdm) ** c_wdm
         npt.assert_almost_equal(suppression_model, 0.8)
+
 
 if __name__ == '__main__':
    pytest.main()
