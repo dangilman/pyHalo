@@ -10,7 +10,7 @@ class TestMassFunctionModels(object):
                            'POWER_LAW_TURNOVER', 'POWER_LAW_TURNOVER_SHMF']
         self.model_names = ['WDM_POWER_LAW', 'SHETH_TORMEN', 'WDM_POWER_LAW',
                             'SHETH_TORMEN', 'SHETH_TORMEN', 'WDM_POWER_LAW', 'CDM_POWER_LAW',
-                            'WDM_POWER_LAW', 'WDM_POWER_LAW']
+                            'SHETH_TORMEN', 'WDM_POWER_LAW']
 
     def test_models(self):
 
