@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from pyHalo.single_realization import realization_at_z
 
 plt.rcParams['axes.linewidth'] = 2.5
 plt.rcParams['xtick.major.width'] = 3.5
@@ -12,6 +13,51 @@ plt.rcParams['ytick.labelsize'] = 20
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['font.family']
 
+
+def plot_halo_mass_function(realization, z_eval=None, ax=None, color='k', kwargs_plot={},
+                                     log_mlow=6.0, log_mhigh=10.0, nbins=25):
+
+    """
+    Makes a log-log plot of the halo mass function for a given realization.
+
+    :param realization:
+    :param z_eval:
+    :param ax:
+    :param color:
+    :param kwargs_plot:
+    :param log_mlow:
+    :param log_mhigh:
+    :param nbins:
+    :param show_errorbars:
+    :return:
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.subplot(111)
+
+    xlabel = 'halo mass '+r'$\left[M_{\odot}\right]$'
+    ylabel = r'$n\left(m\right)$'
+    if z_eval is None:
+        masses = realization.masses
+    elif isinstance(z_eval, float) or isinstance(z_eval, int):
+        real = realization_at_z(realization, z_eval)[0]
+        masses = real.masses
+    elif isinstance(z_eval, list):
+        masses = []
+        for halo in realization.halos:
+            if halo.is_subhalo:
+                continue
+            if halo.z >= z_eval[0] and halo.z < z_eval[1]:
+                masses.append(halo.mass)
+    else:
+        raise Exception('z_eval must be one of: a specific redshift (i.e. a floating point number), or an'
+                        'interval z_eval = [z_min, z_max]')
+    h, m = np.histogram(masses, bins=np.logspace(log_mlow, log_mhigh, nbins))
+    ax.plot(m[0:-1], h, color=color, **kwargs_plot)
+    ax.set_xlabel(xlabel, fontsize=14)
+    ax.set_ylabel(ylabel, fontsize=14)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
 
 def plot_concentration_mass_relation(realization, z_eval, ax=None, color='k', kwargs_plot={},
                                      log_mlow=6.0, log_mhigh=10.0, nbins=20, show_errorbars=False):
@@ -37,6 +83,7 @@ def plot_concentration_mass_relation(realization, z_eval, ax=None, color='k', kw
 
     if z_eval == 'z_lens':
         xlabel = 'infall halo mass ' + r'$\left[M_{\odot}\right]$'
+        ylabel = r'$c\left(m\right)$'
         halo_mass_list = []
         halo_concentration_list = []
         for halo in realization.halos:
@@ -44,7 +91,8 @@ def plot_concentration_mass_relation(realization, z_eval, ax=None, color='k', kw
                 halo_mass_list.append(halo.mass)
                 halo_concentration_list.append(halo.c)
     elif isinstance(z_eval, float) or isinstance(z_eval, int):
-        xlabel = 'halo mass at z=' +str(z_eval)
+        xlabel = 'halo mass ' + r'$\left[M_{\odot}\right]$'
+        ylabel = r'$c\left(m\right)$'
         halo_mass_list = []
         halo_concentration_list = []
         for halo in realization.halos:
@@ -52,14 +100,14 @@ def plot_concentration_mass_relation(realization, z_eval, ax=None, color='k', kw
                 halo_mass_list.append(halo.mass)
                 halo_concentration_list.append(halo.c)
     elif isinstance(z_eval, list):
-        xlabel = 'halo mass (' + str(z_eval[0])+' < z < '+str(z_eval[1])+')'
+        xlabel = 'halo mass ' + r'$\left[M_{\odot}\right]$'
+        ylabel = r'$c\left(m\right)$'
         halo_mass_list = []
         halo_concentration_list = []
         for halo in realization.halos:
-            if halo.is_subhalo:
-                if halo.z >= z_eval[0] and halo.z < z_eval[1]:
-                    halo_mass_list.append(halo.mass)
-                    halo_concentration_list.append(halo.c)
+            if halo.z >= z_eval[0] and halo.z < z_eval[1]:
+                halo_mass_list.append(halo.mass)
+                halo_concentration_list.append(halo.c)
     else:
         raise Exception('z_eval must be one of: z_lens, a specific redshift (i.e. a floating point number), or an'
                         'interval z_eval = [z_min, z_max]')
@@ -74,16 +122,18 @@ def plot_concentration_mass_relation(realization, z_eval, ax=None, color='k', kw
         cond1 = halo_masses >= x[i]
         cond2 = halo_masses < x[i + 1]
         inds = np.where(np.logical_and(cond1, cond2))[0]
-        log10c_median = np.median(np.log10(halo_concentrations[inds]))
-        log10c_std = np.std(np.log10(halo_concentrations[inds]))
-        c.append(log10c_median)
-        c_error.append(log10c_std)
-    log10m = np.log10(x)[0:-1]
+        c_median = np.median(halo_concentrations[inds])
+        c_std = np.std(halo_concentrations[inds])
+        c.append(c_median)
+        c_error.append(c_std)
+
     if show_errorbars:
-        ax.errorbar(log10m, c, yerr=c_error, fmt='none', color=color)
-    ax.plot(log10m, c, color=color, **kwargs_plot)
+        ax.errorbar(x[0:-1], c, yerr=c_error, fmt='none', color=color)
+    ax.plot(x[0:-1], c, color=color, **kwargs_plot)
     ax.set_xlabel(xlabel, fontsize=15)
-    ax.set_ylabel(r'$\log_{10} c$', fontsize=15)
+    ax.set_ylabel(ylabel, fontsize=15)
+    ax.set_xscale('log')
+    ax.set_yscale('linear')
 
 
 def plot_subhalo_bound_mass(realization, ax=None, color='k', kwargs_plot={},

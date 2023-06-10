@@ -238,13 +238,13 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
 
     # SET THE MASS FUNCTION MODELS FOR SUBHALOS AND FIELD HALOS
     # NOTE: MASS FUNCTIONS SHOULD NOT BE INSTANTIATED HERE
-    mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models(mass_function_model_subhalos)
-    kwargs_mfunc_subs.update(kwargs_mass_function_subhalos)
-    kwargs_mfunc_subs['log_mc'] = log_mc
+    mass_function_model_subhalos, kwargs_mass_function_subhalos = preset_mass_function_models(mass_function_model_subhalos,
+                                                                                              kwargs_mass_function_subhalos)
+    kwargs_mass_function_subhalos['log_mc'] = log_mc
 
-    mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models(mass_function_model_fieldhalos)
-    kwargs_mfunc_field.update(kwargs_mass_function_fieldhalos)
-    kwargs_mfunc_field['log_mc'] = log_mc
+    mass_function_model_fieldhalos, kwargs_mass_function_fieldhalos = preset_mass_function_models(mass_function_model_fieldhalos,
+                                                                                                  kwargs_mass_function_fieldhalos)
+    kwargs_mass_function_fieldhalos['log_mc'] = log_mc
 
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
@@ -286,20 +286,20 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     mass_function_class_list = [mass_function_model_subhalos,
                                 mass_function_model_fieldhalos,
                                 mass_function_model_fieldhalos]
-    kwargs_mfunc_subs.update({'log_mlow': log_mlow,
+    kwargs_mass_function_subhalos.update({'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                        'm_pivot': 10 ** 8,
                        'power_law_index': shmf_log_slope,
                        'log_m_host': log_m_host,
                        'sigma_sub': sigma_sub,
                        'delta_power_law_index': 0.0})
-    kwargs_mfunc_field.update({'log_mlow': log_mlow,
+    kwargs_mass_function_fieldhalos.update({'log_mlow': log_mlow,
                   'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,
                   'm_pivot': 10 ** 8,
                   'log_m_host': log_m_host,
                   'delta_power_law_index': 0.0})
-    kwargs_mass_function_list = [kwargs_mfunc_subs, kwargs_mfunc_field, kwargs_mfunc_field]
+    kwargs_mass_function_list = [kwargs_mass_function_subhalos, kwargs_mass_function_fieldhalos, kwargs_mass_function_fieldhalos]
     spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution, fieldhalo_spatial_distribution]
     kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens,
                                'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,

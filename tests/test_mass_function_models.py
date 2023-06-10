@@ -7,10 +7,10 @@ class TestMassFunctionModels(object):
     def setup_method(self):
         self.model_list = ['SHMF_LOVELL2020', 'LOVELL2020', 'SHMF_LOVELL2014',
                            'LOVELL2014', 'SCHIVE2016', 'SHMF_SCHIVE2016', 'POWER_LAW',
-                           'POWER_LAW_TURNOVER']
+                           'POWER_LAW_TURNOVER', 'POWER_LAW_TURNOVER_SHMF']
         self.model_names = ['WDM_POWER_LAW', 'SHETH_TORMEN', 'WDM_POWER_LAW',
                             'SHETH_TORMEN', 'SHETH_TORMEN', 'WDM_POWER_LAW', 'CDM_POWER_LAW',
-                            'WDM_POWER_LAW']
+                            'WDM_POWER_LAW', 'WDM_POWER_LAW']
 
     def test_models(self):
 

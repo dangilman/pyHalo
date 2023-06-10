@@ -51,8 +51,10 @@ def preset_mass_function_models(model_name, kwargs_model={}):
         return WDMPowerLaw, kwargs_model_out
     elif model_name == 'POWER_LAW':
         return CDMPowerLaw, kwargs_model_out
-    elif model_name == 'POWER_LAW_TURNOVER':
+    elif model_name == 'POWER_LAW_TURNOVER_SHMF':
         return WDMPowerLaw, kwargs_model_out
+    elif model_name == 'POWER_LAW_TURNOVER':
+        return ShethTormenTurnover, kwargs_model_out
     elif model_name == 'SHMF_MIXED_WDM_TURNOVER':
         return MixedWDMPowerLaw, kwargs_model_out
     elif model_name == 'MIXED_WDM_TURNOVER':
