@@ -202,7 +202,7 @@ class AdiabaticTidesTruncation(object):
 
 class TruncateMeanDensity(object):
 
-    def __init__(self, lens_cosmo, median_rt_over_rs=1.0, c_power=3.0):
+    def __init__(self, lens_cosmo, median_rt_over_rs=2.0, c_power=3.0):
         """
 
         :param lens_cosmo:

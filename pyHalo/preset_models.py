@@ -21,7 +21,7 @@ from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
 
 __all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed',
-           'CDMFromEmulator']
+           'CDMFromEmulator', 'WDMGeneral']
 
 def preset_model_from_name(name):
     """
@@ -41,6 +41,8 @@ def preset_model_from_name(name):
         return CDMFromEmulator
     elif name == 'WDM_mixed':
         return WDM_mixed
+    elif name == 'WDMGeneral':
+        return WDMGeneral
     else:
         raise Exception('preset model '+ str(name)+' not recognized!')
 
@@ -672,6 +674,115 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
                   'kwargs_density_profile': kwargs_density_profile
                   }
     return WDM(**kwargs_wdm)
+
+def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
+        mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={}):
+
+    """
+
+    :param z_lens: the lens redshift
+    :param z_source:
+    :param log_mc:
+    :param dlogT_dlogk:
+    :param sigma_sub:
+    :param log_mlow:
+    :param log_mhigh:
+    :param shmf_log_slope:
+    :param cone_opening_angle_arcsec:
+    :param log_m_host:
+    :param r_tidal:
+    :param LOS_normalization:
+    :param geometry_type:
+    :param kwargs_cosmo:
+    :param mdef_subhalos:
+    :param mdef_field_halos:
+    :param kwargs_density_profile:
+    :return:
+    """
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
+
+    # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
+    subhalo_spatial_distribution = ProjectedNFW
+    fieldhalo_spatial_distribution = LensConeUniform
+
+    kwargs_model_dlogT_dlogk = {'dlogT_dlogk': dlogT_dlogk}
+    mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models('STUCKER_SHMF', kwargs_model_dlogT_dlogk)
+    mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models('STUCKER', kwargs_model_dlogT_dlogk)
+
+    # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
+    truncation_model_subhalos = 'TRUNCATION_MEAN_DENSITY'
+    truncation_model_fieldhalos = 'SPLASHBACK'
+
+    model_subhalos, kwargs_truncation_model_subhalos = truncation_models(truncation_model_subhalos)
+    kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    truncation_model_subhalos = model_subhalos(**kwargs_truncation_model_subhalos)
+
+    model_fieldhalos, kwargs_truncation_model_fieldhalos = truncation_models(truncation_model_fieldhalos)
+    kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    truncation_model_fieldhalos = model_fieldhalos(**kwargs_truncation_model_fieldhalos)
+
+    # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
+    concentration_model = 'FROM_FORMATION_HISTORY'
+    model_subhalos, kwargs_concentration_model_subhalos = preset_concentration_models(concentration_model,
+                                                                                      kwargs_model_dlogT_dlogk)
+    concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
+    kwargs_concentration_model_subhalos['concentration_cdm_class'] = concentration_model_CDM
+    kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_subhalos['log_mc'] = log_mc
+    concentration_model_subhalos = model_subhalos(**kwargs_concentration_model_subhalos)
+
+    model_fieldhalos, kwargs_concentration_model_fieldhalos = preset_concentration_models(concentration_model,
+                                                                                          kwargs_model_dlogT_dlogk)
+    kwargs_concentration_model_fieldhalos['concentration_cdm_class'] = concentration_model_CDM
+    kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_fieldhalos['log_mc'] = log_mc
+    concentration_model_fieldhalos = model_fieldhalos(**kwargs_concentration_model_fieldhalos)
+
+    # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
+    population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT', 'TWO_HALO']
+
+    mass_function_class_list = [mass_function_model_subhalos,
+                                mass_function_model_fieldhalos,
+                                mass_function_model_fieldhalos]
+    kwargs_mfunc_subs.update({'log_mlow': log_mlow,
+                       'log_mhigh': log_mhigh,
+                       'm_pivot': 10 ** 8,
+                       'power_law_index': shmf_log_slope,
+                       'log_m_host': log_m_host,
+                       'sigma_sub': sigma_sub,
+                       'delta_power_law_index': 0.0,
+                        'log_mc': log_mc})
+    kwargs_mfunc_field.update({'log_mlow': log_mlow,
+                  'log_mhigh': log_mhigh,
+                  'LOS_normalization': LOS_normalization,
+                  'm_pivot': 10 ** 8,
+                  'log_m_host': log_m_host,
+                  'delta_power_law_index': 0.0,
+                  'log_mc': log_mc})
+    kwargs_mass_function_list = [kwargs_mfunc_subs, kwargs_mfunc_field, kwargs_mfunc_field]
+    spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution, fieldhalo_spatial_distribution]
+    kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens,
+                               'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,
+                               'lens_cosmo': pyhalo.lens_cosmo}
+    kwargs_los_spatial = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}
+    kwargs_spatial_distribution_list = [kwargs_subhalos_spatial, kwargs_los_spatial, kwargs_los_spatial]
+
+    kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
+                         'concentration_model_subhalos': concentration_model_subhalos,
+                         'truncation_model_field_halos': truncation_model_fieldhalos,
+                         'concentration_model_field_halos': concentration_model_fieldhalos,
+                         'kwargs_density_profile': kwargs_density_profile}
+
+    realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
+                                     spatial_distribution_class_list, kwargs_spatial_distribution_list,
+                                     geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1)
+    return realization_list[0]
 
 def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     """

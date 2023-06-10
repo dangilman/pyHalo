@@ -41,6 +41,11 @@ class TestPresetModels(object):
         _ = wdm_mixed.lensing_quantities()
         _ = preset_model_from_name('WDM_mixed')
 
+    def test_WDM_general(self):
+        func = preset_model_from_name('WDMGeneral')
+        wdm = func(0.5, 1.5, 7.7, 2.0)
+        _ = wdm.lensing_quantities()
+
     def test_CDM_emulator(self):
 
         def emulator_input_callable(*args, **kwargs):

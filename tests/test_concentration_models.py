@@ -49,7 +49,6 @@ class TestConcentrationModels(object):
 
         kwargs_model = {'dlogT_dlogk': 2.0}
         mod, kw = preset_concentration_models('FROM_FORMATION_HISTORY', kwargs_model)
-        concentration_model = mod(**kw)
 
 if __name__ == '__main__':
      pytest.main()
