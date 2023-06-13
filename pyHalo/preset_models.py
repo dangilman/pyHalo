@@ -676,6 +676,8 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
     return WDM(**kwargs_wdm)
 
 def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        truncation_model_subhalos='TRUNCATION_MEAN_DENSITY', kwargs_truncation_model_subhalos={},
+        truncation_model_fieldhalos='SPLASHBACK', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={}):
@@ -689,6 +691,11 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param sigma_sub:
     :param log_mlow:
     :param log_mhigh:
+    :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
+    :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
+    complete list
+    :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
     :param shmf_log_slope:
     :param cone_opening_angle_arcsec:
     :param log_m_host:
@@ -716,14 +723,13 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models('STUCKER', kwargs_model_dlogT_dlogk)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
-    truncation_model_subhalos = 'TRUNCATION_MEAN_DENSITY'
-    truncation_model_fieldhalos = 'SPLASHBACK'
-
-    model_subhalos, kwargs_truncation_model_subhalos = truncation_models(truncation_model_subhalos)
+    model_subhalos, kwargs_truncation_model_subhalos = truncation_models(truncation_model_subhalos,
+                                                                         kwargs_truncation_model_subhalos)
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     truncation_model_subhalos = model_subhalos(**kwargs_truncation_model_subhalos)
 
-    model_fieldhalos, kwargs_truncation_model_fieldhalos = truncation_models(truncation_model_fieldhalos)
+    model_fieldhalos, kwargs_truncation_model_fieldhalos = truncation_models(truncation_model_fieldhalos,
+                                                                             kwargs_truncation_model_fieldhalos)
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
     truncation_model_fieldhalos = model_fieldhalos(**kwargs_truncation_model_fieldhalos)
 

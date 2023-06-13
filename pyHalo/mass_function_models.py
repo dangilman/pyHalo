@@ -59,7 +59,7 @@ def preset_mass_function_models(model_name, kwargs_model={}):
         return MixedWDMPowerLaw, kwargs_model_out
     elif model_name == 'MIXED_WDM_TURNOVER':
         return ShethTormenMixedWDM, kwargs_model_out
-    elif model_name == 'STUCKER_SHMF':
+    elif model_name in ['STUCKER_SHMF', 'STUCKER']:
         if 'dlogT_dlogk' not in kwargs_model.keys():
             raise Exception('Must specify |dlogT_dlogk| (absolute value of the ' \
             'logarithmic derivative of the transfer function) when using the STUCKER model.)')
@@ -75,24 +75,10 @@ def preset_mass_function_models(model_name, kwargs_model={}):
         kwargs_model_out['b_wdm'] = b_wdm
         kwargs_model_out['c_wdm'] = c_wdm
         del kwargs_model_out['dlogT_dlogk']
-        return WDMPowerLaw, kwargs_model_out
-    elif model_name == 'STUCKER':
-        if 'dlogT_dlogk' not in kwargs_model.keys():
-            raise Exception('Must specify |dlogT_dlogk| (absolute value of the ' \
-            'logarithmic derivative of the transfer function) when using the STUCKER model.)')
-        if 'a_wdm' in kwargs_model.keys():
-            raise Exception('Cannot specify a_wdm with the Stucker model.')
-        if 'b_wdm' in kwargs_model.keys():
-            raise Exception('Cannot specify b_wdm with the Stucker model.')
-        if 'c_wdm' in kwargs_model.keys():
-            raise Exception('Cannot specify c_wdm with the Stucker model.')
-        from pyHalo.Rendering.MassFunctions.stucker import stucker_suppression_params
-        a_wdm, b_wdm, c_wdm = stucker_suppression_params(kwargs_model_out['dlogT_dlogk'])
-        kwargs_model_out['a_wdm'] = a_wdm
-        kwargs_model_out['b_wdm'] = b_wdm
-        kwargs_model_out['c_wdm'] = c_wdm
-        del kwargs_model_out['dlogT_dlogk']
-        return ShethTormenTurnover, kwargs_model_out
+        if model_name == 'STUCKER':
+            return ShethTormenTurnover, kwargs_model_out
+        else:
+            return WDMPowerLaw, kwargs_model_out
     else:
         raise Exception('model name '+str(model_name)+' not recognized')
 
