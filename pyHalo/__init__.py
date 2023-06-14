@@ -3,5 +3,5 @@
 """Top-level package for pyHalo."""
 
 __author__ = """Daniel Gilman"""
-__email__ = 'gilmanda@ucla.edu'
-__version__ = '0.1.0'
+__email__ = 'daniel.gilman@utoronto.ca'
+__version__ = '0.2.7'

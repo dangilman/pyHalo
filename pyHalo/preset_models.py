@@ -683,29 +683,41 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={}):
 
     """
+    This preset model implements a generalized treatment of warm dark matter, or any theory that produces a cutoff in
+    the linear matter power spectrum. One additional free parameter is added to parameterize the cutoff in the matter
+     power spectrum, dlogT_dlogk, which is the absolute value of the logarithmic derivative of the transfer function
+     evaluated at k_1/2, the wavenumber corresponding to the half-mode mass (or log_mc).
+
+     In this model, halo concentrations are computed following the formalism suggeesteed by Schneider et al. (2012) and
+     Ludlow et al. (2016), in which the central density of a halo more or less is fully determined by the formation time.
+
+     The mass function is computed from dlogT_dlogk based on the prescription by Stucker et al. (2021)
+     https://arxiv.org/pdf/2109.09760.pdf
 
     :param z_lens: the lens redshift
-    :param z_source:
-    :param log_mc:
-    :param dlogT_dlogk:
-    :param sigma_sub:
-    :param log_mlow:
-    :param log_mhigh:
+    :param z_source: source redshift
+    :param log_mc: the log (base 10) of the half-mode mass
+    :param dlogT_dlogk: the absolute value of the logarithmic derivative of the transfer function at k_1/2; the model
+    is calibrated for values between ~1 and ~3
+    :param sigma_sub: amplitude of the subhalo mass function
+    :param log_mlow: minimum halo mass to render
+    :param log_mhigh: maximum halo mass to render
     :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
     :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
-    :param shmf_log_slope:
-    :param cone_opening_angle_arcsec:
-    :param log_m_host:
-    :param r_tidal:
-    :param LOS_normalization:
-    :param geometry_type:
-    :param kwargs_cosmo:
-    :param mdef_subhalos:
-    :param mdef_field_halos:
-    :param kwargs_density_profile:
+    :param shmf_log_slope: logarithmic slope of the subhalo mass function
+    :param cone_opening_angle_arcsec: the opening angle of the rendering volume
+    :param log_m_host: the log (base 10) of the host halo mass
+    :param r_tidal: the core size in units of the scale radius of the host halo; subhalos are rendered uniformly in 3D
+    inside this radius
+    :param LOS_normalization: the amplitude of the LOS mass function relative to Sheth-Tormen
+    :param geometry_type: CONE, DOUBLE_CONE, CYLINDER - sets the geometry of the rendering volume
+    :param kwargs_cosmo: keyword arguments to set cosmology
+    :param mdef_subhalos: mass definition for subhalos
+    :param mdef_field_halos: mass definition for field halos
+    :param kwargs_density_profile: keyword arguments for the density profile
     :return:
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
