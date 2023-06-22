@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from pyHalo.single_realization import realization_at_z
+from lenstronomy.Util.analysis_util import azimuthalAverage
 
 plt.rcParams['axes.linewidth'] = 2.5
 plt.rcParams['xtick.major.width'] = 3.5
@@ -13,6 +14,38 @@ plt.rcParams['ytick.labelsize'] = 20
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['font.family']
 
+def plot_subhalo_spatial_distribution(realization, max_range_arcsec=3.0, ax=None, color='k', kwargs_plot={},
+                                     log_mlow=6.0, log_mhigh=10.0, nbins=25):
+    """
+    Plots the azimuthally-averaged radial distribution of subhalos
+    :param realization: an instance of Realization that contains subhalos
+    :param ax: figure axis
+    :param color:
+    :param kwargs_plot:
+    :param log_mlow:
+    :param log_mhigh:
+    :param nbins:
+    :return:
+    """
+
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.subplot(111)
+    x_arcsec, y_arcsec = [], []
+    for halo in realization.halos:
+        if halo.is_subhalo:
+            if halo.mass >= 10**log_mlow and halo.mass < 10**log_mhigh:
+                x_arcsec.append(halo.x)
+                y_arcsec.append(halo.y)
+    root2 = np.sqrt(2)
+    rangex, rangey = (-max_range_arcsec/root2, max_range_arcsec/root2), (-max_range_arcsec/root2, max_range_arcsec/root2)
+    h, binx, biny = np.histogram2d(x_arcsec, y_arcsec, bins=nbins, range=(rangex, rangey))
+    radial_prof, r_bin = azimuthalAverage(h)
+    arcsec_per_pixel = max_range_arcsec / len(r_bin)
+    r_bin_arcsec = r_bin * arcsec_per_pixel
+    ax.plot(r_bin_arcsec, radial_prof, color=color, **kwargs_plot)
+    ax.set_xlabel(r'$r_{\rm{2D}} \ \left[\rm{arcsec}\right]$', fontsize=16)
+    ax.set_ylabel('number density '+r'$\left[\rm{arcsec}^{-2}\right]$', fontsize=16)
 
 def plot_halo_mass_function(realization, z_eval=None, ax=None, color='k', kwargs_plot={},
                                      log_mlow=6.0, log_mhigh=10.0, nbins=25):
