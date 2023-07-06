@@ -2,8 +2,9 @@ from lenstronomy.LensModel.lens_model import LensModel
 import numpy.testing as npt
 import numpy as np
 from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma, ITSampling, \
-    inverse_transform_sampling, inverse_transform_sampling_from_cdf
+    inverse_transform_sampling, delta_kappa, nfw_velocity_dispersion
 from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.Halos.lens_cosmo import LensCosmo
 import pytest
 
 class TestUtilities(object):
@@ -47,11 +48,24 @@ class TestUtilities(object):
         z_lens,z_source=0.5,1.5
         m=1e13 #M_solar
         rein=6. #kpc
-
+        lens_cosmo = LensCosmo(z_lens, z_source)
         lambda_dB = de_broglie_wavelength(log10_m_uldm,v)
         npt.assert_almost_equal(lambda_dB,0.6)
-        delta_kappa = delta_sigma(m,z_lens,rein,lambda_dB)
-        npt.assert_almost_equal(delta_kappa/80837585.696, 1, 2)
+        delta_s = delta_sigma(m,z_lens,rein,lambda_dB)
+        npt.assert_almost_equal(delta_s/80837585.696, 1, 2)
+        dk = delta_kappa(z_lens, z_source, 10 ** 13.0, rein, lambda_dB)
+        sigma_crit = lens_cosmo.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
+        npt.assert_almost_equal(delta_s, dk * sigma_crit)
+
+    def test_nfw_velocity_dispersion(self):
+
+        lens_comso = LensCosmo(0.5, 1.5)
+        m = 10**8
+        z = 0.5
+        c = 15.0
+        rhos, rs, _ = lens_comso.NFW_params_physical(m, c, z)
+        vdis1 = nfw_velocity_dispersion(rhos, rs, c)
+        npt.assert_almost_equal(vdis1/6.34, 1.0, 2)
 
     def test_inverse_transform_sampling(self):
 

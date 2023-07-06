@@ -7,10 +7,18 @@ import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
 
+
 class LensCosmo(object):
 
     def __init__(self, z_lens=None, z_source=None, cosmology=None):
+        """
 
+        This class performs calcuations relevant for certain halo mass profiles and lensing-related quantities for a
+        given lens/source redshift and cosmology
+        :param z_lens: deflector redshift
+        :param z_source: source redshift
+        :param cosmology: and instance of the Cosmology class (see pyhalo.Cosmology.cosmology.py)
+        """
         if cosmology is None:
             from pyHalo.Cosmology.cosmology import Cosmology
             cosmology = Cosmology()
@@ -74,13 +82,14 @@ class LensCosmo(object):
         rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self.cosmo._colossus_cosmo.rho_m(z)
         return rho_2h
 
-    def nfw_physical2angle(self, m, c, z):
+    def nfw_physical2angle(self, m, c, z, no_interp=False):
         """
         converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
         updates lenstronomy implementation with arbitrary redshift
 
         :param m: mass enclosed 200 rho_crit in units of M_sun (physical units, meaning no little h)
         :param c: NFW concentration parameter (r200/r_s)
+        :param no_interp: bool; compute NFW params with interpolation
         :return: Rs_angle (angle at scale radius) (in units of arcsec), alpha_Rs (observed bending angle at the scale radius
         """
         dd = self.cosmo.D_A_z(z)

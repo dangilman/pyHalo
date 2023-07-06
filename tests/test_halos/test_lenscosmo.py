@@ -1,16 +1,13 @@
 import numpy.testing as npt
-from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 import numpy as np
 import pytest
 from astropy.cosmology import FlatLambdaCDM
 from astropy.constants import G, c
-from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 import astropy.units as un
-from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
 from pyHalo.Cosmology.cosmology import Cosmology
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo as LensCosmoLenstronomy
-from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo
+
 
 class TestLensCosmo(object):
 

@@ -1,6 +1,7 @@
 from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.tnfw import TNFW as TNFWLenstronomy
 import numpy as np
+from pyHalo.Halos.util import tnfw_mass_fraction
 
 class TNFWFieldHalo(Halo):
 
@@ -94,23 +95,6 @@ class TNFWFieldHalo(Halo):
 
         return self._profile_args
 
-    @property
-    def bound_mass(self):
-        """
-        Computes the mass inside the virial radius (with truncation effects included)
-        :return: the mass inside r = c * r_s
-        """
-        prof = TNFWLenstronomy()
-        kwargs_profile = self.lenstronomy_params[0][0]
-        alpha_rs = kwargs_profile['alpha_Rs']
-        rs = kwargs_profile['Rs']
-        r_trunc = kwargs_profile['r_trunc']
-        r = self.c * rs
-        rho0 = prof.alpha2rho0(alpha_rs, rs)
-        mass_3d = prof.mass_3d(r, rs, rho0, r_trunc)
-        mass_3d_infall = prof.mass_3d(r, rs, rho0, 1000*rs)
-        return (mass_3d / mass_3d_infall) * self.mass
-
 
 class TNFWSubhalo(TNFWFieldHalo):
     """
@@ -142,3 +126,17 @@ class TNFWSubhalo(TNFWFieldHalo):
             self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
 
         return self._params_physical
+
+    @property
+    def bound_mass(self):
+        """
+        Computes the mass inside the virial radius (with truncation effects included)
+        :return: the mass inside r = c * r_s
+        """
+        if hasattr(self, '_kwargs_lenstronomy'):
+            tau = self._kwargs_lenstronomy[0]['r_trunc'] / self._kwargs_lenstronomy[0]['Rs']
+        else:
+            params_physical = self.params_physical
+            tau = params_physical['r_trunc_kpc'] / params_physical['rs']
+        f = tnfw_mass_fraction(tau, self.c)
+        return f * self.mass

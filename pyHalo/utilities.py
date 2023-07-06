@@ -241,29 +241,7 @@ def delta_kappa(z_lens, z_source, m, rein, de_Broglie_wavelength):
     sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
     ds = delta_sigma(m, z_lens, rein, de_Broglie_wavelength)
     delta_kappa = ds / sigma_crit
-
     return delta_kappa
-
-def delta_sigmaNFW(z_lens, m, rein, de_Broglie_wavelength):
-    '''
-    Returns standard deviation of the density fluctuations in projection normalized by the projected
-    density of the host halo
-
-    :param z_lens,z_source: lens and source redshifts
-    :param m: main deflector halo mass in M_solar
-    :param rein: Einstein radius in kpc
-    :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
-    '''
-
-    cosmo = Cosmology()
-    l = LensCosmo(z_lens, 2.0, cosmo)
-    model, _ = preset_concentration_models('DIEMERJOYCE19')
-    cmodel = model(cosmo.astropy, scatter=False)
-    c = cmodel.nfw_concentration(m, z_lens)
-    rhos, rs, _ = l.NFW_params_physical(m, c, z_lens)
-    kappa_host = projected_squared_density(rein, rhos, rs, c) ** 0.5
-    ds = delta_sigma(m, z_lens, rein, de_Broglie_wavelength)
-    return ds/kappa_host
 
 def delta_sigma(m, z, rein, de_Broglie_wavelength):
     """
@@ -316,21 +294,9 @@ def nfw_velocity_dispersion(rhos, rs, c, x=1):
     prefactor = 4 * np.pi * G * rhos ** 2 * rs ** 2
     density_at_r = rhos / (x * (1 + x) ** 2)
     _integrand = lambda x: (np.log(1 + x) - x / (1 + x)) / (x * (1 + x) ** 2) / x ** 2
-
     x = np.linspace(x, c, 150)
     y = _integrand(x)
     return np.sqrt(prefactor * simps(y, x) / density_at_r)
-
-def nfw_velocity_dispersion_fromfit(m):
-    """
-    The velocity dispersion of an NFW profile with mass m calibrated from a power law fit for halos
-    between 10^6 and 10^10 at z=0
-    :param m: halo mass in M_sun
-    :return: the velocity dispersion inside rs
-    """
-    coeffs = [0.31575757, -1.74259129]
-    log_vrms = coeffs[0] * np.log10(m) + coeffs[1]
-    return 10 ** log_vrms
 
 class MinHaloMassULDM(object):
 

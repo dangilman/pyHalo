@@ -168,7 +168,6 @@ def plot_concentration_mass_relation(realization, z_eval, ax=None, color='k', kw
     ax.set_xscale('log')
     ax.set_yscale('linear')
 
-
 def plot_subhalo_bound_mass(realization, ax=None, color='k', kwargs_plot={},
                             log_mlow=6.0, log_mhigh=10.0):
     """
@@ -187,13 +186,13 @@ def plot_subhalo_bound_mass(realization, ax=None, color='k', kwargs_plot={},
         fig = plt.figure()
         ax = plt.subplot(111)
     masses = []
-    mass_bound = []
+    mass_bound_fraction = []
     for halo in realization.halos:
         if halo.is_subhalo:
             masses.append(halo.mass)
-            mass_bound.append(halo.bound_mass)
+            mass_bound_fraction.append(halo.bound_mass)
 
-    ax.scatter(masses, mass_bound, color=color, **kwargs_plot)
+    ax.scatter(masses, mass_bound_fraction, color=color, **kwargs_plot)
     ax.plot(masses, masses, color='0.5', lw=2, linestyle=':')
     ax.set_xlim(10**log_mlow, 10**log_mhigh)
     ax.set_xlabel('infall halo mass '+r'$\left[M_{\odot}\right]$', fontsize=15)
@@ -240,3 +239,93 @@ def plot_subhalo_mass_functon(realization, log_m_low=6.0, log_m_high=10.0, bound
         ax.set_xlabel('infall halo mass ' + r'$\left[M_{\odot}\right]$', fontsize=15)
         ax.set_ylabel(r'$n\left(m\right)$', fontsize=15)
         ax.set_yscale('log')
+
+def plot_subhalo_concentration_versus_bound_mass(realization, ax=None, color='k', kwargs_plot={},
+                                                 log_mlow=6.0, log_mhigh=10.0):
+    """
+    Plots the bound mass of subhalos, defined as the mass inside the infall virial radius of a truncated
+    profile, versus the infall concentration of the halo.
+    Note: the halo mass definition must have a truncation radius specified for this method
+
+    :param realization: an instance of Realization
+    :param ax: figure axis
+    :param color: color for the lines
+    :param kwargs_plot: keyword arguments passed to plot
+    :param log_mlow: minimum infall halo mass along x axis
+    :param log_mhigh: maximum infall halo mass along x axis
+    :return:
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.subplot(111)
+
+    infall_concentration = []
+    bound_mass_fraction = []
+    for halo in realization.halos:
+        if halo.is_subhalo:
+            if halo.mass >= 10 ** log_mlow and halo.mass < 10 ** log_mhigh:
+                infall_concentration.append(halo.c)
+                bound_mass_fraction.append(halo.bound_mass / halo.mass)
+    ax.scatter(infall_concentration, bound_mass_fraction, color=color, **kwargs_plot)
+    ax.set_xlabel('infall concentration', fontsize=15)
+    ax.set_ylabel(r'$\frac{M_{\rm{bound}}}{M_{\rm{infall}}}$', fontsize=15)
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+
+def plot_bound_mass_histogram(realization, ax=None, color='k', kwargs_plot={},
+                              log_mlow=6.0, log_mhigh=10.0):
+    """
+    Plots the bound mass of subhalos defined as the mass inside the infall virial radius of a truncated
+    profile.
+
+    Note: the halo mass definition must have a truncation radius specified
+
+    :param realization: an instance of Realization
+    :param ax: figure axis
+    :param color: color for the lines
+    :param kwargs_plot: keyword arguments passed to plot
+    :param log_mlow: minimum infall halo mass
+    :param log_mhigh: maximum infall halo mass
+    :return:
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.subplot(111)
+
+    bound_mass_fraction = []
+    for halo in realization.halos:
+        if halo.is_subhalo:
+            if halo.mass >= 10 ** log_mlow and halo.mass < 10 ** log_mhigh:
+                bound_mass_fraction.append(halo.bound_mass / halo.mass)
+    ax.hist(np.log10(bound_mass_fraction), color=color, density=True, **kwargs_plot)
+    ax.set_xlabel(r'$\frac{M_{\rm{bound}}}{M_{\rm{infall}}}$', fontsize=15)
+
+def plot_truncation_radius_histogram(realization, subhalos_only=True, ax=None, color='k', kwargs_plot={},
+                                   log_mlow=6.0, log_mhigh=10.0):
+    """
+    Plots a histogram of the truncation radius of a halo divided by the scale radius.
+
+    Note: the halo mass definition must have a truncation radius specified for this method
+
+    :param realization: an instance of Realization
+    :param subhalos_only: bool; show only subhalos
+    :param ax: figure axis
+    :param color: color for the lines
+    :param kwargs_plot: keyword arguments passed to plot
+    :param log_mlow: minimum infall halo mass
+    :param log_mhigh: maximum infall halo mass
+    :return:
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.subplot(111)
+
+    tau = []
+    for halo in realization.halos:
+        if subhalos_only and halo.is_subhalo is False: continue
+        if halo.mass >= 10 ** log_mlow and halo.mass < 10 ** log_mhigh:
+            params = halo.params_physical
+            rt_over_rs = params['r_trunc_kpc'] / params['rs']
+            tau.append(rt_over_rs)
+    ax.hist(np.log10(tau), color=color, density=True, **kwargs_plot)
+    ax.set_xlabel(r'$\frac{r_t}{r_s}$', fontsize=15)
