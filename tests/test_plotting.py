@@ -8,6 +8,9 @@ class TestPlottingRoutines(object):
     def setup_method(self):
         self.realization = CDM(0.5, 1.5, sigma_sub=0.025, LOS_normalization=0.0)
 
+    def test_spatial_distribution(self):
+        plot_subhalo_spatial_distribution(self.realization)
+
     def test_mass_function_plot(self):
 
         plot_subhalo_mass_functon(self.realization)

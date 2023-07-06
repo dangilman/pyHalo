@@ -479,7 +479,6 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                   }
 
     uldm_no_fluctuations = WDM(**kwargs_wdm)
-
     if flucs: # add fluctuations to realization
         ext = RealizationExtensions(uldm_no_fluctuations)
         lambda_dB = de_broglie_wavelength(log10_m_uldm, velocity_scale) # de Broglie wavelength in kpc
