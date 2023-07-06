@@ -35,19 +35,22 @@ class ProjectedNFW(SpatialDistributionBase):
         super(ProjectedNFW, self).__init__()
 
     @classmethod
-    def from_Mhost(cls, m_host, zlens, rmax2d_arcsec, r_core_units_rs, lens_cosmo):
+    def from_Mhost(cls, m_host, zlens, rmax2d_arcsec, r_core_units_rs, lens_cosmo, c_host=None):
         """
 
-        :param m_host:
-        :param zlens:
-        :param rmax2d_arcsec:
-        :param r_core_units_rs:
-        :param lens_cosmo:
+        :param m_host: host halo mass
+        :param zlens: the deflector redshift
+        :param rmax2d_arcsec: the maximum radius in projection to rendering subhalos
+        :param r_core_units_rs: the core size in units rs of a cored nfw profile (subhalos are distributed
+        following a cored nfw profile)
+        :param lens_cosmo: an instance of LensCosmo
+        :param c_host: host halo concentration
         :return:
         """
-        c_model = ConcentrationDiemerJoyce(lens_cosmo)
-        c = c_model.nfw_concentration(m_host, zlens)
-        _, rs_mpc, r_200_mpc = lens_cosmo.nfwParam_physical(m_host, c, zlens)
+        if c_host is None:
+            c_model = ConcentrationDiemerJoyce(lens_cosmo)
+            c_host = c_model.nfw_concentration(m_host, zlens)
+        _, rs_mpc, r_200_mpc = lens_cosmo.nfwParam_physical(m_host, c_host, zlens)
         arcsec_to_kpc = lens_cosmo.cosmo.kpc_proper_per_asec(zlens)
         rs_arcsec = rs_mpc * 1000 / arcsec_to_kpc
         r_200_arcsec = r_200_mpc * 1000 / arcsec_to_kpc

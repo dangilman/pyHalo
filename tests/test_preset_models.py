@@ -12,11 +12,17 @@ class TestPresetModels(object):
         _ = cdm.lensing_quantities()
         _ = preset_model_from_name('CDM')
 
+        cdm = CDM(0.5, 1.5,
+                  truncation_model_subhalos='TRUNCATION_GALACTICUS')
+
     def test_WDM(self):
 
         wdm = WDM(0.5, 1.5, 8.0)
         _ = wdm.lensing_quantities()
         _ = preset_model_from_name('WDM')
+
+        _ = WDM(0.5, 1.5, 8.0,
+                  truncation_model_subhalos='TRUNCATION_GALACTICUS')
 
     def test_ULDM(self):
 
@@ -45,6 +51,8 @@ class TestPresetModels(object):
         func = preset_model_from_name('WDMGeneral')
         wdm = func(0.5, 1.5, 7.7, 2.0)
         _ = wdm.lensing_quantities()
+
+        wdm = func(0.5, 1.5, 7.7, 2.0, truncation_model_subhalos='TRUNCATION_GALACTICUS')
 
     def test_CDM_emulator(self):
 

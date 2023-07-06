@@ -1,11 +1,9 @@
 import numpy as np
-import pickle
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
-from scipy.interpolate import RegularGridInterpolator
 from pyHalo.Halos.util import tau_mf_interpolation
 from colossus.lss import peaks
 from colossus.halo import splashback
-
+from pyHalo.Halos.galacticus_truncation.interp_mass_loss import InterpGalacticus
 
 class TruncationSplashBack(object):
 
@@ -122,7 +120,7 @@ class AdiabaticTidesTruncation(object):
     def __init__(self, lens_cosmo, log_m_host, z_host, mass_loss_interp):
         """
 
-        :param lens_cosmo: an instacee of the LensCosmo class
+        :param lens_cosmo: an instance of the LensCosmo class
         :param log_m_host: the host halo mass
         :param z_host: the redshift of the host halo
         :param mass_loss_interp: an instance of RegularGridInterpolator
@@ -194,8 +192,8 @@ class AdiabaticTidesTruncation(object):
         This routine makes sure the arguments for the initerpolation are inside the domain of the function.
         """
         (log10c, log10mass_loss_fraction) = point
-        log10c = max(self._min_c, log10c)
-        log10c = min(self._max_c, log10c)
+        log10c = max(np.log10(self._min_c), log10c)
+        log10c = min(np.log10(self._max_c), log10c)
         log10mass_loss_fraction = max(-1.5, log10mass_loss_fraction)
         log10mass_loss_fraction = min(-0.01, log10mass_loss_fraction)
         return (log10c, log10mass_loss_fraction)
@@ -241,3 +239,62 @@ class TruncateMeanDensity(object):
         rt_over_rs = self._norm * (c_actual / c_median) ** self._cpower * (r_peri / 0.5)
         _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, halo_redshift)
         return rs * rt_over_rs
+
+class TruncationGalacticus(object):
+
+    def __init__(self, lens_cosmo, c_host):
+        """
+
+        :param lens_cosmo:
+        """
+
+        self._chost = c_host
+        self._lens_cosmo = lens_cosmo
+        self._mass_loss_interp = InterpGalacticus()
+        self._tau_mf_interpolation = tau_mf_interpolation()
+
+    @staticmethod
+    def _make_params_in_bounds_tau_evaluate(point):
+        """
+        This routine makes sure the arguments for the interpolation are inside the domain of the function.
+        """
+        min_c, max_c = np.log10(1.0), np.log10(10 ** 2.7)
+        (log10c, log10mass_loss_fraction) = point
+        log10c = max(min_c, log10c)
+        log10c = min(max_c, log10c)
+        log10mass_loss_fraction = max(-3.0, log10mass_loss_fraction)
+        log10mass_loss_fraction = min(-0.001, log10mass_loss_fraction)
+        return (log10c, log10mass_loss_fraction)
+
+    def truncation_radius_halo(self, halo):
+
+        """
+        Thiis method computess the truncation radius using the class attributes of an instance of Halo
+        :param halo: an instance of halo
+        :return: the truncation radius in physical kpc
+        """
+
+        return self.truncation_radius(halo.mass, halo.c,
+                                      halo.time_since_infall, self._chost, halo.z)
+
+    def truncation_radius(self, halo_mass, infall_concentration,
+                          time_since_infall, chost, z_eval_angles):
+        """
+
+        :param halo_mass:
+        :param infall_concentration:
+        :param time_since_infall:
+        :param chost:
+        :param z_eval_angles:
+        :return:
+        """
+        log10c = np.log10(infall_concentration)
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, chost)
+        point = self._make_params_in_bounds_tau_evaluate((log10c, log10mbound_over_minfall))
+        log10tau = float(self._tau_mf_interpolation(point))
+        tau = 10 ** log10tau
+        _, rs, _ = self._lens_cosmo.NFW_params_physical(halo_mass,
+                                                        infall_concentration,
+                                                        z_eval_angles)
+        return tau * rs
+

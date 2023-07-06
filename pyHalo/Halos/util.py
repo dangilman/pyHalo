@@ -40,11 +40,11 @@ def tau_mf_interpolation():
     and final bound mass
     :return: an instance of RegularGridInterpolator that returns (r_t / r_s) given a final mass and concentration
     """
-    N = 50
-    tau = np.logspace(-1., 2., N)
+    N = 80
+    tau = np.logspace(-2., 2.3, N)
     log10_c = np.linspace(0, 2.7, N)
     # mass_fraction_1d = np.logspace(-1.45, -0.02, N)
-    mass_fraction_1d = np.logspace(-1.5, np.log10(0.999), N)
+    mass_fraction_1d = np.logspace(-3.0, np.log10(0.9999), N)
     log10tau_2d = np.zeros((N, N))
 
     # This computes the value of tau that correponds to each pair of (concentration, mass_loss)

@@ -1,8 +1,7 @@
 import numpy.testing as npt
 import pytest
 from pyHalo.preset_models import CDM
-from pyHalo.plotting_routines import plot_subhalo_bound_mass, \
-    plot_subhalo_mass_functon, plot_concentration_mass_relation, plot_halo_mass_function
+from pyHalo.plotting_routines import *
 
 class TestPlottingRoutines(object):
 
@@ -20,12 +19,19 @@ class TestPlottingRoutines(object):
     def test_bound_mass_function_plot(self):
 
         plot_subhalo_bound_mass(self.realization)
+        plot_bound_mass_histogram(self.realization)
+        plot_subhalo_concentration_versus_bound_mass(self.realization)
 
     def test_plot_mc_relation(self):
 
         plot_concentration_mass_relation(self.realization, z_eval='z_lens')
         plot_concentration_mass_relation(self.realization, z_eval=0.5)
         plot_concentration_mass_relation(self.realization, z_eval=[0.4, 0.6])
+
+    def test_truncation_radius_plot(self):
+
+        plot_truncation_radius_histogram(self.realization, subhalos_only=False)
+        plot_truncation_radius_histogram(self.realization, subhalos_only=True)
 
 
 if __name__ == '__main__':
