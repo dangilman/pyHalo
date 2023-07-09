@@ -67,6 +67,7 @@ class InterpGalacticus(object):
         """
         mean = self.evaluate_mean_mass_loss(log10_concentration_infall, time_since_infall, host_concentration)
         scatter_dex = self.evaluate_scatter_dex(log10_concentration_infall, time_since_infall, host_concentration)
+        scatter_dex = max(scatter_dex, 0.001)
         output = np.random.normal(mean, scatter_dex)
 
         if isinstance(log10_concentration_infall, float) and \
