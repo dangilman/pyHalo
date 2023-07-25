@@ -118,6 +118,21 @@ class TestConeGeometry(object):
         volume_true = 1./3 * np.pi * radius_radians ** 2 * dz ** 2 * ds
         npt.assert_almost_equal(volume_true, volume_pyhalo, 3)
 
+    def test_cone(self):
+
+        cone_arcsec = 4
+        radius_radians = cone_arcsec * 0.5 * self.cosmo.arcsec
+        geo = Geometry(self.cosmo, 0.5, 1.5, cone_arcsec, 'CONE', angle_pad=1.)
+        volume_pyhalo = 0
+        z = np.linspace(0.0, 1.5, 200)
+        for i in range(0, len(z)-1):
+            delta_z = z[i+1] - z[i]
+            volume_pyhalo += geo.volume_element_comoving(z[i], delta_z)
+
+        ds = self.cosmo.D_C_z(1.5)
+        volume_true = 1./3 * np.pi * radius_radians ** 2 * ds ** 3
+        npt.assert_almost_equal(volume_true, volume_pyhalo, 3)
+
 
 if __name__ == '__main__':
       pytest.main()

@@ -735,11 +735,9 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
     subhalo_spatial_distribution = ProjectedNFW
     fieldhalo_spatial_distribution = LensConeUniform
-
     kwargs_model_dlogT_dlogk = {'dlogT_dlogk': dlogT_dlogk}
     mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models('STUCKER_SHMF', kwargs_model_dlogT_dlogk)
     mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models('STUCKER', kwargs_model_dlogT_dlogk)
-
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     concentration_model = 'FROM_FORMATION_HISTORY'
     model_subhalos, kwargs_concentration_model_subhalos = preset_concentration_models(concentration_model,
@@ -757,11 +755,9 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     kwargs_concentration_model_fieldhalos['log_mc'] = log_mc
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_concentration_model_fieldhalos)
     c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
-
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
-
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
     if truncation_model_subhalos == 'TRUNCATION_GALACTICUS':
@@ -770,10 +766,8 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
     kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
     truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
-
     # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
     population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT', 'TWO_HALO']
-
     mass_function_class_list = [mass_function_model_subhalos,
                                 mass_function_model_fieldhalos,
                                 mass_function_model_fieldhalos]

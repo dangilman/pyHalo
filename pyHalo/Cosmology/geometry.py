@@ -101,12 +101,6 @@ class Geometry(object):
         dR = self.cosmo.astropy.hubble_distance.value * self.cosmo.astropy.efunc(z) ** -1
         return area_comoving * dR
 
-    def _angle_to_arcsec_area(self, radius_arcsec, z):
-
-        theta = self._angle_to_arcsec_radius(radius_arcsec, z)
-
-        return np.pi * theta ** 2
-
     def angle_to_comoving_area(self, radius_arcsec, z):
         """
         computes the area corresponding to the angular radius of a plane at redshift z for a double cone with base at z_base
@@ -134,14 +128,6 @@ class Geometry(object):
         a_z = self.cosmo.scale_factor(z)
 
         return area_comoving * a_z ** 2
-
-    def _angle_to_arcsec_radius(self, radius_arcsec, z):
-
-        r_co_mpc = self.angle_to_comovingradius(radius_arcsec, z)
-        r_co_kpc = r_co_mpc * 1000
-        asec_per_kpc = self.cosmo.astropy.arcsec_per_kpc_comoving(z).value
-
-        return r_co_kpc * asec_per_kpc
 
 class Cone(object):
 

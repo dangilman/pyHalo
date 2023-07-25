@@ -341,9 +341,7 @@ class RealizationExtensions(object):
         realization_smooth = Realization(masses, xcoords, ycoords, r3d, mdefs, redshifts, subhalo_flag,
                                          self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model,
                                          mass_sheet_correction=False)
-
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
-
         for ii, (x_image_interp, y_image_interp, r_max) in enumerate(zip(x_image_interp_list, y_image_interp_list, r_max_arcsec)):
             realization_with_clustering_temp = self.add_correlated_structure(DeltaFunction,
                                  kwargs_pbh_mass_function,
@@ -421,7 +419,6 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
     fluctuation_size_variance_angle = fluctuation_size_variance / kpc_per_arcsec
 
     if shape != 'aperture':
-
         sigs = np.abs(np.random.normal(fluc_var_angle,fluctuation_size_variance_angle,n_flucs)) #random widths
         kappa0 = np.random.normal(0, fluctuation_amplitude, n_flucs)
         # kappa0 = amp / (2 * np.pi * sigma ** 2)
@@ -441,17 +438,12 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
         ys = aa*np.cos(angles)*np.sin(args['angle'])+bb*np.sin(angles)*np.cos(args['angle']) #random y positions
 
     if shape == 'aperture':
-
         amps, sigs, xs, ys = np.array([]), np.array([]), np.array([]), np.array([])
-
         for i in range(0, len(n_flucs)): #loop through each image
-
             sigs_i = np.random.normal(fluc_var_angle,fluctuation_size_variance_angle,n_flucs[i])
             sigs_i = np.absolute(sigs_i)
-
             kappa0 = np.random.normal(0, fluctuation_amplitude, n_flucs[i])
             amps_i = kappa0 * 2*np.pi*sigs_i**2
-
             angles_i = np.random.uniform(0, 2*np.pi, n_flucs[i])  # random angles
             r = np.random.uniform(0, args['aperture'] ** 2, int(n_flucs[i]))
             xs_i = r ** 0.5 * np.sin(angles_i) + args['x_images'][i]
@@ -459,10 +451,7 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
             amps, sigs, xs, ys= np.append(amps, amps_i), np.append(sigs, sigs_i), np.append(xs, xs_i), np.append(ys, ys_i)
 
     args_fluc=[{'amp': amps[i], 'sigma': sigs[i], 'center_x': xs[i], 'center_y': ys[i]} for i in range(len(amps))]
-    # kappa(r) = kappa * exp(-0.5 * r^2/sigma^2)
-    #sigma_crit = realization.lens_cosmo.sigmacrit # in units M_sun / arcsec^2
     masses = np.absolute(amps)
-    #masses = [10 ** 8.0] * len(xs)
     fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, realization.lens_cosmo.z_lens,
                              True, realization.lens_cosmo, args_fluc[i],
                              truncation_class=None, concentration_class=None,
