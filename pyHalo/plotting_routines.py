@@ -201,7 +201,7 @@ def plot_subhalo_bound_mass(realization, ax=None, color='k', kwargs_plot={},
     ax.set_yscale('log')
 
 def plot_subhalo_mass_functon(realization, log_m_low=6.0, log_m_high=10.0, bound_mass_function=False, nbins=20,
-                                  n_bootstrap=10, ax=None, color='k', kwargs_plot={}):
+                                  n_bootstrap=10, ax=None, color='k', kwargs_plot={}, rescale_amp=1.0):
         """
         Makes a log-log plot of the infall mass versus the final bound mass of tidally stripped subhalos
         :param realization: an instance of Realization
@@ -213,6 +213,7 @@ def plot_subhalo_mass_functon(realization, log_m_low=6.0, log_m_high=10.0, bound
         :param ax: figure axis
         :param color: color for the lines
         :param kwargs_plot: keyword arguments passed to plot
+        :param rescale_amp: rescales the plotted mass function
         :return:
         """
         if ax is None:
@@ -233,10 +234,10 @@ def plot_subhalo_mass_functon(realization, log_m_low=6.0, log_m_high=10.0, bound
         median = np.median(h, axis=0)
         standard_dev = np.std(h, axis=0)
         logm = _x[1:] - (_x[1] - _x[0])/2
-        ax.errorbar(logm, median, yerr=standard_dev, fmt='none', color=color)
-        ax.plot(logm, median, color=color, **kwargs_plot)
+        ax.errorbar(logm, rescale_amp*median, yerr=standard_dev, fmt='none', color=color)
+        ax.plot(logm, rescale_amp*median, color=color, **kwargs_plot)
         ax.set_ylim(median[-1] / 2, median[0] * 2)
-        ax.set_xlabel('infall halo mass ' + r'$\left[M_{\odot}\right]$', fontsize=15)
+        ax.set_xlabel('infall halo mass ' + r'$\left[\log_{10} M_{\odot}\right]$', fontsize=15)
         ax.set_ylabel(r'$n\left(m\right)$', fontsize=15)
         ax.set_yscale('log')
 
@@ -268,7 +269,7 @@ def plot_subhalo_concentration_versus_bound_mass(realization, ax=None, color='k'
                 bound_mass_fraction.append(halo.bound_mass / halo.mass)
     ax.scatter(infall_concentration, bound_mass_fraction, color=color, **kwargs_plot)
     ax.set_xlabel('infall concentration', fontsize=15)
-    ax.set_ylabel(r'$\frac{M_{\rm{bound}}}{M_{\rm{infall}}}$', fontsize=15)
+    ax.set_ylabel(r'$\log_{10} \frac{M_{\rm{bound}}}{M_{\rm{infall}}}$', fontsize=22)
     # ax.set_xscale('log')
     ax.set_yscale('log')
 
@@ -298,7 +299,7 @@ def plot_bound_mass_histogram(realization, ax=None, color='k', kwargs_plot={},
             if halo.mass >= 10 ** log_mlow and halo.mass < 10 ** log_mhigh:
                 bound_mass_fraction.append(halo.bound_mass / halo.mass)
     ax.hist(np.log10(bound_mass_fraction), color=color, density=True, **kwargs_plot)
-    ax.set_xlabel(r'$\frac{M_{\rm{bound}}}{M_{\rm{infall}}}$', fontsize=15)
+    ax.set_xlabel(r'$\log_{10} \frac{M_{\rm{bound}}}{M_{\rm{infall}}}$', fontsize=22)
 
 def plot_truncation_radius_histogram(realization, subhalos_only=True, ax=None, color='k', kwargs_plot={},
                                    log_mlow=6.0, log_mhigh=10.0):
