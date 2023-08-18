@@ -6,6 +6,7 @@ from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.integrate import simps
 from pyHalo.concentration_models import preset_concentration_models
+from lenstronomy.LensModel.lens_model import LensModel
 
 class ITSampling(object):
 
@@ -331,3 +332,40 @@ class MinHaloMassULDM(object):
 
     def _zeta(self, z):
         return (18 * np.pi ** 2 + 82 * (self._Om(z) - 1) - 39 * (self._Om(z) - 1) ** 2) / self._Om(z)
+
+def multiplane_convergence(realization, window_size=2.5, npix=100, lens_model_list_macro=None,
+                           kwargs_lens_macro=None, redshift_list_macro=None):
+    """
+    This function computes the effective multiplane convergence from a realization of dark matter halos.
+    If no macromodel is specified (through lens_model_list_macro, kwargs_lens_macro, redshift_list_macro) then
+    a typical one is assumed.
+
+    :param realization: an instance of Realization
+    :param window_size: the window size in arcsec (each axis spans 2*window_size)
+    :param npix: number of pixels per axis
+    :param lens_model_list_macro: list of lens models for the main deflector
+    :param kwargs_lens_macro: keyword arguments for the macro lens models
+    :param redshift_list_macro: list of redshifts for the macro lens models
+    :return: the effective multiplane convergence, the full lens model used to create it, the keyword arguments for it,
+    the macromodel lens model, and the keyword arguments for it
+    """
+
+    lens_model_list_halos, redshfit_array_halos, kwargs_lens_halos, _ = realization.lensing_quantities()
+    if lens_model_list_macro is None:
+        lens_model_list_macro = ['EPL', 'SHEAR']
+        kwargs_lens_macro = [{'theta_E': 1.0, 'center_x': 0.0, 'center_y': 0.0, 'e1': 0.1, 'e2': -0.1,
+                              'gamma': 2.0}, {'gamma1': 0.05, 'gamma2': 0.02}]
+        redshift_list_macro = [realization.lens_cosmo.z_lens] * len(lens_model_list_macro)
+
+    lens_model_macro = LensModel(lens_model_list_macro)
+    lens_model = LensModel(lens_model_list_macro + lens_model_list_halos,
+                           z_source=realization.lens_cosmo.z_source, multi_plane=True,
+                           lens_redshift_list=redshift_list_macro + list(redshfit_array_halos),
+                           cosmo=realization.lens_cosmo.cosmo.astropy)
+
+    _r = np.linspace(-window_size, window_size, npix)
+    xx, yy = np.meshgrid(_r, _r)
+    kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro)
+    kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro + kwargs_lens_halos)
+    delta_kappa = (kappa - kappa_macro).reshape(npix, npix)
+    return delta_kappa, lens_model, kwargs_lens_macro + kwargs_lens_halos, lens_model_macro, kwargs_lens_macro

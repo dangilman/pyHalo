@@ -37,7 +37,7 @@ class TestPlottingRoutines(object):
         plot_truncation_radius_histogram(self.realization, subhalos_only=True)
 
     def test_convergence_plot(self):
-        
+
         fig = plt.figure(1)
         ax = plt.subplot(111)
         plot_multiplane_convergence(self.realization, ax=ax, npix=10, show_critical_curve=False)

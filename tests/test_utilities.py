@@ -86,7 +86,7 @@ class TestUtilities(object):
         x_samples = sampler(100000)
         npt.assert_almost_equal(np.mean(x_samples)/mu, 1.0, 2)
         npt.assert_almost_equal(np.std(x_samples)/sigma, 1.0, 2)
-
+        
 
 if __name__ == '__main__':
 

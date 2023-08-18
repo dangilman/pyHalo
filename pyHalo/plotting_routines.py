@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pyHalo.single_realization import realization_at_z
 from lenstronomy.Util.analysis_util import azimuthalAverage
-from lenstronomy.LensModel.lens_model import LensModel
+from pyHalo.utilities import multiplane_convergence
 
 plt.rcParams['axes.linewidth'] = 2.5
 plt.rcParams['xtick.major.width'] = 3.5
@@ -357,24 +357,8 @@ def plot_multiplane_convergence(realization, ax=None, npix=100, window_size=2.5,
         fig.set_size_inches(6, 6)
         ax = plt.subplot(111)
 
-    lens_model_list_halos, redshfit_array_halos, kwargs_lens_halos, _ = realization.lensing_quantities()
-    if lens_model_list_macro is None:
-        lens_model_list_macro = ['EPL', 'SHEAR']
-        kwargs_lens_macro = [{'theta_E': 1.0, 'center_x': 0.0, 'center_y': 0.0, 'e1': 0.1, 'e2': -0.1,
-                              'gamma': 2.0}, {'gamma1': 0.05, 'gamma2': 0.02}]
-        redshift_list_macro = [realization.lens_cosmo.z_lens] * len(lens_model_list_macro)
-
-    lens_model_macro = LensModel(lens_model_list_macro)
-    lens_model = LensModel(lens_model_list_macro + lens_model_list_halos,
-                           z_source=realization.lens_cosmo.z_source, multi_plane=True,
-                           lens_redshift_list=redshift_list_macro + list(redshfit_array_halos),
-                           cosmo=realization.lens_cosmo.cosmo.astropy)
-
-    _r = np.linspace(-window_size, window_size, npix)
-    xx, yy = np.meshgrid(_r, _r)
-    kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro)
-    kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro + kwargs_lens_halos)
-    delta_kappa = (kappa - kappa_macro).reshape(npix, npix)
+    delta_kappa, lens_model, kwargs_lens, _, _ = multiplane_convergence(realization, window_size, npix, lens_model_list_macro,
+                                         kwargs_lens_macro, redshift_list_macro)
     if subtract_mean_kappa:
         delta_kappa -= np.mean(delta_kappa)
     ax.imshow(delta_kappa, extent=[-window_size, window_size, -window_size, window_size],
@@ -384,8 +368,7 @@ def plot_multiplane_convergence(realization, ax=None, npix=100, window_size=2.5,
         from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
         ext = LensModelExtensions(lens_model)
         ra_crit_list, dec_crit_list, ra_caustic_list, dec_caustic_list = ext.critical_curve_caustics(
-            kwargs_lens_macro + kwargs_lens_halos,
-            grid_scale=grid_scale_crit_curve, compute_window=window_size)
+            kwargs_lens, grid_scale=grid_scale_crit_curve, compute_window=window_size)
 
     ax.plot(ra_crit_list[0], dec_crit_list[0], color='k')
 
