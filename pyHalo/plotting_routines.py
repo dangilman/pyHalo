@@ -369,8 +369,7 @@ def plot_multiplane_convergence(realization, ax=None, npix=100, window_size=2.5,
         ext = LensModelExtensions(lens_model)
         ra_crit_list, dec_crit_list, ra_caustic_list, dec_caustic_list = ext.critical_curve_caustics(
             kwargs_lens, grid_scale=grid_scale_crit_curve, compute_window=window_size)
-
-    ax.plot(ra_crit_list[0], dec_crit_list[0], color='k')
+        ax.plot(ra_crit_list[0], dec_crit_list[0], color='k')
 
     return ax
 
