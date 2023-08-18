@@ -8,6 +8,7 @@ from pyHalo.Halos.HaloModels.powerlaw import PowerLawFieldHalo, PowerLawSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
+from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
 import numpy as np
 from copy import deepcopy
@@ -606,7 +607,6 @@ class Realization(object):
         kwargs_halo = {'mass': mass, 'x': x, 'y': y, 'r3d': r3d,
                        'z': z, 'sub_flag': is_subhalo, 'lens_cosmo_instance': lens_cosmo_instance,
                        'unique_tag': unique_tag}
-
         if 'truncation_model' in kwargs_halo_model.keys():
             kwargs_halo['truncation_class'] = kwargs_halo_model['truncation_model']
         else:
@@ -622,6 +622,7 @@ class Realization(object):
             else:
                 kwargs_halo['concentration_class'] = kwargs_halo_model['concentration_model_field_halos']
         kwargs_halo['args'] = kwargs_halo_model['kwargs_density_profile']
+
         if mdef == 'NFW':
             if is_subhalo:
                 model = NFWSubhhalo
@@ -632,6 +633,11 @@ class Realization(object):
                 model = TNFWSubhalo
             else:
                 model = TNFWFieldHalo
+        elif mdef == 'TNFWC_SIDM':
+            if is_subhalo:
+                model = TNFWCSubhaloSIDM
+            else:
+                model = TNFWCFieldHaloSIDM
         elif mdef == 'PT_MASS':
             model = PTMass
         elif mdef == 'PJAFFE':
@@ -820,9 +826,9 @@ class SingleHalo(Realization):
         :param z: halo redshift
         :param zlens: main deflector redshift
         :param zsource: source redshift
-        :param r3d: three dimensional coordinate of halo inside the host in kpc
+        :param r3d: 3D coordinate of halo inside the host in kpc
         (only relevant for tidally-truncated subhalos, for field halos this can be None)
-        :param subhalo_flag: bool, sets whether or not a halo is a subhalo
+        :param subhalo_flag: bool, sets a halo's status as a subhalo
         :param kwargs_halo_model: keyword arguments for the halo
         :param astropy_instance: an instance of astropy
         :param lens_cosmo: an instance of LensCosmo; if none is provided a new one is generated

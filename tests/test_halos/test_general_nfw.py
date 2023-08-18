@@ -78,7 +78,6 @@ class TestGeneralNFW(object):
                                                          kwargs_gnfw['alpha_Rs'],
                                                          kwargs_gnfw['gamma_inner'], kwargs_gnfw['gamma_outer'])
         npt.assert_almost_equal(m3d_nfw/m3d, 1.0, 4)
-
         m = 10 ** 7.3
         x = 0.5
         y = 1.0
@@ -93,7 +92,6 @@ class TestGeneralNFW(object):
                                    self.truncation_class, self.concentration_class, unique_tag)
         nfw = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                            self.truncation_class, self.concentration_class, unique_tag)
-
         kwargs_gnfw = gnfw.lenstronomy_params[0][0]
         kwargs_nfw = nfw.lenstronomy_params[0][0]
         rmatch = x_match * kwargs_nfw['Rs']
@@ -109,20 +107,22 @@ class TestGeneralNFW(object):
         x = 0.5
         y = 1.0
         r3d = 100
-        is_subhalo = False
         gamma_inner = 1.25
         gamma_outer = 3.3
         x_match = 2.5
         unique_tag = 1.0
         kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match,
-                          'evaluate_mc_at_zlens': False,}
+                          'evaluate_mc_at_zlens': False}
+        is_subhalo = False
         gnfw = GeneralNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                    self.truncation_class, self.concentration_class, unique_tag)
+        is_subhalo = True
         gnfw_subhalo = GeneralNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                    self.truncation_class, self.concentration_class, unique_tag)
         c = gnfw.profile_args[0]
         c_sub = gnfw_subhalo.profile_args[0]
         npt.assert_equal(False, c==c_sub)
+
 
 if __name__ == '__main__':
     pytest.main()

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from pyHalo.utilities import ITSampling
+from scipy.integrate import quad
 
 _log10_rperi_bins = np.array([-2.   , -1.885, -1.77 , -1.655, -1.54 , -1.425, -1.31 , -1.195,
        -1.08 , -0.965, -0.85 , -0.735, -0.62 , -0.505, -0.39 , -0.275,
@@ -148,7 +149,65 @@ class Halo(ABC):
         raise Exception('this halo class does not have a bound mass attribute because the profile does not have '
                         'a tidal truncation radius')
 
+    @property
+    def halo_age(self):
+        """Computes the age of a halo assuming it collapsed at z=10
+        TODO: Make this a function of halo mass
+        """
+        if not hasattr(self, '_halo_age'):
+            self._halo_age = self.lens_cosmo.cosmo.halo_age(self.z, zform=10)
+        return self._halo_age
 
+    def density_profile_3d(self, *args, **kwargs):
+        raise Exception('This profile does not have a density_profile_3d method defined in the class')
 
+    @property
+    def c(self):
+        """
+        Computes the halo concentration (once)
+        """
 
+        raise Exception('this class does not have a well-defined concentration parameter')
 
+    @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
+        if not hasattr(self, '_zeval'):
+
+            if self.is_subhalo:
+                if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
+                    self._zeval = self.z
+                else:
+                    self._zeval = self.z_infall
+            else:
+                self._zeval = self.z
+
+        return self._zeval
+
+    @property
+    def nfw_params(self):
+        """
+        Computes the nfw profile parameters (rs,rho_s) from mass and concentration
+        :return: rs, r200 and rho_s in units kpc, kpc, and M_sun / kpc^3
+        """
+        if not hasattr(self, '_nfw_params'):
+            if self.mdef in ['TNFWC', 'GNFW']:
+                pseudo_nfw = True
+            else:
+                pseudo_nfw = False
+            rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval, pseudo_nfw)
+            self._nfw_params = [rhos, rs, r200]
+        return self._nfw_params[0], self._nfw_params[1], self._nfw_params[2]
+
+    def mass_3d(self, rmax, profile_args=None):
+        """
+        Computes the mass enclosed inside a sphere of radius rmax
+        :param rmax: the maximum radius
+        :return: mass enclosed inside rmax
+        """
+        if rmax == 'r200':
+            rmax = self.nfw_params[2]
+        _integrand = lambda r: 4 * np.pi * r ** 2 * self.density_profile_3d(r, profile_args)
+        return quad(_integrand, 0, rmax)[0]

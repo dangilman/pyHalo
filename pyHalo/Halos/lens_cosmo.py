@@ -7,6 +7,21 @@ import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
 
+class NFWParampyHalo(NFWParam):
+
+    """Adds methods for psuedo-NFW profiles to those implemented in lenstronomy"""
+
+    def rho0_c_pseudoNFW(self, c, z):
+        """
+        computes density normalization as a function of concentration parameter for an NFW-like profile
+        with (1+x^2) in the denominator instead of (1+x)^2
+
+        :param c: concentration
+        :param z: redshift
+        :return: density normalization in h^2/Mpc^3 (physical)
+        """
+        return 2 * c ** 3 * self.rhoc_z(z) * 200 / (3 * numpy.log(1+c**2))
+
 
 class LensCosmo(object):
 
@@ -41,7 +56,7 @@ class LensCosmo(object):
             self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
                 z_lens, z_source)
         self._computed_zacc_pdf = False
-        self._nfw_param = NFWParam(self.cosmo.astropy)
+        self._nfw_param = NFWParampyHalo(self.cosmo.astropy)
         self.z_lens = z_lens
         self.z_source = z_source
 
@@ -82,20 +97,39 @@ class LensCosmo(object):
         rho_2h = twoHaloTerm(r_h, M_h, z, mdef=mdef) / self.cosmo._colossus_cosmo.rho_m(z)
         return rho_2h
 
-    def nfw_physical2angle(self, m, c, z, no_interp=False):
+    def nfw_physical2angle(self, m, c, z, pseudo_nfw=False):
         """
         converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
         updates lenstronomy implementation with arbitrary redshift
 
         :param m: mass enclosed 200 rho_crit in units of M_sun (physical units, meaning no little h)
         :param c: NFW concentration parameter (r200/r_s)
-        :param no_interp: bool; compute NFW params with interpolation
+        :param z: redshift at which to evaluate angles from distances
+        :param pseudo_nfw: specifies whether one deals with a regualr NFW profile (False) or a psuedo-NFW profile
+        with (1+x^2) in the denominator rather than (1+x)^2
         :return: Rs_angle (angle at scale radius) (in units of arcsec), alpha_Rs (observed bending angle at the scale radius
         """
+        rho0, Rs, _ = self.nfwParam_physical(m, c, z, pseudo_nfw)
+        return self.nfw_physical2angle_fromNFWparams(rho0, Rs, z, pseudo_nfw)
+
+    def nfw_physical2angle_fromNFWparams(self, rho0, Rs, z, pseudo_nfw=False):
+        """
+        computes the angular lensing properties of an NFW profile from its physical parameters
+        :param rho0: central density normalization [M_sun / Mpc^3]
+        :param Rs: scale radius [Mpc]
+        :param z: redshift at which to evaluate angles from distances
+        :param pseudo_nfw: specifies whether one deals with a regualr NFW profile (False) or a psuedo-NFW profile
+        with (1+x^2) in the denominator rather than (1+x)^2
+        :return: scale radius and deflection angle at the scale radius in arcsec
+        """
+
         dd = self.cosmo.D_A_z(z)
-        rho0, Rs, r200 = self.nfwParam_physical(m, c, z)
         Rs_angle = Rs / dd / self._arcsec  # Rs in arcsec
-        alpha_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
+        if pseudo_nfw:
+            r2 = numpy.sqrt(2)
+            alpha_Rs = rho0 * (4 * Rs ** 2 * (r2*numpy.log(1+r2) + numpy.log(1. / 2.)))
+        else:
+            alpha_Rs = rho0 * (4 * Rs ** 2 * (1 + numpy.log(1. / 2.)))
         sigma_crit = self.get_sigma_crit_lensing(z, self.z_source)
         return Rs_angle, alpha_Rs / sigma_crit / dd / self._arcsec
 
@@ -112,7 +146,7 @@ class LensCosmo(object):
         rn_mpc_over_h = (3 * M / (4 * numpy.pi * self._nfw_param.rhoc_z(z) * N)) ** (1. / 3.)
         return rn_mpc_over_h / self.cosmo.h
 
-    def nfwParam_physical(self, m, c, z):
+    def nfwParam_physical(self, m, c, z, pseudo_nfw=False):
         """
         returns the NFW parameters in physical units
         updates lenstronomy implementation with arbitrary redshift
@@ -122,19 +156,25 @@ class LensCosmo(object):
         :return: rho0 [Msun/Mpc^3], Rs [Mpc], r200 [Mpc]
         """
         r200 = self._nfw_param.r200_M(m * self.h, z) / self.h  # physical radius r200
-        rho0 = self._nfw_param.rho0_c(c, z) * self.h**2  # physical density in M_sun/Mpc**3
+        if pseudo_nfw:
+            rho0 = self._nfw_param.rho0_c_pseudoNFW(c, z) * self.h ** 2 # physical density in M_sun/Mpc**3
+        else:
+            rho0 = self._nfw_param.rho0_c(c, z) * self.h**2  # physical density in M_sun/Mpc**3
         Rs = r200/c
         return rho0, Rs, r200
 
-    def NFW_params_physical(self, m, c, z):
+    def NFW_params_physical(self, m, c, z, pseudo_nfw=False):
         """
         returns the NFW parameters in physical units
 
         :param M: physical mass in M_sun
         :param c: concentration
+        :param z: redshift
+        :param pseudo_nfw: bool; if False, uses a regular NFW profile, if True, uses an NFW profile
+        with (1+x^2) in the denominator
         :return: rho0 [Msun/kpc^3], Rs [kpc], r200 [kpc]
         """
-        rho0, Rs, r200 = self.nfwParam_physical(m, c, z)
+        rho0, Rs, r200 = self.nfwParam_physical(m, c, z, pseudo_nfw)
         return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
 
     def sigma_crit_mass(self, z, area):
@@ -199,12 +239,11 @@ class LensCosmo(object):
     ##################################################################################
 
     def get_sigma_crit_lensing(self, z1, z2):
-
         """
-
-        :param z1: redshift lens
-        :param z2: redshift source
-        :return: critical density for lensing in units of M_sun / Mpc ^ 2
+        Computes thee critial density for lensing in units of M_sun / Mpc^2
+        :param z1: the lens redshit
+        :param z2: the source redshift
+        :return: the critial density for lensing
         """
         D_ds = self.cosmo.D_A(z1, z2)
         D_d = self.cosmo.D_A_z(z1)

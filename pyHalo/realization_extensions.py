@@ -27,6 +27,44 @@ class RealizationExtensions(object):
 
         self._realization = realization
 
+    def toSIDM(self, cross_section):
+        """
+
+        :param cross_section: a class with a method effective_cross_section(v) that takes as input a velocity scale
+        equal to 0.64 * v_max and returns an effective cross section in units cm^2 / gram
+        :return: a realization where all halos aree transformed into SIDM halos using the parameteric model by
+        Yang et al. (2023) (https://arxiv.org/pdf/2305.16176.pdf)
+        """
+
+        from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
+        sidm_halos = []
+        kwargs_profile = {'SIDM_CROSS_SECTION': cross_section}
+        for halo in self._realization.halos:
+            if halo.is_subhalo:
+                new_halo = TNFWCSubhaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, False,
+                                              halo.lens_cosmo, kwargs_profile,
+                                              halo._truncation_class, halo._concentration_class,
+                                              halo.unique_tag)
+                new_halo._rperi_units_r200 = halo.rperi_units_r200
+                new_halo._time_since_infall = halo.time_since_infall
+            else:
+                new_halo = TNFWCFieldHaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, False,
+                                              halo.lens_cosmo, kwargs_profile,
+                                              halo._truncation_class, halo._concentration_class,
+                                              halo.unique_tag)
+            new_halo._c = halo.c
+            new_halo._zeval = halo.z_eval
+            new_halo._halo_age = halo.halo_age
+            sidm_halos.append(new_halo)
+
+        new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,
+                               self._realization.apply_mass_sheet_correction,
+                               self._realization.rendering_classes,
+                               self._realization._rendering_center_x, self._realization._rendering_center_y,
+                               self._realization.geometry)
+        new_realization._has_been_shifted = self._realization._has_been_shifted
+        return new_realization
+
     def core_collapse_by_mass(self, mass_ranges_subhalos, mass_ranges_field_halos,
                               probabilities_subhalos, probabilities_field_halos,
                               kwargs_sub=None, kwargs_field=None):
@@ -132,12 +170,13 @@ class RealizationExtensions(object):
                 new_halos.append(new_halo)
             else:
                 new_halos.append(halo)
-
-        return Realization.from_halos(new_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,
+        new_realization = Realization.from_halos(new_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,
                                       self._realization.apply_mass_sheet_correction,
                                       self._realization.rendering_classes,
                                       self._realization._rendering_center_x, self._realization._rendering_center_y,
                                       self._realization.geometry)
+        new_realization._has_been_shifted = self._realization._has_been_shifted
+        return new_realization
 
     def add_ULDM_fluctuations(self, de_Broglie_wavelength, fluctuation_amplitude,
                               fluctuation_size, fluctuation_size_variance, n_cut, n_fluc_scale=1., shape='ring',

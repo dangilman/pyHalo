@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pyHalo.single_realization import realization_at_z
 from lenstronomy.Util.analysis_util import azimuthalAverage
+from lenstronomy.LensModel.lens_model import LensModel
 
 plt.rcParams['axes.linewidth'] = 2.5
 plt.rcParams['xtick.major.width'] = 3.5
@@ -330,3 +331,63 @@ def plot_truncation_radius_histogram(realization, subhalos_only=True, ax=None, c
             tau.append(rt_over_rs)
     ax.hist(np.log10(tau), color=color, density=True, **kwargs_plot)
     ax.set_xlabel(r'$\frac{r_t}{r_s}$', fontsize=15)
+
+
+def plot_multiplane_convergence(realization, ax=None, npix=100, window_size=2.5, lens_model_list_macro=None,
+                                kwargs_lens_macro=None, redshift_list_macro=None, cmap='bwr', vmin_max=0.05,
+                                subtract_mean_kappa=False, show_critical_curve=True, grid_scale_crit_curve=0.025):
+    """
+
+    :param realization: an instance of Realization
+    :param ax: a matplotlib axes
+    :param npix: number of pixels per axis
+    :param window_size: the radius of the image in arcsec (full size left to right is 2 * window_size)
+    :param lens_model_list_macro: a list of lens models that desceibe the main deflector
+    :param kwargs_lens_macro: keyword arguments for the macro lens models
+    :param redshift_list_macro: a list of redshifts for the macro lens models
+    :param cmap: the name of a matploblib colormap
+    :param vmin_max: color scale normalization for the convergence map
+    :param subtract_mean_kappa: bool; subtract the average convergence in the area for visualization purposes
+    :param show_critical_curve: bool; plots the critical curve
+    :return: matplotlib axis instance
+    """
+
+    if ax is None:
+        fig = plt.figure()
+        fig.set_size_inches(6, 6)
+        ax = plt.subplot(111)
+
+    lens_model_list_halos, redshfit_array_halos, kwargs_lens_halos, _ = realization.lensing_quantities()
+    if lens_model_list_macro is None:
+        lens_model_list_macro = ['EPL', 'SHEAR']
+        kwargs_lens_macro = [{'theta_E': 1.0, 'center_x': 0.0, 'center_y': 0.0, 'e1': 0.1, 'e2': -0.1,
+                              'gamma': 2.0}, {'gamma1': 0.05, 'gamma2': 0.02}]
+        redshift_list_macro = [realization.lens_cosmo.z_lens] * len(lens_model_list_macro)
+
+    lens_model_macro = LensModel(lens_model_list_macro)
+    lens_model = LensModel(lens_model_list_macro + lens_model_list_halos,
+                           z_source=realization.lens_cosmo.z_source, multi_plane=True,
+                           lens_redshift_list=redshift_list_macro + list(redshfit_array_halos),
+                           cosmo=realization.lens_cosmo.cosmo.astropy)
+
+    _r = np.linspace(-window_size, window_size, npix)
+    xx, yy = np.meshgrid(_r, _r)
+    kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro)
+    kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro + kwargs_lens_halos)
+    delta_kappa = (kappa - kappa_macro).reshape(npix, npix)
+    if subtract_mean_kappa:
+        delta_kappa -= np.mean(delta_kappa)
+    ax.imshow(delta_kappa, extent=[-window_size, window_size, -window_size, window_size],
+              cmap=cmap, vmin=-vmin_max, vmax=vmin_max, origin='lower')
+
+    if show_critical_curve:
+        from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
+        ext = LensModelExtensions(lens_model)
+        ra_crit_list, dec_crit_list, ra_caustic_list, dec_caustic_list = ext.critical_curve_caustics(
+            kwargs_lens_macro + kwargs_lens_halos,
+            grid_scale=grid_scale_crit_curve, compute_window=window_size)
+
+    ax.plot(ra_crit_list[0], dec_crit_list[0], color='k')
+
+    return ax
+

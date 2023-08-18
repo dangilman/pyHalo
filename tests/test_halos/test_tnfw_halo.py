@@ -7,6 +7,7 @@ from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
+import numpy as np
 
 class TestTNFWHalos(object):
 
@@ -74,6 +75,26 @@ class TestTNFWHalos(object):
                                   truncation_class, self.concentration_class, unique_tag)
         bound_mass = tnfw_subhalo.bound_mass
         npt.assert_equal(True, bound_mass/10**8 < 1)
+
+    def test_density_mass(self):
+
+        m = 10 ** 8
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        unique_tag = 1.0
+        kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+        is_subhalo = False
+        tnfw_fieldhalo = TNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                  self.truncation_class, self.concentration_class, unique_tag)
+        rho_s, rs, r200 = tnfw_fieldhalo.nfw_params
+        c = tnfw_fieldhalo.c
+        mtheory = 4 * np.pi * rho_s * rs ** 3 * (np.log(1 + c) - c/(1+c))
+        npt.assert_almost_equal(mtheory, tnfw_fieldhalo.mass)
+        rmax = c * rs
+        m_calculated = tnfw_fieldhalo.mass_3d(rmax)
+        npt.assert_almost_equal(mtheory/m_calculated, 1.0)
+
 
 if __name__ == '__main__':
     pytest.main()

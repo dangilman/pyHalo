@@ -1,7 +1,7 @@
 from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.tnfw import TNFW as TNFWLenstronomy
 import numpy as np
-from pyHalo.Halos.util import tnfw_mass_fraction
+from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
 
 class TNFWFieldHalo(Halo):
 
@@ -20,6 +20,22 @@ class TNFWFieldHalo(Halo):
         mdef = 'TNFW'
         super(TNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
+
+    def density_profile_3d(self, r, profile_args=None):
+        """
+        Computes the 3-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        if profile_args is None:
+            c, rt = self.profile_args
+        else:
+            c, rt = profile_args
+        rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval)
+        tau = rt/rs
+        x = r / rs
+        rho_nfw = rhos / x / (1 + x) ** 2
+        return rho_nfw * tau ** 2 / (tau ** 2 + x ** 2)
 
     @property
     def lenstronomy_ID(self):
@@ -46,9 +62,8 @@ class TNFWFieldHalo(Halo):
         """
 
         if not hasattr(self, '_params_physical'):
-
-            [concentration, rt] = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
+            [_, rt] = self.profile_args
+            rhos, rs, r200 = self.nfw_params
             self._params_physical = {'rhos': rhos * self._rescale_norm, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
 
         return self._params_physical
@@ -77,55 +92,20 @@ class TNFWFieldHalo(Halo):
         return self._kwargs_lenstronomy, None
 
     @property
-    def z_eval(self):
-        """
-        Returns the halo redshift
-        """
-        return self.z
-
-    @property
     def profile_args(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        if not hasattr(self, '_profile_args'):
 
+        if not hasattr(self, '_profile_args'):
             truncation_radius_kpc = self._truncation_class.truncation_radius_halo(self)
             self._profile_args = (self.c, truncation_radius_kpc)
-
         return self._profile_args
-
 
 class TNFWSubhalo(TNFWFieldHalo):
     """
     Defines a truncated NFW halo that is a subhalo of the host dark matter halo
     """
-
-    @property
-    def z_eval(self):
-        """
-        Returns the redshift at which to evalate the concentration-mass relation
-        """
-        if not hasattr(self, '_zeval'):
-
-            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
-                self._zeval = self.z
-            else:
-                self._zeval = self.z_infall
-
-        return self._zeval
-
-    @property
-    def params_physical(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
-        if not hasattr(self, '_params_physical'):
-            [concentration, rt] = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
-            self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'r_trunc_kpc': rt}
-
-        return self._params_physical
 
     @property
     def bound_mass(self):

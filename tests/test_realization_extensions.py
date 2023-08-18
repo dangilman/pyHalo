@@ -11,6 +11,55 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 
 class TestRealizationExtensions(object):
 
+    def test_toSIDM(self):
+
+        halo_mass = 10 ** 8
+        x = 0.5
+        y = 1.0
+        z = 0.5
+        zlens = 0.5
+        zsource = 2.0
+        astropy_instance = Cosmology().astropy
+        lens_cosmo = LensCosmo(zlens, zsource)
+        truncation_class = TruncationRN(lens_cosmo, 100.0)
+        concentration_class = ConcentrationDiemerJoyce(astropy_instance, scatter=False)
+
+        class DummyCrossSection(object):
+
+            def effective_cross_section(self, v):
+                return 100.0
+
+        kwargs_halo_model = {'concentration_model': concentration_class,
+                             'truncation_model': truncation_class,
+                             'kwargs_density_profile': {'evaluate_mc_at_zlens': True}}
+        cross_section = DummyCrossSection()
+        mdef = 'TNFW'
+        single_halo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=False,
+                                 kwargs_halo_model=kwargs_halo_model)
+        ext = RealizationExtensions(single_halo)
+        single_halo_sidm_1 = ext.toSIDM(cross_section)
+
+        single_subhalo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=True,
+                                 kwargs_halo_model=kwargs_halo_model)
+        ext = RealizationExtensions(single_subhalo)
+        single_subhalo_sidm_1 = ext.toSIDM(cross_section)
+
+        mdef = 'TNFWC_SIDM'
+        kwargs_halo_model['kwargs_density_profile']['SIDM_CROSS_SECTION'] = cross_section
+        single_halo_sidm_2 = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=False,
+                                 kwargs_halo_model=kwargs_halo_model)
+        single_subhalo_sidm_2 = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=True,
+                                 kwargs_halo_model=kwargs_halo_model)
+        kwargs_lens_1 = single_halo_sidm_1.lensing_quantities(add_mass_sheet_correction=False)[2][0]
+        kwargs_lens_2 = single_halo_sidm_2.lensing_quantities(add_mass_sheet_correction=False)[2][0]
+
+        kwargs_lens_3 = single_subhalo_sidm_1.lensing_quantities(add_mass_sheet_correction=False)[2][0]
+        kwargs_lens_4 = single_subhalo_sidm_2.lensing_quantities(add_mass_sheet_correction=False)[2][0]
+
+        for kw in kwargs_lens_1.keys():
+            npt.assert_almost_equal(kwargs_lens_1[kw], kwargs_lens_2[kw])
+            npt.assert_almost_equal(kwargs_lens_4[kw], kwargs_lens_3[kw])
+
     def test_add_core_collapsed_halos(self):
 
         halo_mass = 10 ** 8
@@ -337,5 +386,8 @@ class TestRealizationExtensions(object):
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
 
-if __name__ == '__main__':
-     pytest.main()
+t = TestRealizationExtensions()
+t.test_toSIDM()
+
+# if __name__ == '__main__':
+#      pytest.main()

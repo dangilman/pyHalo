@@ -1,6 +1,6 @@
 import pytest
 import numpy.testing as npt
-from pyHalo.Halos.util import *
+from pyHalo.Halos.tnfw_halo_util import *
 from scipy.integrate import quad
 
 class TestUtil(object):

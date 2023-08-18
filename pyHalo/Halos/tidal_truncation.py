@@ -1,6 +1,6 @@
 import numpy as np
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
-from pyHalo.Halos.util import tau_mf_interpolation
+from pyHalo.Halos.tnfw_halo_util import tau_mf_interpolation
 from colossus.lss import peaks
 from colossus.halo import splashback
 from pyHalo.Halos.galacticus_truncation.interp_mass_loss import InterpGalacticus
@@ -239,6 +239,17 @@ class TruncateMeanDensity(object):
         rt_over_rs = self._norm * (c_actual / c_median) ** self._cpower * (r_peri / 0.5)
         _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, halo_redshift)
         return rs * rt_over_rs
+
+class ConstantTruncationArcsec(object):
+    """A constant truncation radius in arcsec"""
+    def __init__(self, lens_cosmo, rt_arcsec):
+        self.rt_arcsec = rt_arcsec
+        pass
+    def truncation_radius_halo(self, halo):
+        return self.rt_arcsec
+    def truncation_radius(self, *args, **kwargs):
+        return self.rt_arcsec
+
 
 class TruncationGalacticus(object):
 

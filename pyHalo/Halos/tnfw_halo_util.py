@@ -3,6 +3,7 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
+
 def tnfw_density_profile(r, rhos, rs, rt):
     """
 
