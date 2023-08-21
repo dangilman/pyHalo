@@ -74,6 +74,13 @@ class TNFWSubhaloEmulator(Halo):
         super(TNFWSubhaloEmulator, self).__init__(infall_mass, x_arcsec, y_arcsec, r3d, profile_definition, redshift,
                                                   sub_flag,
                                                   lens_cosmo_instance, args, unique_tag)
+    
+    @property
+    def c(self):
+        """
+        :return: the halo concentration
+        """
+        return self._c
 
     @property
     def z_eval(self):
