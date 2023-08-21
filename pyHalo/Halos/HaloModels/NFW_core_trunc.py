@@ -8,7 +8,6 @@ class _TNFWCBaseClass(Halo):
     """
     The base class for a cored and truncated NFW halo
     """
-    enforce_mass_conservation = False
     _scale_evolution_timescale = 1.0
     # the parametric model by Yang et al. (2023) doesn't conserve mass; if this is set to True,
     # then the density profile of each lens is rescaled such that the mass inside the CDM halo equivalent virial radius
