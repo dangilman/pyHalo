@@ -2,7 +2,7 @@ import pytest
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
-from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity
+from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity, ConstantTruncationArcsec
 from pyHalo.truncation_models import truncation_models
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
@@ -20,9 +20,9 @@ class TestTruncation(object):
     def test_load_models(self):
 
         model_name_list = ['TRUNCATION_R50', 'TRUNCATION_RN', 'TRUNCATION_ROCHE', 'TRUNCATION_ROCHE_GILMAN2020',
-                           'SPLASHBACK', 'TRUNCATION_MEAN_DENSITY']
+                           'SPLASHBACK', 'TRUNCATION_MEAN_DENSITY', 'CONSTANT']
         kwargs_model_list = [{}, {'LOS_truncation_factor': 50.}, {'RocheNorm': 1.0, 'm_power': 1./3, 'RocheNu': 2.0/3.0}, {},
-                             {}, {}]
+                             {}, {}, {}]
         for model,kwargs in zip(model_name_list, kwargs_model_list):
             mod, kw = truncation_models(model)
             kwargs.update(kw)
@@ -85,6 +85,18 @@ class TestTruncation(object):
         rt_over_rs_theory = median_rt_over_rs * (16.0 / c_theory) ** c_power * (0.7 / 0.5)
         rs = self.lenscosmo.NFW_params_physical(10**8, 16.0, 0.4)[1]
         npt.assert_almost_equal(rs * rt_over_rs_theory, r_t)
+
+    def test_constant(self):
+
+        class DummyHalo(object):
+            def __init__(self):
+                pass
+
+        trunc = ConstantTruncationArcsec(self.lenscosmo.cosmo, 2.5)
+        rt = trunc.truncation_radius_halo(DummyHalo())
+        npt.assert_almost_equal(rt, 2.5)
+        rt= trunc.truncation_radius()
+        npt.assert_almost_equal(rt, 2.5)
 
 
 if __name__ == '__main__':
