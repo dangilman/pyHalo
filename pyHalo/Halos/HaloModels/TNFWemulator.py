@@ -66,7 +66,7 @@ class TNFWSubhaloEmulator(Halo):
             unique_tag = np.random.rand()
 
         # set the concentration
-        self.c = infall_concentration
+        self._c = infall_concentration
         self._bound_mass_fraction = final_bound_mass / infall_mass
         self._kpc_per_arcsec_at_z = self._lens_cosmo.cosmo.kpc_proper_per_asec(redshift)
         x_arcsec = x / self._kpc_per_arcsec_at_z
