@@ -2,19 +2,13 @@
 """
 Created on Tue Aug 22 14:01:57 2023
 
-@author: Birendra Dhanasingham, The University of New Mexico, NM. 
+@author: BirendraDh 
 """
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
 import time
 from scipy.integrate import simps
 from scipy.special import eval_chebyt
-
-"""
-###############################################################################
-Main classes and functions for xiHalo
-###############################################################################
-"""
 
 def grids(numpix_x, numpix_y, window_size_x, window_size_y, r): 
     
