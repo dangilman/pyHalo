@@ -528,6 +528,11 @@ def mask_annular(center_x, center_y, x_grid, y_grid, r_min, r_max = None):
     return mask
 
 def convergence_map(realization, map_size, npix, lens_model_list_macro=None, kwargs_lens_macro=None, redshift_list_macro=None):
+    """
+    From a realization, this function computes the effective multiplane convergence. For further information, see the 
+    multiplane_convergence function documentation in utilities.py.
+    """
+    
     kappa_map, _, _, _, _ = multiplane_convergence(realization, map_size/2, npix, lens_model_list_macro=None,
                            kwargs_lens_macro=None, redshift_list_macro=None)
     _R = np.linspace(-map_size/2, map_size/2, npix)
