@@ -8,6 +8,7 @@ from pyHalo.pyhalo import pyHalo
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw
 from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
+from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen
 from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
 from pyHalo.Rendering.SpatialDistributions.nfw import ProjectedNFW
@@ -16,9 +17,13 @@ from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.mass_function_models import preset_mass_function_models
 from pyHalo.single_realization import Realization
 from copy import copy
+from scipy.spatial.transform import Rotation
 import numpy as np
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
+from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusParameters, GalacticusFile, GalacticusHDF5Parameters, tabulate_node_data
+from pyHalo.Halos.galacticus_util.galacticus_nodedata_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_massrange,nodedata_apply_filter
+
 
 __all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed',
            'CDMFromEmulator', 'WDMGeneral']
@@ -876,4 +881,116 @@ def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model={},
                                                     msheet_correction=False, rendering_classes=None)
     return cdm_halos_LOS.join(subhalos_from_emulator)
+
+
+def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,mass_range,mass_range_is_infall,
+                     nodedata_filter = None,proj_plane_normal = None,tree_n=1,include_field_halos=True):
+    """
+    This generates a realization of halos using subhalo parameters provided explicitly.
+    TODO: We will probably need to provide a way of extrapolating from higher mass halos to lower mass halos,
+    below the resolution. How to implement?
+    TODO: We need to pick out one tree from the galacticus data. Should this functionallity be contained in this function, or 
+        should we require the user to do this themselves?
+    
+    :param z_lens: main deflector redshift
+    :param z_source: source redshift
+    :param subhalo_params: a dictionary of numpy arrays providing subhalo parameters for each subhalo
+    :param kwarg_cdm: Kwargs providing details for the DM subhalo mass functions
+    :param projection_normal: Projects the coordinates of subhalos from parameters onto plane defined with the given (3D) normal vector.
+        if None defaults to (0,0,1). Use this to generate multiple realizations from a single galacticus tree.
+    """
+
+    # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
+    kwargs_cdm['sigma_sub'] = 0.0
+    cdm_halos_LOS = CDM(z_lens, z_source, **kwargs_cdm)
+    
+    # get lens_cosmo class from class containing LOS objects; note that this w    ill work even if there are no LOS halos
+    lens_cosmo = cdm_halos_LOS.lens_cosmo
+
+    #Read requested galacticus output
+    nodedata = tabulate_node_data(galacticus_file)
+
+    mass_key = GalacticusParameters.MASS_BASIC if mass_range_is_infall else GalacticusParameters.MASS_BOUND
+
+    #Filter subhalos
+    #Exclude all nodes that are not subhalos, not within virial radius and mass range, not within the specified tree.
+    #Also include extra user specified filter
+    filter_subhalos = nodedata_filter_subhalos(nodedata)
+    filter_virialized = nodedata_filter_virialized(nodedata)
+    filter_mass = nodedata_filter_massrange(nodedata,mass_range,mass_key)
+    filter_tree = nodedata_filter_tree(nodedata,tree_n)
+    filter_extra = np.ones(filter_tree.shape,dtype=bool) if nodedata_filter is None else nodedata_filter(nodedata)
+
+    #host_halo = nodedata_apply_filter(nodedata,np.logical_not(filter_subhalos) & filter_tree)
+    #host_halo_rv = host_halo[GalacticusParameters.RVIR][0]
+
+    nodedata = nodedata_apply_filter(nodedata,filter_subhalos & filter_virialized & filter_mass & filter_tree & filter_extra)
+
+
+    #Set up for projection
+    #Secify the normal vector for the plane we are projecting onto, if user specified ensure the vector is normalized
+    nh = np.asarray((0,0,1)) if proj_plane_normal is None else proj_plane_normal / np.linalg.norm(proj_plane_normal)
+
+    #Set up for projection, default to projection with n_hat = zhat
+    px,py,pz = nh
+
+    #Convert to spherical angles for rotation
+    theta = np.arccos(pz)
+    phi = np.sign(py) * np.arccos(px/np.sqrt(px**2 + py**2)) if px != 0 or py != 0 else 0
+
+    #This rotation rotates maps the coordinates such that in the new coordinates zh = nh
+    r = Rotation.from_euler("zyz",(0,theta,phi))
+
+    halo_list = []
+    #Loop throught properties of each subhalos
+    #The way this loop works is kinda ugly
+    for n,m_infall in enumerate(nodedata[GalacticusParameters.MASS_BASIC]):
+        rvec = np.array((nodedata[GalacticusParameters.X][n],nodedata[GalacticusParameters.Y][n],nodedata[GalacticusParameters.Z][n]))
+        #Convert to kpc for all parameterss
+        rvec *= 1E3
+        rs  = nodedata[GalacticusParameters.SCALE_RADIUS][n] * 1E3
+        rt = nodedata[GalacticusParameters.TNFW_RADIUS_TRUNCATION][n] * 1E3
+        rv = nodedata[GalacticusParameters.RVIR][n] * 1E3
+        rho_s = nodedata[GalacticusParameters.TNFW_RHO_S][n] * 1E3
+
+        #TODO rotate coordinates such that the new z axis is the z axis passed as an argument
+        #Also need to convert to arc seconds
+        x,y,_ = r.apply(rvec)
+
+        r3d_mag = np.linalg.norm(rvec)
+
+        tnfw_args = {
+            TNFWFromParams.KEY_RT:rt,
+            TNFWFromParams.KEY_RS:rs,
+            TNFWFromParams.KEY_RHO_S:rho_s,
+            TNFWFromParams.KEY_RV:rv
+        }
+
+
+        halo_list.append(TNFWFromParams(m_infall,x,y,r3d_mag,z_lens,True,lens_cosmo,tnfw_args,{}))
+
+    subhalos_from_params = Realization.from_halos(halo_list,lens_cosmo,kwargs_halo_model={},
+                                                    msheet_correction=False, rendering_classes=None)
+
+    #TODO: Extrapolation code here?
+    return cdm_halos_LOS.join(subhalos_from_params) if include_field_halos else subhalos_from_params
+
+        
+
+
+
+        
+
+
+    
+
+
+
+    
+
+
+
+
+
+        
 
