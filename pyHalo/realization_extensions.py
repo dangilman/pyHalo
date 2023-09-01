@@ -531,6 +531,8 @@ def convergence_map(realization, map_size, npix, lens_model_list_macro=None, kwa
     """
     From a realization, this function computes the effective multiplane convergence. For further information, see the 
     multiplane_convergence function documentation in utilities.py.
+
+    :return: the effective multiplane convergence, the two-dimensional x and y coordinate grids.
     """
     
     kappa_map, _, _, _, _ = multiplane_convergence(realization, map_size/2, npix, lens_model_list_macro=None,
