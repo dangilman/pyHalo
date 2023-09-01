@@ -511,8 +511,8 @@ def mask_annular(center_x, center_y, x_grid, y_grid, r_min, r_max = None):
     :param center_y: y-coordinate of center position of circular mask
     :param x_grid: x-coordinate grid
     :param y_grid: y-coordinate grid
-    :param r_min: inner radius of mask in unit of grid coordinates
-    :param r_max: outer radius of mask in unit of grid coordinates
+    :param r_min: inner radius of mask in units of grid coordinates
+    :param r_max: outer radius of mask in units of grid coordinates
     :return: mask array of shape x_grid with =0 inside the radius and =1 outside
     """
     x_shift = x_grid - center_x
@@ -543,6 +543,20 @@ def convergence_map(realization, map_size, npix, lens_model_list_macro=None, kwa
     return kappa_map, XX_, YY_
     
 def corr_kappa_with_mask(kappa_map, XX_, YY_, r, mu, apply_mask = True, r_min = 0, r_max = None, normalization = True): 
+    """
+    This function computes the two-point correlation function from a convergence map.
+    
+    :param kappa_map: the convergence map
+    :param XX_, YY_: the two-dimensional x and y coordinate grids
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param mu: an array of cosines of the rotation angles of vector r. E.g., mu = np.linspace(-1, 1, 100) contains the cosines 
+            of the angles between 0 and 180 degrees.
+    :param apply_mask: if True, apply the mask on the convergence map.
+    :param r_min: inner radius of mask in units of grid coordinates
+    :param r_max: outer radius of mask in units of grid coordinates
+    :param normalization: if True, apply normalization to the correlation function.
+    :return: the two-point correlation function on the (mu, r) coordinate grid.
+    """
     
     start_time = time.time()
 
