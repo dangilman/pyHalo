@@ -505,6 +505,8 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
 
 def mask_annular(center_x, center_y, x_grid, y_grid, r_min, r_max = None):
     """
+    An annular mask of specified inner and outer radii
+    
     :param center_x: x-coordinate of center position of circular mask
     :param center_y: y-coordinate of center position of circular mask
     :param x_grid: x-coordinate grid
@@ -636,7 +638,6 @@ def corr_kappa_with_mask(kappa_map, XX_, YY_, r, mu, apply_mask = True, r_min = 
     print(f"It took {end_time-start_time:.2f} seconds to compute the correlation map") 
     
     return corr
-
 
 def xi_l(l, corr, r, mu):
     T_l = eval_chebyt(l, mu)  
