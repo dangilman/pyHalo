@@ -661,6 +661,17 @@ def corr_kappa_with_mask(kappa_map, XX_, YY_, r, mu, apply_mask = True, r_min = 
     return corr
 
 def xi_l(l, corr, r, mu):
+    """
+    This function computes the multipoles of the two-point correlation function.
+    
+    :param l: the order of the multipole, E.g., l=0 :monopole, l=1: dipole, l=2: quadrupole, etc.
+    :param corr: the two-point correlation function on the (mu, r) coordinate grid
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param mu: an array of cosines of the rotation angles of vector r. E.g., mu = np.linspace(-1, 1, 100) contains the cosines 
+        of the angles between 0 and 180 degrees.
+    :return: r and the two-point correlation function multipole of order l
+    """
+    
     T_l = eval_chebyt(l, mu)  
     func = corr*T_l
     
