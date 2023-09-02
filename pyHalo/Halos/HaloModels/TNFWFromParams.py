@@ -2,6 +2,7 @@ from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.tnfw import TNFW as TNFWLenstronomy
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
+from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 class TNFWFromParams(Halo):
 
@@ -33,6 +34,8 @@ class TNFWFromParams(Halo):
 
         mdef = 'TNFW'
 
+        self.MASS_BOUND_USE_MASS_FRACTION = False
+
         super(TNFWFromParams, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
 
@@ -45,9 +48,9 @@ class TNFWFromParams(Halo):
         
         _params = self._params_physical if params_physical is None else params_physical
 
-        r_t = _params["rt"]
-        r_s = _params["rs"]
-        rho_s = _params["rhos"]
+        r_t = _params[self.KEY_RT]
+        r_s = _params[self.KEY_RS]
+        rho_s = _params[self.KEY_RHO_S]
 
         n = 1
 
@@ -55,9 +58,11 @@ class TNFWFromParams(Halo):
         x = r / r_s
         tau = r_t / r_s
 
-        n = 1
+        n = 0
 
-        return (rho_s / ((x)*(1+x)**2))(tau**2 / (tau**2 + x**2))**n 
+        density_nfw = (rho_s / ((x)*(1+x)**2))
+
+        return density_nfw * (tau**2 / (tau**2 + x**2))**n 
 
 
     @property
@@ -128,11 +133,18 @@ class TNFWFromParams(Halo):
         Computes the mass inside the virial radius (with truncation effects included)
         :return: the mass inside r = c * r_s
         """
-        if hasattr(self, '_kwargs_lenstronomy'):
-            tau = self._kwargs_lenstronomy[0]['r_trunc'] / self._kwargs_lenstronomy[0]['Rs']
-        else:
-            params_physical = self.params_physical
-            tau = params_physical['r_trunc_kpc'] / params_physical['rs']
-        f = tnfw_mass_fraction(tau, self.c)
-        return f * self.mass
+        if self.MASS_BOUND_USE_MASS_FRACTION:
+            if hasattr(self, '_kwargs_lenstronomy'):
+                tau = self._kwargs_lenstronomy[0]['r_trunc'] / self._kwargs_lenstronomy[0]['Rs']
+            else:
+                params_physical = self.params_physical
+                tau = params_physical['r_trunc_kpc'] / params_physical['rs']
+            f = tnfw_mass_fraction(tau, self.c)
+            return f * self.mass
+        
+        params_physical = self.params_physical
+        return TNFW().mass_3d(params_physical[self.KEY_RV],
+                              params_physical[self.KEY_RS],
+                              params_physical[self.KEY_RHO_S],
+                              params_physical[self.KEY_RT])
 

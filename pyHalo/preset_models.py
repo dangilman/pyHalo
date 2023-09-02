@@ -23,7 +23,7 @@ from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusParameters, GalacticusFile, GalacticusHDF5Parameters, tabulate_node_data
 from pyHalo.Halos.galacticus_util.galacticus_nodedata_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_massrange,nodedata_apply_filter
-
+from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 __all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed',
            'CDMFromEmulator', 'WDMGeneral']
@@ -884,7 +884,7 @@ def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
 
 
 def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,mass_range,mass_range_is_infall,
-                     nodedata_filter = None,proj_plane_normal = None,tree_n=1,include_field_halos=True):
+                     nodedata_filter = None,proj_plane_normal = None,tree_n=1,include_field_halos=True,rho_s_use_galacticus=False):
     """
     This generates a realization of halos using subhalo parameters provided explicitly.
     TODO: We will probably need to provide a way of extrapolating from higher mass halos to lower mass halos,
@@ -946,12 +946,26 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,
     #The way this loop works is kinda ugly
     for n,m_infall in enumerate(nodedata[GalacticusParameters.MASS_BASIC]):
         rvec = np.array((nodedata[GalacticusParameters.X][n],nodedata[GalacticusParameters.Y][n],nodedata[GalacticusParameters.Z][n]))
-        #Convert to kpc for all parameterss
-        rvec *= 1E3
-        rs  = nodedata[GalacticusParameters.SCALE_RADIUS][n] * 1E3
-        rt = nodedata[GalacticusParameters.TNFW_RADIUS_TRUNCATION][n] * 1E3
-        rv = nodedata[GalacticusParameters.RVIR][n] * 1E3
-        rho_s = nodedata[GalacticusParameters.TNFW_RHO_S][n] * 1E3
+        #Convert to kpc for all parameters
+        MPC_TO_KPC = 1E3
+        
+        rvec *= MPC_TO_KPC
+        rs  = nodedata[GalacticusParameters.SCALE_RADIUS][n] * MPC_TO_KPC
+        rt = nodedata[GalacticusParameters.TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC
+        rv = nodedata[GalacticusParameters.RVIR][n] * MPC_TO_KPC
+        m_bound = nodedata[GalacticusParameters.MASS_BOUND][n]
+
+        
+        #Chose definition of rho_s
+        if not rho_s_use_galacticus:
+            #rho_s = m_bound / (4 * np.pi * rs**3 * (np.log(1 + c) - c/(1+c)))
+            massslashp0 = TNFW().mass_3d(rv,rs,1,rt)
+            rho_s = m_bound / massslashp0
+        else:
+            # Extra factor of 4 here from the fact the outputed r_s is the underlying nfw density profile of the subhalo evaluated
+            # at r = r_s
+            rho_s = 4 * nodedata[GalacticusParameters.TNFW_RHO_S][n] / (MPC_TO_KPC)**3
+
 
         #TODO rotate coordinates such that the new z axis is the z axis passed as an argument
         #Also need to convert to arc seconds
@@ -965,6 +979,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,
             TNFWFromParams.KEY_RHO_S:rho_s,
             TNFWFromParams.KEY_RV:rv
         }
+
 
 
         halo_list.append(TNFWFromParams(m_infall,x,y,r3d_mag,z_lens,True,lens_cosmo,tnfw_args,{}))
