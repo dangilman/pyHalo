@@ -958,10 +958,13 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,
         
         #Chose definition of rho_s
         if not rho_s_use_galacticus:
-            #rho_s = m_bound / (4 * np.pi * rs**3 * (np.log(1 + c) - c/(1+c)))
+            #rho_s = m_bound / (4 * np.pi * rs**3 * (np.log(1 + c) - c/(1+c)))d
+            # Calculate rho_s such that bound mass is preserved when integrating the profile
+            # Includes truncation effects
             massslashp0 = TNFW().mass_3d(rv,rs,1,rt)
             rho_s = m_bound / massslashp0
         else:
+            # Use galacticus definition of rho_s
             # Extra factor of 4 here from the fact the outputed r_s is the underlying nfw density profile of the subhalo evaluated
             # at r = r_s
             rho_s = 4 * nodedata[GalacticusParameters.TNFW_RHO_S][n] / (MPC_TO_KPC)**3
