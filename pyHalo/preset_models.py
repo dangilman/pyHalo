@@ -21,7 +21,7 @@ from scipy.spatial.transform import Rotation
 import numpy as np
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
-from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusParameters, GalacticusFile, GalacticusHDF5Parameters, tabulate_node_data
+from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusParameters, GalacticusFile, GalacticusHDF5Parameters, tabulate_node_data, GalacticusFileReader
 from pyHalo.Halos.galacticus_util.galacticus_nodedata_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_massrange,nodedata_apply_filter
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
@@ -883,21 +883,30 @@ def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     return cdm_halos_LOS.join(subhalos_from_emulator)
 
 
-def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,mass_range,mass_range_is_infall,
-                     nodedata_filter = None,proj_plane_normal = None,tree_n=1,include_field_halos=True,rho_s_use_galacticus=False):
+def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm,mass_range,mass_range_is_bound = True,
+                     proj_plane_normal = None,nodedata_filter = None,include_field_halos=True,rho_s_use_galacticus=False):
     """
-    This generates a realization of halos using subhalo parameters provided explicitly.
-    TODO: We will probably need to provide a way of extrapolating from higher mass halos to lower mass halos,
-    below the resolution. How to implement?
-    TODO: We need to pick out one tree from the galacticus data. Should this functionallity be contained in this function, or 
-        should we require the user to do this themselves?
+    This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
+    See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy fromation model. 
     
     :param z_lens: main deflector redshift
     :param z_source: source redshift
-    :param subhalo_params: a dictionary of numpy arrays providing subhalo parameters for each subhalo
-    :param kwarg_cdm: Kwargs providing details for the DM subhalo mass functions
-    :param projection_normal: Projects the coordinates of subhalos from parameters onto plane defined with the given (3D) normal vector.
-        if None defaults to (0,0,1). Use this to generate multiple realizations from a single galacticus tree.
+    :param galacticus_file: str or GalacticusFile object. If string reads the galacticus file at the given path.
+        If GalacticusFile object reads the galacticus file at the given path.
+    :param tree_n: The number of the tree to create a realization from. 
+        Trees output from galacticus are assigned a number starting at 1.
+    :param mass_range: Include subhalos that are within the given mass range.
+    :param mass_range_is_bound: If true subhalos are filtered bound mass, if false subhalos are filtered by infall mass.
+    :param projection_normal: Projects the coordinates of subhalos from parameters onto a plane defined with the given (3D) normal vector.
+        If None defaults to (0,0,1). Use this to generate multiple realizations from a single galacticus tree.
+    :param nodedata_filter: Expects a callable function that has input and output: dict[str,np.ndarray] -> np.ndarray[bool]
+        Filters subhalos based on the output np array. Defaults to None
+    :param include_field_halos: If true, feild halos are included, if false only subhalos are included. Defaults to true.
+    :rho_s_use_galacticus: Property chooses how subhalo rho_s parameter is defined based on galacticus. 
+        If true defines subhalos rho_s based on the densityNormalizationTidalTruncationNFW property from galcticus.
+        If false, defines subhalo rho_s based on subhalo bound mass.
+        Defaults to False. 
+
     """
 
     # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
@@ -907,10 +916,14 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,
     # get lens_cosmo class from class containing LOS objects; note that this w    ill work even if there are no LOS halos
     lens_cosmo = cdm_halos_LOS.lens_cosmo
 
-    #Read requested galacticus output
-    nodedata = tabulate_node_data(galacticus_file)
+    _galacticus_file = galacticus_file
+    if isinstance(galacticus_file,str):
+        _galacticus_file = GalacticusFileReader.read_file(galacticus_file)
 
-    mass_key = GalacticusParameters.MASS_BASIC if mass_range_is_infall else GalacticusParameters.MASS_BOUND
+    #Read requested galacticus output
+    nodedata = tabulate_node_data(_galacticus_file)
+
+    mass_key = GalacticusParameters.MASS_BOUND if mass_range_is_bound else GalacticusParameters.MASS_BASIC
 
     #Filter subhalos
     #Exclude all nodes that are not subhalos, not within virial radius and mass range, not within the specified tree.
@@ -985,7 +998,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file:GalacticusFile, kwargs_cdm,
 
 
 
-        halo_list.append(TNFWFromParams(m_infall,x,y,r3d_mag,z_lens,True,lens_cosmo,tnfw_args,{}))
+        halo_list.append(TNFWFromParams(m_infall,x,y,r3d_mag,z_lens,True,lens_cosmo,tnfw_args))
 
     subhalos_from_params = Realization.from_halos(halo_list,lens_cosmo,kwargs_halo_model={},
                                                     msheet_correction=False, rendering_classes=None)

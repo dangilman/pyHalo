@@ -12,13 +12,15 @@ class TNFWFromParams(Halo):
     KEY_RHO_S = "rho_s"
     KEY_RV = "rv"
 
+    mass_bound_uss_massfraction = True 
+
     """
     The base class for a truncated NFW halo
     """
     def __init__(self, mass, x_kpc, y_kpc, r3d, z,
-                 sub_flag, lens_cosmo_instance,params_physical, args, unique_tag=None):
+                 sub_flag, lens_cosmo_instance, args, unique_tag=None):
         """
-        Denfines a TNFW subhalo with physical params r_trunc, rs, rhos passed in the args argument
+        Denfines a TNFW subhalo with physical params r_trunc_kpc, rs, rhos passed in the args argument
         """
         #Rename args to params_physical ?
 
@@ -30,11 +32,9 @@ class TNFWFromParams(Halo):
 
         y = y_kpc / self._kpc_per_arcsec_at_z
 
-        self._params_physical = params_physical
+        self._params_physical = args
 
         mdef = 'TNFW'
-
-        self.MASS_BOUND_USE_MASS_FRACTION = False
 
         super(TNFWFromParams, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
@@ -133,7 +133,7 @@ class TNFWFromParams(Halo):
         Computes the mass inside the virial radius (with truncation effects included)
         :return: the mass inside r = c * r_s
         """
-        if self.MASS_BOUND_USE_MASS_FRACTION:
+        if self.mass_bound_uss_massfraction:
             if hasattr(self, '_kwargs_lenstronomy'):
                 tau = self._kwargs_lenstronomy[0]['r_trunc'] / self._kwargs_lenstronomy[0]['Rs']
             else:
