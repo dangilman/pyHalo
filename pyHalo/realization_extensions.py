@@ -14,7 +14,7 @@ from scipy.interpolate import RectBivariateSpline
 import time
 from scipy.integrate import simps
 from scipy.special import eval_chebyt
-
+from mcfit import Hankel
 
 class RealizationExtensions(object):
 
@@ -686,3 +686,28 @@ def xi_l(l, corr, r, mu):
                
     return r, prefactor*xi_l 
     
+def xi_l_to_Pk_l(r, xi_l, l=0, extrapolate=True):
+
+    """
+    This function translates the correlation multipoles to power spectrum multipoles using Hankel Transform.
+    
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param xi_l: the two-point correlation function multipole of order l
+    :param l: the order of the multipole, E.g., l=0 :monopole, l=1: dipole, l=2: quadrupole, etc.
+    :param corr: the two-point correlation function on the (mu, r) coordinate grid
+    :param extrapolate: if true extrapolates the power spectrum multipole with a power law to improve
+        the smoothness
+    :return: wavenumber (k) and the power spectrum multipole of order l
+    
+    """  
+    list_zero = list(np.where(r==0)[0])
+    r = np.delete(r, list_zero)
+    xi_l = np.delete(xi_l, list_zero)
+
+    prefactor = 2*np.pi*(-1j)**l
+    H = Hankel(r, nu=l, lowring = True)
+    k, Pk_l_ = H(xi_l, extrap=extrapolate)
+    
+    Pk_l = Pk_l_*prefactor
+     
+    return k, Pk_l.real
