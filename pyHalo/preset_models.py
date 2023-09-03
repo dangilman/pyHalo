@@ -22,7 +22,7 @@ import numpy as np
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusParameters, GalacticusFile, GalacticusHDF5Parameters, tabulate_node_data, GalacticusFileReader
-from pyHalo.Halos.galacticus_util.galacticus_nodedata_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_massrange,nodedata_apply_filter
+from pyHalo.Halos.galacticus_util.galacticus_nodedata_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_massrange,nodedata_apply_filter,ProjectionMode,r2d_project
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 __all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed',
@@ -883,7 +883,7 @@ def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     return cdm_halos_LOS.join(subhalos_from_emulator)
 
 
-def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm,mass_range,mass_range_is_bound = True,
+def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mass_range,mass_range_is_bound = True,
                      proj_plane_normal = None,nodedata_filter = None,include_field_halos=True,rho_s_use_galacticus=False):
     """
     This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
@@ -895,23 +895,29 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm,mass_ran
         If GalacticusFile object reads the galacticus file at the given path.
     :param tree_n: The number of the tree to create a realization from. 
         Trees output from galacticus are assigned a number starting at 1.
-    :param mass_range: Include subhalos that are within the given mass range.
+    :param mass_range: Specifies mass range to include subhalos within.
     :param mass_range_is_bound: If true subhalos are filtered bound mass, if false subhalos are filtered by infall mass.
     :param projection_normal: Projects the coordinates of subhalos from parameters onto a plane defined with the given (3D) normal vector.
-        If None defaults to (0,0,1). Use this to generate multiple realizations from a single galacticus tree.
+        Use this to generate multiple realizations from a single galacticus tree. If is None, coordinates are projected on the x,y plane. 
     :param nodedata_filter: Expects a callable function that has input and output: dict[str,np.ndarray] -> np.ndarray[bool]
         Filters subhalos based on the output np array. Defaults to None
     :param include_field_halos: If true, feild halos are included, if false only subhalos are included. Defaults to true.
+        For fast, debugging. Will be removed.
     :rho_s_use_galacticus: Property chooses how subhalo rho_s parameter is defined based on galacticus. 
         If true defines subhalos rho_s based on the densityNormalizationTidalTruncationNFW property from galcticus.
         If false, defines subhalo rho_s based on subhalo bound mass.
         Defaults to False. 
 
     """
-
+    MPC_TO_KPC = 1E3
     # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
+    # only include these halos if requested
     kwargs_cdm['sigma_sub'] = 0.0
-    cdm_halos_LOS = CDM(z_lens, z_source, **kwargs_cdm)
+    los_norm = 1 if include_field_halos else 0
+    los_norm = kwargs_cdm.get("LOS_normalization") if not kwargs_cdm.get("LOS_normalization") is None else los_norm
+
+
+    cdm_halos_LOS = CDM(z_lens, z_source, **kwargs_cdm,LOS_normalization=los_norm)
     
     # get lens_cosmo class from class containing LOS objects; note that this w    ill work even if there are no LOS halos
     lens_cosmo = cdm_halos_LOS.lens_cosmo
@@ -920,49 +926,76 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm,mass_ran
     if isinstance(galacticus_file,str):
         _galacticus_file = GalacticusFileReader.read_file(galacticus_file)
 
-    #Read requested galacticus output
+    #Read galacticus output
     nodedata = tabulate_node_data(_galacticus_file)
 
-    mass_key = GalacticusParameters.MASS_BOUND if mass_range_is_bound else GalacticusParameters.MASS_BASIC
+
+
+    #Set up for rotation of coordinates
+    #Secify the normal vector for the plane we are projecting onto, if user specified ensure the vector is normalized
+    nh = np.asarray((0,0,1)) if proj_plane_normal is None else proj_plane_normal / np.linalg.norm(proj_plane_normal)
+    nh_x,nh_y,nh_z = nh
+
+    #Convert to spherical angles for rotation
+    theta = np.arccos(nh_z)
+    phi = np.sign(nh_y) * np.arccos(nh_x/np.sqrt(nh_x**2 + nh_y**2)) if nh_x != 0 or nh_y != 0 else 0
+
+    #This rotation rotation maps the coordinates such that in the new coordinates zh = nh and the x,y coordinates after rotation
+    #are the x-y coordinates in the plane 
+    rotation = Rotation.from_euler("zyz",(np.pi - phi,theta,phi))
+
+    #print(rotation.apply(np.array((0,0,1))))
+
+    #Apply rotation
+    rvec_original = np.asarray((nodedata[GalacticusParameters.X],nodedata[GalacticusParameters.Y],nodedata[GalacticusParameters.Z])).T * MPC_TO_KPC
+    rvec = rotation.apply(rvec_original)
+
+    kpc_per_arcsec_at_z = lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
+
+    #Apply a final filter, exclude subhalos not in rendering volume
+    r2dmax_kpc = (kwargs_cdm["cone_opening_angle_arcsec"] / 2) * kpc_per_arcsec_at_z
+
+    #print(f"r2dmax_kpc = {r2dmax_kpc}")
+
+    r2d = np.linalg.norm(rvec[:,0:2],axis=1)
+
+    filter_r2d = r2d < r2dmax_kpc
+
 
     #Filter subhalos
     #Exclude all nodes that are not subhalos, not within virial radius and mass range, not within the specified tree.
     #Also include extra user specified filter
     filter_subhalos = nodedata_filter_subhalos(nodedata)
     filter_virialized = nodedata_filter_virialized(nodedata)
+
+    #Choose bound / infall mass
+    mass_key = GalacticusParameters.MASS_BOUND if mass_range_is_bound else GalacticusParameters.MASS_BASIC
+
     filter_mass = nodedata_filter_massrange(nodedata,mass_range,mass_key)
     filter_tree = nodedata_filter_tree(nodedata,tree_n)
     filter_extra = np.ones(filter_tree.shape,dtype=bool) if nodedata_filter is None else nodedata_filter(nodedata)
 
-    #host_halo = nodedata_apply_filter(nodedata,np.logical_not(filter_subhalos) & filter_tree)
-    #host_halo_rv = host_halo[GalacticusParameters.RVIR][0]
+    filter_combined = filter_subhalos & filter_virialized & filter_mass & filter_tree & filter_extra & filter_r2d
 
-    nodedata = nodedata_apply_filter(nodedata,filter_subhalos & filter_virialized & filter_mass & filter_tree & filter_extra)
+    #Apply filter to nodedata and rvec
+    nodedata = nodedata_apply_filter(nodedata,filter_combined)
+    rvec = rvec[filter_combined]
+    r2d = r2d[filter_combined]
+    rvec_original = rvec_original[filter_combined]
+
+    #nodedata = nodedata_apply_filter(nodedata,filter_r2d)
+    
 
 
-    #Set up for projection
-    #Secify the normal vector for the plane we are projecting onto, if user specified ensure the vector is normalized
-    nh = np.asarray((0,0,1)) if proj_plane_normal is None else proj_plane_normal / np.linalg.norm(proj_plane_normal)
-
-    #Set up for projection, default to projection with n_hat = zhat
-    px,py,pz = nh
-
-    #Convert to spherical angles for rotation
-    theta = np.arccos(pz)
-    phi = np.sign(py) * np.arccos(px/np.sqrt(px**2 + py**2)) if px != 0 or py != 0 else 0
-
-    #This rotation rotates maps the coordinates such that in the new coordinates zh = nh
-    r = Rotation.from_euler("zyz",(0,theta,phi))
+    #Apply an additional filter, only include subhalos that are within the angle of the cone opening
 
     halo_list = []
     #Loop throught properties of each subhalos
     #The way this loop works is kinda ugly
     for n,m_infall in enumerate(nodedata[GalacticusParameters.MASS_BASIC]):
-        rvec = np.array((nodedata[GalacticusParameters.X][n],nodedata[GalacticusParameters.Y][n],nodedata[GalacticusParameters.Z][n]))
+        x,y,_ = rvec[n]
+
         #Convert to kpc for all parameters
-        MPC_TO_KPC = 1E3
-        
-        rvec *= MPC_TO_KPC
         rs  = nodedata[GalacticusParameters.SCALE_RADIUS][n] * MPC_TO_KPC
         rt = nodedata[GalacticusParameters.TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC
         rv = nodedata[GalacticusParameters.RVIR][n] * MPC_TO_KPC
@@ -974,20 +1007,21 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm,mass_ran
             #rho_s = m_bound / (4 * np.pi * rs**3 * (np.log(1 + c) - c/(1+c)))d
             # Calculate rho_s such that bound mass is preserved when integrating the profile
             # Includes truncation effects
-            massslashp0 = TNFW().mass_3d(rv,rs,1,rt)
-            rho_s = m_bound / massslashp0
+            rho_s = m_bound / TNFW().mass_3d(rv,rs,1,rt)
         else:
             # Use galacticus definition of rho_s
             # Extra factor of 4 here from the fact the outputed r_s is the underlying nfw density profile of the subhalo evaluated
             # at r = r_s
             rho_s = 4 * nodedata[GalacticusParameters.TNFW_RHO_S][n] / (MPC_TO_KPC)**3
 
+        
+        #print(r2d[n])
+        #print(np.sqrt(x**2 + y**2))
+        #
+        #print(np.linalg.norm(nh))
+        #print(np.sqrt((np.dot(rvec_original[n],rvec_original[n])-(np.dot(rvec_original[n],nh)**2))))
 
-        #TODO rotate coordinates such that the new z axis is the z axis passed as an argument
-        #Also need to convert to arc seconds
-        x,y,_ = r.apply(rvec)
-
-        r3d_mag = np.linalg.norm(rvec)
+        r3d_mag = np.linalg.norm(rvec[n])
 
         tnfw_args = {
             TNFWFromParams.KEY_RT:rt,
@@ -1004,7 +1038,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm,mass_ran
                                                     msheet_correction=False, rendering_classes=None)
 
     #TODO: Extrapolation code here?
-    return cdm_halos_LOS.join(subhalos_from_params) if include_field_halos else subhalos_from_params
+    return cdm_halos_LOS.join(subhalos_from_params)
 
         
 

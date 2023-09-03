@@ -48,7 +48,86 @@ def nodedata_filter_virialized(nodedata:dict[str,np.ndarray]):
 
 
 
+class ProjectionMode():
+    """Different projection calculation modes"""
+    KEY = "projection_mode"
 
+    LOOP = 0
+    """Use a loop to calculate the projection"""
+    MATRIX = 1
+    """Use matrix multiplication to calculate the projection"""
+    EINSUM = 3
+
+    DEFAULT = EINSUM
+    """Default mode of projection"""
+
+def r2d_project(coords:np.ndarray,n:np.ndarray,projection_mode:int = ProjectionMode.DEFAULT,**kwargs)->np.ndarray:
+    """
+    Takes an numpy array of the form \n
+
+    x1 x2 .. xn
+    y1 y2 .. yn
+    z1 z2 .. zn
+
+    Ie (2,1) is the x2 corrdinate (3,2) is the y3 coordinate \n
+
+    And the normal vector n, of the plane to project onto \n
+
+    Projectets specified radius for all entries 
+
+    takes kwarg - project_mode (int) -> Specify way to calculate projection, see ProjectionMode class
+    
+    NOTE COORDS CAN BE READ FROM GALACTICUSOUTPUT REDSHIFT USING util_tabulate(redshift)\n
+    """
+    #Exclude all nodes not in mass range and exclude all isolated nodes (main halos) 
+    #For main halos is_isolated = 0.0f
+    
+    coords_select = coords.T
+
+    r_2d_squared = np.zeros(coords_select.shape[0])
+
+    #conver to unit normal
+    un = n * (1/np.sqrt(np.dot(n,n)))
+
+    #Project distance to plane
+    #Projected distance to plane is sqrt(r.r - (r.un)^2)
+    
+    #Different (but equivalent) algorithms to calculating projections, using ProjectionMode.EINSUM is by far the fastest
+    if projection_mode == ProjectionMode.EINSUM:
+        #We have a matrix of rvectors [r1,r2,r3,...] 
+        #We need to calculate R = [r1.r1,r2.r2,r3.r3,...]
+        #Do this with einstein summation R_i = rij * rij 
+        rdotr = np.einsum("ij,ij->i",coords_select,coords_select)
+
+        rdotun = np.dot(coords_select,un)
+
+        return np.sqrt(rdotr - rdotun**2)
+    
+    elif projection_mode == ProjectionMode.MATRIX:
+        #Use matrix multiplication, slower because it has to calculate off diagonal entries
+        rdotr =  np.diag(np.dot(coords_select,coords_select.transpose()))
+
+        rdotun = np.dot(coords_select,un)
+
+        return np.sqrt(rdotr - rdotun**2)
+
+    elif projection_mode == ProjectionMode.LOOP:
+        #Use simple loop
+        #Calculate the square of the length of the vector projected onto plane for pair of coordinates
+        for i,r in enumerate(coords_select):
+            r_2d_squared[i] = np.dot(r,r) - (np.dot(r,un))**2
+
+        #Take square root all at once - probably faster
+        return np.sqrt(r_2d_squared)
+
+
+
+def nodedata_filter_r2d(nodedata:dict[str,np.ndarray],r2d_max:float,plane_normal:np.ndarray,projection_mode=ProjectionMode.DEFAULT):
+    r = np.asarray((nodedata[pn.X],nodedata[pn.Y],nodedata[pn.Z]))
+
+    r2d = r2d_project(r,plane_normal,projection_mode)
+
+    return r2d < r2d_max
 
     
 
