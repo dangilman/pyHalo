@@ -1,6 +1,6 @@
 import pytest
 from pyHalo.single_realization import SingleHalo
-from pyHalo.realization_extensions import RealizationExtensions
+from pyHalo.realization_extensions import RealizationExtensions, xi_l_to_Pk_l
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.interpolate import interp1d
 import numpy.testing as npt
@@ -385,6 +385,13 @@ class TestRealizationExtensions(object):
             condition1 = 'PT_MASS' == halo.mdef
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
+
+    def test_xi_l_to_Pk_l(self)
+        x = numpy.logspace(-3, 3, num=60, endpoint=False)
+        F = 1 / (1 + x*x)**1.5
+        y, G_Hankel = xi_l_to_Pk_l(x, F, l = 0)
+        G = (2*np.pi*(-1j)**l) * np.exp(-y)  # this is the actual Hankel transform of the function F.
+        npt.assert_almost_equal(G, G_Hankel)
 
 t = TestRealizationExtensions()
 t.test_toSIDM()
