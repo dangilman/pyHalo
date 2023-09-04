@@ -386,7 +386,8 @@ class TestRealizationExtensions(object):
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
 
-    def test_xi_l_to_Pk_l(self)
+    def test_xi_l_to_Pk_l(self):
+        l = 0
         x = numpy.logspace(-3, 3, num=60, endpoint=False)
         F = 1 / (1 + x*x)**1.5
         y, G_Hankel = xi_l_to_Pk_l(x, F, l = 0)
