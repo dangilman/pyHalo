@@ -1,6 +1,6 @@
 import pytest
 from pyHalo.single_realization import SingleHalo
-from pyHalo.realization_extensions import RealizationExtensions, xi_l, xi_l_to_Pk_l
+from pyHalo.realization_extensions import RealizationExtensions, corr_kappa_with_mask, xi_l, xi_l_to_Pk_l
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.interpolate import interp1d
 import numpy.testing as npt
@@ -386,13 +386,48 @@ class TestRealizationExtensions(object):
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
 
+    def test_corr_kappa_with_mask(self):
+        npix = 500
+        window_size = 4
+        delta_pix = window_size/npix
+        mu = np.linspace(-1, 1, 100)
+        r = np.logspace(np.log10(2*10**(-2)), -0.3, num=100, endpoint=True)
+        _R = np.linspace(-window_size/2, window_size/2, npix)
+        XX, YY = np.meshgrid(_R, _R)
+    
+        def kappa_GRF(delta_pix, num_pix, alpha):
+            #Generating Gaussian random field kappa map
+            noise = (delta_pix**2)*np.fft.fft2(np.random.normal(size=(num_pix,num_pix)))
+            fftind = 2.0*np.pi*np.fft.fftfreq(num_pix, d=delta_pix)
+            kxi,kyi = np.meshgrid(fftind,fftind)
+            kvnorm2 = kxi**2 + kyi**2 + 1e-10
+            amplitude = np.sqrt((kvnorm2*delta_pix**2)**(-alpha/2))
+            kappa = np.fft.ifft2(amplitude*noise)/delta_pix**2
+    
+            return kappa.real - np.mean(kappa.real)
+    
+        alpha = 1
+        kappa = kappa_GRF(delta_pix, npix, alpha)
+    
+        corr = corr_kappa_with_mask(kappa, XX, YY, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = False)
+    
+        xi_0_real = delta_pix**(2-alpha)/(2*np.pi*r)
+    
+        mu_grid = np.tile(mu, (r.shape[0], 1))
+        T_l_grid = eval_chebyt(0, mu_grid)
+        xi_l_grid = np.transpose([xi_0_real] *mu.shape[0])
+    
+        corr_real = xi_l_grid*T_l_grid
+    
+        npt.assert_array_almost_equal(corr_real,corr, decimal=2)
+
     def test_xi_l(self):
-    mu = np.linspace(-1, 1, 100)
-    r = np.logspace(-3, -0.3, num=100, endpoint=True)
-    xi_0_real = np.ones(r.shape[0])
-    corr = np.ones((r.shape[0], mu.shape[0]))
-    r, xi_0 = xi_l(0, corr, r, mu)
-    npt.assert_almost_equal(xi_0_real, xi_0)
+        mu = np.linspace(-1, 1, 100)
+        r = np.logspace(-3, -0.3, num=100, endpoint=True)
+        xi_0_real = np.ones(r.shape[0])
+        corr = np.ones((r.shape[0], mu.shape[0]))
+        r, xi_0 = xi_l(0, corr, r, mu)
+        npt.assert_almost_equal(xi_0_real, xi_0)
     
     def test_xi_l_to_Pk_l(self):
         l = 0
