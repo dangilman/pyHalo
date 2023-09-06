@@ -902,8 +902,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_index, kwargs_cdm,mass
         Use this to generate multiple realizations from a single galacticus tree. If is None, coordinates are projected on the x,y plane. 
     :param nodedata_filter: Expects a callable function that has input and output: dict[str,np.ndarray] -> np.ndarray[bool]
         Filters subhalos based on the output np array. Defaults to None
-    :param include_field_halos: If true, feild halos are included, if false only subhalos are included. Defaults to true.
-        For fast, debugging. Will be removed.
+    :param include_field_halos: Wether or not to include feild halos in rendering.
     :rho_s_use_mbound: Property chooses how subhalo rho_s parameter is defined based on galacticus. 
         If false defines subhalos rho_s based on the densityNormalizationTidalTruncationNFW property from galcticus.
         If true, defines subhalo rho_s based on subhalo bound mass.
@@ -932,7 +931,6 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_index, kwargs_cdm,mass
         nodedata = galacticus_file
 
 
-
     #Set up for rotation of coordinates
     #Secify the normal vector for the plane we are projecting onto, if user specified ensure the vector is normalized
     nh = np.asarray((0,0,1)) if proj_plane_normal is None else proj_plane_normal / np.linalg.norm(proj_plane_normal)
@@ -946,8 +944,6 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_index, kwargs_cdm,mass
     #are the x-y coordinates in the plane 
     rotation = Rotation.from_euler("zyz",(np.pi - phi,theta,phi))
 
-    #print(rotation.apply(np.array((0,0,1))))
-
     #Apply rotation
     rvec_original = np.asarray((nodedata[gutil.X],nodedata[gutil.Y],nodedata[gutil.Z])).T * MPC_TO_KPC
     rvec = rotation.apply(rvec_original)
@@ -960,7 +956,6 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_index, kwargs_cdm,mass
     r2d = np.linalg.norm(rvec[:,0:2],axis=1)
 
     filter_r2d = r2d < r2dmax_kpc
-
 
     #Filter subhalos
     #Exclude all nodes that are not subhalos, not within virial radius and mass range, not within the specified tree.
@@ -1026,7 +1021,6 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_index, kwargs_cdm,mass
     subhalos_from_params = Realization.from_halos(halo_list,lens_cosmo,kwargs_halo_model={},
                                                     msheet_correction=False, rendering_classes=None)
 
-    #TODO: Extrapolation code here?
     return cdm_halos_LOS.join(subhalos_from_params)
 
         

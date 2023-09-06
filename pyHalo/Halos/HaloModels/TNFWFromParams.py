@@ -22,7 +22,6 @@ class TNFWFromParams(Halo):
         """
         Denfines a TNFW subhalo with physical params r_trunc_kpc, rs, rhos passed in the args argument
         """
-        #Rename args to params_physical ?
 
         self._lens_cosmo = lens_cosmo_instance
 
@@ -121,7 +120,6 @@ class TNFWFromParams(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        #TODO Change this
         if not hasattr(self, '_profile_args'):
             truncation_radius_kpc = self._params_physical[truncation_radius_kpc]
             self.profile_args = (self.c, truncation_radius_kpc)
