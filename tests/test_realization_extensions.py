@@ -409,7 +409,7 @@ class TestRealizationExtensions(object):
         alpha = 1
         kappa = kappa_GRF(delta_pix, npix, alpha)
     
-        corr = corr_kappa_with_mask(kappa, XX, YY, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = False)
+        corr = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = False)
     
         xi_0_real = delta_pix**(2-alpha)/(2*np.pi*r)
     
