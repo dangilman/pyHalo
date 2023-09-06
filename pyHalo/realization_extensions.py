@@ -13,6 +13,7 @@ from scipy.interpolate import RectBivariateSpline
 import time
 from scipy.integrate import simps
 from scipy.special import eval_chebyt
+from scipy.optimize import curve_fit
 from mcfit import Hankel
 
 class RealizationExtensions(object):
@@ -674,3 +675,28 @@ def xi_l_to_Pk_l(r, xi_l, l=0, extrapolate=True):
     Pk_l = Pk_l_*prefactor
      
     return k, Pk_l.real
+
+def fitting_func(r, xi_l, r_min, r_max):
+    """
+    This function fits a selected range of correlation multipole into a power-law.
+    
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param xi_l: the two-point correlation function multipole of order l
+    :param r_min: the minimum value of the range of interest
+    :param r_max: the maximum value of the range of interest
+    :return: the amplitude and the slope of the power-law fitting function.
+    
+    """
+    
+    r_pivot = (r_min + r_max)/2
+    r_ = r[np.where((r_min < r) & (r < r_max))] 
+    xi_l_ = xi_l[np.where((r_min < r) & (r < r_max))]
+
+    def func(r, As, n):
+        return As*(r/r_pivot)**n
+
+    popt_0, pcov_0 = curve_fit(func, r_, xi_l_)
+    As = popt_0[0]
+    n = popt_0[1]
+    
+    return As, n
