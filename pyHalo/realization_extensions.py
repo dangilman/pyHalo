@@ -6,9 +6,8 @@ from pyHalo.Halos.HaloModels.gaussian import Gaussian
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Cosmology.geometry import Geometry
-from pyHalo.utilities import generate_lens_plane_redshifts
+from pyHalo.utilities import generate_lens_plane_redshifts, mask_annular
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
-from pyHalo.utilities import multiplane_convergence, mask_annular
 from copy import deepcopy
 from scipy.interpolate import RectBivariateSpline
 import time
