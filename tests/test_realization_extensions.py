@@ -437,6 +437,18 @@ class TestRealizationExtensions(object):
         G = (2*np.pi*(-1j)**l) * np.exp(-y)  # this is the actual Hankel transform of the function F.
         npt.assert_almost_equal(G, G_Hankel)
 
+    def test_fitting_func(self):
+        r = np.logspace(-1, 2, num=100, endpoint=True)
+        As = 5
+        n = -3
+        r_min, r_max = 0, 50
+        r_pivot = (r_min + r_max)/2
+        func_real = As*(r/r_pivot)**n
+    
+        As_fit, n_fit = fitting_func(r, func_real, r_min, r_max)
+        npt.assert_array_almost_equal(As, As_fit)
+        npt.assert_array_almost_equal(n, n_fit)
+
 t = TestRealizationExtensions()
 t.test_toSIDM()
 
