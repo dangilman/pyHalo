@@ -79,7 +79,7 @@ class TNFWFromParams(Halo):
     @property
     def c(self):
         """
-        Computes the halo concentration (once)
+        The concentration of the underlying NFW profile.
         """
         return self._params_physical[self.KEY_RV] / self._params_physical[self.KEY_RS]
     
@@ -97,8 +97,6 @@ class TNFWFromParams(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_kwargs_lenstronomy'):
-
-            #TODO change this
             [concentration, rt] = self.profile_args
             Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
 
