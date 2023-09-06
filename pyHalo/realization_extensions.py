@@ -624,7 +624,7 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 
     
     return corr
 
-def xi_l(l, corr, r, mu):
+def _xi_l(l, corr, r, mu):
     """
     This function computes the multipoles of the two-point correlation function.
     
@@ -650,7 +650,7 @@ def xi_l(l, corr, r, mu):
                
     return r, prefactor*xi_l 
     
-def xi_l_to_Pk_l(r, xi_l, l=0, extrapolate=True):
+def _xi_l_to_Pk_l(r, xi_l, l=0, extrapolate=True):
 
     """
     This function translates the correlation multipoles to power spectrum multipoles using Hankel Transform.
@@ -676,7 +676,7 @@ def xi_l_to_Pk_l(r, xi_l, l=0, extrapolate=True):
      
     return k, Pk_l.real
 
-def fitting_func(r, xi_l, r_min, r_max):
+def fit_correlation_multipole(r, xi_l, r_min, r_max):
     """
     This function fits a selected range of correlation multipole into a power-law.
     
