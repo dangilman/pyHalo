@@ -8,7 +8,7 @@ from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.utilities import generate_lens_plane_redshifts
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
-from pyHalo.utilities import multiplane_convergence
+from pyHalo.utilities import multiplane_convergence, mask_annular
 from copy import deepcopy
 from scipy.interpolate import RectBivariateSpline
 import time
@@ -502,30 +502,6 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
                              unique_tag=np.random.rand()) for i in range(len(amps))]
 
     return fluctuations
-
-def mask_annular(center_x, center_y, x_grid, y_grid, r_min, r_max = None):
-    """
-    An annular mask of specified inner and outer radii
-    
-    :param center_x: x-coordinate of center position of circular mask
-    :param center_y: y-coordinate of center position of circular mask
-    :param x_grid: x-coordinate grid
-    :param y_grid: y-coordinate grid
-    :param r_min: inner radius of mask in units of grid coordinates
-    :param r_max: outer radius of mask in units of grid coordinates
-    :return: mask array of shape x_grid with =0 inside the radius and =1 outside
-    """
-    x_shift = x_grid - center_x
-    y_shift = y_grid - center_y
-    R = np.sqrt(x_shift*x_shift + y_shift*y_shift)
-    mask = np.ones(x_shift.shape)
-    if r_max == None:
-        mask[R <= r_min] = 0
-    else:
-        mask[R <= r_min] = 0
-        mask[R >= r_max] = 0
-
-    return mask
 
 def convergence_map(realization, map_size, npix, lens_model_list_macro=None, kwargs_lens_macro=None, redshift_list_macro=None):
     """
