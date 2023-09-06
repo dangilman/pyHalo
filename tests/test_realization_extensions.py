@@ -386,6 +386,15 @@ class TestRealizationExtensions(object):
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
 
+t = TestRealizationExtensions()
+t.test_toSIDM()
+
+
+class TestCorrelationComputation(object):
+
+    def setup_method(self):
+        pass
+
     def test_corr_kappa_with_mask(self):
         npix = 500
         window_size = 4
@@ -448,9 +457,7 @@ class TestRealizationExtensions(object):
         As_fit, n_fit = fit_correlation_multipole(r, func_real, r_min, r_max)
         npt.assert_array_almost_equal(As, As_fit)
         npt.assert_array_almost_equal(n, n_fit)
+    
 
-t = TestRealizationExtensions()
-t.test_toSIDM()
-
-# if __name__ == '__main__':
-#      pytest.main()
+if __name__ == '__main__':
+      pytest.main()
