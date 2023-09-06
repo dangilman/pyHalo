@@ -502,28 +502,13 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
                              unique_tag=np.random.rand()) for i in range(len(amps))]
 
     return fluctuations
-
-def convergence_map(realization, map_size, npix, lens_model_list_macro=None, kwargs_lens_macro=None, redshift_list_macro=None):
-    """
-    From a realization, this function computes the effective multiplane convergence. For further information, see the 
-    multiplane_convergence function documentation in utilities.py.
-
-    :return: the effective multiplane convergence, the two-dimensional x and y coordinate grids.
-    """
     
-    kappa_map, _, _, _, _ = multiplane_convergence(realization, map_size/2, npix, lens_model_list_macro=None,
-                           kwargs_lens_macro=None, redshift_list_macro=None)
-    _R = np.linspace(-map_size/2, map_size/2, npix)
-    XX_, YY_ = np.meshgrid(_R, _R)
-
-    return kappa_map, XX_, YY_
-    
-def corr_kappa_with_mask(kappa_map, XX_, YY_, r, mu, apply_mask = True, r_min = 0, r_max = None, normalization = True): 
+def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 0, r_max = None, normalization = True): 
     """
     This function computes the two-point correlation function from a convergence map.
     
     :param kappa_map: the convergence map
-    :param XX_, YY_: the two-dimensional x and y coordinate grids
+    :param map_size: the map size in arcsec
     :param r: an array of uniformly logarithmically spaced separations of interest
     :param mu: an array of cosines of the rotation angles of vector r. E.g., mu = np.linspace(-1, 1, 100) contains the cosines 
             of the angles between 0 and 180 degrees.
@@ -537,6 +522,9 @@ def corr_kappa_with_mask(kappa_map, XX_, YY_, r, mu, apply_mask = True, r_min = 
     start_time = time.time()
 
     assert kappa_map.shape == XX_.shape, f"Convergence map must NOT be computed using  the window!"
+
+    _R = np.linspace(-map_size/2, map_size/2, kappa_map.shape[0])
+    XX_, YY_ = np.meshgrid(_R, _R)
     
     X_ = XX_[0]
     Y_ = YY_[:,0]
