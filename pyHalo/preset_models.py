@@ -21,8 +21,8 @@ from scipy.spatial.transform import Rotation
 import numpy as np
 from pyHalo.realization_extensions import RealizationExtensions
 from pyHalo.utilities import de_broglie_wavelength, MinHaloMassULDM
-from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusParameters, GalacticusFile, GalacticusHDF5Parameters, tabulate_node_data, GalacticusFileReader
-from pyHalo.Halos.galacticus_util.galacticus_nodedata_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_massrange,nodedata_apply_filter,ProjectionMode,r2d_project
+from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
+from pyHalo.Halos.galacticus_util.galacticus_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_massrange,nodedata_apply_filter,ProjectionMode,r2d_project
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 __all__ = ['preset_model_from_name', 'CDM', 'WDM', 'ULDM', 'SIDM_core_collapse', 'WDM_mixed',
@@ -883,8 +883,9 @@ def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     return cdm_halos_LOS.join(subhalos_from_emulator)
 
 
-def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mass_range,mass_range_is_bound = True,
-                     proj_plane_normal = None,nodedata_filter = None,include_field_halos=True,rho_s_use_galacticus=False):
+def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_index, kwargs_cdm,mass_range,mass_range_is_bound = True,
+                     proj_plane_normal = None,nodedata_filter = None,include_field_halos=True,rho_s_use_mbound=True,
+                     galacticus_utilities:GalacticusUtil = None):
     """
     This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
     See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy fromation model. 
@@ -893,7 +894,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mas
     :param z_source: source redshift
     :param galacticus_file: str or GalacticusFile object. If string reads the galacticus file at the given path.
         If GalacticusFile object reads the galacticus file at the given path.
-    :param tree_n: The number of the tree to create a realization from. 
+    :param tree_index: The number of the tree to create a realization from. 
         Trees output from galacticus are assigned a number starting at 1.
     :param mass_range: Specifies mass range to include subhalos within.
     :param mass_range_is_bound: If true subhalos are filtered bound mass, if false subhalos are filtered by infall mass.
@@ -903,9 +904,9 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mas
         Filters subhalos based on the output np array. Defaults to None
     :param include_field_halos: If true, feild halos are included, if false only subhalos are included. Defaults to true.
         For fast, debugging. Will be removed.
-    :rho_s_use_galacticus: Property chooses how subhalo rho_s parameter is defined based on galacticus. 
-        If true defines subhalos rho_s based on the densityNormalizationTidalTruncationNFW property from galcticus.
-        If false, defines subhalo rho_s based on subhalo bound mass.
+    :rho_s_use_mbound: Property chooses how subhalo rho_s parameter is defined based on galacticus. 
+        If false defines subhalos rho_s based on the densityNormalizationTidalTruncationNFW property from galcticus.
+        If true, defines subhalo rho_s based on subhalo bound mass.
         Defaults to False. 
 
     """
@@ -921,13 +922,14 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mas
     
     # get lens_cosmo class from class containing LOS objects; note that this w    ill work even if there are no LOS halos
     lens_cosmo = cdm_halos_LOS.lens_cosmo
+    
+    gutil = GalacticusUtil() if galacticus_utilities is None else galacticus_utilities
 
-    _galacticus_file = galacticus_file
     if isinstance(galacticus_file,str):
-        _galacticus_file = GalacticusFileReader.read_file(galacticus_file)
-
-    #Read galacticus output
-    nodedata = tabulate_node_data(_galacticus_file)
+        nodedata = gutil.read_nodedata_galacticus(galacticus_file)
+    else:
+        #Read galacticus output
+        nodedata = galacticus_file
 
 
 
@@ -947,15 +949,13 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mas
     #print(rotation.apply(np.array((0,0,1))))
 
     #Apply rotation
-    rvec_original = np.asarray((nodedata[GalacticusParameters.X],nodedata[GalacticusParameters.Y],nodedata[GalacticusParameters.Z])).T * MPC_TO_KPC
+    rvec_original = np.asarray((nodedata[gutil.X],nodedata[gutil.Y],nodedata[gutil.Z])).T * MPC_TO_KPC
     rvec = rotation.apply(rvec_original)
 
     kpc_per_arcsec_at_z = lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
 
     #Apply a final filter, exclude subhalos not in rendering volume
     r2dmax_kpc = (kwargs_cdm["cone_opening_angle_arcsec"] / 2) * kpc_per_arcsec_at_z
-
-    #print(f"r2dmax_kpc = {r2dmax_kpc}")
 
     r2d = np.linalg.norm(rvec[:,0:2],axis=1)
 
@@ -969,10 +969,10 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mas
     filter_virialized = nodedata_filter_virialized(nodedata)
 
     #Choose bound / infall mass
-    mass_key = GalacticusParameters.MASS_BOUND if mass_range_is_bound else GalacticusParameters.MASS_BASIC
+    mass_key = gutil.MASS_BOUND if mass_range_is_bound else gutil.MASS_BASIC
 
     filter_mass = nodedata_filter_massrange(nodedata,mass_range,mass_key)
-    filter_tree = nodedata_filter_tree(nodedata,tree_n)
+    filter_tree = nodedata_filter_tree(nodedata,tree_index)
     filter_extra = np.ones(filter_tree.shape,dtype=bool) if nodedata_filter is None else nodedata_filter(nodedata)
 
     filter_combined = filter_subhalos & filter_virialized & filter_mass & filter_tree & filter_extra & filter_r2d
@@ -983,27 +983,23 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mas
     r2d = r2d[filter_combined]
     rvec_original = rvec_original[filter_combined]
 
-    #nodedata = nodedata_apply_filter(nodedata,filter_r2d)
-    
-
-
     #Apply an additional filter, only include subhalos that are within the angle of the cone opening
 
     halo_list = []
     #Loop throught properties of each subhalos
     #The way this loop works is kinda ugly
-    for n,m_infall in enumerate(nodedata[GalacticusParameters.MASS_BASIC]):
+    for n,m_infall in enumerate(nodedata[gutil.MASS_BASIC]):
         x,y,_ = rvec[n]
 
         #Convert to kpc for all parameters
-        rs  = nodedata[GalacticusParameters.SCALE_RADIUS][n] * MPC_TO_KPC
-        rt = nodedata[GalacticusParameters.TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC
-        rv = nodedata[GalacticusParameters.RVIR][n] * MPC_TO_KPC
-        m_bound = nodedata[GalacticusParameters.MASS_BOUND][n]
+        rs  = nodedata[gutil.SCALE_RADIUS][n] * MPC_TO_KPC
+        rt = nodedata[gutil.TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC
+        rv = nodedata[gutil.RVIR][n] * MPC_TO_KPC
+        m_bound = nodedata[gutil.MASS_BOUND][n]
 
         
         #Chose definition of rho_s
-        if not rho_s_use_galacticus:
+        if rho_s_use_mbound:
             #rho_s = m_bound / (4 * np.pi * rs**3 * (np.log(1 + c) - c/(1+c)))d
             # Calculate rho_s such that bound mass is preserved when integrating the profile
             # Includes truncation effects
@@ -1012,14 +1008,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_n, kwargs_cdm:dict,mas
             # Use galacticus definition of rho_s
             # Extra factor of 4 here from the fact the outputed r_s is the underlying nfw density profile of the subhalo evaluated
             # at r = r_s
-            rho_s = 4 * nodedata[GalacticusParameters.TNFW_RHO_S][n] / (MPC_TO_KPC)**3
-
-        
-        #print(r2d[n])
-        #print(np.sqrt(x**2 + y**2))
-        #
-        #print(np.linalg.norm(nh))
-        #print(np.sqrt((np.dot(rvec_original[n],rvec_original[n])-(np.dot(rvec_original[n],nh)**2))))
+            rho_s = 4 * nodedata[gutil.TNFW_RHO_S][n] / (MPC_TO_KPC)**3
 
         r3d_mag = np.linalg.norm(rvec[n])
 
