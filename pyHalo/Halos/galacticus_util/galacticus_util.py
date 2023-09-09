@@ -18,36 +18,35 @@ class GalacticusUtil():
 
     #Position of the subhalo relative to it's host halo or subhalo (not top level)
     RELX = "satellitePositionX"
-    """The GALACTICUS output parameter for the X coordinate of the subhalo relative to the halo / subhalo that hosts it."""
+
     RELY = "satellitePositionY"
-    """The GALACTICUS output parameter for the Y coordinate of the subhalo relative to the halo / subhalo that hosts it."""
+
     RELZ = "satellitePositionZ"
-    """The GALACTICUS output parameter for the Z coordinate of the subhalo relative to the halo / subhalo that hosts it."""
+
 
     MASS_BOUND = "satelliteBoundMass"
-    """The GALACTICUS output parameter for the gravitationally bound mass contained within a subhalo"""
-    MASS_BASIC = "basicMass"
-    """The GALACTICUS output parameter for the mass at acrettion. Includes mass from substructure."""
+
+    MASS_INFALL = MASS_BASIC = "basicMass"
+    """The infall mass of the subhalo"""
+
     IS_ISOLATED = "nodeIsIsolated"
-    """The GALACTICUS output parameter describing if the node is a halo / subhalo. 0 if subhalo 1 if halo"""
+
     HIERARCHYLEVEL = "nodeHierarchyLevel"
-    """The GALACTICUS output parameter describing the level of substructure the current halo exists at. For the "main" halo
-    this would be 0, for subhstrucure 1, for subs-substructure 2,..."""
+
     RVIR = 'darkMatterOnlyRadiusVirial'
 
     SPHERE_RADIUS = "spheroidRadius"
-    """The GALACTICUS output parameter describing the sphereoid radius of a spheroid galaxy"""
+
     SPHERE_ANGLULARMOMENTUM = "spheroidAngularMomentum"
-    """The GALACTICUS output parameter describing the angular momentum of a spheroid galaxy"""
+
     SPHERE_MASS_STELLAR = "spheroidMassStellar"
-    """The GALACTICUS output parameter describing the stellar mass of a spheroid galaxy"""
+
     SPHERE_MASS_GAS = "spheroidMassGas"
-    """The GALACTICUS output parameter describing the gas mass of a spheroid galaxy"""
 
     SCALE_RADIUS = "darkMatterProfileScaleRadius"
-    """The GALACTICUS output parameter describing the scale radius of the halo / subhalo"""
+
     DENSITY_PROFILE_RADIUS = "densityProfileRadius"
-    """The GALACTICUS output parameter describing the density profile radii of the halo / subhalo"""
+
     DENSITY_PROFILE = "densityProfile"
 
     Z_LASTISOLATED = "redshiftLastIsolated"
@@ -72,7 +71,8 @@ class GalacticusUtil():
     HDF5_GROUP_OUTPUT_N_PREFIX = "Output"
     """The name of the prefix of the "OutputN" groups in GALACTICUS output file"""
 
-    GROUP_NODEDATA = "nodeData"
+    HDF5_GROUP_NODEDATA = "nodeData"
+    """The name of the hdf5 group containing nodedata."""
 
     HDF5_DSET_TREECOUNT = "mergerTreeCount"
 
@@ -80,7 +80,7 @@ class GalacticusUtil():
 
     HDF5_DESET_TREESTART = "mergerTreeStartIndex"
 
-    def hdf5_read_output_indicies(self,f:h5py.File):
+    def hdf5_read_output_indicies(self,f):
         """
         Returns the numbers asigned to the various galacticus outputs.
         For if the galacicus file has the following groups: Outputs/Output1, Outputs/Output10
@@ -104,14 +104,14 @@ class GalacticusUtil():
         return np.array(outputs)
     
 
-    def hdf5_access_output_n_nodedata(self,f:h5py.File,output_n:int)->h5py.Group:
+    def hdf5_access_output_n_nodedata(self,f,output_n):
         """
         Returns the Outputs/OutputN/nodedata groups
 
         :param f: h5py.File read from Galacticus output
         :param output_n: The number coresponding to the output to be read
         """
-        return f[self.HDF5_GROUP_OUTPUT_PRIMARY][f"{self.HDF5_GROUP_OUTPUT_N_PREFIX}{output_n}"][self.GROUP_NODEDATA]
+        return f[self.HDF5_GROUP_OUTPUT_PRIMARY][f"{self.HDF5_GROUP_OUTPUT_N_PREFIX}{output_n}"][self.HDF5_GROUP_NODEDATA]
 
 
     def hdf5_read_dset(self,dset:h5py.Dataset):
@@ -122,10 +122,13 @@ class GalacticusUtil():
         dset.read_direct(arr)
         return arr
 
-    def hdf5_read_custom_nodedata(self,f:h5py.File,output_index:int)->dict[str,np.ndarray]:
+    def hdf5_read_custom_nodedata(self,f,output_index:int):
         """
         To make analysis more convient, it is usefull to add custom datasets to those present in the Outputs/OutputN/nodedata.
         This function is used when read_nodedata_galacticus is called to create custom nodedata datasets for convienence.
+
+        :param f: h5py.File read from Galacticus output
+        :param output_index: The output to read indecies for.
         """
         group_outputn = f[self.HDF5_GROUP_OUTPUT_PRIMARY][f"{self.HDF5_GROUP_OUTPUT_N_PREFIX}{output_index}"]
 
@@ -148,9 +151,12 @@ class GalacticusUtil():
         return {GalacticusUtil.PARAM_TREE_INDEX:node_index,
                 GalacticusUtil.PARAM_TREE_ORDER:node_order}
     
-    def hdf5_read_nodecount_total(self,f:h5py.File,output_index:int):
+    def hdf5_read_nodecount_total(self,f,output_index):
         """
-        Gets the total number of nodes at a given output
+        Returns the total number of nodes at a given output.
+
+        :param f: h5py.File read from Galacticus output
+        :param output_index: The output index to read from.
         """
 
         group_outputn = f[self.HDF5_GROUP_OUTPUT_PRIMARY][f"{self.HDF5_GROUP_OUTPUT_N_PREFIX}{output_index}"]
@@ -159,44 +165,78 @@ class GalacticusUtil():
 
         return np.sum(tree_count)
     
-    def read_nodedata_galacticus(self,path:str, output_index:int = None,
-                                params_to_read:(Iterable[str] | str) = None,
+    def read_nodedata_galacticus(self,path, output_index = None,
+                                params_to_read = None,
                                 nodes_only=True):
-        
+        """
+        Reads a galacticus output file at a given path, returns nodedata for a specified tree.
+        Galacticus: https://github.com/galacticusorg/galacticus
+
+        Note: if your build of galacticus has a different output formats you can inherit the GalacticusUtil class and modify
+        parameter names / methods used when reading galacticus output. 
+
+        :param path: Path to nodedata
+        :param output_index: The index of the tree to read. If None defaults to the final output.
+        :param params_to_read: A list of parameters to read, if None reads all parameters.
+        :nodes_only: If true only reads nodedata entries that have entry for each node, if false reads all datasets in the nodedata group.
+        """
         with h5py.File(path,"r") as f:
+            return self.hdf5_read_galacticus_nodedata(f,output_index,params_to_read,nodes_only)
 
-            #If no output is specified read the final output
-            if output_index is None:
-                outputs_ns = self.hdf5_read_output_indicies(f)
 
-                #If no suitable outputs are found, return None
-                if len(outputs_ns) == 0:
-                    return None
+    def hdf5_read_galacticus_nodedata(self,f, output_index = None,
+                                params_to_read = None,
+                                nodes_only=True):
+        """
+        Reads a galacticus output given a h5py.File read from galacticus ouput
+        Galacticus: https://github.com/galacticusorg/galacticus
 
-                output_index = np.max(outputs_ns)
+        Note: if your build of galacticus has a different output formats you can inherit the GalacticusUtil class and modify
+        parameter names / methods used when reading galacticus output. 
 
-            group_nodedata = self.hdf5_access_output_n_nodedata(f,output_index)
+        :param f: A h5py.File read from galacticus output.
+        :param output_index: The index of the tree to read. If None defaults to the final output.
+        :param params_to_read: A list of parameters to read, if None reads all parameters.
+        :nodes_only: If true only reads nodedata entries that have entry for each node, if false reads all datasets in the nodedata group.
+        """
 
-            nodedata = {}
+        #If no output is specified read the final output
+        if output_index is None:
 
-            #Allow user to pass a single parameter to read as just a strin g
-            if isinstance(params_to_read,str):
-                params_to_read = [params_to_read] 
+            outputs_ns = self.hdf5_read_output_indicies(f)
 
-            nodecount = self.hdf5_read_nodecount_total(f,output_index)
+            #If no suitable outputs are found, return None
 
-            #Loop through datasets in nodedata
-            for key in group_nodedata.keys():
-                dset = group_nodedata[key]
+            if len(outputs_ns) == 0:
 
-                #Read dataset if it is a dataset and it is contained in the params_to_read variable or that variable is None
-                if isinstance(dset,h5py.Dataset) and (params_to_read is None or key in params_to_read):
-                    if not nodes_only or (nodes_only and dset.shape[0] == nodecount):
-                        nodedata[key] = self.hdf5_read_dset(dset)
+                return None
+            
+            output_index = np.max(outputs_ns)
 
-            custom = self.hdf5_read_custom_nodedata(f,output_index)
-            return nodedata | custom
+        group_nodedata = self.hdf5_access_output_n_nodedata(f,output_index)
+
+        nodedata = {}
+
+        #Allow user to pass a single parameter to read as just a string
+
+        if isinstance(params_to_read,str):
+
+            params_to_read = [params_to_read] 
+
+        nodecount = self.hdf5_read_nodecount_total(f,output_index)
+
+        #Loop through datasets in nodedata
+
+        for key in group_nodedata.keys():
+
+            dset = group_nodedata[key]
+
+            #Read dataset if it is a dataset and it is contained in the params_to_read variable or that variable is None
+            if isinstance(dset,h5py.Dataset) and (params_to_read is None or key in params_to_read):
+                if not nodes_only or (nodes_only and dset.shape[0] == nodecount):
+                    nodedata[key] = self.hdf5_read_dset(dset)
+
         
-    
-
+        custom = self.hdf5_read_custom_nodedata(f,output_index)
+        return nodedata | custom
 

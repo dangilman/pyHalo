@@ -2,17 +2,16 @@ from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.tnfw import TNFW as TNFWLenstronomy
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
+from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
-class TNFWFromParams(Halo):
+class TNFWFromParams(TNFWSubhalo):
 
 
     KEY_RT = "r_trunc_kpc"
     KEY_RS = "rs"
     KEY_RHO_S = "rho_s"
     KEY_RV = "rv"
-
-    mass_bound_uss_massfraction = True 
 
     """
     The base class for a truncated NFW halo
@@ -31,12 +30,12 @@ class TNFWFromParams(Halo):
 
         y = y_kpc / self._kpc_per_arcsec_at_z
 
-        self._params_physical = args
+        keys_physical = (self.KEY_RV,self.KEY_RS,self.KEY_RHO_S,self.KEY_RV,self.KEY_RT)
+        self._params_physical = {key:args[key] for key in keys_physical}
 
-        mdef = 'TNFW'
+        self._c = self._params_physical[self.KEY_RV] / self._params_physical[self.KEY_RS]
 
-        super(TNFWFromParams, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                           lens_cosmo_instance, args, unique_tag)
+        super(TNFWFromParams, self).__init__(mass,x,y,r3d,z,sub_flag,lens_cosmo_instance,args,None,None,unique_tag)
 
     def density_profile_3d(self, r, params_physical=None):
         """
@@ -53,43 +52,24 @@ class TNFWFromParams(Halo):
 
         n = 1
 
-
         x = r / r_s
         tau = r_t / r_s
-
-        n = 0
 
         density_nfw = (rho_s / ((x)*(1+x)**2))
 
         return density_nfw * (tau**2 / (tau**2 + x**2))**n 
 
-
-    @property
-    def nfw_params(self):
-        pass
-
-    @property
-    def lenstronomy_ID(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
-
-        return ['TNFW']
-
-    @property
-    def c(self):
-        """
-        The concentration of the underlying NFW profile.
-        """
-        return self._params_physical[self.KEY_RV] / self._params_physical[self.KEY_RS]
     
     @property
-    def params_physical(self):
+    def profile_args(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-
-        return self._params_physical
+        if not hasattr(self, '_profile_args'):
+            truncation_radius_kpc = self.params_physical[self.KEY_RT]
+            self._profile_args = (self.c, truncation_radius_kpc)
+        return self._profile_args
+    
 
     @property
     def lenstronomy_params(self):
@@ -97,14 +77,18 @@ class TNFWFromParams(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_kwargs_lenstronomy'):
-            [concentration, rt] = self.profile_args
-            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+            
+            r_t = self.params_physical[self.KEY_RT]
+            r_s = self.params_physical[self.KEY_RS]
+            rho_s = self.params_physical[self.KEY_RHO_S]
+            
+            Rs_angle, theta_Rs = self.nfw_physical2angle_fromNFWparams(rho_s,r_s,self.z)
 
             x, y = np.round(self.x, 4), np.round(self.y, 4)
 
             Rs_angle = np.round(Rs_angle, 10)
             theta_Rs = np.round(theta_Rs, 10)
-            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            r_trunc_arcsec = r_t / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
             kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle,
                       'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
@@ -112,32 +96,14 @@ class TNFWFromParams(Halo):
             self._kwargs_lenstronomy = kwargs
 
         return self._kwargs_lenstronomy, None
-
-    @property
-    def profile_args(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
-        if not hasattr(self, '_profile_args'):
-            truncation_radius_kpc = self._params_physical[truncation_radius_kpc]
-            self.profile_args = (self.c, truncation_radius_kpc)
-        return self.profile_args
     
     @property
     def bound_mass(self):
         """
         Computes the mass inside the virial radius (with truncation effects included)
-        :return: the mass inside r = c * r_s
+        :return: The mass within virial radius.
         """
-        if self.mass_bound_uss_massfraction:
-            if hasattr(self, '_kwargs_lenstronomy'):
-                tau = self._kwargs_lenstronomy[0]['r_trunc'] / self._kwargs_lenstronomy[0]['Rs']
-            else:
-                params_physical = self.params_physical
-                tau = params_physical['r_trunc_kpc'] / params_physical['rs']
-            f = tnfw_mass_fraction(tau, self.c)
-            return f * self.mass
-        
+
         params_physical = self.params_physical
         return TNFW().mass_3d(params_physical[self.KEY_RV],
                               params_physical[self.KEY_RS],
