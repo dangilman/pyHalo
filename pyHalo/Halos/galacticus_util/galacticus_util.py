@@ -114,7 +114,7 @@ class GalacticusUtil():
         return f[self.HDF5_GROUP_OUTPUT_PRIMARY][f"{self.HDF5_GROUP_OUTPUT_N_PREFIX}{output_n}"][self.HDF5_GROUP_NODEDATA]
 
 
-    def hdf5_read_dset(self,dset:h5py.Dataset):
+    def hdf5_read_dset(self,dset):
         """
         Reads a hdf5 dataset into a numpy array
         """
@@ -122,7 +122,7 @@ class GalacticusUtil():
         dset.read_direct(arr)
         return arr
 
-    def hdf5_read_custom_nodedata(self,f,output_index:int):
+    def hdf5_read_custom_nodedata(self,f,output_index):
         """
         To make analysis more convient, it is usefull to add custom datasets to those present in the Outputs/OutputN/nodedata.
         This function is used when read_nodedata_galacticus is called to create custom nodedata datasets for convienence.
