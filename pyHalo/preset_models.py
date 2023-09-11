@@ -920,7 +920,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_file,tree_index, kwargs_cdm,mass
                       gutil.SCALE_RADIUS,gutil.MASS_BOUND,
                       gutil.MASS_BASIC,gutil.IS_ISOLATED]
 
-    if galactics_params_additional is isinstance(str):
+    if isinstance(galactics_params_additional,str):
         galactics_params_additional = [galactics_params_additional]
     elif galactics_params_additional is None:
         galactics_params_additional = []
