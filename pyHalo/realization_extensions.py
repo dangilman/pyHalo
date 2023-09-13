@@ -523,8 +523,6 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 
 
     _R = np.linspace(-map_size/2, map_size/2, kappa_map.shape[0])
     XX_, YY_ = np.meshgrid(_R, _R)
-
-    assert kappa_map.shape == XX_.shape, f"Convergence map must NOT be computed using  the window!"
     
     X_ = XX_[0]
     Y_ = YY_[:,0]
