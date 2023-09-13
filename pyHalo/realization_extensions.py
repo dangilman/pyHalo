@@ -546,11 +546,9 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 
     if apply_mask == True:
         mask = mask_annular(center_x, center_y, XX_, YY_, r_min, r_max)
         mask_interp = RectBivariateSpline(X_, Y_, mask, kx=1, ky=1, s=0)
-        
     else:
         mask = np.ones(XX_.shape)
         
-    
     kappa_interp = RectBivariateSpline(X_, Y_, kappa_map, kx=5, ky=5, s=0)
        
     corr = np.zeros((r.shape[0], mu.shape[0]))
