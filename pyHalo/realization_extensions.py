@@ -503,7 +503,8 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
 
     return fluctuations
 
-def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 0, r_max = None, normalization = True):
+def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0,
+                         r_max=None, normalization=True):
     """
     This function computes the two-point correlation function from a convergence map.
 

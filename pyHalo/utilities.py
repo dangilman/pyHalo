@@ -333,7 +333,7 @@ class MinHaloMassULDM(object):
     def _zeta(self, z):
         return (18 * np.pi ** 2 + 82 * (self._Om(z) - 1) - 39 * (self._Om(z) - 1) ** 2) / self._Om(z)
 
-def multiplane_convergence(realization, window_size=2.5, npix=100, lens_model_list_macro=None,
+def multiplane_convergence(realization, cone_opening_angle_arcsec=2.5, npix=100, lens_model_list_macro=None,
                            kwargs_lens_macro=None, redshift_list_macro=None):
     """
     This function computes the effective multiplane convergence from a realization of dark matter halos.
@@ -341,7 +341,7 @@ def multiplane_convergence(realization, window_size=2.5, npix=100, lens_model_li
     a typical one is assumed.
 
     :param realization: an instance of Realization
-    :param window_size: the window size in arcsec (each axis spans 2*window_size)
+    :param cone_opening_angle_arcsec: the window size in arcsec (each axis spans 2*window_size)
     :param npix: number of pixels per axis
     :param lens_model_list_macro: list of lens models for the main deflector
     :param kwargs_lens_macro: keyword arguments for the macro lens models
@@ -363,7 +363,7 @@ def multiplane_convergence(realization, window_size=2.5, npix=100, lens_model_li
                            lens_redshift_list=redshift_list_macro + list(redshfit_array_halos),
                            cosmo=realization.lens_cosmo.cosmo.astropy)
 
-    _r = np.linspace(-window_size, window_size, npix)
+    _r = np.linspace(-cone_opening_angle_arcsec/2, cone_opening_angle_arcsec/2, npix)
     xx, yy = np.meshgrid(_r, _r)
     kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro)
     kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro + kwargs_lens_halos)
@@ -374,7 +374,7 @@ def multiplane_convergence(realization, window_size=2.5, npix=100, lens_model_li
 def mask_annular(center_x, center_y, x_grid, y_grid, r_min, r_max = None):
     """
     An annular mask of specified inner and outer radii
-    
+
     :param center_x: x-coordinate of center position of circular mask
     :param center_y: y-coordinate of center position of circular mask
     :param x_grid: x-coordinate grid

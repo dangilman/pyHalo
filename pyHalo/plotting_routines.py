@@ -333,7 +333,7 @@ def plot_truncation_radius_histogram(realization, subhalos_only=True, ax=None, c
     ax.set_xlabel(r'$\frac{r_t}{r_s}$', fontsize=15)
 
 
-def plot_multiplane_convergence(realization, ax=None, npix=100, window_size=2.5, lens_model_list_macro=None,
+def plot_multiplane_convergence(realization, ax=None, npix=100, cone_opening_angle_arcsec=2.5, lens_model_list_macro=None,
                                 kwargs_lens_macro=None, redshift_list_macro=None, cmap='bwr', vmin_max=0.05,
                                 subtract_mean_kappa=False, show_critical_curve=True, grid_scale_crit_curve=0.025):
     """
@@ -341,7 +341,7 @@ def plot_multiplane_convergence(realization, ax=None, npix=100, window_size=2.5,
     :param realization: an instance of Realization
     :param ax: a matplotlib axes
     :param npix: number of pixels per axis
-    :param window_size: the radius of the image in arcsec (full size left to right is 2 * window_size)
+    :param cone_opening_angle_arcsec: the size of each axis in arcsec
     :param lens_model_list_macro: a list of lens models that desceibe the main deflector
     :param kwargs_lens_macro: keyword arguments for the macro lens models
     :param redshift_list_macro: a list of redshifts for the macro lens models
@@ -357,18 +357,18 @@ def plot_multiplane_convergence(realization, ax=None, npix=100, window_size=2.5,
         fig.set_size_inches(6, 6)
         ax = plt.subplot(111)
 
-    delta_kappa, lens_model, kwargs_lens, _, _ = multiplane_convergence(realization, window_size, npix, lens_model_list_macro,
+    delta_kappa, lens_model, kwargs_lens, _, _ = multiplane_convergence(realization, cone_opening_angle_arcsec, npix, lens_model_list_macro,
                                          kwargs_lens_macro, redshift_list_macro)
     if subtract_mean_kappa:
         delta_kappa -= np.mean(delta_kappa)
-    ax.imshow(delta_kappa, extent=[-window_size, window_size, -window_size, window_size],
+    ax.imshow(delta_kappa, extent=[-cone_opening_angle_arcsec/2, cone_opening_angle_arcsec/2, -cone_opening_angle_arcsec/2, cone_opening_angle_arcsec/2],
               cmap=cmap, vmin=-vmin_max, vmax=vmin_max, origin='lower')
 
     if show_critical_curve:
         from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
         ext = LensModelExtensions(lens_model)
         ra_crit_list, dec_crit_list, ra_caustic_list, dec_caustic_list = ext.critical_curve_caustics(
-            kwargs_lens, grid_scale=grid_scale_crit_curve, compute_window=window_size)
+            kwargs_lens, grid_scale=grid_scale_crit_curve, compute_window=cone_opening_angle_arcsec)
         ax.plot(ra_crit_list[0], dec_crit_list[0], color='k')
 
     return ax

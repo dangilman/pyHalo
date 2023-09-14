@@ -433,14 +433,14 @@ class TestCorrelationComputation(object):
         r = np.logspace(-3, -0.3, num=100, endpoint=True)
         xi_0_real = np.ones(r.shape[0])
         corr = np.ones((r.shape[0], mu.shape[0]))
-        r, xi_0 = _xi_l(0, corr, r, mu)
+        r, xi_0 = xi_l(0, corr, r, mu)
         npt.assert_almost_equal(xi_0_real, xi_0)
 
     def test_xi_l_to_Pk_l(self):
         l = 0
         x = np.logspace(-3, 3, num=60, endpoint=False)
         F = 1 / (1 + x*x)**1.5
-        y, G_Hankel = _xi_l_to_Pk_l(x, F, l = 0)
+        y, G_Hankel = xi_l_to_Pk_l(x, F, l = 0)
         G = (2*np.pi*(-1j)**l) * np.exp(-y)  # this is the actual Hankel transform of the function F.
         npt.assert_almost_equal(G, G_Hankel)
 
