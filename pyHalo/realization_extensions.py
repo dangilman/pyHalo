@@ -532,8 +532,8 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0,
 
     rmin_max = X_.max() - r.max()
     Npix = X_.shape[0]
-    print(Npix, X_.max(), rmin_max)
-    npix = np.int((Npix/X_.max())*rmin_max)
+
+    npix = int((Npix/X_.max())*rmin_max)
     _r = np.linspace(-rmin_max, rmin_max, npix)
     xx_, yy_ = np.meshgrid(_r, _r)
 
