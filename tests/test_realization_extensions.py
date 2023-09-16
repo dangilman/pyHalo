@@ -417,6 +417,8 @@ class TestCorrelationComputation(object):
         kappa = kappa_GRF(delta_pix, npix, alpha)
 
         corr = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = False)
+        corr_mask = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = None, normalization = False)
+        corr_mask_ann = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = 1.5, normalization = False)
 
         xi_0_real = delta_pix**(2-alpha)/(2*np.pi*r)
 
@@ -426,7 +428,9 @@ class TestCorrelationComputation(object):
 
         corr_real = xi_l_grid*T_l_grid
 
-        npt.assert_array_almost_equal(corr_real,corr, decimal=2)
+        npt.assert_array_almost_equal(corr_real, corr, decimal=2)
+        npt.assert_array_almost_equal(corr_real, corr_mask, decimal=2)
+        npt.assert_array_almost_equal(corr_real, corr_mask_ann, decimal=2)
 
     def test_xi_l(self):
         mu = np.linspace(-1, 1, 100)
