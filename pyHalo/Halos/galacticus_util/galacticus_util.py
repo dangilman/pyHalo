@@ -4,7 +4,7 @@ from typing import Iterable
 
 class GalacticusUtil():
     """
-    This class stores names of comonly used galacticus parameters
+    This class provides utility for working with galacticus files.
     """
 
     #Names of galacticus parameters

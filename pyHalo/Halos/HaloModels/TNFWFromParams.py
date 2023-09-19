@@ -97,16 +97,16 @@ class TNFWFromParams(TNFWSubhalo):
 
         return self._kwargs_lenstronomy, None
     
-    @property
-    def bound_mass(self):
-        """
-        Computes the mass inside the virial radius (with truncation effects included)
-        :return: The mass within virial radius.
-        """
-
-        params_physical = self.params_physical
-        return TNFW().mass_3d(params_physical[self.KEY_RV],
-                              params_physical[self.KEY_RS],
-                              params_physical[self.KEY_RHO_S],
-                              params_physical[self.KEY_RT])
+    #@property
+    #def bound_mass(self):
+    #    """
+    #    Computes the mass inside the virial radius (with truncation effects included)
+    #    :return: The mass within virial radius.
+    #    """
+    #
+    #    params_physical = self.params_physical
+    #    return TNFW().mass_3d(params_physical[self.KEY_RV],
+    #                          params_physical[self.KEY_RS],
+    #                          params_physical[self.KEY_RHO_S],
+    #                          params_physical[self.KEY_RT])
 

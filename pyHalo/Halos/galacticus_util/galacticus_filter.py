@@ -45,7 +45,7 @@ def nodedata_filter_virialized(nodedata,galacticus_util= None):
     filter_virialized = np.zeros(nodedata[gutil.X].shape,dtype=bool)
 
     for n,rv in zip(halo_output_n,rv_halos):
-        filter_virialized = filter_virialized | ((r < rv) & (nodedata[gutil.PARAM_TREE_ORDER] == n))
+        filter_virialized |= ((r < rv) & (nodedata[gutil.PARAM_TREE_ORDER] == n))
 
     return filter_virialized
 
