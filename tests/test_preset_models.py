@@ -1,4 +1,9 @@
-from pyHalo.preset_models import *
+from pyHalo.PresetModels.cdm import CDM
+from pyHalo.PresetModels.wdm import WDM, WDM_mixed
+from pyHalo.PresetModels.sidm import SIDM_core_collapse
+from pyHalo.PresetModels.uldm import ULDM
+from pyHalo.preset_models import preset_model_from_name
+from pyHalo.PresetModels.external import CDMFromEmulator
 import pytest
 import numpy as np
 import numpy.testing as npt

@@ -6,10 +6,15 @@ from pyHalo.Halos.HaloModels.gaussian import Gaussian
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Cosmology.geometry import Geometry
-from pyHalo.utilities import generate_lens_plane_redshifts
+from pyHalo.utilities import generate_lens_plane_redshifts, mask_annular
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
 from copy import deepcopy
-
+from scipy.interpolate import RectBivariateSpline
+import time
+from scipy.integrate import simps
+from scipy.special import eval_chebyt
+from scipy.optimize import curve_fit
+from mcfit import Hankel
 
 class RealizationExtensions(object):
 
@@ -497,3 +502,203 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
                              unique_tag=np.random.rand()) for i in range(len(amps))]
 
     return fluctuations
+
+def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0,
+                         r_max=None, normalization=True):
+    """
+    This function computes the two-point correlation function from a convergence map.
+
+    :param kappa_map: the convergence map
+    :param map_size: the map size in arcsec
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param mu: an array of cosines of the rotation angles of vector r. E.g., mu = np.linspace(-1, 1, 100) contains the cosines
+            of the angles between 0 and 180 degrees.
+    :param apply_mask: if True, apply the mask on the convergence map.
+    :param r_min: inner radius of mask in units of grid coordinates
+    :param r_max: outer radius of mask in units of grid coordinates
+    :param normalization: if True, apply normalization to the correlation function.
+    :return: the two-point correlation function on the (mu, r) coordinate grid.
+    """
+
+    start_time = time.time()
+
+    _R = np.linspace(-map_size/2, map_size/2, kappa_map.shape[0])
+    XX_, YY_ = np.meshgrid(_R, _R)
+
+    assert kappa_map.shape == XX_.shape, f"Convergence map must NOT be computed using  the window!"
+
+    X_ = XX_[0]
+    Y_ = YY_[:,0]
+
+    rmin_max = X_.max() - r.max()
+    Npix = X_.shape[0]
+
+    npix = int((Npix/X_.max())*rmin_max)
+    _r = np.linspace(-rmin_max, rmin_max, npix)
+    xx_, yy_ = np.meshgrid(_r, _r)
+
+    x_ = xx_[0]
+    y_ = yy_[:,0]
+
+    phi = np.arctan2(yy_, xx_)
+    cos_phi = np.cos(phi)
+    sin_phi = np.sin(phi)
+
+    center_x = (X_.max()+ X_.min())/2
+    center_y = (Y_.max()+ Y_.min())/2
+
+    if apply_mask == True:
+        mask = mask_annular(center_x, center_y, XX_, YY_, r_min, r_max)
+        mask_interp = RectBivariateSpline(X_, Y_, mask, kx=1, ky=1, s=0)
+
+    else:
+        mask = np.ones(XX_.shape)
+
+
+    kappa_interp = RectBivariateSpline(X_, Y_, kappa_map, kx=5, ky=5, s=0)
+
+    corr = np.zeros((r.shape[0], mu.shape[0]))
+
+    for i in range(r.shape[0]):
+        for j in range(mu.shape[0]):
+            x1 = xx_ - (r[i]/2)*((cos_phi*mu[j]) + (sin_phi*np.sqrt(1-mu[j]**2)))
+            y1 = yy_ - (r[i]/2)*((sin_phi*mu[j]) - (cos_phi*np.sqrt(1-mu[j]**2)))
+
+            x2 = xx_ + (r[i]/2)*((cos_phi*mu[j]) + (sin_phi*np.sqrt(1-mu[j]**2)))
+            y2 = yy_ + (r[i]/2)*((sin_phi*mu[j]) - (cos_phi*np.sqrt(1-mu[j]**2)))
+
+            if apply_mask == True:
+                if r_max == None:
+                    Area = (x_.max()-x_.min())*(y_.max()-y_.min()) - np.pi*(r_min**2)
+                else:
+                    Area = np.pi*(r_max**2 - r_min**2)
+            else:
+                Area = (x_.max()-x_.min())*(y_.max()-y_.min())
+
+            kappa_interp_1_ = kappa_interp(y1, x1, grid = False)
+            if apply_mask == True:
+                mask_interp_1 = mask_interp(y1, x1, grid = False)
+            else:
+                mask_interp_1 = np.ones(x1.shape)
+
+            kappa_interp_2_ = kappa_interp(y2, x2, grid = False)
+            if apply_mask == True:
+                mask_interp_2 = mask_interp(y2, x2, grid = False)
+            else:
+                mask_interp_2 = np.ones(x2.shape)
+
+            mask_interp_1[mask_interp_1<0.9] = 0
+            mask_interp_1[mask_interp_1>0.9] = 1
+
+            mask_interp_2[mask_interp_2<0.9] = 0
+            mask_interp_2[mask_interp_2>0.9] = 1
+
+            kappa_interp_1 = kappa_interp_1_*mask_interp_1
+            kappa_interp_2 = kappa_interp_2_*mask_interp_2
+
+            term_1 = simps(simps(kappa_interp_1*kappa_interp_2, x_, axis=0), y_, axis=-1)
+            term_2_1 = simps(simps(kappa_interp_1*mask_interp_2, x_, axis=0), y_, axis=-1)
+            term_2_2 = simps(simps(mask_interp_1*kappa_interp_2, x_, axis=0), y_, axis=-1)
+            term_3 = simps(simps(mask_interp_1*mask_interp_2, x_, axis=0), y_, axis=-1)
+
+            NCC_num = (term_1 - ((term_2_1*term_2_2)/term_3))/Area
+
+            term_4 = simps(simps((kappa_interp_1**2)*mask_interp_2, x_, axis=0), y_, axis=-1)
+            term_5 = term_2_1**2
+            term_6 = term_3
+
+            NCC_den_1 = (term_4 - (term_5/term_6))/Area
+
+            term_7 = simps(simps(mask_interp_1*(kappa_interp_2**2), x_, axis=0), y_, axis=-1)
+            term_8 = term_2_2**2
+            term_9 = term_3
+
+            NCC_den_2 = (term_7 - (term_8/term_9))/Area
+
+            if normalization == True:
+                corr[i,j] = NCC_num/np.sqrt(NCC_den_1*NCC_den_2)
+            else:
+                corr[i,j] = NCC_num
+
+    end_time = time.time()
+
+    print(f"It took {end_time-start_time:.2f} seconds to compute the correlation map")
+
+    return corr
+
+def xi_l(l, corr, r, mu):
+    """
+    This function computes the multipoles of the two-point correlation function.
+
+    :param l: the order of the multipole, E.g., l=0 :monopole, l=1: dipole, l=2: quadrupole, etc.
+    :param corr: the two-point correlation function on the (mu, r) coordinate grid
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param mu: an array of cosines of the rotation angles of vector r. E.g., mu = np.linspace(-1, 1, 100) contains the cosines
+        of the angles between 0 and 180 degrees.
+    :return: r and the two-point correlation function multipole of order l
+    """
+
+    T_l = eval_chebyt(l, mu)
+    func = corr*T_l
+
+    if l==0:
+        prefactor = 1/np.pi
+    else:
+        prefactor = 2/np.pi
+
+    xi_l = np.zeros(r.shape[0])
+    for i in range(r.shape[0]):
+        xi_l[i] = simps(func[i], np.flip(np.arccos(mu)), axis=0)
+
+    return r, prefactor*xi_l
+
+def xi_l_to_Pk_l(r, xi_l, l=0, extrapolate=True):
+
+    """
+    This function translates the correlation multipoles to power spectrum multipoles using Hankel Transform.
+
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param xi_l: the two-point correlation function multipole of order l
+    :param l: the order of the multipole, E.g., l=0 :monopole, l=1: dipole, l=2: quadrupole, etc.
+    :param corr: the two-point correlation function on the (mu, r) coordinate grid
+    :param extrapolate: if true extrapolates the power spectrum multipole with a power law to improve
+        the smoothness
+    :return: wavenumber (k) and the power spectrum multipole of order l
+
+    """
+    list_zero = list(np.where(r==0)[0])
+    r = np.delete(r, list_zero)
+    xi_l = np.delete(xi_l, list_zero)
+
+    prefactor = 2*np.pi*(-1j)**l
+    H = Hankel(r, nu=l, lowring = True)
+    k, Pk_l_ = H(xi_l, extrap=extrapolate)
+
+    Pk_l = Pk_l_*prefactor
+
+    return k, Pk_l.real
+
+def fit_correlation_multipole(r, xi_l, r_min, r_max):
+    """
+    This function fits a selected range of correlation multipole into a power-law.
+
+    :param r: an array of uniformly logarithmically spaced separations of interest
+    :param xi_l: the two-point correlation function multipole of order l
+    :param r_min: the minimum value of the range of interest
+    :param r_max: the maximum value of the range of interest
+    :return: the amplitude and the slope of the power-law fitting function.
+
+    """
+
+    r_pivot = (r_min + r_max)/2
+    r_ = r[np.where((r_min < r) & (r < r_max))]
+    xi_l_ = xi_l[np.where((r_min < r) & (r < r_max))]
+
+    def func(r, As, n):
+        return As*(r/r_pivot)**n
+
+    popt_0, pcov_0 = curve_fit(func, r_, xi_l_)
+    As = popt_0[0]
+    n = popt_0[1]
+
+    return As, n

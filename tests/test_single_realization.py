@@ -7,7 +7,7 @@ from copy import deepcopy
 import pytest
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce, ConcentrationPeakHeight
 from pyHalo.Halos.tidal_truncation import TruncationRN
-from pyHalo.preset_models import CDM
+from pyHalo.PresetModels.cdm import CDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
 import matplotlib.pyplot as plt
 

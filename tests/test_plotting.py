@@ -1,6 +1,6 @@
 import numpy.testing as npt
 import pytest
-from pyHalo.preset_models import CDM
+from pyHalo.PresetModels.cdm import CDM
 from pyHalo.plotting_routines import *
 
 class TestPlottingRoutines(object):
