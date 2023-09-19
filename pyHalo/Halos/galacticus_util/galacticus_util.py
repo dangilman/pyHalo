@@ -9,58 +9,53 @@ class GalacticusUtil():
 
     #Names of galacticus parameters
     #Position of the subhalo relative to the top level host halo
-    X = "positionOrbitalX"
+    PARAM_X = "positionOrbitalX"
     """The GALACTICUS output parameter for the X coordinate of the subhalo relative to the main halo"""
-    Y = "positionOrbitalY" 
+    PARAM_Y = "positionOrbitalY" 
     """The GALACTICUS output parameter for the Y coordinate of the subhalo relative to the main halo"""
-    Z = "positionOrbitalZ"
+    PARAM_Z = "positionOrbitalZ"
     """The GALACTICUS output parameter for the Z coordinate of the subhalo relative to the main halo"""
 
     #Position of the subhalo relative to it's host halo or subhalo (not top level)
-    RELX = "satellitePositionX"
+    PARAM_X_REL = "satellitePositionX"
 
-    RELY = "satellitePositionY"
+    PARAM_Y_REL = "satellitePositionY"
 
-    RELZ = "satellitePositionZ"
+    PARAM_Z_REL = "satellitePositionZ"
 
 
-    MASS_BOUND = "satelliteBoundMass"
+    PARAM_MASS_BOUND = "satelliteBoundMass"
 
-    MASS_INFALL = MASS_BASIC = "basicMass"
+    PARAM_MASS_INFALL = PARAM_MASS_BASIC = "basicMass"
     """The infall mass of the subhalo"""
 
-    IS_ISOLATED = "nodeIsIsolated"
+    PARAM_ISOLATED = "nodeIsIsolated"
 
-    HIERARCHYLEVEL = "nodeHierarchyLevel"
+    PARAM_HIERARCHY = "nodeHierarchyLevel"
 
-    RVIR = 'darkMatterOnlyRadiusVirial'
+    PARAM_RADIUS_VIRIAL = 'darkMatterOnlyRadiusVirial'
 
-    SPHERE_RADIUS = "spheroidRadius"
+    PARAM_SPHERE_RADIUS = "spheroidRadius"
 
-    SPHERE_ANGLULARMOMENTUM = "spheroidAngularMomentum"
+    PARAM_SPHERE_ANGULAR_MOMENTUM = "spheroidAngularMomentum"
 
-    SPHERE_MASS_STELLAR = "spheroidMassStellar"
+    PARAM_SPHERE_MASS_STELLAR = "spheroidMassStellar"
 
-    SPHERE_MASS_GAS = "spheroidMassGas"
+    PARAM_SPHERE_MASS_GAS = "spheroidMassGas"
 
-    SCALE_RADIUS = "darkMatterProfileScaleRadius"
+    PARAM_RADIUS_SCALE = "darkMatterProfileScaleRadius"
 
-    DENSITY_PROFILE_RADIUS = "densityProfileRadius"
+    PARAM_DENSITY_PROFILE_RADIUS = "densityProfileRadius"
 
-    DENSITY_PROFILE = "densityProfile"
+    PARAM_DENSITY_PROFILE = "densityProfile"
 
-    Z_LASTISOLATED = "redshiftLastIsolated"
+    PARAM_Z_LAST_ISOLATED = "redshiftLastIsolated"
 
-    TNFW_RADIUS_TRUNCATION = "radiusTidalTruncationNFW"
-    TNFW_RHO_S = "densityNormalizationTidalTruncationNFW"
+    PARAM_TNFW_RADIUS_TRUNCATION = "radiusTidalTruncationNFW"
+    PARAM_TNFW_RHO_S = "densityNormalizationTidalTruncationNFW"
 
     PARAM_TREE_ORDER = "custom_treeOutputOrder"
     PARAM_TREE_INDEX = "custom_treeIndex"
-    
-
-
-    DEF_TAB = [X,Y,Z,MASS_BOUND,MASS_BASIC,IS_ISOLATED,HIERARCHYLEVEL,RVIR]
-    """Default galacticus parameters to include in tabulation"""
 
     HDF5_GROUP_OUTPUT_PRIMARY = "Outputs"
     """
@@ -78,12 +73,12 @@ class GalacticusUtil():
 
     HDF5_DSET_TREEINDEX = "mergerTreeIndex"
 
-    HDF5_DESET_TREESTART = "mergerTreeStartIndex"
+    HDF5_DSET_TREESTART = "mergerTreeStartIndex"
 
-    def hdf5_read_output_indicies(self,f):
+    def hdf5_read_output_indices(self,f):
         """
-        Returns the numbers asigned to the various galacticus outputs.
-        For if the galacicus file has the following groups: Outputs/Output1, Outputs/Output10
+        Returns the numbers assigned to the various galacticus outputs.
+        For if the Galacticus file has the following groups: Outputs/Output1, Outputs/Output10
         this function will return [1,10]
 
         :param f: h5py.File read from Galacticus output
@@ -109,7 +104,7 @@ class GalacticusUtil():
         Returns the Outputs/OutputN/nodedata groups
 
         :param f: h5py.File read from Galacticus output
-        :param output_n: The number coresponding to the output to be read
+        :param output_n: The number corresponding to the output to be read
         """
         return f[self.HDF5_GROUP_OUTPUT_PRIMARY][f"{self.HDF5_GROUP_OUTPUT_N_PREFIX}{output_n}"][self.HDF5_GROUP_NODEDATA]
 
@@ -124,16 +119,16 @@ class GalacticusUtil():
 
     def hdf5_read_custom_nodedata(self,f,output_index):
         """
-        To make analysis more convient, it is usefull to add custom datasets to those present in the Outputs/OutputN/nodedata.
-        This function is used when read_nodedata_galacticus is called to create custom nodedata datasets for convienence.
+        To make analysis more convenient, it is useful to add custom datasets to those present in the Outputs/OutputN/nodedata.
+        This function is used when read_nodedata_galacticus is called to create custom nodedata datasets for convenience.
 
         :param f: h5py.File read from Galacticus output
-        :param output_index: The output to read indecies for.
+        :param output_index: The output to read indices for.
         """
         group_outputn = f[self.HDF5_GROUP_OUTPUT_PRIMARY][f"{self.HDF5_GROUP_OUTPUT_N_PREFIX}{output_index}"]
 
         tree_index = self.hdf5_read_dset(group_outputn[self.HDF5_DSET_TREEINDEX])
-        tree_start = self.hdf5_read_dset(group_outputn[self.HDF5_DESET_TREESTART])
+        tree_start = self.hdf5_read_dset(group_outputn[self.HDF5_DSET_TREESTART])
 
         total_count = self.hdf5_read_nodecount_total(f,output_index)
 
@@ -188,7 +183,7 @@ class GalacticusUtil():
                                 params_to_read = None,
                                 nodes_only=True):
         """
-        Reads a galacticus output given a h5py.File read from galacticus ouput
+        Reads a galacticus output given a h5py.File read from galacticus output
         Galacticus: https://github.com/galacticusorg/galacticus
 
         Note: if your build of galacticus has a different output formats you can inherit the GalacticusUtil class and modify
@@ -203,7 +198,7 @@ class GalacticusUtil():
         #If no output is specified read the final output
         if output_index is None:
 
-            outputs_ns = self.hdf5_read_output_indicies(f)
+            outputs_ns = self.hdf5_read_output_indices(f)
 
             #If no suitable outputs are found, return None
 

@@ -6,20 +6,19 @@ from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 class TNFWFromParams(TNFWSubhalo):
-
+    """
+    Creates a TNFW halo based on physical params. 
+    """
 
     KEY_RT = "r_trunc_kpc"
     KEY_RS = "rs"
     KEY_RHO_S = "rho_s"
     KEY_RV = "rv"
 
-    """
-    The base class for a truncated NFW halo
-    """
     def __init__(self, mass, x_kpc, y_kpc, r3d, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag=None):
         """
-        Denfines a TNFW subhalo with physical params r_trunc_kpc, rs, rhos passed in the args argument
+        Defines a TNFW subhalo with physical params r_trunc_kpc, rs, rhos passed in the args argument
         """
 
         self._lens_cosmo = lens_cosmo_instance
@@ -96,17 +95,3 @@ class TNFWFromParams(TNFWSubhalo):
             self._kwargs_lenstronomy = kwargs
 
         return self._kwargs_lenstronomy, None
-    
-    #@property
-    #def bound_mass(self):
-    #    """
-    #    Computes the mass inside the virial radius (with truncation effects included)
-    #    :return: The mass within virial radius.
-    #    """
-    #
-    #    params_physical = self.params_physical
-    #    return TNFW().mass_3d(params_physical[self.KEY_RV],
-    #                          params_physical[self.KEY_RS],
-    #                          params_physical[self.KEY_RHO_S],
-    #                          params_physical[self.KEY_RT])
-

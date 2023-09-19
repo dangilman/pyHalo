@@ -12,7 +12,7 @@ import h5py
 
 def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass_range,mass_range_is_bound = True,
                      proj_plane_normal = None,include_field_halos=True,nodedata_filter = None,
-                     galacticus_utilities = None,galactics_params_additional = None, proj_rotation_angles = None):
+                     galacticus_utilities = None,galacticus_params_additional = None, proj_rotation_angles = None):
     """
     This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
     See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy formation model. 
@@ -26,7 +26,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
     :param mass_range_is_bound: If true subhalos are filtered bound mass, if false subhalos are filtered by infall mass.
     :param projection_normal: Projects the coordinates of subhalos from parameters onto a plane defined with the given (3D) normal vector.
         Use this to generate multiple realizations from a single galacticus tree. If is None, coordinates are projected on the x,y plane. 
-    :param include_field_halos: If true includes feild halos, if false no feild halos are included.
+    :param include_field_halos: If true includes field halos, if false no field halos are included.
     :param nodedata_filter: Expects a callable function that has input and output: (dict[str,np.ndarray], GalacticusUtil) -> np.ndarray[bool]
         ,subhalos are filtered based on the output np array. Defaults to None
     :param galacticus_params: Extra parameters to read when loading in galacticus hdf5 file.
@@ -40,17 +40,17 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
     MPC_TO_KPC = 1E3
 
     #Only read needed parameters to save memory. 
-    PARAMS_TO_READ_DEF = [gutil.X,gutil.Y,gutil.Z,gutil.TNFW_RHO_S,
-                      gutil.TNFW_RADIUS_TRUNCATION,gutil.RVIR,
-                      gutil.SCALE_RADIUS,gutil.MASS_BOUND,
-                      gutil.MASS_BASIC,gutil.IS_ISOLATED]
+    PARAMS_TO_READ_DEF = [gutil.PARAM_X,gutil.PARAM_Y,gutil.PARAM_Z,gutil.PARAM_TNFW_RHO_S,
+                      gutil.PARAM_TNFW_RADIUS_TRUNCATION,gutil.PARAM_RADIUS_VIRIAL,
+                      gutil.PARAM_RADIUS_SCALE,gutil.PARAM_MASS_BOUND,
+                      gutil.PARAM_MASS_BASIC,gutil.PARAM_ISOLATED]
 
-    if galactics_params_additional is None:
-        galactics_params_additional = []
+    if galacticus_params_additional is None:
+        galacticus_params_additional = []
     else:
-        galactics_params_additional = list(galactics_params_additional)
+        galacticus_params_additional = list(galacticus_params_additional)
 
-    params_to_read = galactics_params_additional + PARAMS_TO_READ_DEF
+    params_to_read = galacticus_params_additional + PARAMS_TO_READ_DEF
     
     # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
     # only include these halos if requested
@@ -72,7 +72,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
 
 
     #Set up for rotation of coordinates
-    #Secify the normal vector for the plane we are projecting onto, if user specified ensure the vector is normalized
+    #Specify the normal vector for the plane we are projecting onto, if user specified ensure the vector is normalized
     nh = np.asarray((0,0,1)) if proj_plane_normal is None else proj_plane_normal / np.linalg.norm(proj_plane_normal)
     nh_x,nh_y,nh_z = nh
 
@@ -87,7 +87,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
     #are the x-y coordinates in the plane 
     rotation = Rotation.from_euler("zyz",(0,theta,phi))
 
-    coords = np.asarray((nodedata[gutil.X],nodedata[gutil.Y],nodedata[gutil.Z])) * MPC_TO_KPC
+    coords = np.asarray((nodedata[gutil.PARAM_X],nodedata[gutil.PARAM_Y],nodedata[gutil.PARAM_Z])) * MPC_TO_KPC
 
     #We would like define the x and y unit vectors, so we can project our coordinates
     xh_r = rotation.apply(np.array((1,0,0)))
@@ -104,7 +104,7 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
     filter_r2d = r2d_mag < r2dmax_kpc
 
     #Choose to filter by  bound / infall mass
-    mass_key = gutil.MASS_BOUND if mass_range_is_bound else gutil.MASS_BASIC
+    mass_key = gutil.PARAM_MASS_BOUND if mass_range_is_bound else gutil.PARAM_MASS_BASIC
 
     # Filter subhalos
     # We should exclude nodes that are not valid subhalos, such as host halo nodes and nodes that are outside the virial radius.
@@ -131,16 +131,16 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
     # Get rhos_s factor of 4 comes from the this galacticus output is
     # The density normalization of the underlying NFW halo at r = rs
     # Multiply by 4 to get the normalization for the halo profile
-    rho_s = 4 * nodedata[gutil.TNFW_RHO_S] / (MPC_TO_KPC)**3
+    rho_s = 4 * nodedata[gutil.PARAM_TNFW_RHO_S] / (MPC_TO_KPC)**3
 
 
-    rs  = nodedata[gutil.SCALE_RADIUS] * MPC_TO_KPC
-    rt = nodedata[gutil.TNFW_RADIUS_TRUNCATION] * MPC_TO_KPC
-    rv = nodedata[gutil.RVIR] * MPC_TO_KPC
+    rs  = nodedata[gutil.PARAM_RADIUS_SCALE] * MPC_TO_KPC
+    rt = nodedata[gutil.PARAM_TNFW_RADIUS_TRUNCATION] * MPC_TO_KPC
+    rv = nodedata[gutil.PARAM_RADIUS_VIRIAL] * MPC_TO_KPC
 
     halo_list = []
-    #Loop throught properties of each subhalos
-    for n,m_infall in enumerate(nodedata[gutil.MASS_BASIC]):
+    #Loop thought properties of each subhalos
+    for n,m_infall in enumerate(nodedata[gutil.PARAM_MASS_BASIC]):
         x,y = coords_2d[0][n], coords_2d[1][n]
 
         tnfw_args = {

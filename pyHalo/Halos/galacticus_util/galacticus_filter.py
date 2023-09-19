@@ -15,7 +15,7 @@ def nodedata_filter_tree(nodedata, treenum,galacticus_util = None):
 def nodedata_filter_subhalos(nodedata,galacticus_util= None):
     """Returns a filter that excludes all but subhalos (excludes host halos)"""
     gutil = GalacticusUtil() if galacticus_util is None else galacticus_util
-    return nodedata[gutil.IS_ISOLATED] == 0
+    return nodedata[gutil.PARAM_ISOLATED] == 0
 
 def nodedata_filter_halos(nodedata,galacticus_util = None):
     """Returns a filter that excludes all but halo (excludes sub-halos)"""
@@ -34,12 +34,12 @@ def nodedata_filter_virialized(nodedata,galacticus_util= None):
     gutil = GalacticusUtil() if galacticus_util is None else galacticus_util
 
     #Get radial position of halos
-    rvec = np.asarray((nodedata[gutil.X],nodedata[gutil.Y],nodedata[gutil.Z]))
+    rvec = np.asarray((nodedata[gutil.PARAM_X],nodedata[gutil.PARAM_Y],nodedata[gutil.PARAM_Z]))
     r = np.linalg.norm(rvec,axis=0)
 
     #Filter halos and get there virial radii
     filtered_halos = nodedata_filter_halos(nodedata)
-    rv_halos = nodedata[gutil.RVIR][filtered_halos]
+    rv_halos = nodedata[gutil.PARAM_RADIUS_VIRIAL][filtered_halos]
     halo_output_n = nodedata[gutil.PARAM_TREE_ORDER]
 
     filter_virialized = r < rv_halos[halo_output_n]
@@ -54,7 +54,7 @@ def nodedata_filter_r2d(nodedata,r2d_max,plane_normal,
     """
     gutil = GalacticusUtil() if galacticus_util is None else galacticus_util
     
-    r = np.asarray((nodedata[gutil.X],nodedata[gutil.Y],nodedata[gutil.Z]))
+    r = np.asarray((nodedata[gutil.PARAM_X],nodedata[gutil.PARAM_Y],nodedata[gutil.PARAM_Z]))
 
     r2d = project_r2d(*r,plane_normal)
 
