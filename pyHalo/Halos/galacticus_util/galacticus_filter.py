@@ -21,9 +21,9 @@ def nodedata_filter_halos(nodedata,galacticus_util = None):
     """Returns a filter that excludes all but halo (excludes sub-halos)"""
     return np.logical_not(nodedata_filter_subhalos(nodedata))
 
-def nodedata_filter_range(nodedata,mass_range,key,galacticus_util=None):
+def nodedata_filter_range(nodedata,range,key,galacticus_util=None):
     """Returns a filter that excludes nodes not within the given range for a specified parameter"""
-    return (nodedata[key] > mass_range[0]) & (nodedata[key] < mass_range[1]) 
+    return (nodedata[key] > range[0]) & (nodedata[key] < range[1]) 
 
 def nodedata_filter_virialized(nodedata,galacticus_util= None):
     """
@@ -40,12 +40,9 @@ def nodedata_filter_virialized(nodedata,galacticus_util= None):
     #Filter halos and get there virial radii
     filtered_halos = nodedata_filter_halos(nodedata)
     rv_halos = nodedata[gutil.RVIR][filtered_halos]
-    halo_output_n = nodedata[gutil.PARAM_TREE_ORDER][filtered_halos]
+    halo_output_n = nodedata[gutil.PARAM_TREE_ORDER]
 
-    filter_virialized = np.zeros(nodedata[gutil.X].shape,dtype=bool)
-
-    for n,rv in zip(halo_output_n,rv_halos):
-        filter_virialized |= ((r < rv) & (nodedata[gutil.PARAM_TREE_ORDER] == n))
+    filter_virialized = r < rv_halos[halo_output_n]
 
     return filter_virialized
 
@@ -75,11 +72,11 @@ def project_r2d(x,y,z,plane_normal):
     """
     coords = np.asarray((x,y,z))
 
-    #Reshape so if scalars are passed for x,y,z we do not encounter issue
+    #Reshape so if scalers are passed for x,y,z we do not encounter issue
     if coords.ndim == 1:
         coords.reshape((3,1))
 
-    #conver to unit normal
+    #convert to unit normal
     un = plane_normal / np.linalg.norm(plane_normal)
 
     #Project distance to plane

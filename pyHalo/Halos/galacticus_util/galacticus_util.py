@@ -137,8 +137,8 @@ class GalacticusUtil():
 
         total_count = self.hdf5_read_nodecount_total(f,output_index)
 
-        node_index = np.zeros(total_count)
-        node_order = np.zeros(total_count)
+        node_index = np.zeros(total_count,dtype=int)
+        node_order = np.zeros(total_count,dtype=int)
 
         for n in range(1,len(tree_start)):
             start,stop = tree_start[n-1],tree_start[n]
