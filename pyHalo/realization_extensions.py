@@ -503,7 +503,7 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
 
     return fluctuations
     
-def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 0, r_max = None, normalization = True): 
+def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 0.5, r_max = 1.5, normalization = False): 
     """
     This function computes the two-point correlation function from a convergence map.
     
@@ -514,7 +514,8 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask = True, r_min = 
             of the angles between 0 and 180 degrees.
     :param apply_mask: if True, apply the mask on the convergence map.
     :param r_min: inner radius of mask in units of grid coordinates
-    :param r_max: outer radius of mask in units of grid coordinates
+    :param r_max: outer radius of mask in units of grid coordinates. If r_max = None, the size of the convergence map's outside 
+            boundary becomes the mask's outer boundary.
     :param normalization: if True, apply normalization to the correlation function.
     :return: the two-point correlation function on the (mu, r) coordinate grid.
     """
