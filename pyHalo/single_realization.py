@@ -621,6 +621,7 @@ class Realization(object):
                 kwargs_halo['concentration_class'] = kwargs_halo_model['concentration_model_subhalos']
             else:
                 kwargs_halo['concentration_class'] = kwargs_halo_model['concentration_model_field_halos']
+
         kwargs_halo['args'] = kwargs_halo_model['kwargs_density_profile']
 
         if mdef == 'NFW':
