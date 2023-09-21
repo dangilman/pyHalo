@@ -1,6 +1,6 @@
 import pytest
 from pyHalo.single_realization import SingleHalo
-from pyHalo.realization_extensions import RealizationExtensions, corr_kappa_with_mask, _xi_l, _xi_l_to_Pk_l, fit_correlation_multipole
+from pyHalo.realization_extensions import RealizationExtensions, corr_kappa_with_mask, xi_l, xi_l_to_Pk_l, fit_correlation_multipole
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.interpolate import interp1d
 import numpy.testing as npt
