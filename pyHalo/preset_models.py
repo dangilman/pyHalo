@@ -5,10 +5,11 @@ act as a how-to guide if one wants to explore more complicated descriptions of t
 presented here show what each keyword argument accepted by pyHalo does.
 """
 from pyHalo.PresetModels.cdm import CDM
-from pyHalo.PresetModels.external import CDMFromEmulator
+from pyHalo.PresetModels.external import CDMFromEmulator, DMFromGalacticus
 from pyHalo.PresetModels.sidm import SIDM_core_collapse
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.PresetModels.wdm import WDM, WDM_mixed, WDMGeneral
+
 
 __all__ = ['preset_model_from_name']
 
@@ -32,7 +33,26 @@ def preset_model_from_name(name):
         return WDM_mixed
     elif name == 'WDMGeneral':
         return WDMGeneral
+    elif name == "DMGalacticus":
+        return DMFromGalacticus
     else:
         raise Exception('preset model '+ str(name)+' not recognized!')
+        
 
+
+
+        
+
+
+    
+
+
+
+    
+
+
+
+
+
+        
 
