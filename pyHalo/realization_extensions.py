@@ -503,8 +503,8 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
 
     return fluctuations
 
-def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0,
-                         r_max=None, normalization=True):
+def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0.5, r_max=1.5, normalization=False): 
+
     """
     This function computes the two-point correlation function from a convergence map.
 
@@ -515,7 +515,8 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0,
             of the angles between 0 and 180 degrees.
     :param apply_mask: if True, apply the mask on the convergence map.
     :param r_min: inner radius of mask in units of grid coordinates
-    :param r_max: outer radius of mask in units of grid coordinates
+    :param r_max: outer radius of mask in units of grid coordinates. If r_max = None, the size of the convergence map's outside 
+            boundary becomes the mask's outer boundary.
     :param normalization: if True, apply normalization to the correlation function.
     :return: the two-point correlation function on the (mu, r) coordinate grid.
     """
@@ -550,11 +551,9 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0,
     if apply_mask == True:
         mask = mask_annular(center_x, center_y, XX_, YY_, r_min, r_max)
         mask_interp = RectBivariateSpline(X_, Y_, mask, kx=1, ky=1, s=0)
-
     else:
         mask = np.ones(XX_.shape)
-
-
+        
     kappa_interp = RectBivariateSpline(X_, Y_, kappa_map, kx=5, ky=5, s=0)
 
     corr = np.zeros((r.shape[0], mu.shape[0]))

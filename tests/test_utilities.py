@@ -1,10 +1,12 @@
 from lenstronomy.LensModel.lens_model import LensModel
 import numpy.testing as npt
+from scipy.integrate import simps
 import numpy as np
 from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma, ITSampling, \
     inverse_transform_sampling, delta_kappa, nfw_velocity_dispersion
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
+from pyHalo.utilities import mask_annular
 import pytest
 
 class TestUtilities(object):
@@ -87,6 +89,29 @@ class TestUtilities(object):
         npt.assert_almost_equal(np.mean(x_samples)/mu, 1.0, 2)
         npt.assert_almost_equal(np.std(x_samples)/sigma, 1.0, 2)
 
+    def test_mask_annular(self):
+        npix = 1000
+        window_size = 4
+        delta_pix = window_size/npix
+        _R = np.linspace(-window_size/2, window_size/2, npix)
+        XX, YY = np.meshgrid(_R, _R)
+        r_min, r_max = 0.5, 1.5
+    
+        no_mask = mask_annular(0, 0, XX, YY, r_min = 0, r_max = None)
+        mask_1 = mask_annular(0, 0, XX, YY, r_min, r_max = None)
+        mask_2 = mask_annular(0, 0, XX, YY, r_min, r_max)
+    
+        area_no_mask = simps(simps(no_mask, _R, axis=0), _R, axis=-1)
+        area_mask_1 = simps(simps(mask_1, _R, axis=0), _R, axis=-1)
+        area_mask_2 = simps(simps(mask_2, _R, axis=0), _R, axis=-1)
+    
+        area_no_mask_real = window_size**2
+        area_mask_1_real = window_size**2 - np.pi*r_min**2
+        area_mask_2_real = np.pi*(r_max**2 - r_min**2)
+    
+        npt.assert_array_almost_equal(area_no_mask_real,area_no_mask, decimal=3)
+        npt.assert_array_almost_equal(area_mask_1_real,area_mask_1, decimal=3)
+        npt.assert_array_almost_equal(area_mask_2_real,area_mask_2, decimal=3)
 
 if __name__ == '__main__':
 
