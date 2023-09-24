@@ -14,6 +14,7 @@ class TNFWFromParams(TNFWSubhalo):
     KEY_RS = "rs"
     KEY_RHO_S = "rho_s"
     KEY_RV = "rv"
+    KEY_ID = "index"
 
     def __init__(self, mass, x_kpc, y_kpc, r3d, z,
                  sub_flag, lens_cosmo_instance, args, unique_tag=None):
@@ -33,6 +34,8 @@ class TNFWFromParams(TNFWSubhalo):
         self._params_physical = {key:args[key] for key in keys_physical}
 
         self._c = self._params_physical[self.KEY_RV] / self._params_physical[self.KEY_RS]
+
+        self.id = args.get(self.KEY_ID)
 
         super(TNFWFromParams, self).__init__(mass,x,y,r3d,z,sub_flag,lens_cosmo_instance,args,None,None,unique_tag)
 

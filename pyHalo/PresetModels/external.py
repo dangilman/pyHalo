@@ -12,7 +12,8 @@ import h5py
 
 def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass_range,mass_range_is_bound = True,
                      proj_plane_normal = None,include_field_halos=True,nodedata_filter = None,
-                     galacticus_utilities = None,galacticus_params_additional = None, proj_rotation_angles = None):
+                     galacticus_utilities = None,galacticus_params_additional = None, proj_rotation_angles = None,
+                     tabulate_radius_truncation = None):
     """
     This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
     See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy formation model. 
@@ -32,6 +33,8 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
     :param galacticus_params: Extra parameters to read when loading in galacticus hdf5 file.
     :param proj_rotation_angle: Alternative to providing proj_plane_normal argument. Expects a length 2 array: (theta, phi)
         with theta and phi being the angles in spherical coordinates of the normal vector of defining the plane to project coordinates onto.
+    :param tabulate_radius_truncation: Expects a callable function that has input and output (dict[str,np.ndarray], GalacticusUtil) -> np.ndarray[float],
+        if provided takes output of the function as the truncation radii. Expects radius truncation to be in units of kpc
 
     :return: A realization from Galacticus halos
     """
@@ -67,9 +70,10 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
 
     if isinstance(galacticus_hdf5,str):
         nodedata = gutil.read_nodedata_galacticus(galacticus_hdf5,params_to_read=params_to_read)
-    else:
+    elif isinstance(galacticus_hdf5, h5py.Group):
         nodedata = gutil.hdf5_read_galacticus_nodedata(galacticus_hdf5,params_to_read=params_to_read)
-
+    else:
+        nodedata = galacticus_hdf5
 
     #Set up for rotation of coordinates
     #Specify the normal vector for the plane we are projecting onto, if user specified ensure the vector is normalized
@@ -135,8 +139,9 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
 
 
     rs  = nodedata[gutil.PARAM_RADIUS_SCALE] * MPC_TO_KPC
-    rt = nodedata[gutil.PARAM_TNFW_RADIUS_TRUNCATION] * MPC_TO_KPC
+    rt = nodedata[gutil.PARAM_TNFW_RADIUS_TRUNCATION] * MPC_TO_KPC if tabulate_radius_truncation is None else tabulate_radius_truncation(nodedata,gutil)
     rv = nodedata[gutil.PARAM_RADIUS_VIRIAL] * MPC_TO_KPC
+    index = nodedata[gutil.PARAM_NODE_ID]
 
     halo_list = []
     #Loop thought properties of each subhalos
@@ -147,7 +152,8 @@ def DMFromGalacticus(z_lens,z_source,galacticus_hdf5,tree_index, kwargs_cdm,mass
             TNFWFromParams.KEY_RT:rt[n],
             TNFWFromParams.KEY_RS:rs[n],
             TNFWFromParams.KEY_RHO_S:rho_s[n],
-            TNFWFromParams.KEY_RV:rv[n]
+            TNFWFromParams.KEY_RV:rv[n],
+            TNFWFromParams.KEY_ID:index[n]
         }
 
 
