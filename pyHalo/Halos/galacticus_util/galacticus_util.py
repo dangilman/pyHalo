@@ -1,6 +1,5 @@
 import h5py
 import numpy as np
-import xarray as xr
 from typing import Iterable
 
 class GalacticusUtil():
@@ -76,23 +75,6 @@ class GalacticusUtil():
     HDF5_DSET_TREEINDEX = "mergerTreeIndex"
 
     HDF5_DSET_TREESTART = "mergerTreeStartIndex"
-
-    class NodeIterator():
-        """Usefull for looping over each node in nodedata"""
-        def __init__(self,nodedata):
-            self._nodedata = nodedata
-            self._nnodes = nodedata[nodedata.__iter__().__next__()].shape[0]
-            self._n = 0
-
-        def __iter__(self):
-            return self
-        
-        def __next__(self):
-            n = self._n
-            self._n += 1
-            if n < self._nnodes:
-                return {key:val[n] for key,val in self._nodedata.items()}
-            raise StopIteration
 
     def hdf5_read_output_indices(self,f):
         """
