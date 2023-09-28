@@ -363,7 +363,7 @@ def multiplane_convergence(realization, cone_opening_angle_arcsec=2.5, npix=100,
                            lens_redshift_list=redshift_list_macro + list(redshfit_array_halos),
                            cosmo=realization.lens_cosmo.cosmo.astropy)
 
-    _r = np.linspace(-cone_opening_angle_arcsec/2, cone_opening_angle_arcsec/2, npix)
+    _r = np.linspace(-cone_opening_angle_arcsec/4, cone_opening_angle_arcsec/4, npix)
     xx, yy = np.meshgrid(_r, _r)
     kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro)
     kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens_macro + kwargs_lens_halos)
