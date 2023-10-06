@@ -12,7 +12,7 @@ class TNFWFromParams(TNFWSubhalo):
 
     KEY_RT = "r_trunc_kpc"
     KEY_RS = "rs"
-    KEY_RHO_S = "rho_s"
+    KEY_RHO_S = "rhos"
     KEY_RV = "rv"
     KEY_ID = "index"
 
@@ -84,7 +84,7 @@ class TNFWFromParams(TNFWSubhalo):
             r_s = self.params_physical[self.KEY_RS]
             rho_s = self.params_physical[self.KEY_RHO_S]
             
-            Rs_angle, theta_Rs = self.nfw_physical2angle_fromNFWparams(rho_s,r_s,self.z)
+            Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rho_s,r_s,self.z)
 
             x, y = np.round(self.x, 4), np.round(self.y, 4)
 
