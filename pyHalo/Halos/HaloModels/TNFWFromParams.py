@@ -78,13 +78,15 @@ class TNFWFromParams(TNFWSubhalo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
+        KPC_TO_MPC = 1E-3
+
         if not hasattr(self, '_kwargs_lenstronomy'):
             
             r_t = self.params_physical[self.KEY_RT]
             r_s = self.params_physical[self.KEY_RS]
             rho_s = self.params_physical[self.KEY_RHO_S]
             
-            Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rho_s,r_s,self.z)
+            Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rho_s *1 / KPC_TO_MPC**3,r_s * KPC_TO_MPC,self.z)
 
             x, y = np.round(self.x, 4), np.round(self.y, 4)
 
