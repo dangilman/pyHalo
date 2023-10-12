@@ -9,6 +9,8 @@ from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 import pytest
 import numpy as np
 import numpy.testing as npt
+from copy import copy
+from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class TestPresetModels(object):
@@ -99,26 +101,31 @@ class TestPresetModels(object):
     def test_galacticus(self):
         util = GalacticusUtil()
 
-        test_data = {
-            util.PARAM_X:                       np.asarray((1,1,0,1,0 ,1,0 ,0,0,1)), 
-            util.PARAM_Y:                       np.asarray((1,0,1,0,0 ,1,0 ,0,3,0)),
-            util.PARAM_Z:                       np.asarray((0,1,1,0,0 ,0,0 ,0,0,0)),
-            util.PARAM_TNFW_RHO_S:              np.asarray((1,1,1,1,1 ,1,1 ,1,1,1)),
-            util.PARAM_TNFW_RADIUS_TRUNCATION:  np.asarray((1,1,1,1,1 ,1,1 ,1,1,1)),
-            util.PARAM_RADIUS_VIRIAL:           np.asarray((2,2,2,2,2 ,2,2 ,2,2,2)),
-            util.PARAM_RADIUS_SCALE:            np.asarray((1,1,1,1,2 ,1,2 ,2,2,2)),
-            util.PARAM_MASS_BOUND:              np.asarray((1,2,3,4,2 ,1,2 ,2,1,1)),
-            util.PARAM_MASS_BASIC:              np.asarray((5,6,7,1,2 ,1,2 ,2,1,1)),
-            util.PARAM_ISOLATED:                np.asarray((0,0,0,0,1 ,0,1 ,1,0,0)),
-            util.PARAM_TREE_ORDER:              np.asarray((0,0,0,0,0 ,1,1 ,2,2,2)),
-            util.PARAM_TREE_INDEX:              np.asarray((1,1,1,1,1 ,2,2 ,3,3,3)),
-            util.PARAM_NODE_ID:                 np.asarray((0,1,2,3,4 ,5,6 ,7,8,9))
+        cosmo = Cosmology()
+    
+        # Simulates data loaded from a galacticus hdf5 file.
+        # mock_data is in NOT intended to be physical
+        # It is however designed to test aspects of DMfromGalacticus
+        mock_data = {
+            util.PARAM_X:                       np.asarray((1,1,0,1,0, 1,0, 0,0,1)), 
+            util.PARAM_Y:                       np.asarray((1,0,1,0,0, 1,0, 0,3,0)),
+            util.PARAM_Z:                       np.asarray((0,1,1,0,0, 0,0, 0,0,0)),
+            util.PARAM_TNFW_RHO_S:              np.asarray((1,1,1,1,1, 1,1, 1,1,1)),
+            util.PARAM_TNFW_RADIUS_TRUNCATION:  np.asarray((1,1,1,1,1, 1,1, 1,1,1)),
+            util.PARAM_RADIUS_VIRIAL:           np.asarray((2,2,2,2,2, 2,2, 2,2,2)),
+            util.PARAM_RADIUS_SCALE:            np.asarray((1,1,1,1,2, 1,2, 2,2,2)),
+            util.PARAM_MASS_BOUND:              np.asarray((1,2,3,4,2, 1,2, 2,1,1)),
+            util.PARAM_MASS_BASIC:              np.asarray((5,6,7,1,2, 1,2, 2,1,1)),
+            util.PARAM_ISOLATED:                np.asarray((0,0,0,0,1, 0,1, 1,0,0)),
+            util.PARAM_TREE_ORDER:              np.asarray((0,0,0,0,0, 1,1, 2,2,2)),
+            util.PARAM_TREE_INDEX:              np.asarray((1,1,1,1,1, 2,2, 3,3,3)),
+            util.PARAM_NODE_ID:                 np.asarray((0,1,2,3,4, 5,6, 7,8,9))
         }
 
-        kwargs_realization_base = dict(
+        kwargs_base = dict(
             z_lens=                             0.5,
             z_source=                           2,
-            galacticus_hdf5=                    test_data,
+            galacticus_hdf5=                    mock_data,
             tree_index=                         1,
             kwargs_cdm=                         dict(cone_opening_angle_arcsec=1E10),
             mass_range=                         (0,10),
@@ -132,47 +139,50 @@ class TestPresetModels(object):
             tabulate_radius_truncation=         None
         )
 
-        realization_test_projection = DMFromGalacticus(**kwargs_realization_base)
-
-        assert len(realization_test_projection.halos) == 4
-
         MPC_TO_KPC = 1E3
-        MPC_TO_AS = MPC_TO_KPC / realization_test_projection.lens_cosmo.cosmo.kpc_proper_per_asec(kwargs_realization_base["z_lens"]) 
-    
+        MPC_TO_AS = MPC_TO_KPC / cosmo.kpc_proper_per_asec(kwargs_base["z_lens"])     
+
+        kwargs_test_projection = copy(kwargs_base)
+        realization_test_projection = DMFromGalacticus(**kwargs_test_projection) 
+        assert len(realization_test_projection.halos) == 4 
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[0].x,realization_test_projection.halos[0].y))), MPC_TO_AS * 1)
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[1].x,realization_test_projection.halos[1].y))), MPC_TO_AS * 1)
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[2].x,realization_test_projection.halos[2].y))), MPC_TO_AS * np.sqrt(2))
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[3].x,realization_test_projection.halos[3].y))), 0)
 
-        realization_test_filter_mass_basic = DMFromGalacticus(**(kwargs_realization_base | dict(mass_range=(4.99,6.01),mass_range_is_bound=False)))
+        kwargs_test_filter_mass_basic = copy(kwargs_base)
+        kwargs_test_filter_mass_basic.update(dict(mass_range=(4.99,6.01),mass_range_is_bound=False))
+        realization_test_filter_mass_basic = DMFromGalacticus(**kwargs_test_filter_mass_basic)
         npt.assert_equal(len(realization_test_filter_mass_basic.halos),2)
 
-        realization_test_filter_mass_bound = DMFromGalacticus(**(kwargs_realization_base | dict(mass_range=(0.99,2.01),mass_range_is_bound=True)))
+        kwargs_test_filter_mass_bound = copy(kwargs_base)
+        kwargs_test_filter_mass_bound.update(dict(mass_range=(0.99,2.01),mass_range_is_bound=True))
+        realization_test_filter_mass_bound = DMFromGalacticus(**kwargs_test_filter_mass_bound)
         npt.assert_equal(len(realization_test_filter_mass_bound.halos),2)
 
-        kwargs_realization_test_volume_exclusion = dict(
-            kwargs_cdm=                         dict(cone_opening_angle_arcsec= 0.99 * MPC_TO_AS * 2), 
-        )
-
-        realization_test_volume_exclusion = DMFromGalacticus(**(kwargs_realization_base | kwargs_realization_test_volume_exclusion))
-
+        kwargs_test_volume_exclusion = copy(kwargs_base)
+        kwargs_test_volume_exclusion["kwargs_cdm"] = dict(cone_opening_angle_arcsec= 0.99 * MPC_TO_AS * 2)
+        realization_test_volume_exclusion = DMFromGalacticus(**kwargs_test_volume_exclusion)
         npt.assert_equal(len(realization_test_volume_exclusion.halos),1)
 
-        realization_test_tree2 = DMFromGalacticus(**(kwargs_realization_base | dict(tree_index=2)))
-
+        kwargs_test_tree2 = copy(kwargs_base)
+        kwargs_test_tree2["tree_index"] = 2
+        realization_test_tree2 = DMFromGalacticus(**kwargs_test_tree2)
         npt.assert_equal(len(realization_test_tree2.halos),1)
 
-        realization_test_exclude_beyond_virial = DMFromGalacticus(**(kwargs_realization_base | dict(tree_index=3)))
-
+        kwargs_test_exclude_beyond_virial = copy(kwargs_base)
+        kwargs_test_exclude_beyond_virial["tree_index"] = 3
+        realization_test_exclude_beyond_virial = DMFromGalacticus(**kwargs_test_exclude_beyond_virial)
         npt.assert_equal(len(realization_test_exclude_beyond_virial.halos),1)
 
-        realization_test_params_physical = DMFromGalacticus(**(kwargs_realization_base | dict(nodedata_filter = lambda nd,u: np.ones(nd[u.PARAM_MASS_BASIC].shape[0],dtype=bool))))
-
+        kwargs_test_params_physical = copy(kwargs_base)
+        kwargs_test_params_physical["nodedata_filter"] = lambda nd,u: np.ones(nd[u.PARAM_MASS_BASIC].shape[0],dtype=bool)
+        realization_test_params_physical = DMFromGalacticus(**kwargs_test_params_physical)
         for n,sh in enumerate(realization_test_params_physical.halos):    
-            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RHO_S],test_data[util.PARAM_TNFW_RHO_S][n] * 4 * 1 / MPC_TO_KPC**3)
-            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RS],test_data[util.PARAM_RADIUS_SCALE][n] * MPC_TO_KPC)
-            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RV],test_data[util.PARAM_RADIUS_VIRIAL][n] * MPC_TO_KPC)
-            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RT],test_data[util.PARAM_TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC)
+            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RHO_S],mock_data[util.PARAM_TNFW_RHO_S][n] * 4 * 1 / MPC_TO_KPC**3)
+            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RS],mock_data[util.PARAM_RADIUS_SCALE][n] * MPC_TO_KPC)
+            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RV],mock_data[util.PARAM_RADIUS_VIRIAL][n] * MPC_TO_KPC)
+            npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RT],mock_data[util.PARAM_TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC)
 
 
 
