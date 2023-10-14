@@ -107,40 +107,41 @@ class TestPresetModels(object):
         # mock_data is in NOT intended to be physical
         # It is however designed to test aspects of DMfromGalacticus
         mock_data = {
-            util.PARAM_X:                       np.asarray((1,1,0,1,0, 1,0, 0,0,1)), 
-            util.PARAM_Y:                       np.asarray((1,0,1,0,0, 1,0, 0,3,0)),
-            util.PARAM_Z:                       np.asarray((0,1,1,0,0, 0,0, 0,0,0)),
-            util.PARAM_TNFW_RHO_S:              np.asarray((1,1,1,1,1, 1,1, 1,1,1)),
-            util.PARAM_TNFW_RADIUS_TRUNCATION:  np.asarray((1,1,1,1,1, 1,1, 1,1,1)),
-            util.PARAM_RADIUS_VIRIAL:           np.asarray((2,2,2,2,2, 2,2, 2,2,2)),
-            util.PARAM_RADIUS_SCALE:            np.asarray((1,1,1,1,2, 1,2, 2,2,2)),
-            util.PARAM_MASS_BOUND:              np.asarray((1,2,3,4,2, 1,2, 2,1,1)),
-            util.PARAM_MASS_BASIC:              np.asarray((5,6,7,1,2, 1,2, 2,1,1)),
-            util.PARAM_ISOLATED:                np.asarray((0,0,0,0,1, 0,1, 1,0,0)),
-            util.PARAM_TREE_ORDER:              np.asarray((0,0,0,0,0, 1,1, 2,2,2)),
-            util.PARAM_TREE_INDEX:              np.asarray((1,1,1,1,1, 2,2, 3,3,3)),
-            util.PARAM_NODE_ID:                 np.asarray((0,1,2,3,4, 5,6, 7,8,9))
+            util.PARAM_X:                       np.asarray((1,1,0,1,0  ,  1,0  ,   0,1,0  )), 
+            util.PARAM_Y:                       np.asarray((1,0,1,0,0  ,  1,0  ,   3,0,0  )),
+            util.PARAM_Z:                       np.asarray((0,1,1,0,0  ,  0,0  ,   0,0,0  )),
+            util.PARAM_TNFW_RHO_S:              np.asarray((1,1,1,1,1  ,  1,1  ,   1,1,1  )),
+            util.PARAM_TNFW_RADIUS_TRUNCATION:  np.asarray((1,1,1,1,1  ,  1,1  ,   1,1,1  )),
+            util.PARAM_RADIUS_VIRIAL:           np.asarray((2,2,2,2,2  ,  2,2  ,   2,2,2  )),
+            util.PARAM_RADIUS_SCALE:            np.asarray((1,1,1,1,2  ,  1,2  ,   2,2,2  )),
+            util.PARAM_MASS_BOUND:              np.asarray((1,2,3,4,2  ,  1,2  ,   1,1,2  )),
+            util.PARAM_MASS_BASIC:              np.asarray((5,6,7,1,2  ,  1,2  ,   1,1,2  )),
+            util.PARAM_ISOLATED:                np.asarray((0,0,0,0,1  ,  0,1  ,   0,0,1  )),
+            util.PARAM_TREE_ORDER:              np.asarray((0,0,0,0,0  ,  1,1  ,   2,2,2  )),
+            util.PARAM_TREE_INDEX:              np.asarray((1,1,1,1,1  ,  2,2  ,   3,3,3  )),
+            util.PARAM_NODE_ID:                 np.asarray((0,1,2,3,4  ,  5,6  ,   8,9,7  )),
+            util.PARAM_Z_LAST_ISOLATED:         np.asarray((1,2,3,2,0.5,  1,0.5,   3,1,0.5))
         }
 
         kwargs_base = dict(
-            z_lens=                             0.5,
-            z_source=                           2,
             galacticus_hdf5=                    mock_data,
+            z_source=                           2,
             tree_index=                         1,
-            kwargs_cdm=                         dict(cone_opening_angle_arcsec=1E10),
-            mass_range=                         (0,10),
+            cone_opening_angle_arcsec=          1E10,
+            log_mlow_galacticus=                -10,
+            log_mhigh_galacticus=               10,
             mass_range_is_bound=                False, 
             proj_plane_normal=                  np.asarray((1,0,0)),
-            include_field_halos=                False,
             nodedata_filter=                    None,
             galacticus_utilities=               util,
             galacticus_params_additional=       None, 
             proj_rotation_angles=               None,
-            tabulate_radius_truncation=         None
+            tabulate_radius_truncation=         None,
+            LOS_normalization=                  0.0
         )
 
         MPC_TO_KPC = 1E3
-        MPC_TO_AS = MPC_TO_KPC / cosmo.kpc_proper_per_asec(kwargs_base["z_lens"])     
+        MPC_TO_AS = MPC_TO_KPC / cosmo.kpc_proper_per_asec(0.5)     
 
         kwargs_test_projection = copy(kwargs_base)
         realization_test_projection = DMFromGalacticus(**kwargs_test_projection) 
@@ -151,17 +152,19 @@ class TestPresetModels(object):
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[3].x,realization_test_projection.halos[3].y))), 0)
 
         kwargs_test_filter_mass_basic = copy(kwargs_base)
-        kwargs_test_filter_mass_basic.update(dict(mass_range=(4.99,6.01),mass_range_is_bound=False))
+        kwargs_test_filter_mass_basic.update(dict(log_mlow_galacticus=np.log10(4.99),log_mhigh_galacticus=np.log10(6.01)
+                                                  ,mass_range_is_bound=False))
         realization_test_filter_mass_basic = DMFromGalacticus(**kwargs_test_filter_mass_basic)
         npt.assert_equal(len(realization_test_filter_mass_basic.halos),2)
 
         kwargs_test_filter_mass_bound = copy(kwargs_base)
-        kwargs_test_filter_mass_bound.update(dict(mass_range=(0.99,2.01),mass_range_is_bound=True))
+        kwargs_test_filter_mass_bound.update(dict(log_mlow_galacticus=np.log10(0.99),log_mhigh_galacticus=np.log10(2.01)
+                                                ,mass_range_is_bound=True))
         realization_test_filter_mass_bound = DMFromGalacticus(**kwargs_test_filter_mass_bound)
         npt.assert_equal(len(realization_test_filter_mass_bound.halos),2)
 
         kwargs_test_volume_exclusion = copy(kwargs_base)
-        kwargs_test_volume_exclusion["kwargs_cdm"] = dict(cone_opening_angle_arcsec= 0.99 * MPC_TO_AS * 2)
+        kwargs_test_volume_exclusion["cone_opening_angle_arcsec"] = 0.99 * MPC_TO_AS * 2
         realization_test_volume_exclusion = DMFromGalacticus(**kwargs_test_volume_exclusion)
         npt.assert_equal(len(realization_test_volume_exclusion.halos),1)
 
@@ -175,16 +178,19 @@ class TestPresetModels(object):
         realization_test_exclude_beyond_virial = DMFromGalacticus(**kwargs_test_exclude_beyond_virial)
         npt.assert_equal(len(realization_test_exclude_beyond_virial.halos),1)
 
-        kwargs_test_params_physical = copy(kwargs_base)
-        kwargs_test_params_physical["nodedata_filter"] = lambda nd,u: np.ones(nd[u.PARAM_MASS_BASIC].shape[0],dtype=bool)
-        realization_test_params_physical = DMFromGalacticus(**kwargs_test_params_physical)
-        for n,sh in enumerate(realization_test_params_physical.halos):    
+        kwargs_test_params = copy(kwargs_base)
+        kwargs_test_params["nodedata_filter"] = lambda nd,u: np.ones(nd[u.PARAM_MASS_BASIC].shape[0],dtype=bool)
+        realization_test_params = DMFromGalacticus(**kwargs_test_params)
+        for n,sh in enumerate(realization_test_params.halos):    
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RHO_S],mock_data[util.PARAM_TNFW_RHO_S][n] * 4 * 1 / MPC_TO_KPC**3)
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RS],mock_data[util.PARAM_RADIUS_SCALE][n] * MPC_TO_KPC)
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RV],mock_data[util.PARAM_RADIUS_VIRIAL][n] * MPC_TO_KPC)
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RT],mock_data[util.PARAM_TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC)
+            npt.assert_almost_equal(sh.z,0.5)
+            npt.assert_almost_equal(sh.z_infall,mock_data[util.PARAM_Z_LAST_ISOLATED])
 
 
 
 if __name__ == '__main__':
-     pytest.main()
+    #pytest.main()
+    TestPresetModels().test_galacticus()
