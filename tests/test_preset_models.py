@@ -192,5 +192,4 @@ class TestPresetModels(object):
 
 
 if __name__ == '__main__':
-    #pytest.main()
-    TestPresetModels().test_galacticus()
+    pytest.main() 
