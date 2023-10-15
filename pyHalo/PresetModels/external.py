@@ -87,8 +87,10 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
     kwargs_los['sigma_sub'] = 0.0
     kwargs_los["cone_opening_angle_arcsec"] = cone_opening_angle_arcsec
+    kwargs_los["z_lens"] = z_lens
+    kwargs_los["z_source"] = z_source
 
-    halos_LOS = preset_model_from_name(preset_model_los)(z_lens, z_source, **kwargs_los)
+    halos_LOS = preset_model_from_name(preset_model_los)(**kwargs_los)
     
     # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
     lens_cosmo = halos_LOS.lens_cosmo
