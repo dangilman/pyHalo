@@ -124,20 +124,21 @@ class TestPresetModels(object):
         }
 
         kwargs_base = dict(
-            galacticus_hdf5=                    mock_data,
-            z_source=                           2,
-            tree_index=                         1,
-            cone_opening_angle_arcsec=          1E10,
-            log_mlow_galacticus=                -10,
-            log_mhigh_galacticus=               10,
-            mass_range_is_bound=                False, 
-            proj_plane_normal=                  np.asarray((1,0,0)),
-            nodedata_filter=                    None,
-            galacticus_utilities=               util,
-            galacticus_params_additional=       None, 
-            proj_rotation_angles=               None,
-            tabulate_radius_truncation=         None,
-            LOS_normalization=                  0.0
+            galacticus_hdf5=                        mock_data,
+            z_source=                               2,
+            cone_opening_angle_arcsec=              1E10,
+            tree_index=                             1,
+            log_mlow_galacticus=                    -10,
+            log_mhigh_galacticus=                   10,
+            mass_range_is_bound=                    False, 
+            proj_angle_theta=                       np.pi/2,
+            proj_angle_phi=                         0,
+            nodedata_filter=                        None,
+            galacticus_utilities=                   util,
+            galacticus_params_additional=           None, 
+            galacticus_tabulate_radius_truncation=  None,
+            preset_model_los=                       "CDM",
+            LOS_normalization=                      0.0
         )
 
         MPC_TO_KPC = 1E3
