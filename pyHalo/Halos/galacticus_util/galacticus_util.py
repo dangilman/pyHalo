@@ -56,6 +56,7 @@ class GalacticusUtil():
 
     PARAM_TREE_ORDER = "custom_treeOutputOrder"
     PARAM_TREE_INDEX = "custom_treeIndex"
+    PARAM_NODE_ID = "id"
 
     HDF5_GROUP_OUTPUT_PRIMARY = "Outputs"
     """
@@ -132,19 +133,22 @@ class GalacticusUtil():
 
         total_count = self.hdf5_read_nodecount_total(f,output_index)
 
-        node_index = np.zeros(total_count,dtype=int)
-        node_order = np.zeros(total_count,dtype=int)
+        node_tree_index = np.zeros(total_count,dtype=int)
+        node_tree_order = np.zeros(total_count,dtype=int)
 
         for n in range(1,len(tree_start)):
             start,stop = tree_start[n-1],tree_start[n]
-            node_order[start:stop] = n - 1
-            node_index[start:stop] = tree_index[n - 1] 
+            node_tree_order[start:stop] = n - 1
+            node_tree_index[start:stop] = tree_index[n - 1] 
 
-        node_order[stop:] = n
-        node_index[stop:] = tree_index[n]
+        node_tree_order[stop:] = n
+        node_tree_index[stop:] = tree_index[n]
 
-        return {GalacticusUtil.PARAM_TREE_INDEX:node_index,
-                GalacticusUtil.PARAM_TREE_ORDER:node_order}
+        node_index = np.arange(total_count)
+
+        return {self.PARAM_TREE_INDEX:node_tree_index,
+                self.PARAM_TREE_ORDER:node_tree_order,
+                self.PARAM_NODE_ID:node_index}
     
     def hdf5_read_nodecount_total(self,f,output_index):
         """
