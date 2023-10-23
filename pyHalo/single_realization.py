@@ -561,12 +561,11 @@ class Realization(object):
                 redshifts_out.append(zi)
                 area = self.geometry.angle_to_physical_area(0.5 * self.geometry.cone_opening_angle, zi)
                 kappa_ext = -self.mass_at_z_exact(zi) / self.lens_cosmo.sigma_crit_mass(zi, area)
-                kwargs_sheet = {'kappa_ext': kappa_ext}
+                kwargs_sheet = {'kappa': kappa_ext}
                 kwargs_mass_sheets_out.append(kwargs_sheet)
             profiles_out = ['CONVERGENCE'] * len(kwargs_mass_sheets_out)
 
         else:
-
             for rendering_class in rendering_classes:
 
                 if rendering_class is None:
