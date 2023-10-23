@@ -12,10 +12,11 @@ class TNFWFromParams(TNFWSubhalo):
 
     KEY_RT = "r_trunc_kpc"
     KEY_RS = "rs"
-    KEY_RHO_S = "rho_s"
+    KEY_RHO_S = "rhos"
     KEY_RV = "rv"
+    KEY_ID = "index"
 
-    def __init__(self, mass, x_kpc, y_kpc, r3d, z,
+    def __init__(self, mass, x_kpc, y_kpc, r3d, z, z_infall,
                  sub_flag, lens_cosmo_instance, args, unique_tag=None):
         """
         Defines a TNFW subhalo with physical params r_trunc_kpc, rs, rhos passed in the args argument
@@ -33,6 +34,10 @@ class TNFWFromParams(TNFWSubhalo):
         self._params_physical = {key:args[key] for key in keys_physical}
 
         self._c = self._params_physical[self.KEY_RV] / self._params_physical[self.KEY_RS]
+
+        self.id = args.get(self.KEY_ID)
+
+        self._z_infall = z_infall
 
         super(TNFWFromParams, self).__init__(mass,x,y,r3d,z,sub_flag,lens_cosmo_instance,args,None,None,unique_tag)
 
@@ -75,13 +80,15 @@ class TNFWFromParams(TNFWSubhalo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
+        KPC_TO_MPC = 1E-3
+
         if not hasattr(self, '_kwargs_lenstronomy'):
             
             r_t = self.params_physical[self.KEY_RT]
             r_s = self.params_physical[self.KEY_RS]
             rho_s = self.params_physical[self.KEY_RHO_S]
             
-            Rs_angle, theta_Rs = self.nfw_physical2angle_fromNFWparams(rho_s,r_s,self.z)
+            Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rho_s *1 / KPC_TO_MPC**3,r_s * KPC_TO_MPC,self.z)
 
             x, y = np.round(self.x, 4), np.round(self.y, 4)
 
