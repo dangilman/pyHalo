@@ -115,13 +115,15 @@ class TestPresetModels(object):
             util.PARAM_RADIUS_VIRIAL:           np.asarray((2,2,2,2,2  ,  2,2  ,   2,2,2  )),
             util.PARAM_RADIUS_SCALE:            np.asarray((1,1,1,1,2  ,  1,2  ,   2,2,2  )),
             util.PARAM_MASS_BOUND:              np.asarray((1,2,3,4,2  ,  1,2  ,   1,1,2  )),
-            util.PARAM_MASS_BASIC:              np.asarray((5,6,7,1,2  ,  1,2  ,   1,1,2  )),
+            util.PARAM_MASS_INFALL:             np.asarray((5,6,7,1,2  ,  1,2  ,   1,1,2  )),
             util.PARAM_ISOLATED:                np.asarray((0,0,0,0,1  ,  0,1  ,   0,0,1  )),
             util.PARAM_TREE_ORDER:              np.asarray((0,0,0,0,0  ,  1,1  ,   2,2,2  )),
             util.PARAM_TREE_INDEX:              np.asarray((1,1,1,1,1  ,  2,2  ,   3,3,3  )),
             util.PARAM_NODE_ID:                 np.asarray((0,1,2,3,4  ,  5,6  ,   8,9,7  )),
             util.PARAM_Z_LAST_ISOLATED:         np.asarray((1,2,3,2,0.5,  1,0.5,   3,1,0.5))
         }
+
+        mock_data[util.PARAM_CONCENTRATION] = mock_data[util.PARAM_RADIUS_VIRIAL] / mock_data[util.PARAM_RADIUS_SCALE]
 
         kwargs_base = dict(
             galacticus_hdf5=                        mock_data,
@@ -136,7 +138,7 @@ class TestPresetModels(object):
             nodedata_filter=                        None,
             galacticus_utilities=                   util,
             galacticus_params_additional=           None, 
-            galacticus_tabulate_radius_truncation=  None,
+            galacticus_tabulate_tnfw_params=        None,
             preset_model_los=                       "CDM",
             LOS_normalization=                      0.0
         )
@@ -180,7 +182,7 @@ class TestPresetModels(object):
         npt.assert_equal(len(realization_test_exclude_beyond_virial.halos),1)
 
         kwargs_test_params = copy(kwargs_base)
-        kwargs_test_params["nodedata_filter"] = lambda nd,u: np.ones(nd[u.PARAM_MASS_BASIC].shape[0],dtype=bool)
+        kwargs_test_params["nodedata_filter"] = lambda nd,u: np.ones(nd[u.PARAM_MASS_INFALL].shape[0],dtype=bool)
         realization_test_params = DMFromGalacticus(**kwargs_test_params)
         for n,sh in enumerate(realization_test_params.halos):    
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RHO_S],mock_data[util.PARAM_TNFW_RHO_S][n] * 4 * 1 / MPC_TO_KPC**3)
@@ -188,9 +190,9 @@ class TestPresetModels(object):
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RV],mock_data[util.PARAM_RADIUS_VIRIAL][n] * MPC_TO_KPC)
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RT],mock_data[util.PARAM_TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC)
             npt.assert_almost_equal(sh.z,0.5)
-            npt.assert_almost_equal(sh.z_infall,mock_data[util.PARAM_Z_LAST_ISOLATED])
+            npt.assert_almost_equal(sh.z_infall,mock_data[util.PARAM_Z_LAST_ISOLATED][n])
 
 
 
 if __name__ == '__main__':
-    pytest.main() 
+    TestPresetModels().test_galacticus()

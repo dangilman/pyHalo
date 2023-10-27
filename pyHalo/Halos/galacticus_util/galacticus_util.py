@@ -26,7 +26,7 @@ class GalacticusUtil():
 
     PARAM_MASS_BOUND = "satelliteBoundMass"
 
-    PARAM_MASS_INFALL = PARAM_MASS_BASIC = "basicMass"
+    PARAM_MASS_INFALL = "massHaloEnclosedCurrent"
     """The infall mass of the subhalo"""
 
     PARAM_ISOLATED = "nodeIsIsolated"
@@ -57,6 +57,8 @@ class GalacticusUtil():
     PARAM_TREE_ORDER = "custom_treeOutputOrder"
     PARAM_TREE_INDEX = "custom_treeIndex"
     PARAM_NODE_ID = "id"
+
+    PARAM_CONCENTRATION = "concentration"
 
     HDF5_GROUP_OUTPUT_PRIMARY = "Outputs"
     """
