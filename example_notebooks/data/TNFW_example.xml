@@ -1,11 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!--
-This is the parameter file used to generate TNFW_example.hdf5
-Galacticus version used:
-revision 4a1abebecd4065bde5191c8d37f61bc3c59e80dd   (branch: master; build time: Sat Oct 07 14:54:00 UTC 2023)
-If you wish to use this parameter file please replace "YOUR_PATH_HERE" with your preffered file paths.
--->
 <parameters>
+  <!--
+  This is the parameter file used to generate TNFW_example.hdf5
+  Galacticus version used:
+  revision 4a1abebecd4065bde5191c8d37f61bc3c59e80dd   (branch: master; build time: Sat Oct 07 14:54:00 UTC 2023)
+  If you wish to use this parameter file please replace "YOUR_PATH_HERE" with your preffered file paths.
+  Parameter file provided by Andrew Benson https://github.com/abensonca
+  Edits by Charles Gannon 
+  -->
   <lastModified>f24b6658837bbb9e810e1f71acf27311444e2220</lastModified>
   <formatVersion>2</formatVersion>
   <version>0.9.4</version>
@@ -362,7 +364,7 @@ If you wish to use this parameter file please replace "YOUR_PATH_HERE" with your
   <!-- Charles Gannon 04.12.23 -->
   <!-- changed galacticusOutputFileName -> outputFileName-->
   <!-- Output file -->
-  <outputFileName value="YOUR_PATH_HERE" />
+  <outputFileName value="/home/cgannon/data/galacticus/tnfw/TNFW_example-date-10.26.2023-time-17.28.23-res-1.00000E+08-z-5.00000E-01.xml.hdf5" />
 
   <!-- Output properties -->
   <nodePropertyExtractor value="multi">
@@ -387,9 +389,30 @@ If you wish to use this parameter file please replace "YOUR_PATH_HERE" with your
     <radiusSpecifiers value="virialRadius:all:all:radial:0.000100  virialRadius:all:all:radial:0.000127  virialRadius:all:all:radial:0.000160  virialRadius:all:all:radial:0.000203  virialRadius:all:all:radial:0.000257  virialRadius:all:all:radial:0.000326  virialRadius:all:all:radial:0.000412  virialRadius:all:all:radial:0.000522  virialRadius:all:all:radial:0.000661  virialRadius:all:all:radial:0.000838  virialRadius:all:all:radial:0.001061  virialRadius:all:all:radial:0.001343  virialRadius:all:all:radial:0.001701  virialRadius:all:all:radial:0.002154  virialRadius:all:all:radial:0.002728  virialRadius:all:all:radial:0.003455  virialRadius:all:all:radial:0.004375  virialRadius:all:all:radial:0.005541  virialRadius:all:all:radial:0.007017  virialRadius:all:all:radial:0.008886  virialRadius:all:all:radial:0.011253  virialRadius:all:all:radial:0.014251  virialRadius:all:all:radial:0.018047  virialRadius:all:all:radial:0.022855  virialRadius:all:all:radial:0.028943  virialRadius:all:all:radial:0.036652  virialRadius:all:all:radial:0.046416  virialRadius:all:all:radial:0.058780  virialRadius:all:all:radial:0.074438  virialRadius:all:all:radial:0.094267  virialRadius:all:all:radial:0.119378  virialRadius:all:all:radial:0.151178  virialRadius:all:all:radial:0.191448  virialRadius:all:all:radial:0.242446  virialRadius:all:all:radial:0.307029  virialRadius:all:all:radial:0.388816  virialRadius:all:all:radial:0.492388  virialRadius:all:all:radial:0.623551  virialRadius:all:all:radial:0.789652  virialRadius:all:all:radial:1.000000" />
     </nodePropertyExtractor>
     <nodePropertyExtractor value="tidallyTruncatedNFWFit" />
+    
+    <!-- Adding Conversions to be compatible with Daniel's code -->
+    <nodePropertyExtractor value="massHalo">
+      <useLastIsolatedTime value="true" />
+      <darkMatterProfileDMO value="NFW" />
+      <virialDensityContrastDefinition value="fixed">
+        <densityType value="critical" />
+        <densityContrastValue value="200.0" />
+        <turnAroundOverVirialRadius value="2.0" />
+      </virialDensityContrastDefinition>
+    </nodePropertyExtractor>
+    <nodePropertyExtractor value="concentration">
+      <useLastIsolatedTime value="true" />
+      <darkMatterProfileDMO value="NFW" />
+      <virialDensityContrastDefinition value="fixed">
+        <densityType value="critical" />
+        <densityContrastValue value="200.0" />
+        <turnAroundOverVirialRadius value="2.0" />
+      </virialDensityContrastDefinition>
+    </nodePropertyExtractor>
   </nodePropertyExtractor>
 
   <!--Backup files here-->
-  <stateFileRoot value="YOUR_PATH_HERE" />
+  <stateFileRoot value="/home/cgannon/scratch/TNFW_example-date-10.26.2023-time-17.28.23-res-1.00000E+08-z-5.00000E-01.xml.tmp" />
+  <!--<galacticusOutputScratchFileName value="/home/cgannon/galacticus/scratch/__FILENAME__-scratch.hdf5" />-->
 
 </parameters>
