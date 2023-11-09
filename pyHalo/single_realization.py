@@ -550,7 +550,6 @@ class Realization(object):
         :param zmax:
         :return:
         """
-
         kwargs_mass_sheets_out = []
         redshifts_out = []
         profiles_out = []

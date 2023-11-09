@@ -7,7 +7,7 @@ from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 class TNFWFromParams(TNFWSubhalo):
     """
-    Creates a TNFW halo based on physical params. 
+    Creates a TNFW halo based on physical params.
     """
 
     KEY_RT = "r_trunc_kpc"
@@ -23,22 +23,14 @@ class TNFWFromParams(TNFWSubhalo):
         """
 
         self._lens_cosmo = lens_cosmo_instance
-
         self._kpc_per_arcsec_at_z = self._lens_cosmo.cosmo.kpc_proper_per_asec(z)
-
         x = x_kpc / self._kpc_per_arcsec_at_z
-
         y = y_kpc / self._kpc_per_arcsec_at_z
-
         keys_physical = (self.KEY_RV,self.KEY_RS,self.KEY_RHO_S,self.KEY_RV,self.KEY_RT)
         self._params_physical = {key:args[key] for key in keys_physical}
-
         self._c = self._params_physical[self.KEY_RV] / self._params_physical[self.KEY_RS]
-
         self.id = args.get(self.KEY_ID)
-
         self._z_infall = z_infall
-
         super(TNFWFromParams, self).__init__(mass,x,y,r3d,z,sub_flag,lens_cosmo_instance,args,None,None,unique_tag)
 
     def density_profile_3d(self, r, params_physical=None):
@@ -47,7 +39,7 @@ class TNFWFromParams(TNFWSubhalo):
         :param r: distance from center of halo [kpc]
         :return: the density profile in units M_sun / kpc^3
         """
-        
+
         _params = self._params_physical if params_physical is None else params_physical
 
         r_t = _params[self.KEY_RT]
@@ -61,9 +53,9 @@ class TNFWFromParams(TNFWSubhalo):
 
         density_nfw = (rho_s / ((x)*(1+x)**2))
 
-        return density_nfw * (tau**2 / (tau**2 + x**2))**n 
+        return density_nfw * (tau**2 / (tau**2 + x**2))**n
 
-    
+
     @property
     def profile_args(self):
         """
@@ -73,7 +65,7 @@ class TNFWFromParams(TNFWSubhalo):
             truncation_radius_kpc = self.params_physical[self.KEY_RT]
             self._profile_args = (self.c, truncation_radius_kpc)
         return self._profile_args
-    
+
 
     @property
     def lenstronomy_params(self):
@@ -83,11 +75,11 @@ class TNFWFromParams(TNFWSubhalo):
         KPC_TO_MPC = 1E-3
 
         if not hasattr(self, '_kwargs_lenstronomy'):
-            
+
             r_t = self.params_physical[self.KEY_RT]
             r_s = self.params_physical[self.KEY_RS]
             rho_s = self.params_physical[self.KEY_RHO_S]
-            
+
             Rs_angle, theta_Rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rho_s *1 / KPC_TO_MPC**3,r_s * KPC_TO_MPC,self.z)
 
             x, y = np.round(self.x, 4), np.round(self.y, 4)

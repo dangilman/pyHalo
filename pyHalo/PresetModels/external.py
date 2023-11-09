@@ -12,36 +12,36 @@ import h5py
 
 def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_index,log_mlow_galacticus,log_mhigh_galacticus,
                      mass_range_is_bound = True, proj_angle_theta = 0, proj_angle_phi=0,
-                     nodedata_filter = None,galacticus_utilities = None,galacticus_params_additional = None,  
+                     nodedata_filter = None,galacticus_utilities = None,galacticus_params_additional = None,
                      galacticus_tabulate_radius_truncation = None,preset_model_los="CDM",**kwargs_los):
     """
     This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
-    See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy formation model. 
-    
+    See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy formation model.
+
     :param galacticus_hdf5: Galacticus output hdf5 file. If str loads file from specified path
     :param z_source: source redshift
-    :param cone_opening_angle_arcsec: The opening angle of the cone in arc seconds    
-    :param tree_index: The number of the tree to create a realization from. 
+    :param cone_opening_angle_arcsec: The opening angle of the cone in arc seconds
+    :param tree_index: The number of the tree to create a realization from.
         A single galacticus file contains multiple realizations (trees).
         NOTE: Trees output from galacticus are assigned a number starting at 1.
-    :param log_galacticus_mlow: The log_10 of the minimum mass subhalo to include in the realization.  
-        Subhalos are filtered by bound or infall mass as set by setting mass_range_is_bound. 
-    :param log_galacticus_mhigh: The log_10 of the minimum subhalo to include in the realization 
-        Subhalos are filtered by bound or infall mass as set by setting mass_range_is_bound. 
+    :param log_galacticus_mlow: The log_10 of the minimum mass subhalo to include in the realization.
+        Subhalos are filtered by bound or infall mass as set by setting mass_range_is_bound.
+    :param log_galacticus_mhigh: The log_10 of the minimum subhalo to include in the realization
+        Subhalos are filtered by bound or infall mass as set by setting mass_range_is_bound.
     :param mass_range_is_bound: If true subhalos are filtered bound mass, if false subhalos are filtered by infall mass.
     :param proj_angle_theta: Specifies the theta angle (in spherical coordinates) of the normal vector for the plane to project subhalo coordinates on.
         Should be in the range [0,pi]
     :param proj_angle_theta: Specifies the theta angle (in spherical coordinates) of the normal vector for the plane to project subhalo coordinates on.
         Should be in the range [0, 2 * pi]
     :param nodedata_filter: Expects a callable function that has input and output: (dict[str,np.ndarray], GalacticusUtil) -> np.ndarray[bool]
-        ,subhalos are filtered based on the output np array. Defaults to None. If provided overrides default filtering. 
+        ,subhalos are filtered based on the output np array. Defaults to None. If provided overrides default filtering.
     :param galacticus_params: Extra parameters to read when loading in galacticus hdf5 file.
     :param tabulate_radius_truncation: Expects a callable function that has input and output (dict[str,np.ndarray], GalacticusUtil) -> np.ndarray[float],
         if provided takes output of the function as the truncation radii. Expects radius truncation to be in units of kpc.
     :return: A realization from Galacticus halos
 
     NOTE:
-    For galacticus output files: All trees should output at the same redshift. The final output should include only one host halo per tree. 
+    For galacticus output files: All trees should output at the same redshift. The final output should include only one host halo per tree.
     An example galacticus output and it's parameter file can be found in example_notebooks/data
     """
     #Avoid circular import
@@ -51,7 +51,7 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
 
     MPC_TO_KPC = 1E3
 
-    #Only read needed parameters to save memory. 
+    #Only read needed parameters to save memory.
     PARAMS_TO_READ_DEF = [
                             gutil.PARAM_X,
                             gutil.PARAM_Y,
@@ -72,7 +72,7 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
         galacticus_params_additional = list(galacticus_params_additional)
 
     params_to_read = galacticus_params_additional + PARAMS_TO_READ_DEF
-    
+
     if isinstance(galacticus_hdf5,str):
         nodedata = gutil.read_nodedata_galacticus(galacticus_hdf5,params_to_read=params_to_read)
     elif isinstance(galacticus_hdf5, h5py.Group):
@@ -91,7 +91,7 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     kwargs_los["z_source"] = z_source
 
     halos_LOS = preset_model_from_name(preset_model_los)(**kwargs_los)
-    
+
     # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
     lens_cosmo = halos_LOS.lens_cosmo
 
@@ -107,14 +107,14 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     yh_r = rotation.apply(np.array((0,1,0)))
 
     kpc_per_arcsec_at_z = lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
-    
+
     r2dmax_kpc = (cone_opening_angle_arcsec / 2) * kpc_per_arcsec_at_z
 
     coords_2d = np.asarray((np.dot(xh_r,coords),np.dot(yh_r,coords)))
     r2d_mag = np.linalg.norm(coords_2d,axis=0)
 
     filter_r2d = r2d_mag < r2dmax_kpc
- 
+
     mass_key = gutil.PARAM_MASS_BOUND if mass_range_is_bound else gutil.PARAM_MASS_BASIC
     mass_range = 10.0**np.asarray((log_mlow_galacticus,log_mhigh_galacticus))
 
@@ -165,9 +165,6 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
                                                     msheet_correction=False, rendering_classes=None)
 
     return halos_LOS.join(subhalos_from_params)
-
-
-
 
 def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     """
