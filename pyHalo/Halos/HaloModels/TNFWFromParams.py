@@ -1,9 +1,5 @@
-from pyHalo.Halos.halo_base import Halo
-from lenstronomy.LensModel.Profiles.tnfw import TNFW as TNFWLenstronomy
 import numpy as np
-from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
 from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
-from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 class TNFWFromParams(TNFWSubhalo):
     """
@@ -14,10 +10,11 @@ class TNFWFromParams(TNFWSubhalo):
     KEY_RS = "rs"
     KEY_RHO_S = "rhos"
     KEY_RV = "rv"
+    KEY_Z_INFALL = "z_infall"
     KEY_ID = "index"
 
-    def __init__(self, mass, x_kpc, y_kpc, r3d, z, z_infall,
-                 sub_flag, lens_cosmo_instance, args, unique_tag=None):
+    def __init__(self, mass, x_kpc, y_kpc, r3d, z,sub_flag,
+                 lens_cosmo_instance, args, unique_tag=None):
         """
         Defines a TNFW subhalo with physical params r_trunc_kpc, rs, rhos passed in the args argument
         """
@@ -30,7 +27,7 @@ class TNFWFromParams(TNFWSubhalo):
         self._params_physical = {key:args[key] for key in keys_physical}
         self._c = self._params_physical[self.KEY_RV] / self._params_physical[self.KEY_RS]
         self.id = args.get(self.KEY_ID)
-        self._z_infall = z_infall
+        self._z_infall = args.get(self.KEY_Z_INFALL)
         super(TNFWFromParams, self).__init__(mass,x,y,r3d,z,sub_flag,lens_cosmo_instance,args,None,None,unique_tag)
 
     def density_profile_3d(self, r, params_physical=None):

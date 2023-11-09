@@ -6,14 +6,13 @@ from pyHalo.PresetModels.cdm import CDM
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.galacticus_util.galacticus_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_range,nodedata_apply_filter
-from lenstronomy.LensModel.Profiles.tnfw import TNFW
 import h5py
 
 
 def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_index,log_mlow_galacticus,log_mhigh_galacticus,
-                     mass_range_is_bound = True, proj_angle_theta = 0, proj_angle_phi=0,
-                     nodedata_filter = None,galacticus_utilities = None,galacticus_params_additional = None,
-                     galacticus_tabulate_radius_truncation = None,preset_model_los="CDM",**kwargs_los):
+                     mass_range_is_bound=True, proj_angle_theta=0, proj_angle_phi=0,
+                     nodedata_filter=None, galacticus_utilities=None, galacticus_params_additional=None,
+                     galacticus_tabulate_tnfw_params=None, preset_model_los="CDM", **kwargs_los):
     """
     This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
     See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy formation model.
@@ -36,8 +35,10 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     :param nodedata_filter: Expects a callable function that has input and output: (dict[str,np.ndarray], GalacticusUtil) -> np.ndarray[bool]
         ,subhalos are filtered based on the output np array. Defaults to None. If provided overrides default filtering.
     :param galacticus_params: Extra parameters to read when loading in galacticus hdf5 file.
-    :param tabulate_radius_truncation: Expects a callable function that has input and output (dict[str,np.ndarray], GalacticusUtil) -> np.ndarray[float],
-        if provided takes output of the function as the truncation radii. Expects radius truncation to be in units of kpc.
+    :param galacticus_tabulate_params: Expects a callable function that has input and output: (dict[str,np.ndarray], GalacticusUtil) -> dict[str,np.ndarray]
+        Should return a dictionary containing a numpy array of args for use in creation of tnfw halos.
+    :param preset_model_los: Specifies the preset model to use when generating the LOS subhalos. Defaults to CDM
+
     :return: A realization from Galacticus halos
 
     NOTE:
@@ -61,9 +62,10 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
                             gutil.PARAM_RADIUS_VIRIAL,
                             gutil.PARAM_RADIUS_SCALE,
                             gutil.PARAM_MASS_BOUND,
-                            gutil.PARAM_MASS_BASIC,
+                            gutil.PARAM_MASS_INFALL,
                             gutil.PARAM_ISOLATED,
-                            gutil.PARAM_Z_LAST_ISOLATED
+                            gutil.PARAM_Z_LAST_ISOLATED,
+                            gutil.PARAM_CONCENTRATION
                          ]
 
     if galacticus_params_additional is None:
@@ -114,8 +116,7 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     r2d_mag = np.linalg.norm(coords_2d,axis=0)
 
     filter_r2d = r2d_mag < r2dmax_kpc
-
-    mass_key = gutil.PARAM_MASS_BOUND if mass_range_is_bound else gutil.PARAM_MASS_BASIC
+    mass_key = gutil.PARAM_MASS_BOUND if mass_range_is_bound else gutil.PARAM_MASS_INFALL
     mass_range = 10.0**np.asarray((log_mlow_galacticus,log_mhigh_galacticus))
 
     # We should exclude nodes that are not valid subhalos, such as host halo nodes and nodes that are outside the virial radius.
@@ -136,30 +137,29 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     coords = coords[:,filter_combined]
     r3d_mag = np.linalg.norm(coords,axis=0)
 
-    # The rhos_s factor of 4 comes from the this galacticus output is
-    # The density normalization of the underlying NFW halo at r = rs
-    # Multiply by 4 to get the normalization for the halo profile
-    rho_s = 4 * nodedata[gutil.PARAM_TNFW_RHO_S] / (MPC_TO_KPC)**3
-
-    rs  = nodedata[gutil.PARAM_RADIUS_SCALE] * MPC_TO_KPC
-    rt = nodedata[gutil.PARAM_TNFW_RADIUS_TRUNCATION] * MPC_TO_KPC if galacticus_tabulate_radius_truncation is None else galacticus_tabulate_radius_truncation(nodedata,gutil)
-    rv = nodedata[gutil.PARAM_RADIUS_VIRIAL] * MPC_TO_KPC
-    z_infall = nodedata[gutil.PARAM_Z_LAST_ISOLATED]
-    index = nodedata[gutil.PARAM_NODE_ID]
-
-    halo_list = []
-    for n,m_infall in enumerate(nodedata[gutil.PARAM_MASS_BASIC]):
-        x,y = coords_2d[0][n], coords_2d[1][n]
-
-        tnfw_args = {
-            TNFWFromParams.KEY_RT:rt[n],
-            TNFWFromParams.KEY_RS:rs[n],
-            TNFWFromParams.KEY_RHO_S:rho_s[n],
-            TNFWFromParams.KEY_RV:rv[n],
-            TNFWFromParams.KEY_ID:index[n]
+    def tabualate_params(nodedata,gutil):
+        return {
+            # The rhos_s factor of 4 comes from the this galacticus output is
+            # The density normalization of the underlying NFW halo at r = rs
+            # Multiply by 4 to get the normalization for the halo profile
+            TNFWFromParams.KEY_RHO_S:       4 * nodedata[gutil.PARAM_TNFW_RHO_S] / (MPC_TO_KPC)**3,
+            TNFWFromParams.KEY_RS :         nodedata[gutil.PARAM_RADIUS_SCALE] * MPC_TO_KPC,
+            TNFWFromParams.KEY_RT :         nodedata[gutil.PARAM_TNFW_RADIUS_TRUNCATION] * MPC_TO_KPC,
+            TNFWFromParams.KEY_RV :         nodedata[gutil.PARAM_CONCENTRATION] * nodedata[gutil.PARAM_RADIUS_SCALE] * MPC_TO_KPC,
+            TNFWFromParams.KEY_Z_INFALL:    nodedata[gutil.PARAM_Z_LAST_ISOLATED],
+            TNFWFromParams.KEY_ID :         nodedata[gutil.PARAM_NODE_ID]
         }
 
-        halo_list.append(TNFWFromParams(m_infall,x,y,r3d_mag[n],z_lens,z_infall,True,lens_cosmo,tnfw_args))
+    galacticus_tabulate_tnfw_params = tabualate_params if galacticus_tabulate_tnfw_params is None else galacticus_tabulate_tnfw_params
+    tnfw_args_all = galacticus_tabulate_tnfw_params(nodedata,gutil)
+
+    halo_list = []
+    for n,m_infall in enumerate(nodedata[gutil.PARAM_MASS_INFALL]):
+        x,y = coords_2d[0][n], coords_2d[1][n]
+
+        tnfw_args = {key:val[n] for key,val in tnfw_args_all.items()}
+
+        halo_list.append(TNFWFromParams(m_infall,x,y,r3d_mag[n],z_lens,True,lens_cosmo,tnfw_args))
 
     subhalos_from_params = Realization.from_halos(halo_list,lens_cosmo,kwargs_halo_model={},
                                                     msheet_correction=False, rendering_classes=None)
