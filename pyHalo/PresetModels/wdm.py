@@ -7,7 +7,7 @@ from pyHalo.pyhalo import pyHalo
 from pyHalo.truncation_models import truncation_models
 
 
-def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
         mass_function_model_subhalos='LOVELL2020', kwargs_mass_function_subhalos={},
         mass_function_model_fieldhalos='LOVELL2020', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
@@ -25,6 +25,8 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     :param z_source: source redshift
     :param log_mc: the log base 10 of the half-mode mass
     :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log10_sigma_sub: optional setting of sigma_sub in log10-scale (useful for log-uniform priors); if this is specified
+    it overwrites the value of sigma_sub
     :param log_mlow: log base 10 of the minimum halo mass to render
     :param log_mhigh: log base 10 of the maximum halo mass to render
     :param mass_function_model_subhalos: mass function model for subhalos, see mass_function_models.py for a list
@@ -116,7 +118,9 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
 
     # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
     population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT', 'TWO_HALO']
-
+    # check for log10 value of sigma_sub
+    if log10_sigma_sub is not None:
+        sigma_sub = 10 ** log10_sigma_sub
     mass_function_class_list = [mass_function_model_subhalos,
                                 mass_function_model_fieldhalos,
                                 mass_function_model_fieldhalos]

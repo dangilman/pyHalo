@@ -10,7 +10,7 @@ from pyHalo.pyhalo import pyHalo
 from pyHalo.truncation_models import truncation_models
 
 
-def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
@@ -24,6 +24,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     :param z_lens: main deflector redshift
     :param z_source: source redshift
     :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log10_sigma_sub: optional setting of sigma_sub in log10-scale (useful for log-uniform priors); if this is specified
+    it overwrites the value of sigma_sub
     :param log_mlow: log base 10 of the minimum halo mass to render
     :param log_mhigh: log base 10 of the maximum halo mass to render
     :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
@@ -103,6 +105,9 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
     population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT']
     mass_function_class_list = [mass_function_model_subhalos, mass_function_model_fieldhalos]
+    # check for log10 value of sigma_sub
+    if log10_sigma_sub is not None:
+        sigma_sub = 10 ** log10_sigma_sub
     kwargs_subhalos = {'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                        'm_pivot': 10 ** 8,

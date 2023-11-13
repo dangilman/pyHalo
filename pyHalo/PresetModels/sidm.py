@@ -4,7 +4,7 @@ from pyHalo.realization_extensions import RealizationExtensions
 
 def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field_halos,
         probabilities_subhalos, probabilities_field_halos, kwargs_sub_function=None,
-        kwargs_field_function=None, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        kwargs_field_function=None, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
@@ -31,6 +31,8 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param kwargs_field_function: if probabilities_field_halos is a list of functions, specifies keyword arguments
     for each function
     :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log10_sigma_sub: optional setting of sigma_sub in log10-scale (useful for log-uniform priors); if this is specified
+    it overwrites the value of sigma_sub
     :param log_mlow: log base 10 of the minimum halo mass to render
     :param log_mhigh: log base 10 of the maximum halo mass to render
     :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
@@ -63,7 +65,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
 
     two_halo_contribution = True
     delta_power_law_index = 0.0
-    cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh,
+    cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh, log10_sigma_sub,
               concentration_model_subhalos, kwargs_concentration_model_subhalos,
               concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
               truncation_model_subhalos, kwargs_truncation_model_subhalos,
