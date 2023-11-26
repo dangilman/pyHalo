@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 
 
 class ProjectedNFW(SpatialDistributionBase):
-
+    name = 'PROJECTEDNFW'
     """
     This class approximates sampling from a full 3D NFW profile by
     sampling the projected mass of a cored NFW profile in 2D, and then sampling

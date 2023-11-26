@@ -73,8 +73,6 @@ class Realization(object):
         :param masses: an array of halo masses (units solar mass)
         :param x: an array of halo x-coordinates (units arcsec)
         :param y: an array of halo y-coordinates (units arcsec)
-        :param r2d: an array of halo 2-d distances from lens center (units kpc / (kpc/arsec), or arcsec,
-        at halo redshift)
         :param r3d: an array of halo 2-d distances from lens center (units kpc / (kpc/arsec), or arcsec,
         at halo redshift)
         :param mdefs: mass definition of each halo
@@ -772,7 +770,6 @@ class Realization(object):
 
         distances_from_halo_redshifts = np.array([distance_calc(zi) for zi in redshifts])
         sizes = 24 * (masses / 10**marker_size_normalization) ** 1.
-
         ax.scatter(distances_from_halo_redshifts, np.array(x_comoving) / 206265,
                    np.array(y_comoving) / 206265,
                    s=sizes,

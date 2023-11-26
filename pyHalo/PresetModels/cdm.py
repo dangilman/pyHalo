@@ -1,5 +1,4 @@
 from copy import copy
-
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw

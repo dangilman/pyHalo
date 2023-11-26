@@ -2,7 +2,7 @@ import numpy as np
 from pyHalo.Rendering.SpatialDistributions.base import SpatialDistributionBase
 
 class LensConeUniform(SpatialDistributionBase):
-
+    name = 'LENS_CONE_UNIFORM'
     """
     This class generates samples drawn uniformly in two dimensions out to maximum radius
     r(z) = 0.5 * cone_opening_angle * f(z), where cone_opening_angle is the opening angle of the rendering volume
@@ -63,7 +63,7 @@ class LensConeUniform(SpatialDistributionBase):
         return x_kpc, y_kpc
 
 class Uniform(SpatialDistributionBase):
-
+    name = 'UNIFORM'
     """
     This class generates samples distributed uniformly in two dimensions out to a radius 0.5 * cone_opening_angle
     """

@@ -22,11 +22,6 @@ class Subhalos(RenderingClassBase):
         if 'log_m_host' in kwargs_mass_function.keys():
             kwargs_mass_function_internal['host_m200'] = 10 ** kwargs_mass_function['log_m_host']
             del kwargs_mass_function_internal['log_m_host']
-        elif 'host_m200' in kwargs_mass_function.keys():
-            pass
-        else:
-            raise Exception('must specify the host halo mass through keyword argument host_m200 or log_m_host (base 10)'
-                            'when adding subhalos!')
         super(Subhalos, self).__init__(mass_function_model, kwargs_mass_function_internal, spatial_distribution_model,
                  geometry, lens_cosmo, None, None)
 
@@ -51,8 +46,12 @@ class Subhalos(RenderingClassBase):
         The 3d coordinate only has a clear physical interpretation for subhalos, and is used to compute truncation raddi.
         For line of sight halos it is set to None.
         """
-
-        x_kpc, y_kpc, r3d_kpc = self._spatial_distribution_model.draw(nhalos, self._lens_cosmo.z_lens)
+        out = self._spatial_distribution_model.draw(nhalos, self._lens_cosmo.z_lens)
+        if self._spatial_distribution_model.name in ['UNIFORM', 'LENS_CONE_UNIFORM']:
+            x_kpc, y_kpc = out[0], out[1]
+            r3d_kpc = [None] * len(x_kpc)
+        else:
+            x_kpc, y_kpc, r3d_kpc = out[0], out[1], out[2]
         if len(x_kpc) > 0:
             kpc_per_asec = self._geometry.kpc_per_arcsec(self._lens_cosmo.z_lens)
             x_arcsec = x_kpc * kpc_per_asec ** -1
@@ -81,10 +80,19 @@ class Subhalos(RenderingClassBase):
         kpc_per_asec_zlens = self._lens_cosmo.cosmo.kpc_proper_per_asec(self._lens_cosmo.z_lens)
         kwargs_model['power_law_index'] = self._kwargs_mass_function['power_law_index'] + \
                                           kwargs_model['delta_power_law_index']
-        kwargs_model['normalization'] = normalization_sigmasub(kwargs_model['sigma_sub'],
+        if 'sigma_sub' in kwargs_model.keys():
+            kwargs_model['normalization'] = normalization_sigmasub(kwargs_model['sigma_sub'],
                                                                kwargs_model['host_m200'], self._lens_cosmo.z_lens,
                                                                kpc_per_asec_zlens, self._geometry.cone_opening_angle,
                                                                kwargs_model['power_law_index'], kwargs_model['m_pivot'])
+        elif 'dndA' in kwargs_model.keys():
+            R_kpc = kpc_per_asec_zlens * (0.5 * self._geometry.cone_opening_angle)
+            area = np.pi * R_kpc ** 2
+            m_pivot_factor = kwargs_model['m_pivot'] ** -(kwargs_model['power_law_index'] + 1)
+            kwargs_model['normalization'] = area * kwargs_model['dndA'] * m_pivot_factor
+        else:
+            raise Exception('only subhalo mass function amplitudes specified through dndA or sigma_sub parameters '
+                            'currently implemented')
         return self._mass_function_model(**kwargs_model)
 
     def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, *args, **kwargs):
@@ -119,7 +127,6 @@ def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7):
     :return:
     """
     logscaling = k1 * np.log10(mhalo / 10**13) + k2 * np.log10(z + 0.5)
-
     return 10 ** logscaling
 
 

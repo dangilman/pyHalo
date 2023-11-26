@@ -37,7 +37,11 @@ class HaloPopulation(object):
             kwargs_model = kwargs_mass_function_list[i]
 
             if model_name == 'SUBHALOS':
-                spatial_distribution_model = spatial_distribution_class_list[i].from_Mhost(**kwargs_spatial_distribution[i])
+                if spatial_distribution_class_list[i].name in ['UNIFORM', 'LENS_CONE_UNIFORM']:
+                    spatial_distribution_model = spatial_distribution_class_list[i](
+                        **kwargs_spatial_distribution[i])
+                else:
+                    spatial_distribution_model = spatial_distribution_class_list[i].from_Mhost(**kwargs_spatial_distribution[i])
             else:
                 spatial_distribution_model = spatial_distribution_class_list[i](**kwargs_spatial_distribution[i])
 

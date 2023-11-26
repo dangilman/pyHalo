@@ -2,6 +2,7 @@ import numpy as np
 from pyHalo.Rendering.SpatialDistributions.base import SpatialDistributionBase
 
 class Correlated2D(SpatialDistributionBase):
+    name = 'CORRELATEDSTRUCTURE'
     """
     This class generates points from an arbitrary 2D probability distribution
     """
