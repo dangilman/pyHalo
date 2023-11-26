@@ -6,18 +6,23 @@ import numpy.testing as npt
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Rendering.SpatialDistributions.nfw import ProjectedNFW
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw
-from pyHalo.Rendering.subhalos import Subhalos, normalization_sigmasub
+from pyHalo.Rendering.subhalos import Subhalos, normalization_sigmasub, host_scaling_function
+
 
 class TestSubhalos(object):
 
     def setup_method(self):
-
+        zlens = 0.8
+        zsource = 1.5
         sigma_sub = 0.75
         kwargs_mass_function = {'log_mlow': 6.0, 'log_mhigh': 8.0, 'm_pivot': 1e8, 'power_law_index': -1.9,
                                 'delta_power_law_index': 0.054, 'draw_poisson': False, 'log_m_host': 13.5,
                                 'sigma_sub': sigma_sub}
-        zlens = 0.8
-        zsource = 1.5
+        rescale = host_scaling_function(10**13.5, zlens)
+        dndmdA = sigma_sub * rescale
+        kwargs_mass_function_dndmdA = {'log_mlow': 6.0, 'log_mhigh': 8.0, 'm_pivot': 1e8, 'power_law_index': -1.9,
+                                'delta_power_law_index': 0.054, 'draw_poisson': False, 'log_m_host': 13.5,
+                                'dndA': dndmdA}
         cosmo = Cosmology()
         geometry = Geometry(cosmo, zlens, zsource, 6.0, 'DOUBLE_CONE')
         lens_cosmo = LensCosmo(zlens, zsource, cosmo)
@@ -25,7 +30,9 @@ class TestSubhalos(object):
         spatial_distribution_model = ProjectedNFW.from_Mhost(mhost, zlens, geometry.cone_opening_angle/2,
                                                                            0.05, lens_cosmo)
         mass_function_model = CDMPowerLaw
-        self.model = Subhalos(mass_function_model, kwargs_mass_function, spatial_distribution_model,
+        self.model_sigmasub = Subhalos(mass_function_model, kwargs_mass_function, spatial_distribution_model,
+                              geometry, lens_cosmo)
+        self.model_dndmdA = Subhalos(mass_function_model, kwargs_mass_function_dndmdA, spatial_distribution_model,
                               geometry, lens_cosmo)
         self.kwargs_mass_function = kwargs_mass_function
         self._norm_sigma_sub = normalization_sigmasub(kwargs_mass_function['sigma_sub'],
@@ -41,12 +48,14 @@ class TestSubhalos(object):
                               self.kwargs_mass_function['power_law_index']+self.kwargs_mass_function['delta_power_law_index'],
                               False, self._norm_sigma_sub)
         mtheory = model.first_moment
-        m_rendered = np.sum(self.model.render()[0])
+        m_rendered = np.sum(self.model_sigmasub.render()[0])
         npt.assert_array_less(abs(1-mtheory/m_rendered), 0.03)
+        m_rendered = np.sum(self.model_dndmdA.render()[0])
+        npt.assert_array_less(abs(1 - mtheory / m_rendered), 0.03)
 
     def test_rendering(self):
 
-        m, x, y, r3d_kpc, z, subhalo_flag = self.model.render()
+        m, x, y, r3d_kpc, z, subhalo_flag = self.model_sigmasub.render()
         npt.assert_equal(len(m), len(x))
         npt.assert_equal(len(x), len(y))
         npt.assert_equal(len(r3d_kpc), len(z))
@@ -57,7 +66,7 @@ class TestSubhalos(object):
             npt.assert_equal(zi, 0.8)
 
     def test_sheets(self):
-        kwargs_out, profile_names_out, redshifts = self.model.convergence_sheet_correction(kappa_scale=1.0,
+        kwargs_out, profile_names_out, redshifts = self.model_sigmasub.convergence_sheet_correction(kappa_scale=1.0,
                                                                                            log_mlow=6.0,
                                                                                            log_mhigh=10.0)
         npt.assert_equal(len(kwargs_out), len(profile_names_out))
