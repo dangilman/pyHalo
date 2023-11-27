@@ -388,84 +388,84 @@ class TestRealizationExtensions(object):
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
 
-# class TestCorrelationComputation(object):
-#
-#     def setup_method(self):
-#         pass
-#
-#     def test_corr_kappa_with_mask(self):
-#         npix = 150
-#         window_size = 4
-#         delta_pix = window_size/npix
-#         mu = np.linspace(-1, 1, 100)
-#         r = np.logspace(np.log10(2*10**(-2)), -0.3, num=100, endpoint=True)
-#         _R = np.linspace(-window_size/2, window_size/2, npix)
-#         XX, YY = np.meshgrid(_R, _R)
-#
-#         def kappa_GRF(delta_pix, num_pix, alpha):
-#             #Generating Gaussian random field kappa map
-#             noise = (delta_pix**2)*np.fft.fft2(np.random.normal(size=(num_pix,num_pix)))
-#             fftind = 2.0*np.pi*np.fft.fftfreq(num_pix, d=delta_pix)
-#             kxi,kyi = np.meshgrid(fftind,fftind)
-#             kvnorm2 = kxi**2 + kyi**2 + 1e-10
-#             amplitude = np.sqrt((kvnorm2*delta_pix**2)**(-alpha/2))
-#             kappa = np.fft.ifft2(amplitude*noise)/delta_pix**2
-#
-#             return kappa.real - np.mean(kappa.real)
-#
-#         alpha = 1
-#         kappa = kappa_GRF(delta_pix, npix, alpha)
-#
-#         corr = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = False)
-#         corr_mask = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = None, normalization = False)
-#         corr_mask_ann = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = 1.5, normalization = False)
-#         corr_norm = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = True)
-#         corr_mask_norm = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = None, normalization = True)
-#         corr_mask_ann_norm = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = 1.5, normalization = True)
-#
-#         xi_0_real = delta_pix**(2-alpha)/(2*np.pi*r)
-#
-#         mu_grid = np.tile(mu, (r.shape[0], 1))
-#         T_l_grid = eval_chebyt(0, mu_grid)
-#         xi_l_grid = np.transpose([xi_0_real] *mu.shape[0])
-#
-#         corr_real = xi_l_grid*T_l_grid
-#         corr_real_norm = np.linalg.norm(corr_real, 1)*corr_real
-#
-#         npt.assert_array_almost_equal(corr_real, corr, decimal=2)
-#         npt.assert_array_almost_equal(corr_real, corr_mask, decimal=2)
-#         npt.assert_array_almost_equal(corr_real, corr_mask_ann, decimal=2)
-#         npt.assert_array_almost_equal(corr_real_norm,corr_norm, 1)
-#         npt.assert_array_almost_equal(corr_real_norm,corr_mask_norm, 1)
-#         npt.assert_array_almost_equal(corr_real_norm,corr_mask_ann_norm, 1)
-#
-#     def test_xi_l(self):
-#         mu = np.linspace(-1, 1, 100)
-#         r = np.logspace(-3, -0.3, num=100, endpoint=True)
-#         xi_0_real = np.ones(r.shape[0])
-#         corr = np.ones((r.shape[0], mu.shape[0]))
-#         r, xi_0 = xi_l(0, corr, r, mu)
-#         npt.assert_almost_equal(xi_0_real, xi_0)
-#
-#     def test_xi_l_to_Pk_l(self):
-#         l = 0
-#         x = np.logspace(-3, 3, num=60, endpoint=False)
-#         F = 1 / (1 + x*x)**1.5
-#         y, G_Hankel = xi_l_to_Pk_l(x, F, l = 0)
-#         G = (2*np.pi*(-1j)**l) * np.exp(-y)  # this is the actual Hankel transform of the function F.
-#         npt.assert_almost_equal(G, G_Hankel)
-#
-#     def test_fit_correlation_multipole(self):
-#         r = np.logspace(-1, 2, num=100, endpoint=True)
-#         As = 5
-#         n = -3
-#         r_min, r_max = 0, 50
-#         r_pivot = (r_min + r_max)/2
-#         func_real = As*(r/r_pivot)**n
-#
-#         As_fit, n_fit = fit_correlation_multipole(r, func_real, r_min, r_max)
-#         npt.assert_array_almost_equal(As, As_fit)
-#         npt.assert_array_almost_equal(n, n_fit)
+class TestCorrelationComputation(object):
+
+    def setup_method(self):
+        pass
+
+    def test_corr_kappa_with_mask(self):
+        npix = 150
+        window_size = 4
+        delta_pix = window_size/npix
+        mu = np.linspace(-1, 1, 100)
+        r = np.logspace(np.log10(2*10**(-2)), -0.3, num=100, endpoint=True)
+        _R = np.linspace(-window_size/2, window_size/2, npix)
+        XX, YY = np.meshgrid(_R, _R)
+
+        def kappa_GRF(delta_pix, num_pix, alpha):
+            #Generating Gaussian random field kappa map
+            noise = (delta_pix**2)*np.fft.fft2(np.random.normal(size=(num_pix,num_pix)))
+            fftind = 2.0*np.pi*np.fft.fftfreq(num_pix, d=delta_pix)
+            kxi,kyi = np.meshgrid(fftind,fftind)
+            kvnorm2 = kxi**2 + kyi**2 + 1e-10
+            amplitude = np.sqrt((kvnorm2*delta_pix**2)**(-alpha/2))
+            kappa = np.fft.ifft2(amplitude*noise)/delta_pix**2
+
+            return kappa.real - np.mean(kappa.real)
+
+        alpha = 1
+        kappa = kappa_GRF(delta_pix, npix, alpha)
+
+        corr = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = False)
+        corr_mask = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = None, normalization = False)
+        corr_mask_ann = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = 1.5, normalization = False)
+        corr_norm = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = False, r_min = 0, r_max = None, normalization = True)
+        corr_mask_norm = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = None, normalization = True)
+        corr_mask_ann_norm = corr_kappa_with_mask(kappa, window_size, r, mu, apply_mask = True, r_min = 0.5, r_max = 1.5, normalization = True)
+
+        xi_0_real = delta_pix**(2-alpha)/(2*np.pi*r)
+
+        mu_grid = np.tile(mu, (r.shape[0], 1))
+        T_l_grid = eval_chebyt(0, mu_grid)
+        xi_l_grid = np.transpose([xi_0_real] *mu.shape[0])
+
+        corr_real = xi_l_grid*T_l_grid
+        corr_real_norm = np.linalg.norm(corr_real, 1)*corr_real
+
+        npt.assert_array_almost_equal(corr_real, corr, decimal=2)
+        npt.assert_array_almost_equal(corr_real, corr_mask, decimal=2)
+        npt.assert_array_almost_equal(corr_real, corr_mask_ann, decimal=2)
+        npt.assert_array_almost_equal(corr_real_norm,corr_norm, 1)
+        npt.assert_array_almost_equal(corr_real_norm,corr_mask_norm, 1)
+        npt.assert_array_almost_equal(corr_real_norm,corr_mask_ann_norm, 1)
+
+    def test_xi_l(self):
+        mu = np.linspace(-1, 1, 100)
+        r = np.logspace(-3, -0.3, num=100, endpoint=True)
+        xi_0_real = np.ones(r.shape[0])
+        corr = np.ones((r.shape[0], mu.shape[0]))
+        r, xi_0 = xi_l(0, corr, r, mu)
+        npt.assert_almost_equal(xi_0_real, xi_0)
+
+    def test_xi_l_to_Pk_l(self):
+        l = 0
+        x = np.logspace(-3, 3, num=60, endpoint=False)
+        F = 1 / (1 + x*x)**1.5
+        y, G_Hankel = xi_l_to_Pk_l(x, F, l = 0)
+        G = (2*np.pi*(-1j)**l) * np.exp(-y)  # this is the actual Hankel transform of the function F.
+        npt.assert_almost_equal(G, G_Hankel)
+
+    def test_fit_correlation_multipole(self):
+        r = np.logspace(-1, 2, num=100, endpoint=True)
+        As = 5
+        n = -3
+        r_min, r_max = 0, 50
+        r_pivot = (r_min + r_max)/2
+        func_real = As*(r/r_pivot)**n
+
+        As_fit, n_fit = fit_correlation_multipole(r, func_real, r_min, r_max)
+        npt.assert_array_almost_equal(As, As_fit)
+        npt.assert_array_almost_equal(n, n_fit)
 
 
 if __name__ == '__main__':

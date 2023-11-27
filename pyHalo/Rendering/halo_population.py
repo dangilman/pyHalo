@@ -89,30 +89,3 @@ class HaloPopulation(object):
             is_subhalo_flag += sub_flag
 
         return masses, x, y, r3d, redshifts, is_subhalo_flag
-
-    def convergence_sheet_correction(self, kwargs_mass_sheets=None):
-
-        """
-        This routine combines the negative convergence sheet corrections corresponding to each halo population. This
-        is necessary because adding dark matter profiles to a lens model and not subtracting the mean of what you've
-        added effectively makes the Universe too dense in all of your simulations.
-
-        :param kwargs_mass_sheets: keyword arguments for the mass sheet correction
-        :return: list of profiles, redshifts, and lenstronomy keyword arguments for the negative convergence sheet models
-        """
-        kwargs_list = []
-        profile_list = []
-        redshift_list = []
-
-        for model in self.rendering_classes:
-
-            kwargs, profile_names, redshifts = model.convergence_sheet_correction(kwargs_mass_sheets)
-            kwargs_list += kwargs
-            profile_list += profile_names
-            redshift_list += redshifts
-
-        return profile_list, redshift_list, kwargs_list
-
-
-
-
