@@ -394,7 +394,7 @@ class TestCorrelationComputation(object):
         pass
 
     def test_corr_kappa_with_mask(self):
-        npix = 150
+        npix = 500
         window_size = 4
         delta_pix = window_size/npix
         mu = np.linspace(-1, 1, 100)
