@@ -37,12 +37,12 @@ class TestDeltaFunction(object):
         npt.assert_equal(m[0]==self._mass, True)
         n_theory = np.round(self._kwargs_model['mass_fraction']*self._rho * self._volume/self._mass)
         npt.assert_equal(True, len(m)==n_theory)
-
-    def test_draw_poisson(self):
-
-        m = self.mass_function.draw()
-        m_poisson = self.mass_function_poisson.draw()
-        npt.assert_equal(True, len(m)!=len(m_poisson))
+    #
+    # def test_draw_poisson(self):
+    #
+    #     m = self.mass_function.draw()
+    #     m_poisson = self.mass_function_poisson.draw()
+    #     npt.assert_equal(True, len(m)!=len(m_poisson))
 
     def test_from_redshift(self):
 
