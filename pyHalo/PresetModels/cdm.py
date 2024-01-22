@@ -16,7 +16,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
-        geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
+        geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.88, redshift_scaling_factor=1.7):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -52,6 +52,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param geometry_type: string that specifies the geometry of the rendering volume; options include
     DOUBLE_CONE, CONE, CYLINDER
     :param kwargs_cosmo: keyword arguments that specify the cosmology (see pyHalo.Cosmology.cosmology)
+    :param host_scaling_factor: the scaling with host halo mass of the projected number density of subhalos
+    :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
     :return: a realization of dark matter halos
     """
 
@@ -113,7 +115,9 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                        'power_law_index': shmf_log_slope,
                        'delta_power_law_index': delta_power_law_index,
                        'log_m_host': log_m_host,
-                       'sigma_sub': sigma_sub}
+                       'sigma_sub': sigma_sub,
+                       'host_scaling_factor': host_scaling_factor,
+                       'redshift_scaling_factor': redshift_scaling_factor}
     kwargs_los = {'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,

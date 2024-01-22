@@ -16,7 +16,8 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
-        mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={}):
+        mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
+        host_scaling_factor=0.88, redshift_scaling_factor=1.7):
 
     """
     This class generates realizations of dark matter structure in Warm Dark Matter
@@ -57,6 +58,8 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     :param mdef_subhalos: mass definition for subhalos
     :param mdef_field_halos: mass definition for field halos
     :param kwargs_density_profile: keyword arguments for the specified mass profile
+    :param host_scaling_factor: the scaling with host halo mass of the projected number density of subhalos
+    :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
     :return: a realization of dark matter halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -130,7 +133,9 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
                        'power_law_index': shmf_log_slope,
                        'log_m_host': log_m_host,
                        'sigma_sub': sigma_sub,
-                       'delta_power_law_index': 0.0})
+                       'delta_power_law_index': 0.0,
+                       'host_scaling_factor': host_scaling_factor,
+                       'redshift_scaling_factor': redshift_scaling_factor})
     kwargs_mass_function_fieldhalos.update({'log_mlow': log_mlow,
                   'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,
@@ -238,7 +243,8 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
         truncation_model_fieldhalos='SPLASHBACK', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
-        mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={}):
+        mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
+               host_scaling_factor=0.88, redshift_scaling_factor=1.7):
 
     """
     This preset model implements a generalized treatment of warm dark matter, or any theory that produces a cutoff in
@@ -276,6 +282,8 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param mdef_subhalos: mass definition for subhalos
     :param mdef_field_halos: mass definition for field halos
     :param kwargs_density_profile: keyword arguments for the density profile
+    :param host_scaling_factor: the scaling with host halo mass of the projected number density of subhalos
+    :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
     :return:
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -330,7 +338,9 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
                        'log_m_host': log_m_host,
                        'sigma_sub': sigma_sub,
                        'delta_power_law_index': 0.0,
-                        'log_mc': log_mc})
+                        'log_mc': log_mc,
+                        'host_scaling_factor': host_scaling_factor,
+                        'redshift_scaling_factor': redshift_scaling_factor})
     kwargs_mfunc_field.update({'log_mlow': log_mlow,
                   'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,

@@ -23,6 +23,14 @@ class TestPresetModels(object):
 
         cdm = CDM(0.5, 1.5,
                   truncation_model_subhalos='TRUNCATION_GALACTICUS')
+        cdm2 = CDM(0.6, 1.5, log_m_host=13.3,
+                  truncation_model_subhalos='TRUNCATION_GALACTICUS')
+        cdm3 = CDM(0.6, 1.5, log_m_host=13.3,
+                   truncation_model_subhalos='TRUNCATION_GALACTICUS',
+                   host_scaling_factor=4.0, redshift_scaling_factor=2.0)
+        halos2 = len(cdm2.halos)
+        halos3 = len(cdm3.halos)
+        npt.assert_equal(halos3 > halos2, True)
 
     def test_WDM(self):
 
@@ -102,12 +110,12 @@ class TestPresetModels(object):
         util = GalacticusUtil()
 
         cosmo = Cosmology()
-    
+
         # Simulates data loaded from a galacticus hdf5 file.
         # mock_data is in NOT intended to be physical
         # It is however designed to test aspects of DMfromGalacticus
         mock_data = {
-            util.PARAM_X:                       np.asarray((1,1,0,1,0  ,  1,0  ,   0,1,0  )), 
+            util.PARAM_X:                       np.asarray((1,1,0,1,0  ,  1,0  ,   0,1,0  )),
             util.PARAM_Y:                       np.asarray((1,0,1,0,0  ,  1,0  ,   3,0,0  )),
             util.PARAM_Z:                       np.asarray((0,1,1,0,0  ,  0,0  ,   0,0,0  )),
             util.PARAM_TNFW_RHO_S:              np.asarray((1,1,1,1,1  ,  1,1  ,   1,1,1  )),
@@ -132,23 +140,23 @@ class TestPresetModels(object):
             tree_index=                             1,
             log_mlow_galacticus=                    -10,
             log_mhigh_galacticus=                   10,
-            mass_range_is_bound=                    False, 
+            mass_range_is_bound=                    False,
             proj_angle_theta=                       np.pi/2,
             proj_angle_phi=                         0,
             nodedata_filter=                        None,
             galacticus_utilities=                   util,
-            galacticus_params_additional=           None, 
+            galacticus_params_additional=           None,
             galacticus_tabulate_tnfw_params=        None,
             preset_model_los=                       "CDM",
             LOS_normalization=                      0.0
         )
 
         MPC_TO_KPC = 1E3
-        MPC_TO_AS = MPC_TO_KPC / cosmo.kpc_proper_per_asec(0.5)     
+        MPC_TO_AS = MPC_TO_KPC / cosmo.kpc_proper_per_asec(0.5)
 
         kwargs_test_projection = copy(kwargs_base)
-        realization_test_projection = DMFromGalacticus(**kwargs_test_projection) 
-        assert len(realization_test_projection.halos) == 4 
+        realization_test_projection = DMFromGalacticus(**kwargs_test_projection)
+        assert len(realization_test_projection.halos) == 4
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[0].x,realization_test_projection.halos[0].y))), MPC_TO_AS * 1)
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[1].x,realization_test_projection.halos[1].y))), MPC_TO_AS * 1)
         npt.assert_almost_equal(np.linalg.norm(np.asarray((realization_test_projection.halos[2].x,realization_test_projection.halos[2].y))), MPC_TO_AS * np.sqrt(2))
@@ -184,7 +192,7 @@ class TestPresetModels(object):
         kwargs_test_params = copy(kwargs_base)
         kwargs_test_params["nodedata_filter"] = lambda nd,u: np.ones(nd[u.PARAM_MASS_INFALL].shape[0],dtype=bool)
         realization_test_params = DMFromGalacticus(**kwargs_test_params)
-        for n,sh in enumerate(realization_test_params.halos):    
+        for n,sh in enumerate(realization_test_params.halos):
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RHO_S],mock_data[util.PARAM_TNFW_RHO_S][n] * 4 * 1 / MPC_TO_KPC**3)
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RS],mock_data[util.PARAM_RADIUS_SCALE][n] * MPC_TO_KPC)
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RV],mock_data[util.PARAM_RADIUS_VIRIAL][n] * MPC_TO_KPC)
@@ -195,4 +203,4 @@ class TestPresetModels(object):
 
 
 if __name__ == '__main__':
-    pytest.main() 
+    pytest.main()

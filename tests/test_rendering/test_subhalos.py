@@ -17,8 +17,9 @@ class TestSubhalos(object):
         sigma_sub = 0.75
         kwargs_mass_function = {'log_mlow': 6.0, 'log_mhigh': 8.0, 'm_pivot': 1e8, 'power_law_index': -1.9,
                                 'delta_power_law_index': 0.054, 'draw_poisson': False, 'log_m_host': 13.5,
-                                'sigma_sub': sigma_sub}
-        rescale = host_scaling_function(10**13.5, zlens)
+                                'sigma_sub': sigma_sub, 'host_scaling_factor': 0.88, 'redshift_scaling_factor': 1.7}
+        rescale = host_scaling_function(10**13.5, zlens,
+                                        kwargs_mass_function['host_scaling_factor'], kwargs_mass_function['redshift_scaling_factor'])
         dndmdA = sigma_sub * rescale
         kwargs_mass_function_dndmdA = {'log_mlow': 6.0, 'log_mhigh': 8.0, 'm_pivot': 1e8, 'power_law_index': -1.9,
                                 'delta_power_law_index': 0.054, 'draw_poisson': False, 'log_m_host': 13.5,
@@ -40,7 +41,9 @@ class TestSubhalos(object):
                                                       lens_cosmo.cosmo.kpc_proper_per_asec(zlens),
                                                       geometry.cone_opening_angle,
                                                       kwargs_mass_function['power_law_index']+kwargs_mass_function['delta_power_law_index'],
-                                                      kwargs_mass_function['m_pivot'])
+                                                      kwargs_mass_function['m_pivot'],
+                                                      kwargs_mass_function['host_scaling_factor'],
+                                                      kwargs_mass_function['redshift_scaling_factor'])
 
     def test_mass_rendered(self):
 

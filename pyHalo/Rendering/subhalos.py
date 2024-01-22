@@ -84,7 +84,9 @@ class Subhalos(RenderingClassBase):
             kwargs_model['normalization'] = normalization_sigmasub(kwargs_model['sigma_sub'],
                                                                kwargs_model['host_m200'], self._lens_cosmo.z_lens,
                                                                kpc_per_asec_zlens, self._geometry.cone_opening_angle,
-                                                               kwargs_model['power_law_index'], kwargs_model['m_pivot'])
+                                                               kwargs_model['power_law_index'], kwargs_model['m_pivot'],
+                                                                kwargs_model['host_scaling_factor'],
+                                                                   kwargs_model['redshift_scaling_factor'])
         elif 'dndA' in kwargs_model.keys():
             R_kpc = kpc_per_asec_zlens * (0.5 * self._geometry.cone_opening_angle)
             area = np.pi * R_kpc ** 2
@@ -117,20 +119,26 @@ class Subhalos(RenderingClassBase):
         redshifts_out = [self._lens_cosmo.z_lens]
         return kwargs_out, profile_name_out, redshifts_out
 
-def host_scaling_function(mhalo, z, k1 = 0.88, k2 = 1.7):
+def host_scaling_function(mhalo, z, host_scaling_factor=0.88, redshift_scaling_factor=1.7):
     """
+    This function implements a scaling of the projected number density of subhalos with host halo mass and redshift.
+    The function form for the rescaling factor F is given by
 
-    :param mhalo:
-    :param z:
-    :param k1:
-    :param k2:
+    F = 10^(k1 * log10(M_host / 10^13) + k2 * log10(0.5+z))
+
+    such that F = 1 for a 10^13 solar mass host at z=0.5.
+
+    :param mhalo: the host halo mass in solar masses
+    :param z: the host halo redshift (or main deflector redshift)
+    :param host_scaling_factor: the scaling with host halo mass of the projected number density of subhalos
+    :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
     :return:
     """
-    logscaling = k1 * np.log10(mhalo / 10**13) + k2 * np.log10(z + 0.5)
+    logscaling = host_scaling_factor * np.log10(mhalo / 10**13) + redshift_scaling_factor * np.log10(z + 0.5)
     return 10 ** logscaling
 
-
-def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone_opening_angle, plaw_index, m_pivot):
+def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone_opening_angle, plaw_index,
+                           m_pivot, host_scaling_factor, redshift_scaling_factor):
     """
 
     :param sigma_sub:
@@ -140,10 +148,13 @@ def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone
     :param cone_opening_angle:
     :param plaw_index:
     :param m_pivot:
+    :param host_scaling_factor:
+    :param redshift_scaling_factor:
     :return:
     """
 
-    host_scaling = host_scaling_function(host_m200, zlens)
+    host_scaling = host_scaling_function(host_m200, zlens,
+                                         host_scaling_factor, redshift_scaling_factor)
     a0_per_kpc2 = sigma_sub * host_scaling
     R_kpc = kpc_per_asec_zlens * (0.5 * cone_opening_angle)
     area = np.pi * R_kpc ** 2
