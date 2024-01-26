@@ -14,7 +14,8 @@ _log10_rpericenter_sampling = ITSampling(_log10_rperi_bins, _cdf)
 class Halo(ABC):
 
     def __init__(self, mass=None, x=None, y=None, r3d=None, mdef=None, z=None,
-                 sub_flag=None, lens_cosmo_instance=None, args={}, unique_tag=None, fixed_position=False):
+                 sub_flag=None, lens_cosmo_instance=None, args={}, unique_tag=None, fixed_position=False,
+                 z_infall_function=None):
 
         """
         This is the main class for objects rendered in the lens volume. It keeps track of stuff like the position,
@@ -32,6 +33,8 @@ class Halo(ABC):
         :param args: keyword arguments that include default settings for the halo
         :param unique_tag: a random number with 16 decimal places that uniquely identifies each halo
         :param fixed_position: determiens whether halos can be moved around when aligning a realization with
+        :param z_infall_function: a function that takes as input halo mass and redshift and returns the infall
+        redshift of the subhalo
         the rendering volume
         """
 
@@ -49,6 +52,15 @@ class Halo(ABC):
         self._rescale_norm = 1.
         self.fixed_position = fixed_position
         self._rescaled_once = False
+        self._z_infall_function = z_infall_function
+
+    def assign_concentration(self, c):
+        """
+        assigns the concentration parameter of a halo; this overrides any value sampled from a concentration-mass
+        relation
+        :return:
+        """
+        self._c = c
 
     def rescale_normalization(self, factor):
         """
@@ -108,11 +120,8 @@ class Halo(ABC):
         Note: This routine is meaningless and therefore not used for LOS halos
         :return: the infall redshift of a halo assuming it is in a host halo at redshift self.z
         """
-
         if not hasattr(self, '_z_infall'):
-
-            self._z_infall = self.lens_cosmo.z_accreted_from_zlens(self.mass, self.z)
-
+            self._z_infall = self._z_infall_function(self.mass)
         return self._z_infall
 
     @property
@@ -166,7 +175,6 @@ class Halo(ABC):
         """
         Computes the halo concentration (once)
         """
-
         raise Exception('this class does not have a well-defined concentration parameter')
 
     @property

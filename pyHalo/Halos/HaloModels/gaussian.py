@@ -20,7 +20,8 @@ class Gaussian(Halo):
         self._truncation_class = truncation_class
         mdef = 'GAUSSIAN_KAPPA'
         super(Gaussian, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                            lens_cosmo_instance, args, unique_tag, fixed_position=True)
+                                            lens_cosmo_instance, args, unique_tag, fixed_position=True,
+                                       z_infall_function=None)
 
     @property
     def profile_args(self):

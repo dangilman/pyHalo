@@ -10,7 +10,8 @@ class NFWFieldHalo(Halo):
     """
 
     def __init__(self, mass, x, y, r3d, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag,
+                 subhalo_infall_model=None):
 
         """
         See documentation in base class (Halos/halo_base.py)
@@ -20,7 +21,8 @@ class NFWFieldHalo(Halo):
         self._concentration_class = concentration_class
         mdef = 'NFW'
         super(NFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                            lens_cosmo_instance, args, unique_tag)
+                                            lens_cosmo_instance, args, unique_tag, fixed_position=False,
+                                           z_infall_function=subhalo_infall_model)
 
     def density_profile_3d(self, r, profile_args=None):
         """
@@ -64,7 +66,6 @@ class NFWFieldHalo(Halo):
         """
         Computes the halo concentration (once)
         """
-
         if not hasattr(self, '_c'):
             self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
         return self._c

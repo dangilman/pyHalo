@@ -11,7 +11,8 @@ class GeneralNFWSubhalo(Halo):
     an NFW profile with the specified halo mass
     """
     def __init__(self, mass, x, y, r3d, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag,
+                 subhalo_infall_model):
         """
         See documentation in base class (Halos/halo_base.py)
         """
@@ -21,7 +22,8 @@ class GeneralNFWSubhalo(Halo):
         self._concentration_class = concentration_class
         mdef = 'GNFW'
         super(GeneralNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                              lens_cosmo_instance, args, unique_tag)
+                                              lens_cosmo_instance, args, unique_tag, fixed_position=False,
+                                                subhalo_infall_model=subhalo_infall_model)
 
     @property
     def c(self):
