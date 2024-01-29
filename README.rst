@@ -14,7 +14,7 @@ pyHalo
 .. image:: https://github.com/dangilman/pyHalo/blob/master/readme_fig.jpg
         :target: https://github.com/dangilman/pyHalo/blob/master/readme_fig
 
-pyHalo renders full mass distributions for substructure lensing simulations with the open source gravitational lensing software package lenstronomy (https://github.com/sibirrer/lenstronomy). The example notebooks illustrate the core functionality of this package. 
+pyHalo renders full mass distributions for substructure lensing simulations with the open source gravitational lensing software package lenstronomy (https://github.com/lenstronomy/lenstronomy). The example notebooks illustrate the core functionality of this package. 
 
 If you would like to use this package and have questions, please get in touch with me at daniel.gilman@utoronto.ca - I am happy to help! 
 
