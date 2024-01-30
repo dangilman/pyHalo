@@ -24,7 +24,7 @@ class TestpyHalo(object):
         mass_function_class_list = [CDMPowerLaw, ShethTormen, ShethTormen, ShethTormen]
         kwargs_subhalos = {'log_mlow': 6.0, 'log_mhigh': 10.0, 'm_pivot': 10**8, 'power_law_index': -1.9,
                            'delta_power_law_index': 0.0, 'draw_poisson': False, 'log_m_host': 13.3,
-                           'sigma_sub': 0.05}
+                           'sigma_sub': 0.05, 'host_scaling_factor': 0.88, 'redshift_scaling_factor': 1.7}
         kwargs_los = {'log_mlow': 6.0, 'log_mhigh': 10.0, 'm_pivot': 1e8,
                       'LOS_normalization': 1.0, 'delta_power_law_index': 0.0}
         kwargs_two_halo = {'log_mlow': 6.0, 'log_mhigh': 10.0, 'm_pivot': 1e8,

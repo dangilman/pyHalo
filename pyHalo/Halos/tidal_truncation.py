@@ -200,17 +200,21 @@ class AdiabaticTidesTruncation(object):
 
 class TruncateMeanDensity(object):
 
-    def __init__(self, lens_cosmo, median_rt_over_rs=2.0, c_power=3.0):
+    def __init__(self, lens_cosmo, median_rt_over_rs=2.0, c_power=3.0, rperi_power=1.0):
         """
-
-        :param lens_cosmo:
-        :param median_rt_over_rs:
-        :param c_power:
+        Implements a truncation model where the truncation radius depends on the infall concentration and orbital pericenter
+        r_t / r_s = norm * (c / c_med)^c_power * (r_peri / (0.5 * r_200))^rperi_power
+        :param lens_cosmo: an instance of LensCosmo
+        :param median_rt_over_rs: the value of rt / rs for a halo that falls into the host with the median concetration
+        for halos of its mass with an orbital pericenter of half the host's virial radius
+        :param c_power: scales the dependence on infall concentration
+        :param rperi_power: scales the dependence on orbital pericenter
         """
 
         self._norm = median_rt_over_rs
         self._cpower = c_power
         self.lens_cosmo = lens_cosmo
+        self._rperi_power = rperi_power
         self._concentration_cdm = ConcentrationDiemerJoyce(lens_cosmo.cosmo,
                                                            scatter=False)
 
@@ -236,7 +240,7 @@ class TruncateMeanDensity(object):
         :param r_peri:
         :return:
         """
-        rt_over_rs = self._norm * (c_actual / c_median) ** self._cpower * (r_peri / 0.5)
+        rt_over_rs = self._norm * (c_actual / c_median) ** self._cpower * (r_peri / 0.5) ** self._rperi_power
         _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, halo_redshift)
         return rs * rt_over_rs
 
