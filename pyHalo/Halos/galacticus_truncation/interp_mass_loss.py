@@ -2,6 +2,8 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from pyHalo.Halos.galacticus_truncation.tabulated_mass_loss import _log10_mbound_over_minfall, \
     _log10_mbound_over_minfall_scatter_dex
+from pyHalo.Halos.galacticus_truncation.johnsonSUpdf import a_JohnsonSU, b_JohnsonSU
+from scipy.stats import johnsonsu
 
 class InterpGalacticus(object):
     """
@@ -22,6 +24,12 @@ class InterpGalacticus(object):
         self._mfrac_interp = RegularGridInterpolator(_points, _values, bounds_error=False, fill_value=None)
         self._mfrac_scatter_dex_interp = RegularGridInterpolator(_points, _values_scatter, bounds_error=False,
                                                                  fill_value=None)
+        self._afit_interp = RegularGridInterpolator(_points, a_JohnsonSU.reshape(_n, _n, _n),
+                                                    bounds_error=False, fill_value=None
+                                                    )
+        self._bfit_interp = RegularGridInterpolator(_points, b_JohnsonSU.reshape(_n, _n, _n),
+                                                    bounds_error=False, fill_value=None
+                                        )
 
     def evaluate_mean_mass_loss(self, log10_concentration_infall, time_since_infall, host_concentration):
         """
@@ -57,7 +65,20 @@ class InterpGalacticus(object):
         else:
             return np.squeeze(y)
 
-    def __call__(self, log10_concentration_infall, time_since_infall, host_concentration):
+    def evaluate_JohnsonSU(self, log10_concentration_infall, time_since_infall, host_concentration):
+        """
+
+        :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
+        :param time_since_infall: the time ellapsed since infall and the deflector redshift
+        :param host_concentration: the concentration of the host halo
+        :return: the scatter in dex of the bound mass divided by infall mass
+        """
+        point = (time_since_infall, host_concentration, log10_concentration_infall)
+        a = self._afit_interp(point)
+        b = self._bfit_interp(point)
+        return abs(float(a)), abs(float(b))
+
+    def __call__(self, log10_concentration_infall, time_since_infall, host_concentration, use_JohnsonSU=True):
         """
         Evaluates the prediction from galacticus for subhalo bound mass
         :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
@@ -65,19 +86,37 @@ class InterpGalacticus(object):
         :param host_concentration: the concentration of the host halo
         :return: the log10(bound mass divided by the infall mass), plus scatter
         """
-        mean = self.evaluate_mean_mass_loss(log10_concentration_infall, time_since_infall, host_concentration)
-        scatter_dex = self.evaluate_scatter_dex(log10_concentration_infall, time_since_infall, host_concentration)
-        scatter_dex = max(scatter_dex, 0.001)
-        output = np.random.normal(mean, scatter_dex)
+        if use_JohnsonSU:
+            if isinstance(log10_concentration_infall, list) or isinstance(log10_concentration_infall, np.ndarray):
+                raise Exception('the Johnson SU sampling method only works for one value of concentration, time, and '
+                                'host concentration at a time')
+            if isinstance(time_since_infall, list) or isinstance(time_since_infall, np.ndarray):
+                raise Exception('the Johnson SU sampling method only works for one value of concentration, time, and '
+                                'host concentration at a time')
+            if isinstance(host_concentration, list) or isinstance(host_concentration, np.ndarray):
+                raise Exception('the Johnson SU sampling method only works for one value of concentration, time, and '
+                                'host concentration at a time')
+            a, b = self.evaluate_JohnsonSU(log10_concentration_infall, time_since_infall, host_concentration)
+            try:
+                log10_mbound_over_minfall = float(johnsonsu.rvs(a, b))
+            except:
+                print('failed at point: ', log10_concentration_infall, time_since_infall, host_concentration)
+                raise Exception('a, b = '+str(a)+', '+str(b))
+
+        else:
+            mean = self.evaluate_mean_mass_loss(log10_concentration_infall, time_since_infall, host_concentration)
+            scatter_dex = self.evaluate_scatter_dex(log10_concentration_infall, time_since_infall, host_concentration)
+            scatter_dex = max(scatter_dex, 0.001)
+            log10_mbound_over_minfall = np.random.normal(mean, scatter_dex)
+
 
         if isinstance(log10_concentration_infall, float) and \
             isinstance(time_since_infall, float) and \
             isinstance(host_concentration, float):
-            output = min(0.0, max(-4.0, output))
+            output = min(0.0, max(-4.0, log10_mbound_over_minfall))
         else:
-            inds_high = np.where(output > 0.0)
-            output[inds_high] = 0.0
-            inds_low = np.where(output < -4.0)
-            output[inds_low] = -3.0
+            inds_high = np.where(log10_mbound_over_minfall > 0.0)
+            log10_mbound_over_minfall[inds_high] = 0.0
+            inds_low = np.where(log10_mbound_over_minfall < -4.0)
+            log10_mbound_over_minfall[inds_low] = -4.0
         return output
-

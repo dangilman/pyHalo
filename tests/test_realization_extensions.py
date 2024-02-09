@@ -446,7 +446,7 @@ class TestRealizationExtensions(object):
 #         corr = np.ones((r.shape[0], mu.shape[0]))
 #         r, xi_0 = xi_l(0, corr, r, mu)
 #         npt.assert_almost_equal(xi_0_real, xi_0)
-# 
+#
 #     def test_xi_l_to_Pk_l(self):
 #         l = 0
 #         x = np.logspace(-3, 3, num=60, endpoint=False)

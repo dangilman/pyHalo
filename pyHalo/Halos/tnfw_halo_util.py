@@ -39,22 +39,21 @@ def tau_mf_interpolation():
     """
     This function interpolates solutions for the truncation radius of a truncated NFW profile given the concentration
     and final bound mass
-    :return: an instance of RegularGridInterpolator that returns (r_t / r_s) given a final mass and concentration
+    :return: an instance of RegularGridInterpolator that returns log10(r_t / r_s) given the log10(concentration) and
+    log10(m_bound/m_infall)
     """
-    N = 80
+    N = 100
     tau = np.logspace(-2., 2.3, N)
     log10_c = np.linspace(0, 2.7, N)
     # mass_fraction_1d = np.logspace(-1.45, -0.02, N)
-    mass_fraction_1d = np.logspace(-3.0, np.log10(0.9999), N)
+    mass_fraction_1d = np.logspace(-5.0, np.log10(0.9999), N)
     log10tau_2d = np.zeros((N, N))
-
     # This computes the value of tau that correponds to each pair of (concentration, mass_loss)
     for i, log10con_i in enumerate(log10_c):
         log10final_mass = np.log10(tnfw_mass_fraction(tau, 10**log10con_i))
         mfinterp = interp1d(log10final_mass, np.log10(tau), bounds_error=False, fill_value='extrapolate')
         for j, mass_j in enumerate(mass_fraction_1d):
             log10tau_2d[i, j] = mfinterp(np.log10(mass_j))
-
     interp_points = (log10_c, np.log10(mass_fraction_1d))
     interpolator = RegularGridInterpolator(interp_points, log10tau_2d, bounds_error=False, fill_value=None)
     return interpolator
