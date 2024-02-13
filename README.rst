@@ -20,25 +20,32 @@ If you would like to use this package and have questions, please get in touch wi
 
 Installation
 ------------
-"python3 -m pip install pyhalo"
+Install via pypi: "python3 -m pip install pyhalo". 
+The installation via pip of version 1.1.0 includes some changes that may not be backwards compatible with the previous stable version. To use the previous stable version clone the repository from commit 4dc87c8.
 
-Or clone the repository, navigate into the directory that contains the setup.py file and run "python setup.py install"
-
-The first code release, before majoring refactoring, is 8302393. 
-
-In order to use this package when not installing via pip, you'll need to install colossus http://www.benediktdiemer.com/code/colossus/ 
+Install from github: "git clone https://github.com/dangilman/pyHalo.git; cd pyhalo; python -m setup.py install". Make sure to check the requirements listed in requirements.txt
 
 Features
 --------
+The purpose of this code is to quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. pyHalo also transltes halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy. Implemented dark matter models currently include:
+1) cold dark matter
+2) warm dark matter
+3) self-interacting dark matter
+4) fuzzy dark matter
+5) black holes
 
-- Quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. Implemented models currently include cold and warm dark matter, custom mass-concentration relations, self-interacting dark matter, and more.
-- Translte halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy
+Other useful features:
+1) customizeable mass-concentration relations 
+2) flexible parameterization of the halo mass function with variable normalizations and logarithmic slopes
+3) a variety of tidal stripping modules designed to predict the bound subhalo mass function given the infall subhalo mass function
+4) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density (adding too much additional mass in halos is like lensing in Universe with negative curvature in the sense that light will not travel in straight lines on average.) 
+5) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source. 
 
+pyHalo currently supports a variety of halo mass profiles, including Navarro-Frenk-White (NFW) profiles, truncated (NFW) profiles, cored power-law (PL) profiles, double PL profiles with variable inner and outer logarithmic slopes, cored NFW profiles, and point masses. 
 
 Credits
 -------
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
