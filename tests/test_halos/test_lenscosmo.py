@@ -1,5 +1,5 @@
 import numpy.testing as npt
-from pyHalo.Halos.lens_cosmo import LensCosmo
+from pyHalo.Halos.lens_cosmo import LensCosmo, InfallDistributionGalacticus2024
 import numpy as np
 import pytest
 from astropy.cosmology import FlatLambdaCDM
@@ -44,14 +44,12 @@ class TestLensCosmo(object):
 
     def test_subhalo_accretion(self):
 
-        zi = [self.lens_cosmo.z_accreted_from_zlens(10**8, 0.5)
-              for _ in range(0, 20000)]
-
-        h, b = np.histogram(zi, bins=np.linspace(0.5, 6, 20))
-
-        # number at the lens redshift should be about 5x that at redshift 4
-        ratio = h[0]/h[12]
-        npt.assert_almost_equal(ratio/5 - 1, 0., 1)
+        zi = [self.lens_cosmo.z_accreted_from_zlens(None, 0.5)
+              for _ in range(0, 25000)]
+        zi = np.array(zi) - 0.5
+        h, b = np.histogram(zi, bins=np.linspace(0.0, 20, 20))
+        z_median = np.median(zi)
+        npt.assert_almost_equal(z_median / 6.955, 1, 1)
 
     def test_mhm_convert(self):
 
@@ -83,8 +81,14 @@ class TestLensCosmo(object):
         npt.assert_almost_equal(rs_kpc, rs*1000)
         npt.assert_almost_equal(r200_kpc, r200 * 1000)
 
+    def test_z_accretion_class(self):
+
+        zlens = 0.5
+        pdf = InfallDistributionGalacticus2024(zlens)
+        z = [pdf.z_accreted_from_zlens(zlens) for _ in range(0, 1000)]
+        for zi in z:
+            npt.assert_equal(zi > zlens, True)
 
 if __name__ == '__main__':
     pytest.main()
-
 

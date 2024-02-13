@@ -228,8 +228,7 @@ class TruncateMeanDensity(object):
         """
         c_median = self._concentration_cdm.nfw_concentration(halo.mass, halo.z_eval)
         c_actual = halo.c
-        halo_rpericenter = halo.rperi_units_r200
-        return self.truncation_radius(halo.mass, halo.z, c_median, c_actual, halo_rpericenter)
+        return self.truncation_radius(halo.mass, halo.z, c_median, c_actual, self._scatter)
 
     def truncation_radius(self, halo_mass, halo_redshift, c_median, c_actual, intrinsic_scatter):
         """

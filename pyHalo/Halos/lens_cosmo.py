@@ -63,12 +63,13 @@ class LensCosmo(object):
 
     def z_accreted_from_zlens(self, mass, z_lens):
         """
-        Returns the redshift a subhalo was accreted
-        :param mass: subhalo mass
+        Returns the redshift a subhalo was accreted. Note that in the current implementation this is
+        independent of infall mass
+        :param mass: subhalo mass at infall
         :param z_lens: main deflector redshift
         :return: accretion redshift
         """
-        return self._z_infall_pdf.z_accreted_from_zlens(mass, z_lens)
+        return self._z_infall_pdf.z_accreted_from_zlens(z_lens)
 
     def two_halo_boost(self, m200, z, rmin=0.5, rmax=10):
 
@@ -212,7 +213,6 @@ class LensCosmo(object):
         :param m_thermaal:
         :return:
         """
-
         # too lazy for algebra
         def _func(m):
             return abs(self.halfmode_to_thermal(m)-m_thermal)/0.01
@@ -318,104 +318,104 @@ class InfallDistributionGalacticus2024(object):
         self._cdf_max = numpy.max(self._cdf)
         self._interp = interp1d(self._cdf, self._z_infall)
 
-    def z_accreted_from_zlens(self, mass, z_lens):
+    def z_accreted_from_zlens(self, z_lens):
         u = numpy.random.uniform(self._cdf_min, self._cdf_max)
         z_infall = z_lens + self._interp(u)
         return z_infall
-
-class InfallDistributionGalacticus2020(object):
-    """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS PUBLISHED IN 2020 WITH
-    WARM DARK MATTER CHILLS OUT"""
-    def __init__(self, z_lens):
-        self.z_lens = z_lens
-
-    @property
-    def _subhalo_accretion_pdfs(self):
-
-        if self._computed_zacc_pdf is False:
-            self._computed_zacc_pdf = True
-            self._mlist, self._dzvals, self._cdfs = self._Msub_cdfs(self.z_lens)
-
-        return self._mlist, self._dzvals, self._cdfs
-
-    def z_accreted_from_zlens(self, msub, zlens):
-
-        mlist, dzvals, cdfs = self._subhalo_accretion_pdfs
-
-        idx = self._mass_index(msub, mlist)
-
-        z_accreted = zlens + self._sample_cdf_single(cdfs[idx])
-
-        return z_accreted
-
-    def _cdf_numerical(self, m, z_lens, delta_z_values):
-
-        c_d_f = []
-
-        prob = 0
-        for zi in delta_z_values:
-            prob += self._P_fit_diff_M_sub(z_lens + zi, z_lens, m)
-            c_d_f.append(prob)
-        return numpy.array(c_d_f) / c_d_f[-1]
-
-    def _Msub_cdfs(self, z_lens):
-
-        M_sub_exp = numpy.arange(6.0, 10.2, 0.2)
-        M_sub_list = 10 ** M_sub_exp
-        delta_z = numpy.linspace(0., 6, 8000)
-        funcs = []
-
-        for mi in M_sub_list:
-            # cdfi = P_fit_diff_M_sub_cumulative(z_lens+delta_z, z_lens, mi)
-            cdfi = self._cdf_numerical(mi, z_lens, delta_z)
-
-            funcs.append(interp1d(cdfi, delta_z))
-
-        return M_sub_list, delta_z, funcs
-
-    def z_decay_mass_dependence(self, M_sub):
-        # Mass dependence of z_decay.
-        a = 3.21509397
-        b = 1.04659814e-03
-
-        return a - b * numpy.log(M_sub / 1.0e6) ** 3
-
-    def z_decay_exp_mass_dependence(self, M_sub):
-        # Mass dependence of z_decay_exp.
-
-        a = 0.30335749
-        b = 3.2777e-4
-
-        return a - b * numpy.log(M_sub / 1.0e6) ** 3
-
-    def _P_fit_diff_M_sub(self, z, z_lens, M_sub):
-        # Given the redhsift of the lens, z_lens, and the subhalo mass, M_sub, return the
-        # posibility that the subhlao has an accretion redhisft of z.
-
-        z_decay = self.z_decay_mass_dependence(M_sub)
-        z_decay_exp = self.z_decay_exp_mass_dependence(M_sub)
-
-        normalization = 2.0 / numpy.sqrt(2.0 * numpy.pi) / z_decay \
-                        / numpy.exp(0.5 * z_decay ** 2 * z_decay_exp ** 2) \
-                        / erfc(z_decay * z_decay_exp / numpy.sqrt(2.0))
-        return normalization * numpy.exp(-0.5 * ((z - z_lens) / z_decay) ** 2) \
-               * numpy.exp(-z_decay_exp * (z - z_lens))
-
-    def _sample_cdf_single(self, cdf_interp):
-
-        u = numpy.random.uniform(0, 1)
-
-        try:
-            output = float(cdf_interp(u))
-            if numpy.isnan(output):
-                output = 0
-
-        except:
-            output = 0
-
-        return output
-
-    def _mass_index(self, subhalo_mass, mass_array):
-
-        idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
-        return idx
+#
+# class InfallDistributionGalacticus2020(object):
+#     """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS PUBLISHED IN 2020 WITH
+#     WARM DARK MATTER CHILLS OUT"""
+#     def __init__(self, z_lens):
+#         self.z_lens = z_lens
+#
+#     @property
+#     def _subhalo_accretion_pdfs(self):
+#
+#         if self._computed_zacc_pdf is False:
+#             self._computed_zacc_pdf = True
+#             self._mlist, self._dzvals, self._cdfs = self._Msub_cdfs(self.z_lens)
+#
+#         return self._mlist, self._dzvals, self._cdfs
+#
+#     def z_accreted_from_zlens(self, msub, zlens):
+#
+#         mlist, dzvals, cdfs = self._subhalo_accretion_pdfs
+#
+#         idx = self._mass_index(msub, mlist)
+#
+#         z_accreted = zlens + self._sample_cdf_single(cdfs[idx])
+#
+#         return z_accreted
+#
+#     def _cdf_numerical(self, m, z_lens, delta_z_values):
+#
+#         c_d_f = []
+#
+#         prob = 0
+#         for zi in delta_z_values:
+#             prob += self._P_fit_diff_M_sub(z_lens + zi, z_lens, m)
+#             c_d_f.append(prob)
+#         return numpy.array(c_d_f) / c_d_f[-1]
+#
+#     def _Msub_cdfs(self, z_lens):
+#
+#         M_sub_exp = numpy.arange(6.0, 10.2, 0.2)
+#         M_sub_list = 10 ** M_sub_exp
+#         delta_z = numpy.linspace(0., 6, 8000)
+#         funcs = []
+#
+#         for mi in M_sub_list:
+#             # cdfi = P_fit_diff_M_sub_cumulative(z_lens+delta_z, z_lens, mi)
+#             cdfi = self._cdf_numerical(mi, z_lens, delta_z)
+#
+#             funcs.append(interp1d(cdfi, delta_z))
+#
+#         return M_sub_list, delta_z, funcs
+#
+#     def z_decay_mass_dependence(self, M_sub):
+#         # Mass dependence of z_decay.
+#         a = 3.21509397
+#         b = 1.04659814e-03
+#
+#         return a - b * numpy.log(M_sub / 1.0e6) ** 3
+#
+#     def z_decay_exp_mass_dependence(self, M_sub):
+#         # Mass dependence of z_decay_exp.
+#
+#         a = 0.30335749
+#         b = 3.2777e-4
+#
+#         return a - b * numpy.log(M_sub / 1.0e6) ** 3
+#
+#     def _P_fit_diff_M_sub(self, z, z_lens, M_sub):
+#         # Given the redhsift of the lens, z_lens, and the subhalo mass, M_sub, return the
+#         # posibility that the subhlao has an accretion redhisft of z.
+#
+#         z_decay = self.z_decay_mass_dependence(M_sub)
+#         z_decay_exp = self.z_decay_exp_mass_dependence(M_sub)
+#
+#         normalization = 2.0 / numpy.sqrt(2.0 * numpy.pi) / z_decay \
+#                         / numpy.exp(0.5 * z_decay ** 2 * z_decay_exp ** 2) \
+#                         / erfc(z_decay * z_decay_exp / numpy.sqrt(2.0))
+#         return normalization * numpy.exp(-0.5 * ((z - z_lens) / z_decay) ** 2) \
+#                * numpy.exp(-z_decay_exp * (z - z_lens))
+#
+#     def _sample_cdf_single(self, cdf_interp):
+#
+#         u = numpy.random.uniform(0, 1)
+#
+#         try:
+#             output = float(cdf_interp(u))
+#             if numpy.isnan(output):
+#                 output = 0
+#
+#         except:
+#             output = 0
+#
+#         return output
+#
+#     def _mass_index(self, subhalo_mass, mass_array):
+#
+#         idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
+#         return idx

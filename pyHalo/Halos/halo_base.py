@@ -110,7 +110,6 @@ class Halo(ABC):
         """
 
         if not hasattr(self, '_z_infall'):
-
             self._z_infall = self.lens_cosmo.z_accreted_from_zlens(self.mass, self.z)
 
         return self._z_infall
