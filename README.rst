@@ -48,7 +48,7 @@ Other useful features:
 
 3) a variety of tidal stripping modules designed to predict the bound subhalo mass function given the infall subhalo mass function
 
-4) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density (adding too much additional mass in halos is like lensing in Universe with negative curvature in the sense that light will not travel in straight lines on average.) 
+4) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density (adding too much additional mass in halos is like lensing in Universe with negative curvature in the sense that light will not travel in straight lines, on average). 
 
 5) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source. 
 
