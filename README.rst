@@ -29,28 +29,33 @@ Features
 --------
 The purpose of this code is to quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. pyHalo also transltes halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy. Implemented dark matter models currently include:
 
-1) cold dark matter 
+1) cold dark matter
+    - https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract
+    - https://ui.adsabs.harvard.edu/abs/2022MNRAS.512.3163G/abstract
 
-2) warm dark matter (https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract)
+2) warm dark matter 
+    - https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
+    - https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.6159K/abstract
 
 3) self-interacting dark matter
+    - https://ui.adsabs.harvard.edu/abs/2021MNRAS.507.2432G/abstract
+    - https://ui.adsabs.harvard.edu/abs/2023PhRvD.107j3008G/abstract
 
 4) fuzzy dark matter
-
+    - https://ui.adsabs.harvard.edu/abs/2022MNRAS.517.1867L/abstract
 5) black holes
+    - https://ui.adsabs.harvard.edu/abs/2023MNRAS.522.5434D/abstract
 
 
 Other useful features:
 
-1) customizeable mass-concentration relations 
+1) customizeable mass-concentration relations and flexible parameterization of the halo mass function with variable normalizations and logarithmic slopes (see https://ui.adsabs.harvard.edu/abs/2022MNRAS.512.3163G/abstract)
 
-2) flexible parameterization of the halo mass function with variable normalizations and logarithmic slopes
+2) a variety of tidal stripping modules designed to predict the bound subhalo mass function given the infall subhalo mass function
 
-3) a variety of tidal stripping modules designed to predict the bound subhalo mass function given the infall subhalo mass function
+3) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density (adding too much additional mass in halos is like lensing in Universe with negative curvature in the sense that light will not travel in straight lines, on average). 
 
-4) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density (adding too much additional mass in halos is like lensing in Universe with negative curvature in the sense that light will not travel in straight lines, on average). 
-
-5) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source. 
+4) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source. 
 
 pyHalo currently supports a variety of halo mass profiles, including Navarro-Frenk-White (NFW) profiles, truncated (NFW) profiles, cored power-law (PL) profiles, double PL profiles with variable inner and outer logarithmic slopes, cored NFW profiles, and point masses. 
 
