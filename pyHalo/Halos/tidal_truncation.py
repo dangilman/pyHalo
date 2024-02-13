@@ -200,7 +200,7 @@ class AdiabaticTidesTruncation(object):
 
 class TruncateMeanDensity(object):
 
-    def __init__(self, lens_cosmo, median_rt_over_rs=2.0, c_power=3.0, rperi_power=1.0):
+    def __init__(self, lens_cosmo, median_rt_over_rs=2.0, c_power=3.0, intrinsic_scatter=0.0):
         """
         Implements a truncation model where the truncation radius depends on the infall concentration and orbital pericenter
         r_t / r_s = norm * (c / c_med)^c_power * (r_peri / (0.5 * r_200))^rperi_power
@@ -208,13 +208,14 @@ class TruncateMeanDensity(object):
         :param median_rt_over_rs: the value of rt / rs for a halo that falls into the host with the median concetration
         for halos of its mass with an orbital pericenter of half the host's virial radius
         :param c_power: scales the dependence on infall concentration
-        :param rperi_power: scales the dependence on orbital pericenter
+        :param intrinsic_scatter: adds Gaussian scatter to rt_over_rs in unis of rt_over_rs, i.e.
+        if intrinsic_scatter = s the scatter is given by Gaussian(mean = 0.0, sigma= s * rt_over_rs)
         """
 
         self._norm = median_rt_over_rs
         self._cpower = c_power
         self.lens_cosmo = lens_cosmo
-        self._rperi_power = rperi_power
+        self._scatter = intrinsic_scatter
         self._concentration_cdm = ConcentrationDiemerJoyce(lens_cosmo.cosmo,
                                                            scatter=False)
 
@@ -230,17 +231,22 @@ class TruncateMeanDensity(object):
         halo_rpericenter = halo.rperi_units_r200
         return self.truncation_radius(halo.mass, halo.z, c_median, c_actual, halo_rpericenter)
 
-    def truncation_radius(self, halo_mass, halo_redshift, c_median, c_actual, r_peri):
+    def truncation_radius(self, halo_mass, halo_redshift, c_median, c_actual, intrinsic_scatter):
         """
-
-        :param halo_mass:
-        :param halo_redshift:
-        :param c_median:
-        :param c_actual:
-        :param r_peri:
+        Computes the truncation radius from halo mass, halo redshift, median concentration at infall for halos of the
+        given mass, and the actual concentration of the halo at infall, plus Gaussian scatter
+        :param halo_mass: halo mass at infall
+        :param halo_redshift: redshift of infall
+        :param c_median: median concentration of halos of mass halo_mass at z = z_infall in CDM
+        :param c_actual: actual concentration of the halo at infall
+        :param intrinsic_scatter: Gaussian scatter
         :return:
         """
-        rt_over_rs = self._norm * (c_actual / c_median) ** self._cpower * (r_peri / 0.5) ** self._rperi_power
+        _rt_over_rs = self._norm * (c_actual / c_median) ** self._cpower
+        if intrinsic_scatter > 0:
+            rt_over_rs = abs(np.random.normal(_rt_over_rs, intrinsic_scatter * _rt_over_rs))
+        else:
+            rt_over_rs = _rt_over_rs
         _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, halo_redshift)
         return rs * rt_over_rs
 

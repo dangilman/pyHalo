@@ -59,6 +59,16 @@ class LensCosmo(object):
         self._nfw_param = NFWParampyHalo(self.cosmo.astropy)
         self.z_lens = z_lens
         self.z_source = z_source
+        self._z_infall_pdf = InfallDistributionGalacticus2024(z_lens)
+
+    def z_accreted_from_zlens(self, mass, z_lens):
+        """
+        Returns the redshift a subhalo was accreted
+        :param mass: subhalo mass
+        :param z_lens: main deflector redshift
+        :return: accretion redshift
+        """
+        return self._z_infall_pdf.z_accreted_from_zlens(mass, z_lens)
 
     def two_halo_boost(self, m200, z, rmin=0.5, rmax=10):
 
@@ -253,95 +263,6 @@ class LensCosmo(object):
         epsilon_crit = (self.cosmo.c**2*(4*numpy.pi*self.cosmo.G)**-1)*d_inv
         return epsilon_crit
 
-    # ##################################################################################
-    # """Routines relevant for NFW profiles"""
-    # ##################################################################################
-    # def NFW_params_physical(self, M, c, z):
-    #     """
-    #
-    #     :param M: physical M200
-    #     :param c: concentration
-    #     :param z: halo redshift
-    #     :return: physical NFW parameters in kpc units
-    #     """
-    #
-    #     rho0, Rs, r200 = self.nfwParam_physical_Mpc(M, c, z)
-    #     return rho0 * 1000 ** -3, Rs * 1000, r200 * 1000
-    #
-    # def nfw_physical2angle_fromNFWparams(self, rhos, rs, z):
-    #
-    #     """
-    #     computes the deflection angle properties of an NFW halo from the density normalization mass and scale radius
-    #     :param rhos: central density normalization in M_sun / Mpc^3
-    #     :param rs: scale radius in Mpc
-    #     :param z: redshift
-    #     :return: theta_Rs (deflection angle at the scale radius) [arcsec], scale radius [arcsec]
-    #     """
-    #
-    #     D_d = self.cosmo.D_A_z(z)
-    #     Rs_angle = rs / D_d / self.cosmo.arcsec  # Rs in arcsec
-    #     theta_Rs = rhos * (4 * rs ** 2 * (1 + numpy.log(1. / 2.)))
-    #     eps_crit = self.get_sigma_crit_lensing(z, self.z_source)
-    #
-    #     return Rs_angle, theta_Rs / eps_crit / D_d / self.cosmo.arcsec
-    #
-    # def nfw_physical2angle(self, M, c, z):
-    #     """
-    #     converts the physical mass and concentration parameter of an NFW profile into the lensing quantities
-    #     :param M: mass enclosed 200 \rho_crit
-    #     :param c: NFW concentration parameter (r200/r_s)
-    #     :return: theta_Rs (observed bending angle at the scale radius, Rs_angle (angle at scale radius) (in units of arcsec)
-    #     """
-    #
-    #     rhos, rs, _ = self.nfwParam_physical_Mpc(M, c, z)
-    #     return self.nfw_physical2angle_fromNFWparams(rhos, rs, z)
-    #
-    # def rho0_c_NFW(self, c, z_eval_rho=0., N=200):
-    #     """
-    #     computes density normalization as a function of concentration parameter
-    #
-    #     :param c: concentration
-    #     :param z_eval_rho: redshift at which to evaluate the critical density
-    #     :param N: the density contrast used to define the halo mass
-    #     :return: density normalization in h^2/Mpc^3 (comoving)
-    #     """
-    #
-    #     rho_crit = self.cosmo.rho_crit(z_eval_rho) / self.cosmo.h ** 2
-    #     return N / 3 * rho_crit * c ** 3 / (numpy.log(1 + c) - c / (1 + c))
-    #
-    # def rN_M_nfw_comoving(self, M, N, z):
-    #     """
-    #     computes the radius R_N of a halo of mass M in comoving distances
-    #     :param M: halo mass in M_sun/h
-    #     :type M: float or numpy array
-    #     :return: radius R_200 in comoving Mpc/h
-    #     """
-    #
-    #     rho_crit = self.cosmo.rho_crit(z) / self.cosmo.h ** 2
-    #     return (3 * M / (4 * numpy.pi * rho_crit * N)) ** (1. / 3.)
-    #
-    # def nfwParam_physical_Mpc(self, M, c, z, N=200):
-    #
-    #     """
-    #
-    #     :param M: halo mass in units M_sun (no little h)
-    #     :param c: concentration parameter
-    #     :param z: redshift
-    #     :return: physical rho_s, rs for the NFW profile in comoving units
-    #     Mass definition critical density of Universe with respect to critical density at redshift z
-    #     Also specified in colossus as 200c
-    #     """
-    #
-    #     h = self.cosmo.h
-    #     r200 = self.rN_M_nfw_comoving(M * h, N, z) / h  # comoving virial radius
-    #     rhos = self.rho0_c_NFW(c, z, N) * h ** 2  # density in M_sun/Mpc**3
-    #     rs = r200 / c
-    #     return rhos, rs, r200
-
-    ##################################################################################
-    """Routines relevant for other lensing by other mass profiles"""
-    ##################################################################################
-
     def point_mass_factor_z(self, z):
 
         """
@@ -377,15 +298,41 @@ class LensCosmo(object):
         g = 4.3e-6
         return 0.5427 / numpy.sqrt(g*rho_average)
 
-    ##################################################################################
-    """ACCRETION REDSHIFT PDF FROM GALACTICUS"""
-    ##################################################################################
+class InfallDistributionGalacticus2024(object):
+    """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS AS OF FEB 2024"""
+
+    def __init__(self, z_lens):
+        self.z_lens = z_lens
+        self._counts = numpy.array([ 74, 111, 138, 225, 281, 394, 396, 492, 603, 665, 626, 738, 714,
+        725, 744, 712, 679, 600, 556, 524, 478, 442, 347, 322, 283, 198,
+        189, 148, 137,  98,  77,  44,  32,  32,  26,  18,  15,   6,   5,
+        4,   0,   2,   0,   0])
+        self._z_infall = numpy.array([ 0.25,  0.75,  1.25,  1.75,  2.25,  2.75,  3.25,  3.75,  4.25,
+        4.75,  5.25,  5.75,  6.25,  6.75,  7.25,  7.75,  8.25,  8.75,
+        9.25,  9.75, 10.25, 10.75, 11.25, 11.75, 12.25, 12.75, 13.25,
+        13.75, 14.25, 14.75, 15.25, 15.75, 16.25, 16.75, 17.25, 17.75,
+        18.25, 18.75, 19.25, 19.75, 20.25, 20.75, 21.25, 21.75])
+        cdf = numpy.cumsum(self._counts)
+        self._cdf = cdf / numpy.max(cdf)
+        self._cdf_min = numpy.min(self._cdf)
+        self._cdf_max = numpy.max(self._cdf)
+        self._interp = interp1d(self._cdf, self._z_infall)
+
+    def z_accreted_from_zlens(self, mass, z_lens):
+        u = numpy.random.uniform(self._cdf_min, self._cdf_max)
+        z_infall = z_lens + self._interp(u)
+        return z_infall
+
+class InfallDistributionGalacticus2020(object):
+    """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS PUBLISHED IN 2020 WITH
+    WARM DARK MATTER CHILLS OUT"""
+    def __init__(self, z_lens):
+        self.z_lens = z_lens
 
     @property
     def _subhalo_accretion_pdfs(self):
 
         if self._computed_zacc_pdf is False:
-
             self._computed_zacc_pdf = True
             self._mlist, self._dzvals, self._cdfs = self._Msub_cdfs(self.z_lens)
 
