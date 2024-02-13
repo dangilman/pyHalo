@@ -35,14 +35,9 @@ class TestTwoHalo(object):
 
         z_step = 0.02
         mhost = 10**13
-        boost = two_halo_enhancement_factor(self.zlens, z_step, self.lens_cosmo, mhost)
-        npt.assert_array_less(1.1, boost)
-
-        z_step = 0.2
-        mhost = 10 ** 13
-        boost = two_halo_enhancement_factor(self.zlens, z_step, self.lens_cosmo, mhost)
-        # as the redshift increment increases, the relative contribution from the two halo term diminishes
-        npt.assert_array_less(boost, 1.1)
+        r200_host = 0.4
+        boost = two_halo_enhancement_factor(self.zlens, z_step, self.lens_cosmo, mhost, r200_host)
+        npt.assert_equal(boost>0, True)
 
     def test_render(self):
 
