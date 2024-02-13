@@ -60,9 +60,8 @@ Other useful features:
 
 4) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source. 
 
-5) correlated structure around the main deflector arising from the two-halo term, e.g.: 
-https://ui.adsabs.harvard.edu/abs/2019MNRAS.487.5721G/abstract
-https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.6064L/abstract
+5) correlated structure around the main deflector arising from the two-halo term 
+(see https://ui.adsabs.harvard.edu/abs/2019MNRAS.487.5721G/abstract, https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.6064L/abstract)
 
 pyHalo currently supports a variety of halo mass profiles, including Navarro-Frenk-White (NFW) profiles, truncated (NFW) profiles, cored power-law (PL) profiles, double PL profiles with variable inner and outer logarithmic slopes, cored NFW profiles, and point masses. 
 
