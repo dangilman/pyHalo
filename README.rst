@@ -41,10 +41,15 @@ The purpose of this code is to quickly render full populations of dark matter su
 
 
 Other useful features:
+
 1) customizeable mass-concentration relations 
+
 2) flexible parameterization of the halo mass function with variable normalizations and logarithmic slopes
+
 3) a variety of tidal stripping modules designed to predict the bound subhalo mass function given the infall subhalo mass function
+
 4) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density (adding too much additional mass in halos is like lensing in Universe with negative curvature in the sense that light will not travel in straight lines on average.) 
+
 5) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source. 
 
 pyHalo currently supports a variety of halo mass profiles, including Navarro-Frenk-White (NFW) profiles, truncated (NFW) profiles, cored power-law (PL) profiles, double PL profiles with variable inner and outer logarithmic slopes, cored NFW profiles, and point masses. 
