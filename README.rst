@@ -29,9 +29,9 @@ Features
 --------
 The purpose of this code is to quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. pyHalo also transltes halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy. Implemented dark matter models currently include:
 
-1) cold dark matter
+1) cold dark matter 
 
-2) warm dark matter
+2) warm dark matter (https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract)
 
 3) self-interacting dark matter
 
