@@ -32,6 +32,7 @@ The purpose of this code is to quickly render full populations of dark matter su
 1) cold dark matter
     - https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract
     - https://ui.adsabs.harvard.edu/abs/2022MNRAS.512.3163G/abstract
+    - https://ui.adsabs.harvard.edu/abs/2023MNRAS.518.5843D/abstract
 
 2) warm dark matter 
     - https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
@@ -40,22 +41,28 @@ The purpose of this code is to quickly render full populations of dark matter su
 3) self-interacting dark matter
     - https://ui.adsabs.harvard.edu/abs/2021MNRAS.507.2432G/abstract
     - https://ui.adsabs.harvard.edu/abs/2023PhRvD.107j3008G/abstract
+    - https://ui.adsabs.harvard.edu/abs/2023MNRAS.526.5455D/abstract
 
 4) fuzzy dark matter
     - https://ui.adsabs.harvard.edu/abs/2022MNRAS.517.1867L/abstract
+
 5) black holes
     - https://ui.adsabs.harvard.edu/abs/2023MNRAS.522.5434D/abstract
 
 
 Other useful features:
 
-1) customizeable mass-concentration relations and flexible parameterization of the halo mass function with variable normalizations and logarithmic slopes (see https://ui.adsabs.harvard.edu/abs/2022MNRAS.512.3163G/abstract)
+1) customizeable mass-concentration relations and flexible parameterization of the halo mass function with variable normalizations and logarithmic slopes (see, for example,  https://ui.adsabs.harvard.edu/abs/2022MNRAS.512.3163G/abstract)
 
 2) a variety of tidal stripping modules designed to predict the bound subhalo mass function given the infall subhalo mass function
 
 3) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density (adding too much additional mass in halos is like lensing in Universe with negative curvature in the sense that light will not travel in straight lines, on average). 
 
 4) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source. 
+
+5) correlated structure around the main deflector arising from the two-halo term, e.g.: 
+    - https://ui.adsabs.harvard.edu/abs/2019MNRAS.487.5721G/abstract
+    - https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.6064L/abstract
 
 pyHalo currently supports a variety of halo mass profiles, including Navarro-Frenk-White (NFW) profiles, truncated (NFW) profiles, cored power-law (PL) profiles, double PL profiles with variable inner and outer logarithmic slopes, cored NFW profiles, and point masses. 
 
