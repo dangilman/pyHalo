@@ -28,11 +28,17 @@ Install from github: "git clone https://github.com/dangilman/pyHalo.git; cd pyha
 Features
 --------
 The purpose of this code is to quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. pyHalo also transltes halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy. Implemented dark matter models currently include:
+
 1) cold dark matter
+
 2) warm dark matter
+
 3) self-interacting dark matter
+
 4) fuzzy dark matter
+
 5) black holes
+
 
 Other useful features:
 1) customizeable mass-concentration relations 
