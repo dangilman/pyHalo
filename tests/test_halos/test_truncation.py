@@ -69,7 +69,6 @@ class TestTruncation(object):
                 self.mass = m
                 self.z = z
                 self.z_eval = z
-                self.rperi_units_r200 = 0.7
                 self.c = 16.0
 
         halo = DummyHalo(10 ** 8, 0.4)
@@ -77,12 +76,12 @@ class TestTruncation(object):
         c_power = 4.0
         cmodel = ConcentrationDiemerJoyce(self.lenscosmo.cosmo, scatter=False)
         c_theory = cmodel.nfw_concentration(10 ** 8, 0.4)
-        truncation = TruncateMeanDensity(self.lenscosmo, median_rt_over_rs, c_power)
-        r_t = truncation.truncation_radius(10**8, 0.4, c_theory, 16.0, 0.7)
+        truncation = TruncateMeanDensity(self.lenscosmo, median_rt_over_rs, c_power, 0.0)
+        r_t = truncation.truncation_radius(10**8, 0.4, c_theory, 16.0, 0.0)
         r_t_halo = truncation.truncation_radius_halo(halo)
         npt.assert_almost_equal(r_t, r_t_halo)
 
-        rt_over_rs_theory = median_rt_over_rs * (16.0 / c_theory) ** c_power * (0.7 / 0.5)
+        rt_over_rs_theory = median_rt_over_rs * (16.0 / c_theory) ** c_power
         rs = self.lenscosmo.NFW_params_physical(10**8, 16.0, 0.4)[1]
         npt.assert_almost_equal(rs * rt_over_rs_theory, r_t)
 
@@ -97,7 +96,6 @@ class TestTruncation(object):
         npt.assert_almost_equal(rt, 2.5)
         rt= trunc.truncation_radius()
         npt.assert_almost_equal(rt, 2.5)
-
 
 if __name__ == '__main__':
     pytest.main()
