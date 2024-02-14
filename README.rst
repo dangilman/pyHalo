@@ -58,7 +58,7 @@ Other useful features:
 
 3) automatic calculation of negative sheets of convergence along the line of sight to keep the mean density of the Universe equal to the critical density after adding halos
 
-4) Different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source.
+4) different geometries for rendering line-of-sight halos, ranging from a cylindrical volume to a double-cone configuration that opens towards the lens and closes towards the source.
 
 5) correlated structure around the main deflector arising from the two-halo term (https://ui.adsabs.harvard.edu/abs/2019MNRAS.487.5721G/abstract, https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.6064L/abstract)
 
