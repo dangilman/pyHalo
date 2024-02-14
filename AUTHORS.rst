@@ -11,6 +11,7 @@ Contributors
 ------------
 
 * Veronica Dike <vdike2@illinois.edu>
-* Alex Laroche <alexander.laroche@mail.mcgill.ca>
+* Birendra Dhanasingham <birendradh@unm.edu>
 * Charles Gannon <cgannon@ucmerced.edu>
+* Alex Laroche <alexander.laroche@mail.mcgill.ca>
 
