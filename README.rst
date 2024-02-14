@@ -64,6 +64,16 @@ Other useful features:
 
 pyHalo currently supports a variety of halo mass profiles, including Navarro-Frenk-White (NFW) profiles, truncated (NFW) profiles, cored power-law (PL) profiles, double PL profiles with variable inner and outer logarithmic slopes, cored NFW profiles, and point masses.
 
+Attribution
+-------
+
+When using pyHalo, please link to this repository in a footnote and cite https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
+
+Contribution
+-------
+
+Please feel free to make a pull request implementing any changes you feel would improve the functionality of the code! 
+
 Credits
 -------
 
