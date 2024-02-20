@@ -14,14 +14,14 @@ def preset_mass_function_models(model_name, kwargs_model={}):
     if model_name == 'SHMF_LOVELL2020':
         # calibrated for subhalos
         # from https://arxiv.org/pdf/2003.01125.pdf
-        kwargs_model_out['a_wdm'] = 4.2
+        kwargs_model_out['a_wdm'] = 36.15
         kwargs_model_out['b_wdm'] = 2.5
         kwargs_model_out['c_wdm'] = -0.2
         return WDMPowerLaw, kwargs_model_out
     elif model_name == 'LOVELL2020':
         # calibrated for field halos
         # from https://arxiv.org/pdf/2003.01125.pdf
-        kwargs_model_out['a_wdm'] = 2.3
+        kwargs_model_out['a_wdm'] = 1.95
         kwargs_model_out['b_wdm'] = 0.8
         kwargs_model_out['c_wdm'] = -1.0
         return ShethTormenTurnover, kwargs_model_out
