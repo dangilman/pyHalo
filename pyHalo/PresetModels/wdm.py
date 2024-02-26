@@ -12,7 +12,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         mass_function_model_fieldhalos='LOVELL2020', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
@@ -167,7 +167,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
         mass_function_model_fieldhalos='MIXED_WDM_TURNOVER', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
@@ -243,7 +243,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
-               host_scaling_factor=0.88, redshift_scaling_factor=1.7):
+               host_scaling_factor=0.5, redshift_scaling_factor=0.3):
 
     """
     This preset model implements a generalized treatment of warm dark matter, or any theory that produces a cutoff in
