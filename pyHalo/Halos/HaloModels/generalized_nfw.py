@@ -1,5 +1,5 @@
 from pyHalo.Halos.halo_base import Halo
-from lenstronomy.LensModel.Profiles.general_nfw import GNFW
+from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePowerlaw
 import numpy as np
 
 class GeneralNFWSubhalo(Halo):
@@ -15,11 +15,11 @@ class GeneralNFWSubhalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        self._prof = GNFW()
+        self._prof = PseudoDoublePowerlaw()
         self._lens_cosmo = lens_cosmo_instance
         self._truncation_class = truncation_class
         self._concentration_class = concentration_class
-        mdef = 'GNFW'
+        mdef = 'PSEUDO_DPL'
         super(GeneralNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                               lens_cosmo_instance, args, unique_tag)
 
@@ -57,7 +57,7 @@ class GeneralNFWSubhalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        return ['GNFW']
+        return ['PSEUDO_DPL']
 
     @property
     def profile_args(self):

@@ -4,7 +4,7 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo
 from pyHalo.Halos.HaloModels.NFW import NFWFieldHalo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
-from lenstronomy.LensModel.Profiles.general_nfw import GNFW
+from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePowerlaw
 from lenstronomy.LensModel.Profiles.nfw import NFW
 import pytest
 from astropy.cosmology import FlatLambdaCDM
@@ -20,7 +20,7 @@ class TestGeneralNFW(object):
         self.zsource = 2.0
         self.lens_cosmo = LensCosmo(self.zhalo, self.zsource, cosmo)
         self.nfw_profile_lenstronomy = NFW()
-        self.gnfw_profile_lenstronomy = GNFW()
+        self.gnfw_profile_lenstronomy = PseudoDoublePowerlaw()
         self.truncation_class = None
         self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
 
@@ -49,7 +49,7 @@ class TestGeneralNFW(object):
         npt.assert_almost_equal(rs/kwargs_gnfw_profile['Rs'], 1.0, 4)
 
         id = gnfw.lenstronomy_ID
-        npt.assert_string_equal('GNFW', id[0])
+        npt.assert_string_equal('PSEUDO_DPL', id[0])
 
     def test_enclosed_mass(self):
 

@@ -25,7 +25,7 @@ class TruncationSplashBack(object):
 
     def truncation_radius(self, halo_mass, z):
         """
-        Computes the radius r_N of an NFW halo
+        Computes the truncation radius as the splashback radius an NFW halo
         :param halo_mass: halo mass (m200 with respect to critical density at z)
         :param z: redshift
         :param halo_concentration: the halo concentration

@@ -14,7 +14,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         mass_function_model_fieldhalos='SCHIVE2016', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='LAROCHE2022', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='LAROCHE2022', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_ROCHE_GILMAN2020', kwargs_truncation_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
