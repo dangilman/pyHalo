@@ -57,7 +57,7 @@ class GeneralNFWSubhalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        return ['GNFW']
+        return ['PSEUDO_DPL']
 
     @property
     def profile_args(self):
