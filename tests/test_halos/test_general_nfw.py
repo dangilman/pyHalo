@@ -49,7 +49,7 @@ class TestGeneralNFW(object):
         npt.assert_almost_equal(rs/kwargs_gnfw_profile['Rs'], 1.0, 4)
 
         id = gnfw.lenstronomy_ID
-        npt.assert_string_equal('GNFW', id[0])
+        npt.assert_string_equal('PSEUDO_DPL', id[0])
 
     def test_enclosed_mass(self):
 

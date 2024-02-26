@@ -19,7 +19,7 @@ class GeneralNFWSubhalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._truncation_class = truncation_class
         self._concentration_class = concentration_class
-        mdef = 'GNFW'
+        mdef = 'PSEUDO_DPL'
         super(GeneralNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                               lens_cosmo_instance, args, unique_tag)
 
