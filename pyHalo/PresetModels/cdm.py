@@ -16,7 +16,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
-        geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.5, redshift_scaling_factor=0.3):
+        geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.5,
+        redshift_scaling_factor=0.3, two_halo_Lazar_correction=True):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -54,6 +55,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param kwargs_cosmo: keyword arguments that specify the cosmology (see pyHalo.Cosmology.cosmology)
     :param host_scaling_factor: the scaling with host halo mass of the projected number density of subhalos
     :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
+    :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
+    main deflector presented by Lazar et al. (2021)
     :return: a realization of dark matter halos
     """
 
@@ -147,6 +150,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                          'kwargs_density_profile': {}}
 
     realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
-                                          spatial_distribution_class_list, kwargs_spatial_distribution_list,
-                                          geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1)
+                                     spatial_distribution_class_list, kwargs_spatial_distribution_list,
+                                     geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
+                                     two_halo_Lazar_correction,
+                                     nrealizations=1)
     return realization_list[0]

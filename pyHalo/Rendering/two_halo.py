@@ -16,7 +16,7 @@ class TwoHaloContribution(LineOfSightNoSheet):
     """
 
     def __init__(self, mass_function_model, kwargs_mass_function, spatial_distribution_model,
-                 geometry, lens_cosmo, lens_plane_redshifts, delta_z_list):
+                 geometry, lens_cosmo, lens_plane_redshifts, delta_z_list, use_Lazar_correction=True):
 
         """
 
@@ -26,6 +26,7 @@ class TwoHaloContribution(LineOfSightNoSheet):
         :param geometry:
         :param lens_cosmo:
         :param lens_plane_redshifts:
+        :param use_Lazar_correction:
         :param delta_z_list:
         """
         if 'host_m200' in kwargs_mass_function.keys():
@@ -42,7 +43,7 @@ class TwoHaloContribution(LineOfSightNoSheet):
         z_eval = lens_cosmo.z_lens
         idx = np.argmin(abs(np.array(lens_plane_redshifts) - z_eval))
         delta_z = delta_z_list[idx]
-        boost = two_halo_enhancement_factor(z_eval, delta_z, lens_cosmo, host_m200, r200_host_mpc)
+        boost = two_halo_enhancement_factor(z_eval, delta_z, lens_cosmo, host_m200, r200_host_mpc, use_Lazar_correction)
         kwargs_mass_function_scaled = deepcopy(kwargs_mass_function)
         kwargs_mass_function_scaled['LOS_normalization'] *= boost
         self._delta_z = delta_z
@@ -76,7 +77,7 @@ def modificationLazar2021(r, r200, b_e=0.1, s_e=4.0):
     """
     return b_e * (r / r200 / 5) ** -s_e
 
-def _boost_integrand(r, m200_host, z, r200_host, lens_cosmo):
+def _boost_integrand(r, m200_host, z, r200_host, lens_cosmo, use_Lazar_correction):
     """
     The local enhancement of the background density of the Universe from the two-halo term and a correction factor
     see Lazar et al. 2021
@@ -87,9 +88,12 @@ def _boost_integrand(r, m200_host, z, r200_host, lens_cosmo):
     :param lens_cosmo: an instance of LensCosmo
     :return: the local enhancement to the background density
     """
-    return lens_cosmo.twohaloterm(r, m200_host, z) + modificationLazar2021(r, r200_host)
+    if use_Lazar_correction:
+        return lens_cosmo.twohaloterm(r, m200_host, z) + modificationLazar2021(r, r200_host)
+    else:
+        return lens_cosmo.twohaloterm(r, m200_host, z)
 
-def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200, r200_host):
+def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200, r200_host, use_Lazar_correction):
     """
     Calculates the enhancement of the background density due to correlated structure around the main deflector. Includes
     a contribution from the two-halo term and a correction factor calibrated by Lazar et al. (2021)
@@ -97,10 +101,11 @@ def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200, r2
     :param z_step: redshift spacing
     :param lens_cosmo: instance of LensCosmo
     :param overdensity_m200: host halo mass
+    :param use_Lazar_correction: bool; adds the correction derived by Lazar et al. (2021)
     :return: the enhancement of the background density per unit length
     """
     rmax = lens_cosmo.cosmo.D_C_transverse(z_lens + z_step) - lens_cosmo.cosmo.D_C_transverse(z_lens)
     rmin = min(rmax, 0.5)
-    args = (overdensity_m200, z_lens, r200_host, lens_cosmo)
+    args = (overdensity_m200, z_lens, r200_host, lens_cosmo, use_Lazar_correction)
     two_halo_boost = 2 * quad(_boost_integrand, rmin, rmax, args=args)[0] / (rmax - rmin)
     return two_halo_boost
