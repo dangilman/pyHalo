@@ -150,3 +150,79 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                                           spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                           geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1)
     return realization_list[0]
+
+def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
+        concentration_model='DIEMERJOYCE19', kwargs_concentration_model={},
+        truncation_model='TRUNCATION_RN', kwargs_truncation_model={},
+        cone_opening_angle_arcsec=6., log_m_host=13.3, LOS_normalization=1.0,
+        delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
+    """
+
+    :param z_lens:
+    :param z_source:
+    :param log_mlow:
+    :param log_mhigh:
+    :param concentration_model:
+    :param kwargs_concentration_model:
+    :param truncation_model:
+    :param kwargs_truncation_model:
+    :param cone_opening_angle_arcsec:
+    :param log_m_host:
+    :param LOS_normalization:
+    :param delta_power_law_index:
+    :param geometry_type:
+    :param kwargs_cosmo:
+    :return:
+    """
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
+
+    # NOW WE SET THE MASS FUNCTION CLASSES FOR SUBHALOS AND FIELD HALOS
+    # NOTE: MASS FUNCTION CLASSES SHOULD NOT BE INSTANTIATED HERE
+    mass_function_model = ShethTormen
+
+    # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
+    fieldhalo_spatial_distribution = LensConeUniform
+    kwargs_spatial_distribution = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}
+
+    # set the density profile definition
+    mdef_subhalos = 'TNFW'
+    mdef_field_halos = 'TNFW'
+
+    kwargs_concentration_model['cosmo'] = pyhalo.astropy_cosmo
+
+    # SET THE CONCENTRATION-MASS RELATION MODEL
+    model, kwargs_mc = preset_concentration_models(concentration_model, kwargs_concentration_model)
+    concentration_model = model(**kwargs_mc)
+
+    # SET THE TRUNCATION RADIUS MODEL
+    kwargs_truncation_model['lens_cosmo'] = pyhalo.lens_cosmo
+    model, kwargs_trunc = truncation_models(truncation_model)
+    kwargs_trunc.update(kwargs_truncation_model)
+    truncation_model = model(**kwargs_trunc)
+
+    kwargs_halo_model = {'truncation_model_subhalos': truncation_model,
+                         'concentration_model_subhalos': concentration_model,
+                         'truncation_model_field_halos': truncation_model,
+                         'concentration_model_field_halos': concentration_model,
+                         'kwargs_density_profile': {}}
+    kwargs_mass_function = {'log_mlow': log_mlow,
+                  'log_mhigh': log_mhigh,
+                  'LOS_normalization': LOS_normalization,
+                  'm_pivot': 10 ** 8,
+                  'delta_power_law_index': delta_power_law_index,
+                  'log_m_host': log_m_host}
+    population_model_list = ['TWO_HALO']
+    mass_function_class_list = [mass_function_model]
+    spatial_distribution_class_list = [fieldhalo_spatial_distribution]
+    kwargs_spatial_distribution_list = [kwargs_spatial_distribution]
+    kwargs_mass_function_list = [kwargs_mass_function]
+
+    realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
+                                     spatial_distribution_class_list, kwargs_spatial_distribution_list,
+                                     geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1)
+    return realization_list[0]
+

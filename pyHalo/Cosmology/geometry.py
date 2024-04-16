@@ -57,7 +57,6 @@ class Geometry(object):
     def angle_to_physicalradius(self, radius_arcsec, z):
 
         angle_radian = radius_arcsec * self._arcsec
-
         return angle_radian * self.rendering_scale(z) * self.cosmo.D_A_z(z)
 
     def angle_to_comovingradius(self, radius_arcsec, z):
@@ -71,7 +70,7 @@ class Geometry(object):
 
     def volume_element_comoving(self, z, delta_z, radius=None):
         """
-
+        Computes the volume of a disk at redshift z according to the specified geometry
         :param z: redshift
         :param delta_z: thickness of the redshift pancake
         :param radius: angular radius of the rendering area in arcseconds
@@ -79,8 +78,8 @@ class Geometry(object):
         """
 
         if radius is None:
+            # note that the rendering scale is handled in the angle to co-moving radius function
             radius = 0.5*self.cone_opening_angle
-
         if delta_z > self._delta_z_min:
             func = self._volume_integrand_comoving
             volume_element = quad(func, z, z+delta_z, args=(radius))[0]
@@ -109,9 +108,7 @@ class Geometry(object):
         :param z_lens: redshift of main lens
         :return: comoving area
         """
-
         r = self.angle_to_comovingradius(radius_arcsec, z)
-
         return np.pi * r ** 2
 
     def angle_to_physical_area(self, radius_arcsec, z):
@@ -197,18 +194,12 @@ class DoubleCone(object):
     def __init__(self, cosmology, z_lens, z_source, opening_angle, angle_pad):
 
         self.cosmo = cosmology
-
         self._angle_pad = angle_pad
-
         d_c_lens = self.cosmo.D_C_transverse(z_lens)
         d_c_lens_source = self.cosmo.D_C_transverse(z_source) - d_c_lens
-
         comoving_radius_zlens = 0.5 * opening_angle * self.cosmo.arcsec * d_c_lens
-
         self._reduced_to_phys = self.cosmo.D_A(0, z_source) / self.cosmo.D_A(z_lens, z_source)
-
         self._zlens, self._zsource = z_lens, z_source
-
         volume_foreground = (np.pi/3) * comoving_radius_zlens ** 2 * d_c_lens
         volume_background = (np.pi/3) * comoving_radius_zlens ** 2 * d_c_lens_source
         self._total_volume = volume_background + volume_foreground

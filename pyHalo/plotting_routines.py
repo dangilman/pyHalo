@@ -241,6 +241,7 @@ def plot_subhalo_mass_functon(realization, log_m_low=6.0, log_m_high=10.0, bound
         ax.set_xlabel('infall halo mass ' + r'$\left[\log_{10} M_{\odot}\right]$', fontsize=15)
         ax.set_ylabel(r'$n\left(m\right)$', fontsize=15)
         ax.set_yscale('log')
+        return (logm, median, standard_dev)
 
 def plot_subhalo_concentration_versus_bound_mass(realization, ax=None, color='k', kwargs_plot={},
                                                  log_mlow=6.0, log_mhigh=10.0):
