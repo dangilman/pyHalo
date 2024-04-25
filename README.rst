@@ -37,6 +37,7 @@ The purpose of this code is to quickly render full populations of dark matter su
 2) warm dark matter
     - https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
     - https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.6159K/abstract
+    - https://ui.adsabs.harvard.edu/abs/2024arXiv240303253G/abstract
 
 3) self-interacting dark matter
     - https://ui.adsabs.harvard.edu/abs/2021MNRAS.507.2432G/abstract
@@ -49,6 +50,7 @@ The purpose of this code is to quickly render full populations of dark matter su
 5) black holes
     - https://ui.adsabs.harvard.edu/abs/2023MNRAS.522.5434D/abstract
 
+(if you have used pyHalo in a paper but your publication is not listed here, feel free to submit a pull request to edit the README)
 
 Other useful features:
 

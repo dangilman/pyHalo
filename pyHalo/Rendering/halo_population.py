@@ -13,8 +13,8 @@ class HaloPopulation(object):
 
     def __init__(self, model_list, mass_function_class_list, kwargs_mass_function_list,
                  spatial_distribution_class_list, kwargs_spatial_distribution,
-                 lens_cosmo, geometry,
-                 lens_plane_redshift_list=None, redshift_spacings=None):
+                 lens_cosmo, geometry, lens_plane_redshift_list=None, redshift_spacings=None,
+                 two_halo_Lazar_correction=True):
 
         """
 
@@ -28,6 +28,8 @@ class HaloPopulation(object):
         :param geometry: an instance of Geometry class (see Cosmology.geometry)
         :param lens_plane_redshift_list: redshifts at which to render line-of-sight halos
         :param redshift_spacings: spacing between redshift planes
+        :param two_halo_Lazar_correction: implements the correction derived by Lazar et al. 2021 for the two-halo term
+        (see functions in the two_halo.py file)
         """
 
         self.rendering_classes = []
@@ -56,7 +58,7 @@ class HaloPopulation(object):
                  geometry, lens_cosmo)
             elif model_name == 'TWO_HALO':
                 model = TwoHaloContribution(mass_function_model_class, kwargs_model, spatial_distribution_model,
-                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings)
+                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings, two_halo_Lazar_correction)
             else:
                 raise Exception('model '+str(model_name)+' not recognized. ')
 

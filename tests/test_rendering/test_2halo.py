@@ -21,23 +21,34 @@ class TestTwoHalo(object):
 
         mass_function_model = ShethTormen
         kwargs_mass_function = {'log_mlow': 6.0, 'log_mhigh': 10.0, 'm_pivot': 1e8,
-                                'LOS_normalization': 1.0, 'delta_power_law_index': 0.0, 'log_m_host': 13.0}
+                                'LOS_normalization': 1.0, 'delta_power_law_index': 0.0, 'log_m_host': 13.0,
+                                'draw_poisson': False}
 
         geometry = Geometry(self.cosmo, self.zlens, self.zsource, 6.0, 'DOUBLE_CONE')
         lens_cosmo = LensCosmo(self.zlens, self.zsource, self.cosmo)
         lens_plane_redshifts, delta_z_list = generate_lens_plane_redshifts(self.zlens, self.zsource)
         spatial_distribution_model = LensConeUniform(geometry.cone_opening_angle, geometry)
+
         self.model = TwoHaloContribution(mass_function_model, kwargs_mass_function,
                                                        spatial_distribution_model, geometry, lens_cosmo,
                                                        lens_plane_redshifts, delta_z_list)
+
+        use_Lazar_correction = False
+        self.model_no_Lazar = TwoHaloContribution(mass_function_model, kwargs_mass_function,
+                                         spatial_distribution_model, geometry, lens_cosmo,
+                                         lens_plane_redshifts, delta_z_list, use_Lazar_correction)
 
     def test_boost(self):
 
         z_step = 0.02
         mhost = 10**13
         r200_host = 0.4
-        boost = two_halo_enhancement_factor(self.zlens, z_step, self.lens_cosmo, mhost, r200_host)
+        boost = two_halo_enhancement_factor(self.zlens, z_step, self.lens_cosmo, mhost, r200_host,
+                                            use_Lazar_correction=True)
         npt.assert_equal(boost>0, True)
+        boost_no_lazar = two_halo_enhancement_factor(self.zlens, z_step, self.lens_cosmo, mhost, r200_host,
+                                                       use_Lazar_correction=False)
+        npt.assert_equal(boost_no_lazar / boost < 1, True)
 
     def test_render(self):
 
@@ -51,6 +62,8 @@ class TestTwoHalo(object):
             npt.assert_equal(False, flag)
         npt.assert_equal(redshifts, self.zlens)
 
+        masses_no_Lazar, x, y, r3d, redshifts, subhalo_flag = self.model_no_Lazar.render()
+        npt.assert_equal(len(masses_no_Lazar) < len(masses), True)
 
 if __name__ == '__main__':
    pytest.main()

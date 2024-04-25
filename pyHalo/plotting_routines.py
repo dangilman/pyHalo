@@ -201,47 +201,48 @@ def plot_subhalo_bound_mass(realization, ax=None, color='k', kwargs_plot={},
     ax.set_xscale('log')
     ax.set_yscale('log')
 
+
 def plot_subhalo_mass_functon(realization, log_m_low=6.0, log_m_high=10.0, bound_mass_function=False, nbins=20,
-                                  n_bootstrap=10, ax=None, color='k', kwargs_plot={}, rescale_amp=1.0):
-        """
-        Makes a log-log plot of the infall mass versus the final bound mass of tidally stripped subhalos
-        :param realization: an instance of Realization
-        :param log_mlow: minimum infall halo mass along x axis
-        :param log_mhigh: maximum infall halo mass along x axis
-        :param bound_mass_function:
-        :param nbins: number of bins along x axis
-        :param n_bootstrap: number of bootstrap resampling iteratins to compute vertical error bars
-        :param ax: figure axis
-        :param color: color for the lines
-        :param kwargs_plot: keyword arguments passed to plot
-        :param rescale_amp: rescales the plotted mass function
-        :return:
-        """
-        if ax is None:
-            fig = plt.figure()
-            ax = plt.subplot(111)
-        masses = []
-        for halo in realization.halos:
-            if halo.is_subhalo:
-                if bound_mass_function:
-                    masses.append(halo.bound_mass)
-                else:
-                    masses.append(halo.mass)
-        h = np.empty((n_bootstrap, nbins))
-        for i in range(0, n_bootstrap):
-            inds = np.random.randint(0, len(masses), len(masses))
-            _h, _x = np.histogram(np.log10(masses)[inds], bins=nbins, range=(log_m_low, log_m_high))
-            h[i, :] = _h
-        median = np.median(h, axis=0)
-        standard_dev = np.std(h, axis=0)
-        logm = _x[1:] - (_x[1] - _x[0])/2
-        ax.errorbar(logm, rescale_amp*median, yerr=standard_dev, fmt='none', color=color)
-        ax.plot(logm, rescale_amp*median, color=color, **kwargs_plot)
-        ax.set_ylim(median[-1] / 2, median[0] * 2)
-        ax.set_xlabel('infall halo mass ' + r'$\left[\log_{10} M_{\odot}\right]$', fontsize=15)
-        ax.set_ylabel(r'$n\left(m\right)$', fontsize=15)
-        ax.set_yscale('log')
-        return (logm, median, standard_dev)
+                              n_bootstrap=10, ax=None, color='k', kwargs_plot={}, rescale_amp=1.0):
+    """
+    Makes a log-log plot of the infall mass versus the final bound mass of tidally stripped subhalos
+    :param realization: an instance of Realization
+    :param log_mlow: minimum infall halo mass along x axis
+    :param log_mhigh: maximum infall halo mass along x axis
+    :param bound_mass_function:
+    :param nbins: number of bins along x axis
+    :param n_bootstrap: number of bootstrap resampling iteratins to compute vertical error bars
+    :param ax: figure axis
+    :param color: color for the lines
+    :param kwargs_plot: keyword arguments passed to plot
+    :param rescale_amp: rescales the plotted mass function
+    :return:
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.subplot(111)
+    masses = []
+    for halo in realization.halos:
+        if halo.is_subhalo:
+            if bound_mass_function:
+                masses.append(halo.bound_mass)
+            else:
+                masses.append(halo.mass)
+    h = np.empty((n_bootstrap, nbins))
+    for i in range(0, n_bootstrap):
+        inds = np.random.randint(0, len(masses), len(masses))
+        _h, _x = np.histogram(np.log10(masses)[inds], bins=nbins, range=(log_m_low, log_m_high))
+        h[i, :] = _h
+    median = np.median(h, axis=0)
+    standard_dev = np.std(h, axis=0)
+    logm = _x[1:] - (_x[1] - _x[0]) / 2
+    ax.errorbar(logm, rescale_amp * median, yerr=standard_dev, fmt='none', color=color)
+    ax.plot(logm, rescale_amp * median, color=color, **kwargs_plot)
+    ax.set_ylim(median[-1] / 2, median[0] * 2)
+    ax.set_xlabel('infall halo mass ' + r'$\left[\log_{10} M_{\odot}\right]$', fontsize=15)
+    ax.set_ylabel(r'$n\left(m\right)$', fontsize=15)
+    ax.set_yscale('log')
+    return (logm, median, standard_dev)
 
 def plot_subhalo_concentration_versus_bound_mass(realization, ax=None, color='k', kwargs_plot={},
                                                  log_mlow=6.0, log_mhigh=10.0):

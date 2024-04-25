@@ -40,7 +40,8 @@ class pyHalo(object):
 
     def render(self, population_model_list, mass_function_class_list, kwargs_mass_function_list,
                    spatial_distribution_class_list, kwargs_spatial_distribution_list,
-               geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1):
+               geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model, two_halo_Lazar_correction=True,
+               nrealizations=1):
 
         """
 
@@ -53,6 +54,7 @@ class pyHalo(object):
         :param mdef_subhalos:
         :param mdef_field_halos:
         :param kwargs_halo_model:
+        :param two_halo_Lazar_correction:
         :param nrealizations:
         :return:
         """
@@ -63,7 +65,7 @@ class pyHalo(object):
                                 kwargs_mass_function_list,
                                 spatial_distribution_class_list,
                                 kwargs_spatial_distribution_list,
-                                geometry_class)
+                                geometry_class, two_halo_Lazar_correction)
             realization_list.append(self.create_realization(masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, rendering_classes,
                                                             geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model))
         return realization_list
@@ -73,7 +75,8 @@ class pyHalo(object):
                                 kwargs_mass_function,
                                 spatial_distribution_class_list,
                                 kwargs_spatial_distribution,
-                                geometry_class):
+                                geometry_class,
+                                two_halo_Lazar_correction=True):
 
         """
 
@@ -83,6 +86,7 @@ class pyHalo(object):
         :param spatial_distribution_class_list:
         :param kwargs_spatial_distribution:
         :param geometry_class:
+        :param two_halo_Lazar_correction:
         :return:
         """
 
@@ -95,7 +99,8 @@ class pyHalo(object):
                                               self.lens_cosmo,
                                               geometry_class,
                                               plane_redshifts,
-                                              redshift_spacing)
+                                              redshift_spacing,
+                                              two_halo_Lazar_correction)
         masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag = population_model.render()
         return masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, population_model.rendering_classes
 

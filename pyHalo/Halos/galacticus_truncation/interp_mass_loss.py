@@ -29,7 +29,7 @@ class InterpGalacticus(object):
         :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
         :param time_since_infall: the time ellapsed since infall and the deflector redshift
         :param host_concentration: the concentration of the host halo
-        :return: bound mass divided by the infall mass
+        :return: log10 bound mass divided by the infall mass
         """
         point = (time_since_infall, host_concentration, log10_concentration_infall)
         y = self._mfrac_interp(point)

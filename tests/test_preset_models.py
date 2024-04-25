@@ -21,8 +21,6 @@ class TestPresetModels(object):
         _ = cdm.lensing_quantities()
         _ = preset_model_from_name('CDM')
 
-        cdm = CDM(0.5, 1.5,
-                  truncation_model_subhalos='TRUNCATION_GALACTICUS')
         cdm2 = CDM(0.6, 1.5, log_m_host=13.3,
                   truncation_model_subhalos='TRUNCATION_GALACTICUS')
         cdm3 = CDM(0.6, 1.5, log_m_host=13.3,
