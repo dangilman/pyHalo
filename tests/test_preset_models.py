@@ -34,7 +34,7 @@ class TestPresetModels(object):
 
         cdm = CDMCorrelatedStructure(0.5, 1.5)
         _ = cdm.lensing_quantities()
-        
+
     def test_WDM(self):
 
         wdm = WDM(0.5, 1.5, 8.0)

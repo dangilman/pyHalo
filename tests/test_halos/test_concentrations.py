@@ -31,14 +31,14 @@ class TestConcentration(object):
         c = concentration_model.nfw_concentration(m, z)
         npt.assert_equal(c != c_true, True)
 
-        c = concentration_model.nfw_concentration(np.array([10**8]*10), [z]*10)
+        c = concentration_model.nfw_concentration(np.array([10**8]*10), z)
         npt.assert_equal(10, len(c))
 
     def test_concentration_ludlow(self):
 
         m = 10 ** 8
         z = 0.5
-        c_true = 14.246936385951503
+        c_true = 13.602537830392322
         scatter = False
         scatter_amplitude_dex = 0.2
         concentration_model = ConcentrationLudlow(self.astropy, scatter)
@@ -50,7 +50,7 @@ class TestConcentration(object):
         c = concentration_model.nfw_concentration(m, z)
         npt.assert_equal(c != c_true, True)
 
-        c = concentration_model.nfw_concentration(np.array([10 ** 8] * 10), [z] * 10)
+        c = concentration_model.nfw_concentration(np.array([10 ** 8] * 10), z)
         npt.assert_equal(10, len(c))
 
 
