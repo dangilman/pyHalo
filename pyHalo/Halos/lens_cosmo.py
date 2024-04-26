@@ -1,7 +1,6 @@
 import numpy
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
-from scipy.special import erfc
 from lenstronomy.Cosmo.nfw_param import NFWParam
 import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
