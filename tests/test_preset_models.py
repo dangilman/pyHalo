@@ -1,4 +1,4 @@
-from pyHalo.PresetModels.cdm import CDM
+from pyHalo.PresetModels.cdm import CDM, CDMCorrelatedStructure
 from pyHalo.PresetModels.wdm import WDM, WDM_mixed
 from pyHalo.PresetModels.sidm import SIDM_core_collapse
 from pyHalo.PresetModels.uldm import ULDM
@@ -30,6 +30,11 @@ class TestPresetModels(object):
         halos3 = len(cdm3.halos)
         npt.assert_equal(halos3 > halos2, True)
 
+    def test_CDM_correlated_structure_only(self):
+
+        cdm = CDMCorrelatedStructure(0.5, 1.5)
+        _ = cdm.lensing_quantities()
+        
     def test_WDM(self):
 
         wdm = WDM(0.5, 1.5, 8.0)
