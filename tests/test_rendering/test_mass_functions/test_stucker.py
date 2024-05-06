@@ -12,7 +12,7 @@ class TestStucker(object):
         kwargs_model = {'dlogT_dlogk': -2.0}
         model, kwargs_stucker = preset_mass_function_models('STUCKER', kwargs_model)
         a_wdm, b_wdm, c_wdm = kwargs_stucker['a_wdm'], kwargs_stucker['b_wdm'], kwargs_stucker['c_wdm']
-        a, b, c = stucker_suppression_params(2.0)
+        a, b, c = stucker_suppression_params(-2.0)
         npt.assert_almost_equal(a, a_wdm)
         npt.assert_almost_equal(b, b_wdm)
         npt.assert_almost_equal(c, c_wdm)
