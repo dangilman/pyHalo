@@ -298,19 +298,17 @@ class LensCosmo(object):
         return 0.5427 / numpy.sqrt(g*rho_average)
 
 class InfallDistributionGalacticus2024(object):
-    """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS AS OF FEB 2024"""
+    """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS AS OF FEB 2024 AND SELECTING ON
+    SUBHALOS WITH A BOUND MASS > 10^6"""
 
     def __init__(self, z_lens):
         self.z_lens = z_lens
-        self._counts = numpy.array([ 74, 111, 138, 225, 281, 394, 396, 492, 603, 665, 626, 738, 714,
-        725, 744, 712, 679, 600, 556, 524, 478, 442, 347, 322, 283, 198,
-        189, 148, 137,  98,  77,  44,  32,  32,  26,  18,  15,   6,   5,
-        4,   0,   2,   0,   0])
-        self._z_infall = numpy.array([ 0.25,  0.75,  1.25,  1.75,  2.25,  2.75,  3.25,  3.75,  4.25,
-        4.75,  5.25,  5.75,  6.25,  6.75,  7.25,  7.75,  8.25,  8.75,
-        9.25,  9.75, 10.25, 10.75, 11.25, 11.75, 12.25, 12.75, 13.25,
-        13.75, 14.25, 14.75, 15.25, 15.75, 16.25, 16.75, 17.25, 17.75,
-        18.25, 18.75, 19.25, 19.75, 20.25, 20.75, 21.25, 21.75])
+        self._counts = numpy.array([ 50,  93, 125, 180, 175, 144, 120, 117,  97,  82,  52,  51,  35,
+        20,   9,   4,   4,   0,   1,   1])
+        self._z_infall = numpy.array([ 0.53836189,  1.37376234,  2.2091628 ,  3.04456325,  3.87996371,
+        4.71536416,  5.55076461,  6.38616507,  7.22156552,  8.05696598,
+        8.89236643,  9.72776689, 10.56316734, 11.39856779, 12.23396825,
+       13.0693687 , 13.90476916, 14.74016961, 15.57557007, 16.41097052])
         cdf = numpy.cumsum(self._counts)
         self._cdf = cdf / numpy.max(cdf)
         self._cdf_min = numpy.min(self._cdf)
@@ -321,6 +319,31 @@ class InfallDistributionGalacticus2024(object):
         u = numpy.random.uniform(self._cdf_min, self._cdf_max)
         z_infall = z_lens + self._interp(u)
         return z_infall
+
+# class InfallDistributionGalacticus2024(object):
+#     """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS AS OF FEB 2024"""
+#
+#     def __init__(self, z_lens):
+#         self.z_lens = z_lens
+#         self._counts = numpy.array([ 74, 111, 138, 225, 281, 394, 396, 492, 603, 665, 626, 738, 714,
+#         725, 744, 712, 679, 600, 556, 524, 478, 442, 347, 322, 283, 198,
+#         189, 148, 137,  98,  77,  44,  32,  32,  26,  18,  15,   6,   5,
+#         4,   0,   2,   0,   0])
+#         self._z_infall = numpy.array([ 0.25,  0.75,  1.25,  1.75,  2.25,  2.75,  3.25,  3.75,  4.25,
+#         4.75,  5.25,  5.75,  6.25,  6.75,  7.25,  7.75,  8.25,  8.75,
+#         9.25,  9.75, 10.25, 10.75, 11.25, 11.75, 12.25, 12.75, 13.25,
+#         13.75, 14.25, 14.75, 15.25, 15.75, 16.25, 16.75, 17.25, 17.75,
+#         18.25, 18.75, 19.25, 19.75, 20.25, 20.75, 21.25, 21.75])
+#         cdf = numpy.cumsum(self._counts)
+#         self._cdf = cdf / numpy.max(cdf)
+#         self._cdf_min = numpy.min(self._cdf)
+#         self._cdf_max = numpy.max(self._cdf)
+#         self._interp = interp1d(self._cdf, self._z_infall)
+#
+#     def z_accreted_from_zlens(self, z_lens):
+#         u = numpy.random.uniform(self._cdf_min, self._cdf_max)
+#         z_infall = z_lens + self._interp(u)
+#         return z_infall
 #
 # class InfallDistributionGalacticus2020(object):
 #     """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS PUBLISHED IN 2020 WITH
@@ -418,3 +441,4 @@ class InfallDistributionGalacticus2024(object):
 #
 #         idx = numpy.argmin(numpy.absolute(subhalo_mass - mass_array))
 #         return idx
+

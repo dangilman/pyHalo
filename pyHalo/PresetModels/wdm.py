@@ -17,7 +17,8 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
-        host_scaling_factor=0.5, redshift_scaling_factor=0.3, two_halo_Lazar_correction=True):
+        host_scaling_factor=0.5, redshift_scaling_factor=0.3, two_halo_Lazar_correction=True,
+        draw_poisson=True):
 
     """
     This class generates realizations of dark matter structure in Warm Dark Matter
@@ -136,17 +137,18 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
                        'sigma_sub': sigma_sub,
                        'delta_power_law_index': 0.0,
                        'host_scaling_factor': host_scaling_factor,
-                       'redshift_scaling_factor': redshift_scaling_factor})
+                       'redshift_scaling_factor': redshift_scaling_factor,
+                                          'draw_poisson': draw_poisson})
     kwargs_mass_function_fieldhalos.update({'log_mlow': log_mlow,
                   'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,
                   'm_pivot': 10 ** 8,
                   'log_m_host': log_m_host,
-                  'delta_power_law_index': 0.0})
+                  'delta_power_law_index': 0.0, 'draw_poisson': draw_poisson})
     kwargs_mass_function_list = [kwargs_mass_function_subhalos, kwargs_mass_function_fieldhalos, kwargs_mass_function_fieldhalos]
     spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution, fieldhalo_spatial_distribution]
 
-    kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens, 'c_host': c_host,
+    kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens,
                                'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,
                                'lens_cosmo': pyhalo.lens_cosmo, 'c_host': c_host}
     kwargs_los_spatial = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}

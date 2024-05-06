@@ -32,7 +32,7 @@ def preset_concentration_models(model_name, kwargs_model=None):
         kwargs_model_return['c_scale'] = 60.0
         kwargs_model_return['c_power'] = -0.17
         kwargs_model_return['c_power_inner'] = 1.0
-        kwargs_model_return['mc_suppression_redshift_evolution'] = True
+        kwargs_model_return['mc_suppression_redshift_evolution'] = False
         return ConcentrationWDMPolynomial, kwargs_model_return
     elif model_name == 'LAROCHE2022':
         # https://ui.adsabs.harvard.edu/abs/2022MNRAS.517.1867L/abstract

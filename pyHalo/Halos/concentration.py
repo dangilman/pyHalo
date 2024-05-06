@@ -240,7 +240,6 @@ class ConcentrationWDMPolynomial(_ConcentrationTurnover):
         :param log_mc: mass scale where suppresion kicks in [same units as m]
         :return:
         """
-
         mhm = 10 ** self._log_mc
         rescale_factor = (1 + self._c_scale * (mhm / m) ** self._c_power_inner) ** self._c_power
         if self._mc_suppression_redshift_evolution:

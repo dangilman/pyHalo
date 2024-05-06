@@ -17,7 +17,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
         geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.5,
-        redshift_scaling_factor=0.3, two_halo_Lazar_correction=True):
+        redshift_scaling_factor=0.3, two_halo_Lazar_correction=True, draw_poisson=True):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -120,13 +120,15 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                        'log_m_host': log_m_host,
                        'sigma_sub': sigma_sub,
                        'host_scaling_factor': host_scaling_factor,
-                       'redshift_scaling_factor': redshift_scaling_factor}
+                       'redshift_scaling_factor': redshift_scaling_factor,
+                       'draw_poisson': draw_poisson}
     kwargs_los = {'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,
                        'm_pivot': 10 ** 8,
                        'delta_power_law_index': delta_power_law_index,
-                       'log_m_host': log_m_host}
+                       'log_m_host': log_m_host,
+                    'draw_poisson': draw_poisson}
     kwargs_mass_function_list = [kwargs_subhalos, kwargs_los]
     spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution]
     kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens, 'c_host': c_host,
