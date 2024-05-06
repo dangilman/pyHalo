@@ -243,7 +243,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
 
 def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
-        truncation_model_fieldhalos='SPLASHBACK', kwargs_truncation_model_fieldhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
@@ -304,22 +304,22 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models('STUCKER_SHMF', kwargs_model_dlogT_dlogk)
     mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models('STUCKER', kwargs_model_dlogT_dlogk)
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
-    concentration_model = 'FROM_FORMATION_HISTORY'
+    concentration_model = 'LUDLOW_WDM'
     model_subhalos, kwargs_concentration_model_subhalos = preset_concentration_models(concentration_model,
                                                                                       kwargs_model_dlogT_dlogk)
-    concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
-    kwargs_concentration_model_subhalos['concentration_cdm_class'] = concentration_model_CDM
+
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_subhalos['log_mc'] = log_mc
     concentration_model_subhalos = model_subhalos(**kwargs_concentration_model_subhalos)
 
     model_fieldhalos, kwargs_concentration_model_fieldhalos = preset_concentration_models(concentration_model,
                                                                                           kwargs_model_dlogT_dlogk)
-    kwargs_concentration_model_fieldhalos['concentration_cdm_class'] = concentration_model_CDM
     kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_fieldhalos['log_mc'] = log_mc
+
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_concentration_model_fieldhalos)
-    c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
+    concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0](pyhalo.astropy_cosmo)
+    c_host = concentration_model_CDM.nfw_concentration(10 ** log_m_host, z_lens)
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
@@ -327,6 +327,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
     if truncation_model_subhalos == 'TRUNCATION_GALACTICUS':
         kwargs_trunc_subs['c_host'] = c_host
+
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
     kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
@@ -372,4 +373,5 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction,
                                      nrealizations=1)
+
     return realization_list[0]

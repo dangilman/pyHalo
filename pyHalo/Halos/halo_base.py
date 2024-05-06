@@ -49,6 +49,7 @@ class Halo(ABC):
         self._rescale_norm = 1.
         self.fixed_position = fixed_position
         self._rescaled_once = False
+        assert z > 0, 'Negative redshifts are unphysical for halos'
 
     def rescale_normalization(self, factor):
         """
@@ -111,7 +112,7 @@ class Halo(ABC):
 
         if not hasattr(self, '_z_infall'):
             self._z_infall = self.lens_cosmo.z_accreted_from_zlens(self.mass, self.z)
-
+            assert self._z_infall >= self.z, 'infall redshifts less than current redshift are unphysical'
         return self._z_infall
 
     @property
