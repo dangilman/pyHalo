@@ -112,38 +112,37 @@ class ConcentrationLudlow(_ConcentrationCDM):
         """
         self._cosmo = cosmo
         self._mdef = mdef
-        self._interp = self._setup_model()
         super(ConcentrationLudlow, self).__init__(cosmo, scatter, scatter_dex)
 
-    def _setup_model(self):
-        """
-        As discussed in the Colossus documentation the evaluation of this model is efficient for large arrays of
-        halo masses but inefficient for individual halo masses. Therefore, in this routine we will compute the m-c
-        relation on a grid (efficient) and interpolate it to later sample individual conentrations
-        :return:
-        """
-        n = 40
-        log10m_array = numpy.log10(numpy.logspace(5, 11, n))
-        z_array = numpy.linspace(0, 15, n)
-        values = numpy.empty((n, n))
-        for i in range(0, len(z_array)):
-            values[:, i] = self.evaluate_concentration_colossus(10**log10m_array, z_array[i])
-        points = (log10m_array, z_array)
-        interp = RegularGridInterpolator(points, values)
-        return interp
+    # def _setup_model(self):
+    #     """
+    #     As discussed in the Colossus documentation the evaluation of this model is efficient for large arrays of
+    #     halo masses but inefficient for individual halo masses. Therefore, in this routine we will compute the m-c
+    #     relation on a grid (efficient) and interpolate it to later sample individual conentrations
+    #     :return:
+    #     """
+    #     n = 40
+    #     log10m_array = numpy.log10(numpy.logspace(5, 11, n))
+    #     z_array = numpy.linspace(0, 15, n)
+    #     values = numpy.empty((n, n))
+    #     for i in range(0, len(z_array)):
+    #         values[:, i] = self.evaluate_concentration_colossus(10**log10m_array, z_array[i])
+    #     points = (log10m_array, z_array)
+    #     interp = RegularGridInterpolator(points, values)
+    #     return interp
 
-    def evaluate_concentration_colossus(self, m, z):
-        """
-        This function makes a direct call to Colossus to do the calculation of the median halo concentration.
-        This is inefficient for individual halo masses
-        :param m: halo mass in units 200c
-        :param z: halo redshift
-        :return: halo concentration
-        """
-        model = 'ludlow16'
-        M_h = m * self._cosmo.h
-        c = concentration(M_h, mdef=self._mdef, model=model, z=z)
-        return c
+    # def evaluate_concentration_colossus(self, m, z):
+    #     """
+    #     This function makes a direct call to Colossus to do the calculation of the median halo concentration.
+    #     This is inefficient for individual halo masses
+    #     :param m: halo mass in units 200c
+    #     :param z: halo redshift
+    #     :return: halo concentration
+    #     """
+    #     model = 'ludlow16'
+    #     M_h = m * self._cosmo.h
+    #     c = concentration(M_h, mdef=self._mdef, model=model, z=z)
+    #     return c
 
     def _evaluate_concentration(self, M, z):
 
@@ -154,15 +153,15 @@ class ConcentrationLudlow(_ConcentrationCDM):
         :param z: redshift
         :return: halo concentratioon
         """
-        try:
-            M_h = M * self._cosmo.h
-            point = (numpy.log10(M_h), z)
-            c = float(self._interp(point))
-        except:
-            model = 'ludlow16'
-            M_h = M * self._cosmo.h
-            z = max(15.0, z)
-            c = concentration(M_h, mdef=self._mdef, model=model, z=z)
+        # try:
+        #     M_h = M * self._cosmo.h
+        #     point = (numpy.log10(M_h), z)
+        #     c = float(self._interp(point))
+        # except:
+        #     model = 'ludlow16'
+        M_h = M * self._cosmo.h
+        z = min(15.0, z)
+        c = concentration(M_h, mdef=self._mdef, model='ludlow16', z=z)
         return c
 
 class ConcentrationPeakHeight(_ConcentrationCDM):
