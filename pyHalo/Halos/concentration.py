@@ -286,6 +286,92 @@ class ConcentrationWDMHyperbolic(_ConcentrationTurnover):
         argument = (log10u - self._a) / (2 * self._b)
         return 0.5 * (1 + numpy.tanh(argument))
 
+class ConcentrationLudlowWDM(_ConcentrationTurnover):
+
+    name = 'LUDLOW_WDM'
+
+    points = (numpy.array([1.0, 2.0, 2.7, 3.2, 4.0]),
+              numpy.array([6.0, 7.0, 8.0]),
+              numpy.array([0.0, 1.0, 2.0, 3.0, 4.0]))
+    values_a = numpy.array([ 0.554,  0.484,  0.432,  0.276,  0.116,  0.474,  0.46 ,  0.376,
+        0.206,  0.053,  0.486,  0.429,  0.319,  0.12 , -0.048,  0.497,
+        0.457,  0.37 ,  0.288,  0.131,  0.472,  0.446,  0.35 ,  0.216,
+        0.057,  0.477,  0.393,  0.329,  0.134, -0.021,  0.49 ,  0.412,
+        0.367,  0.268,  0.121,  0.454,  0.406,  0.343,  0.24 ,  0.074,
+        0.455,  0.388,  0.287,  0.123, -0.017,  0.453,  0.428,  0.363,
+        0.271,  0.128,  0.442,  0.412,  0.337,  0.225,  0.072,  0.409,
+        0.392,  0.282,  0.146,  0.004,  0.432,  0.414,  0.348,  0.255,
+        0.103,  0.425,  0.419,  0.318,  0.166,  0.065,  0.412,  0.379,
+        0.283,  0.119,  0.01 ])
+    values_b = numpy.array([0.805, 0.766, 0.85 , 0.927, 0.938, 0.739, 0.782, 0.868, 0.952,
+       1.015, 0.782, 0.778, 0.892, 0.946, 1.045, 0.545, 0.513, 0.552,
+       0.617, 0.715, 0.533, 0.574, 0.606, 0.711, 0.721, 0.549, 0.56 ,
+       0.638, 0.702, 0.749, 0.499, 0.46 , 0.495, 0.543, 0.646, 0.468,
+       0.485, 0.553, 0.57 , 0.686, 0.498, 0.509, 0.56 , 0.64 , 0.684,
+       0.457, 0.464, 0.499, 0.492, 0.631, 0.445, 0.471, 0.499, 0.555,
+       0.657, 0.45 , 0.504, 0.518, 0.641, 0.685, 0.42 , 0.447, 0.477,
+       0.483, 0.584, 0.42 , 0.476, 0.501, 0.565, 0.622, 0.424, 0.473,
+       0.514, 0.59 , 0.665])
+    interp_a = RegularGridInterpolator(points, values_a.reshape(5, 3, 5),
+                                       bounds_error=False, fill_value=None)
+    interp_b = RegularGridInterpolator(points, values_b.reshape(5, 3, 5),
+                                       bounds_error=False, fill_value=None)
+
+    def __init__(self, cosmo, log_mc, dlogT_dlogk, scatter=True, scatter_dex=0.2, mdef='200c'):
+        """
+
+        :param cosmo:
+        :param log_mc:
+        :param dlogT_dlogk:
+        :param scatter:
+        :param scatter_dex:
+        :param mdef:
+        """
+        if dlogT_dlogk > 0:
+            raise Exception('positive logarithmic derivatives are unphysical')
+        self._dlogT_dlogk = dlogT_dlogk
+        self._log_mc = log_mc
+        cdm_concentration = ConcentrationLudlow(cosmo, scatter, scatter_dex, mdef)
+        super(ConcentrationLudlowWDM, self).__init__(cdm_concentration)
+
+    def suppression_fit(self, log10_mhm, dlogT_dlogk, z):
+        """
+        Evaluates the coefficients of the hyperbolic suppression term
+        :param log10_mhm: log10 half-mode mass
+        :param dlogT_dlogk: logarithmic derivative at the half-mode scale k_1/2
+        :param z: redshift
+        :return: suppression of the WDM relation relative to CDM
+        """
+        x = (-dlogT_dlogk, log10_mhm, z)
+        a = self.interp_a(x)
+        b = self.interp_b(x)
+        return numpy.squeeze(a), numpy.squeeze(b)
+
+    def nfw_concentration(self, m, z):
+        """
+        Evaluates the concentration of a halo of mass 'm' at redshift z
+        :param M: halo mass [M_sun]
+        :param z: halo redshift
+        :return: halo concentration
+        """
+        c_cdm = self._cdm_concentration.nfw_concentration(m, z)
+        return c_cdm * self.suppression(m, z)
+
+    def suppression(self, m, z):
+        """
+        Evaluates the suppression of the concentration mass relation such that c_wdm = c_cdm * suppression
+        :param m: halo mass [solar mass]
+        :param z: redshift
+        :return: the suppression factor of the WDM concentration-mass relation
+        """
+        mhm = 10 ** self._log_mc
+        a, b = self.suppression_fit(self._log_mc, self._dlogT_dlogk, z)
+        a = numpy.squeeze(a)
+        b = numpy.squeeze(b)
+        log10u = numpy.log10(m / mhm)
+        arg = (log10u - a) / (2 * b)
+        return 0.5 * (1 + numpy.tanh(arg))
+
 class _zEvolutionPeakHeight(object):
 
     def __init__(self, cosmo):

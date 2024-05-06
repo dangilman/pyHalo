@@ -1,5 +1,5 @@
 from pyHalo.Halos.concentration import ConcentrationLudlow, ConcentrationDiemerJoyce, \
-    ConcentrationPeakHeight, ConcentrationWDMHyperbolic, ConcentrationWDMPolynomial
+    ConcentrationPeakHeight, ConcentrationWDMHyperbolic, ConcentrationWDMPolynomial, ConcentrationLudlowWDM
 from copy import deepcopy
 import numpy as np
 
@@ -43,6 +43,8 @@ def preset_concentration_models(model_name, kwargs_model=None):
         kwargs_model_return['c_power'] = -0.42
         kwargs_model_return['c_power_inner'] = 1.62
         return ConcentrationWDMPolynomial, kwargs_model_return
+    elif model_name == 'LUDLOW_WDM':
+        return ConcentrationLudlowWDM, kwargs_model_return
     elif model_name == 'FROM_FORMATION_HISTORY':
         norm, slope = 0.75, 0.4
         a = norm * (0.7 / kwargs_model['dlogT_dlogk']) ** slope

@@ -243,7 +243,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
 
 def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
-        truncation_model_fieldhalos='SPLASHBACK', kwargs_truncation_model_fieldhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
@@ -304,7 +304,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models('STUCKER_SHMF', kwargs_model_dlogT_dlogk)
     mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models('STUCKER', kwargs_model_dlogT_dlogk)
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
-    concentration_model = 'FROM_FORMATION_HISTORY'
+    concentration_model = 'LUDLOW_WDM'
     model_subhalos, kwargs_concentration_model_subhalos = preset_concentration_models(concentration_model,
                                                                                       kwargs_model_dlogT_dlogk)
     concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
