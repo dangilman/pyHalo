@@ -30,7 +30,7 @@ Features
 The purpose of this code is to quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. pyHalo also transltes halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy. Implemented dark matter models currently include:
 
 1) cold dark matter
-    - https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract
+    - \href{Concentration-mass relation in CDM}{https://ui.adsabs.harvard.edu/abs/2020MNRAS.492L..12G/abstract}
     - https://ui.adsabs.harvard.edu/abs/2022MNRAS.512.3163G/abstract
     - https://ui.adsabs.harvard.edu/abs/2023MNRAS.518.5843D/abstract
 
