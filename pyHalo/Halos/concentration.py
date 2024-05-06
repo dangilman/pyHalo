@@ -124,7 +124,7 @@ class ConcentrationLudlow(_ConcentrationCDM):
         """
         n = 40
         log10m_array = numpy.log10(numpy.logspace(5, 11, n))
-        z_array = numpy.linspace(0, 5, n)
+        z_array = numpy.linspace(0, 15, n)
         values = numpy.empty((n, n))
         for i in range(0, len(z_array)):
             values[:, i] = self.evaluate_concentration_colossus(10**log10m_array, z_array[i])
@@ -154,9 +154,15 @@ class ConcentrationLudlow(_ConcentrationCDM):
         :param z: redshift
         :return: halo concentratioon
         """
-        M_h = M * self._cosmo.h
-        point = (numpy.log10(M_h), z)
-        c = float(self._interp(point))
+        try:
+            M_h = M * self._cosmo.h
+            point = (numpy.log10(M_h), z)
+            c = float(self._interp(point))
+        except:
+            model = 'ludlow16'
+            M_h = M * self._cosmo.h
+            z = max(15.0, z)
+            c = concentration(M_h, mdef=self._mdef, model=model, z=z)
         return c
 
 class ConcentrationPeakHeight(_ConcentrationCDM):

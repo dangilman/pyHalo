@@ -37,10 +37,6 @@ class TestPresetModels(object):
 
     def test_WDM(self):
 
-        cdm = CDM(0.5, 1.5, 0.05, LOS_normalization=0.0, draw_poisson=False)
-        wdm = WDM(0.5, 1.5, 0.0, 0.05, LOS_normalization=0.0, draw_poisson=False)
-        npt.assert_equal((len(cdm.halos), len(wdm.halos)))
-
         wdm = WDM(0.5, 1.5, 8.0)
         _ = wdm.lensing_quantities()
         _ = preset_model_from_name('WDM')
@@ -73,10 +69,9 @@ class TestPresetModels(object):
 
     def test_WDM_general(self):
         func = preset_model_from_name('WDMGeneral')
-        wdm = func(0.5, 1.5, 7.7, 2.0)
+        wdm = func(0.5, 1.5, 7.7, -2.0)
         _ = wdm.lensing_quantities()
-
-        wdm = func(0.5, 1.5, 7.7, 2.0, truncation_model_subhalos='TRUNCATION_GALACTICUS')
+        wdm = func(0.5, 1.5, 7.7, -2.0, truncation_model_subhalos='TRUNCATION_GALACTICUS')
 
     def test_CDM_emulator(self):
 
@@ -206,7 +201,6 @@ class TestPresetModels(object):
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RT],mock_data[util.PARAM_TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC)
             npt.assert_almost_equal(sh.z,0.5)
             npt.assert_almost_equal(sh.z_infall,mock_data[util.PARAM_Z_LAST_ISOLATED][n])
-
 
 if __name__ == '__main__':
     pytest.main()

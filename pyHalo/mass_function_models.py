@@ -70,7 +70,7 @@ def preset_mass_function_models(model_name, kwargs_model={}):
         if 'c_wdm' in kwargs_model.keys():
             raise Exception('Cannot specify c_wdm with the Stucker model.')
         from pyHalo.Rendering.MassFunctions.stucker import stucker_suppression_params
-        a_wdm, b_wdm, c_wdm = stucker_suppression_params(kwargs_model_out['dlogT_dlogk'])
+        a_wdm, b_wdm, c_wdm = stucker_suppression_params(-kwargs_model_out['dlogT_dlogk'])
         kwargs_model_out['a_wdm'] = a_wdm
         kwargs_model_out['b_wdm'] = b_wdm
         kwargs_model_out['c_wdm'] = c_wdm

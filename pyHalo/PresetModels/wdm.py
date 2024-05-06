@@ -307,19 +307,19 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     concentration_model = 'LUDLOW_WDM'
     model_subhalos, kwargs_concentration_model_subhalos = preset_concentration_models(concentration_model,
                                                                                       kwargs_model_dlogT_dlogk)
-    concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
-    kwargs_concentration_model_subhalos['concentration_cdm_class'] = concentration_model_CDM
+
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_subhalos['log_mc'] = log_mc
     concentration_model_subhalos = model_subhalos(**kwargs_concentration_model_subhalos)
 
     model_fieldhalos, kwargs_concentration_model_fieldhalos = preset_concentration_models(concentration_model,
                                                                                           kwargs_model_dlogT_dlogk)
-    kwargs_concentration_model_fieldhalos['concentration_cdm_class'] = concentration_model_CDM
     kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_fieldhalos['log_mc'] = log_mc
+
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_concentration_model_fieldhalos)
-    c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
+    concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0](pyhalo.astropy_cosmo)
+    c_host = concentration_model_CDM.nfw_concentration(10 ** log_m_host, z_lens)
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
@@ -327,6 +327,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
     if truncation_model_subhalos == 'TRUNCATION_GALACTICUS':
         kwargs_trunc_subs['c_host'] = c_host
+
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
     kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
@@ -372,4 +373,5 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction,
                                      nrealizations=1)
+
     return realization_list[0]
