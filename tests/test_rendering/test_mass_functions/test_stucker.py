@@ -34,7 +34,7 @@ class TestStucker(object):
         dlogT_dlogk = -2.0
         _a_wdm, b_wdm, c_wdm = stucker_suppression_params(dlogT_dlogk)
         a_wdm = _a_wdm ** (1/b_wdm)
-
+        print(_a_wdm, b_wdm, c_wdm)
         theory_mass_scale_m20 = _supp_mscale(a_wdm, b_wdm, c_wdm, frac=0.2)
         theory_mass_scale_m50 = _supp_mscale(a_wdm, b_wdm, c_wdm, frac=0.5)
         theory_mass_scale_m80 = _supp_mscale(a_wdm, b_wdm, c_wdm, frac=0.8)

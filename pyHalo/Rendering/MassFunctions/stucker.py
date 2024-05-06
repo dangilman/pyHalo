@@ -14,7 +14,7 @@ def stucker_suppression_params(dlogT_dlogk, gamma=5.0):
     """
 
     fabg = (-1.0 + 0.5 ** (-1 / gamma))
-    beta = dlogT_dlogk * (1 + fabg) / fabg / gamma
+    beta = -dlogT_dlogk * (1 + fabg) / fabg / gamma
 
     if (beta > 6.) | (beta < 1.5):
         print("beta = %.2f is outside the validated range [1.5 ... 6]!"

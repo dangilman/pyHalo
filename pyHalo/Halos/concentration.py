@@ -317,10 +317,8 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
        0.657, 0.45 , 0.504, 0.518, 0.641, 0.685, 0.42 , 0.447, 0.477,
        0.483, 0.584, 0.42 , 0.476, 0.501, 0.565, 0.622, 0.424, 0.473,
        0.514, 0.59 , 0.665])
-    interp_a = RegularGridInterpolator(points, values_a.reshape(5, 3, 5),
-                                       bounds_error=False, fill_value=None)
-    interp_b = RegularGridInterpolator(points, values_b.reshape(5, 3, 5),
-                                       bounds_error=False, fill_value=None)
+    interp_a = RegularGridInterpolator(points, values_a.reshape(5, 3, 5))
+    interp_b = RegularGridInterpolator(points, values_b.reshape(5, 3, 5))
 
     def __init__(self, cosmo, log_mc, dlogT_dlogk, scatter=True, scatter_dex=0.2, mdef='200c'):
         """
@@ -347,7 +345,15 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
         :param z: redshift
         :return: suppression of the WDM relation relative to CDM
         """
-        x = (-dlogT_dlogk, log10_mhm, z)
+        # we will only evaluate this model around the scales where it was calibrated; i.e. no extrapolation
+        log10_mhm_eval = max(6.0, log10_mhm)
+        log10_mhm_eval = min(8.0, log10_mhm_eval)
+        dlogT_dlogk_eval = -1.0 * dlogT_dlogk
+        dlogT_dlogk_eval = max(1.0, dlogT_dlogk_eval)
+        dlogT_dlogk_eval = min(4.0, dlogT_dlogk_eval)
+        z_eval = max(z, 0.0)
+        z_eval = min(z_eval, 4.0)
+        x = (dlogT_dlogk_eval, log10_mhm_eval, z_eval)
         a = self.interp_a(x)
         b = self.interp_b(x)
         return numpy.squeeze(a), numpy.squeeze(b)
@@ -392,7 +398,6 @@ class _zEvolutionPeakHeight(object):
         M_h = m * self._cosmo.h
         redshift_factor = peaks.peakHeight(M_h, 0.0) / peaks.peakHeight(M_h, z)
         return redshift_factor
-
 
 class _zEvolutionBose2016(object):
 
