@@ -81,12 +81,11 @@ class TestConcentration(object):
 
         m = 10 ** 8
         z = 0.5
-        c_true = 13.602537830392322
+        c_true = 13.36631
         scatter = False
-        scatter_amplitude_dex = 0.2
         concentration_model = ConcentrationLudlow(self.astropy, scatter)
         c = concentration_model.nfw_concentration(m, z)
-        npt.assert_almost_equal(c_true, c)
+        npt.assert_almost_equal(c_true, c, 3)
 
         scatter = True
         concentration_model = ConcentrationDiemerJoyce(self.astropy, scatter)

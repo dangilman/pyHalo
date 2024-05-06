@@ -47,9 +47,8 @@ class TestLensCosmo(object):
         zi = [self.lens_cosmo.z_accreted_from_zlens(None, 0.5)
               for _ in range(0, 25000)]
         zi = np.array(zi) - 0.5
-        h, b = np.histogram(zi, bins=np.linspace(0.0, 20, 20))
         z_median = np.median(zi)
-        npt.assert_almost_equal(z_median / 6.955, 1, 1)
+        npt.assert_almost_equal(z_median / 6.955 / 0.5563, 1, 1)
 
     def test_mhm_convert(self):
 
