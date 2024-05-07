@@ -337,6 +337,21 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
         cdm_concentration = ConcentrationLudlow(cosmo, scatter, scatter_dex, mdef)
         super(ConcentrationLudlowWDM, self).__init__(cdm_concentration)
 
+    @staticmethod
+    def _make_in_bounds(log10_mhm, dlogT_dlogk, z):
+        """
+        Forces the values of log10_mhm, dlogT_dlogk, and z to be inside the range of interpolation
+        :return: the values of these parameters
+        """
+        log10_mhm_eval = max(6.0, log10_mhm)
+        log10_mhm_eval = min(8.0, log10_mhm_eval)
+        dlogT_dlogk_eval = -1.0 * dlogT_dlogk
+        dlogT_dlogk_eval = max(1.0, dlogT_dlogk_eval)
+        dlogT_dlogk_eval = min(4.0, dlogT_dlogk_eval)
+        z_eval = max(z, 0.0)
+        z_eval = min(z_eval, 4.0)
+        return log10_mhm_eval, dlogT_dlogk_eval, z_eval
+
     def suppression_fit(self, log10_mhm, dlogT_dlogk, z):
         """
         Evaluates the coefficients of the hyperbolic suppression term
@@ -346,13 +361,7 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
         :return: suppression of the WDM relation relative to CDM
         """
         # we will only evaluate this model around the scales where it was calibrated; i.e. no extrapolation
-        log10_mhm_eval = max(6.0, log10_mhm)
-        log10_mhm_eval = min(8.0, log10_mhm_eval)
-        dlogT_dlogk_eval = -1.0 * dlogT_dlogk
-        dlogT_dlogk_eval = max(1.0, dlogT_dlogk_eval)
-        dlogT_dlogk_eval = min(4.0, dlogT_dlogk_eval)
-        z_eval = max(z, 0.0)
-        z_eval = min(z_eval, 4.0)
+        log10_mhm_eval, dlogT_dlogk_eval, z_eval = self._make_in_bounds(log10_mhm, dlogT_dlogk, z)
         x = (dlogT_dlogk_eval, log10_mhm_eval, z_eval)
         a = self.interp_a(x)
         b = self.interp_b(x)
