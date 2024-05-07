@@ -241,7 +241,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
     return WDM(**kwargs_wdm)
 
 
-def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
@@ -269,6 +269,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param sigma_sub: amplitude of the subhalo mass function
     :param log_mlow: minimum halo mass to render
     :param log_mhigh: maximum halo mass to render
+    :param log10_sigma_sub: optional keyword argument that overrides sigma_sub; specified in a log10-scale
     :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
     :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
@@ -337,6 +338,9 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     mass_function_class_list = [mass_function_model_subhalos,
                                 mass_function_model_fieldhalos,
                                 mass_function_model_fieldhalos]
+    # check for log10 value of sigma_sub
+    if log10_sigma_sub is not None:
+        sigma_sub = 10 ** log10_sigma_sub
     kwargs_mfunc_subs.update({'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                        'm_pivot': 10 ** 8,
