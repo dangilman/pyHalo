@@ -58,6 +58,19 @@ class TestConcentration(object):
         npt.assert_almost_equal(ratio, 0.28453, 3)
         npt.assert_almost_equal(c_wdm, c_cdm * suppression, 3)
 
+        log10_mhm_eval, dlogT_dlogk_eval, z_eval = 9.0, -4.5, 4.5
+        log10_mhm_eval, dlogT_dlogk_eval, z_eval = concentration_model_wdm._make_in_bounds(log10_mhm_eval, dlogT_dlogk_eval, z_eval)
+        npt.assert_equal(log10_mhm_eval, 8.0)
+        npt.assert_equal(dlogT_dlogk_eval, 4.0)
+        npt.assert_equal(z_eval, 4.0)
+
+        log10_mhm_eval, dlogT_dlogk_eval, z_eval = 5.6, -0.5, 4.0
+        log10_mhm_eval, dlogT_dlogk_eval, z_eval = concentration_model_wdm._make_in_bounds(log10_mhm_eval,
+                                                                                           dlogT_dlogk_eval, z_eval)
+        npt.assert_equal(log10_mhm_eval, 6.0)
+        npt.assert_equal(dlogT_dlogk_eval, 1.0)
+        npt.assert_equal(z_eval, 4.0)
+
     def test_concentration_diemer_joyce(self):
 
             m = 10 ** 8
