@@ -320,6 +320,7 @@ class InfallDistributionGalacticus2024(object):
         z_infall = z_lens + self._interp(u)
         return z_infall
 
+
 # class InfallDistributionGalacticus2024(object):
 #     """ACCRETION REDSHIFT PDF FROM GALACTICUS USING THE VERSION OF GALACTICUS AS OF FEB 2024"""
 #

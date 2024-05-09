@@ -1,6 +1,19 @@
 import numpy as np
 from scipy.optimize import root
 
+def beta_from_slope(dlogT_dlogk, gamma=5):
+    """
+    Computes the parameter beta in the transfer function from the logarithmic slope and gamma
+    see: https://arxiv.org/pdf/2109.09760.pdf
+    :param dlogT_dlogk: the logarithmic derivative of the transfer function at k half-mode
+    :param gamma: the shape parameter of the transfer function
+    (has negligible effect, can be set to 5)
+    :return: the beta parameter
+    """
+    fabg = (-1.0 + 0.5 ** (-1 / gamma))
+    beta = -dlogT_dlogk * (1 + fabg) / fabg / gamma
+    return beta
+
 def stucker_suppression_params(dlogT_dlogk, gamma=5.0):
 
     """
@@ -13,9 +26,7 @@ def stucker_suppression_params(dlogT_dlogk, gamma=5.0):
     :return: the a, b, c parameters for the mass function suppression
     """
 
-    fabg = (-1.0 + 0.5 ** (-1 / gamma))
-    beta = -dlogT_dlogk * (1 + fabg) / fabg / gamma
-
+    beta = beta_from_slope(dlogT_dlogk, gamma)
     if (beta > 6.) | (beta < 1.5):
         print("beta = %.2f is outside the validated range [1.5 ... 6]!"
                       " Usage at your own risk!" % beta)

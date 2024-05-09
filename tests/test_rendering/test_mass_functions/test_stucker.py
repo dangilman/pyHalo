@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import numpy.testing as npt
-from pyHalo.Rendering.MassFunctions.stucker import stucker_suppression_params, _supp_mscale
+from pyHalo.Rendering.MassFunctions.stucker import stucker_suppression_params, beta_from_slope, _supp_mscale
 from pyHalo.mass_function_models import preset_mass_function_models
 
 
@@ -29,6 +29,11 @@ class TestStucker(object):
         kwargs_model = {'dlogT_dlogk': -2.0, 'c_wdm': 1.0}
         args = ('STUCKER', kwargs_model)
         npt.assert_raises(Exception, preset_mass_function_models, *args)
+
+    def test_beta(self):
+
+        beta = beta_from_slope(-1.3)
+        npt.assert_almost_equal(beta, 2.0, 2)
 
     def test_abc_params(self):
         dlogT_dlogk = -2.0
