@@ -3,6 +3,7 @@ from pyHalo.Halos.concentration import ConcentrationLudlow, ConcentrationDiemerJ
 from copy import deepcopy
 import numpy as np
 
+
 def preset_concentration_models(model_name, kwargs_model=None):
     """
     This function loads the concentration models, and implements some specific models from the literature
