@@ -8,7 +8,7 @@ from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
-from lenstronomy.LensModel.Profiles.p_jaffe import PJaffe as PJaffeLenstronomy
+from lenstronomy.LensModel.Profiles.pseudo_jaffe import PseudoJaffe as PJaffeLenstronomy
 
 class TestPjaffeHalo(object):
 

@@ -35,7 +35,7 @@ class TestGaussianHalo(object):
     def test_lenstronomy_ID(self):
 
         id = self.halo.lenstronomy_ID
-        npt.assert_string_equal(id[0], 'GAUSSIAN_KAPPA')
+        npt.assert_string_equal(id[0], 'GAUSSIAN')
 
     def test_redshift_eval(self):
 
