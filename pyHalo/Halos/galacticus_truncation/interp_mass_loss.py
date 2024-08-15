@@ -98,6 +98,10 @@ class InterpGalacticus(object):
         :param time_since_infall: the time ellapsed since infall and the deflector redshift
         :return: the log10(bound mass divided by the infall mass), plus scatter
         """
+        log10_concentration_infall = max(np.log10(2), log10_concentration_infall)
+        log10_concentration_infall = min(np.log10(384), log10_concentration_infall)
+        time_since_infall = max(0.0, time_since_infall)
+        time_since_infall = min(time_since_infall, 8.1)
         p = (time_since_infall, log10_concentration_infall)
         a, b = self._a_interp(p), self._b_interp(p)
         output = float(johnsonsu.rvs(a, b))
