@@ -1,14 +1,15 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
-from pyHalo.Halos.galacticus_truncation.tabulated_mass_loss import _log10_mbound_over_minfall, \
-    _log10_mbound_over_minfall_scatter_dex
+from scipy.stats import johnsonsu
 
-class InterpGalacticus(object):
+class InterpGalacticusKeeley24(object):
     """
     This class interpolates output from the semi-analytic model galacticus to predict the bound mass of a subhalo
     as a function of its infall mass, concentration, host halo concentration, and the time since infall.
     """
     def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.tabulated_mass_loss_Keeley24 import _log10_mbound_over_minfall, \
+            _log10_mbound_over_minfall_scatter_dex
         _t_ellapsed_min, _t_ellapsed_max = 0.0, 7.658449372663094
         _chostmin, _chostmax = 2.0, 8.0
         _log10cmin, _log10cmax = 0.3010299956639812, 2.3010299956639813
@@ -22,6 +23,20 @@ class InterpGalacticus(object):
         self._mfrac_interp = RegularGridInterpolator(_points, _values, bounds_error=False, fill_value=None)
         self._mfrac_scatter_dex_interp = RegularGridInterpolator(_points, _values_scatter, bounds_error=False,
                                                                  fill_value=None)
+
+    def __call__(self, log10_concentration_infall, time_since_infall, host_concentration):
+        """
+        Evaluates the prediction from galacticus for subhalo bound mass
+        :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
+        :param time_since_infall: the time ellapsed since infall and the deflector redshift
+        :param host_concentration: the concentration of the host halo
+        :return: the log10(bound mass divided by the infall mass), plus scatter
+        """
+        mean = self.evaluate_mean_mass_loss(log10_concentration_infall, time_since_infall, host_concentration)
+        scatter_dex = self.evaluate_scatter_dex(log10_concentration_infall, time_since_infall, host_concentration)
+        scatter_dex = max(scatter_dex, 0.001)
+        output = np.random.normal(mean, scatter_dex)
+        return output
 
     def evaluate_mean_mass_loss(self, log10_concentration_infall, time_since_infall, host_concentration):
         """
@@ -57,27 +72,33 @@ class InterpGalacticus(object):
         else:
             return np.squeeze(y)
 
-    def __call__(self, log10_concentration_infall, time_since_infall, host_concentration):
+class InterpGalacticus(object):
+    """
+    This class interpolates output from the semi-analytic model galacticus to predict the bound mass of a subhalo
+    as a function of its infall mass, concentration, host halo concentration, and the time since infall.
+    """
+    def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.johnsonSUparams import a_fit, \
+            b_fit
+
+        log10c_values = np.linspace(np.log10(2.0), np.log10(384), 20)
+        t_inf_values = np.linspace(0.0, 8.1, 20)
+        a_values = np.array(a_fit).reshape(20, 20)
+        b_values = np.array(b_fit).reshape(20, 20)
+        _points = (t_inf_values, log10c_values)
+        self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
+                                               fill_value=None)
+        self._b_interp = RegularGridInterpolator(_points, b_values, bounds_error=False,
+                                           fill_value=None)
+
+    def __call__(self, log10_concentration_infall, time_since_infall):
         """
         Evaluates the prediction from galacticus for subhalo bound mass
         :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
         :param time_since_infall: the time ellapsed since infall and the deflector redshift
-        :param host_concentration: the concentration of the host halo
         :return: the log10(bound mass divided by the infall mass), plus scatter
         """
-        mean = self.evaluate_mean_mass_loss(log10_concentration_infall, time_since_infall, host_concentration)
-        scatter_dex = self.evaluate_scatter_dex(log10_concentration_infall, time_since_infall, host_concentration)
-        scatter_dex = max(scatter_dex, 0.001)
-        output = np.random.normal(mean, scatter_dex)
-
-        if isinstance(log10_concentration_infall, float) and \
-            isinstance(time_since_infall, float) and \
-            isinstance(host_concentration, float):
-            output = min(0.0, max(-4.0, output))
-        else:
-            inds_high = np.where(output > 0.0)
-            output[inds_high] = 0.0
-            inds_low = np.where(output < -4.0)
-            output[inds_low] = -3.0
+        p = (time_since_infall, log10_concentration_infall)
+        a, b = self._a_interp(p), self._b_interp(p)
+        output = float(johnsonsu.rvs(a, b))
         return output
-

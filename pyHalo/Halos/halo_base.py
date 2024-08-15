@@ -126,7 +126,9 @@ class Halo(ABC):
             print("time since infall is a meaningless concept for field halos")
             return None
         if not hasattr(self, '_time_since_infall'):
-            self._time_since_infall = self.lens_cosmo.cosmo.halo_age(self.z, self.z_infall)
+            astropy = self.lens_cosmo.cosmo.astropy
+            self._time_since_infall = astropy.age(self.z).value - astropy.age(self.z_infall).value
+            assert self._time_since_infall > 0
         return self._time_since_infall
 
     @property
@@ -172,7 +174,7 @@ class Halo(ABC):
     @property
     def z_eval(self):
         """
-        Returns the redshift at which to evalate the concentration-mass relation
+        Returns the redshift at which to evaluate the concentration-mass relation
         """
         if not hasattr(self, '_zeval'):
 
@@ -197,7 +199,7 @@ class Halo(ABC):
                 pseudo_nfw = True
             else:
                 pseudo_nfw = False
-            rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval, pseudo_nfw)
+            rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z, pseudo_nfw)
             self._nfw_params = [rhos, rs, r200]
         return self._nfw_params[0], self._nfw_params[1], self._nfw_params[2]
 
