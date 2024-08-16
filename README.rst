@@ -1,15 +1,14 @@
 ======
 pyHalo
 ======
+.. image:: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
+ :target: https://travis-ci.com/dangilman/pyHalo
 
 .. image:: https://codecov.io/github/dangilman/pyHalo/graph/badge.svg?token=3H5QT3S6OO 
  :target: https://codecov.io/github/dangilman/pyHalo
 
 .. image:: https://badge.fury.io/py/pyhalo.svg
     :target: https://badge.fury.io/py/pyhalo
-
-.. image:: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
-    :target: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
 
 .. image:: https://github.com/dangilman/pyHalo/blob/master/readme_fig.jpg
         :target: https://github.com/dangilman/pyHalo/blob/master/readme_fig
