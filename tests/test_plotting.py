@@ -24,6 +24,7 @@ class TestPlottingRoutines(object):
         plot_subhalo_bound_mass(self.realization)
         plot_bound_mass_histogram(self.realization)
         plot_subhalo_concentration_versus_bound_mass(self.realization)
+        plot_subhalo_infall_time_versus_bound_mass(self.realization)
 
     def test_plot_mc_relation(self):
 
