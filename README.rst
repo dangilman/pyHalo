@@ -8,6 +8,12 @@ pyHalo
 .. image:: https://badge.fury.io/py/pyhalo.svg
     :target: https://badge.fury.io/py/pyhalo
 
+.. image:: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
+        :target: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
+
+.. image:: https://coveralls.io/repos/github/dangilman/pyHalo/badge.svg?branch=master
+        :target: https://coveralls.io/github/dangilman/pyHalo?branch=master
+
 .. image:: https://github.com/dangilman/pyHalo/blob/master/readme_fig.jpg
         :target: https://github.com/dangilman/pyHalo/blob/master/readme_fig
 
