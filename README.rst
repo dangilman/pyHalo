@@ -2,6 +2,9 @@
 pyHalo
 ======
 
+.. image:: https://github.com/dangilman/pyHalo/workflows/Tests/badge.svg
+    :target: https://github.com/dangilman/pyHalo/actions
+
 .. image:: https://codecov.io/github/dangilman/pyHalo/graph/badge.svg?token=3H5QT3S6OO 
  :target: https://codecov.io/github/dangilman/pyHalo
 
