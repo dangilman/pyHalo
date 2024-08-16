@@ -9,7 +9,7 @@ pyHalo
     :target: https://badge.fury.io/py/pyhalo
 
 .. image:: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
-        :target: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
+    :target: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
 
 .. image:: https://github.com/dangilman/pyHalo/blob/master/readme_fig.jpg
         :target: https://github.com/dangilman/pyHalo/blob/master/readme_fig
