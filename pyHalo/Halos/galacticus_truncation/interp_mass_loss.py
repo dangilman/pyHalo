@@ -82,8 +82,8 @@ class InterpGalacticus(object):
             b_fit
         log10c_values = np.linspace(np.log10(2.0), np.log10(384), 25)
         t_inf_values = np.linspace(0.0, 8.1, 25)
-        a_values = np.array(a_fit).reshape(20, 25)
-        b_values = np.array(b_fit).reshape(20, 25)
+        a_values = np.array(a_fit).reshape(25, 25)
+        b_values = np.array(b_fit).reshape(25, 25)
         _points = (t_inf_values, log10c_values)
         self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
                                                fill_value=None)
