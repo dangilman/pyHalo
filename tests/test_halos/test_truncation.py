@@ -20,9 +20,11 @@ class TestTruncation(object):
     def test_load_models(self):
 
         model_name_list = ['TRUNCATION_R50', 'TRUNCATION_RN', 'TRUNCATION_ROCHE', 'TRUNCATION_ROCHE_GILMAN2020',
-                           'SPLASHBACK', 'TRUNCATION_MEAN_DENSITY', 'CONSTANT']
+                           'SPLASHBACK', 'TRUNCATION_MEAN_DENSITY', 'CONSTANT',
+                           'TRUNCATION_GALACTICUS',
+                           'TRUNCATION_GALACTICUS_KEELEY24']
         kwargs_model_list = [{}, {'LOS_truncation_factor': 50.}, {'RocheNorm': 1.0, 'm_power': 1./3, 'RocheNu': 2.0/3.0}, {},
-                             {}, {}, {'rt_arcsec': 1.0}]
+                             {}, {}, {'rt_arcsec': 1.0}, {}, {'c_host': 5.0}]
         for model,kwargs in zip(model_name_list, kwargs_model_list):
             mod, kw = truncation_models(model)
             kwargs.update(kw)

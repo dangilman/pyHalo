@@ -1,6 +1,6 @@
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
-from lenstronomy.LensModel.Profiles.p_jaffe import PJaffe
+from lenstronomy.LensModel.Profiles.pseudo_jaffe import PseudoJaffe
 
 class PJaffeSubhalo(Halo):
     """
@@ -18,7 +18,7 @@ class PJaffeSubhalo(Halo):
         This profile is defined to have the same total mass as an NFW profile; rs = rs_pjaffe
         """
         self._lens_cosmo = lens_cosmo_instance
-        self._prof = PJaffe()
+        self._prof = PseudoJaffe()
         self._concentration_class = concentration_class
         self._truncation_class = truncation_class
         mdef = 'PJAFFE'

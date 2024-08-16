@@ -1,5 +1,5 @@
 from pyHalo.Halos.halo_base import Halo
-from lenstronomy.LensModel.Profiles.gaussian_kappa import GaussianKappa
+from lenstronomy.LensModel.Profiles.gaussian import Gaussian
 import numpy as np
 
 class Gaussian(Halo):
@@ -31,7 +31,7 @@ class Gaussian(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        return ['GAUSSIAN_KAPPA']
+        return ['GAUSSIAN']
 
     @property
     def lenstronomy_params(self):

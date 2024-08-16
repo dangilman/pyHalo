@@ -1,6 +1,6 @@
 import pytest
 import numpy.testing as npt
-from pyHalo.Halos.tidal_truncation import TruncationGalacticus
+from pyHalo.Halos.tidal_truncation import TruncationGalacticus, TruncationGalacticusKeeley24
 import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
 
@@ -10,11 +10,12 @@ class TestTruncationGalacticus(object):
 
         self.lens_cosmo_instance = LensCosmo(0.5, 1.5)
         chost = 5.0
-        self.tg = TruncationGalacticus(self.lens_cosmo_instance, chost)
+        self.tg = TruncationGalacticus(self.lens_cosmo_instance)
+        self.tgk24 = TruncationGalacticusKeeley24(self.lens_cosmo_instance, chost)
 
-    def test_interp(self):
+    def test_interp_k24(self):
 
-        interp = self.tg._mass_loss_interp
+        interp = self.tgk24._mass_loss_interp
 
         log10c = 0.5
         m1 = interp.evaluate_mean_mass_loss(log10c, 1.0, 5.0)
@@ -36,14 +37,14 @@ class TestTruncationGalacticus(object):
         npt.assert_equal(m[0], m1)
         npt.assert_equal(m[1], m2)
 
-    def test_evaluate(self):
+    def test_evaluate_keeley24(self):
 
         halo_mass = 10**8
         infall_concentration = 10.0
         time_since_infall = 2.0
         chost = 5.0
         z_eval_angles = 0.5
-        rt_kpc = self.tg.truncation_radius(halo_mass, infall_concentration, time_since_infall,
+        rt_kpc = self.tgk24.truncation_radius(halo_mass, infall_concentration, time_since_infall,
                                         chost, z_eval_angles)
         npt.assert_equal(True, np.isfinite(rt_kpc))
         npt.assert_equal(True, isinstance(rt_kpc, float))
@@ -53,8 +54,42 @@ class TestTruncationGalacticus(object):
         time_since_infall = 8.0
         chost = 5.0
         z_eval_angles = 0.5
+        rt_kpc = self.tgk24.truncation_radius(halo_mass, infall_concentration, time_since_infall,
+                                            chost, z_eval_angles)
+
+        npt.assert_equal(True, np.isfinite(rt_kpc))
+        npt.assert_equal(True, isinstance(rt_kpc, float))
+
+        class DummyHalo(object):
+
+            def __init__(self):
+                self.mass = 10**8
+                self.c = 16.0
+                self.time_since_infall = 5.0
+                self.z = 0.5
+
+        halo = DummyHalo()
+        rt_kpc = self.tgk24.truncation_radius_halo(halo)
+        npt.assert_equal(True, np.isfinite(rt_kpc))
+        npt.assert_equal(True, isinstance(rt_kpc, float))
+
+    def test_evaluate(self):
+
+        halo_mass = 10**8
+        infall_concentration = 10.0
+        time_since_infall = 2.0
+        z_eval_angles = 0.5
         rt_kpc = self.tg.truncation_radius(halo_mass, infall_concentration, time_since_infall,
-                                           chost, z_eval_angles)
+                                        z_eval_angles)
+        npt.assert_equal(True, np.isfinite(rt_kpc))
+        npt.assert_equal(True, isinstance(rt_kpc, float))
+
+        halo_mass = 10 ** 8
+        infall_concentration = 10.0
+        time_since_infall = 8.0
+        z_eval_angles = 0.5
+        rt_kpc = self.tg.truncation_radius(halo_mass, infall_concentration, time_since_infall,
+                                            z_eval_angles)
 
         npt.assert_equal(True, np.isfinite(rt_kpc))
         npt.assert_equal(True, isinstance(rt_kpc, float))
