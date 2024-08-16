@@ -276,6 +276,37 @@ def plot_subhalo_concentration_versus_bound_mass(realization, ax=None, color='k'
     # ax.set_xscale('log')
     ax.set_yscale('log')
 
+def plot_subhalo_infall_time_versus_bound_mass(realization, ax=None, color='k', kwargs_plot={},
+                                                 log_mlow=6.0, log_mhigh=10.0):
+    """
+    Plots the time since infall of subhalos versus the infall bound mass of the subhalo.
+    Note: the halo mass definition must have a truncation radius specified for this method
+
+    :param realization: an instance of Realization
+    :param ax: figure axis
+    :param color: color for the lines
+    :param kwargs_plot: keyword arguments passed to plot
+    :param log_mlow: minimum infall halo mass along x axis
+    :param log_mhigh: maximum infall halo mass along x axis
+    :return:
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.subplot(111)
+
+    infall_time = []
+    bound_mass_fraction = []
+    for halo in realization.halos:
+        if halo.is_subhalo:
+            if halo.mass >= 10 ** log_mlow and halo.mass < 10 ** log_mhigh:
+                infall_time.append(halo.time_since_infall)
+                bound_mass_fraction.append(halo.bound_mass / halo.mass)
+    ax.scatter(infall_time, bound_mass_fraction, color=color, **kwargs_plot)
+    ax.set_xlabel('time since infall [Gyr]', fontsize=15)
+    ax.set_ylabel(r'$\log_{10} \frac{M_{\rm{bound}}}{M_{\rm{infall}}}$', fontsize=22)
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+
 def plot_bound_mass_histogram(realization, ax=None, color='k', kwargs_plot={},
                               log_mlow=6.0, log_mhigh=10.0):
     """
