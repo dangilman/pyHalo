@@ -34,8 +34,14 @@ jobs:
     - name: Test with pytest
       run: |
           pytest --cov=pyHalo
-    - name: Coveralls
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        coveralls --service=github
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with:
+        files: ./coverage.xml
+    #- name: Coveralls
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #  run: |
+    #    coveralls --service=github
