@@ -1,8 +1,6 @@
 ======
 pyHalo
 ======
-.. image:: https://travis-ci.com/dangilman/pyHalo.svg?branch=master
- :target: https://travis-ci.com/dangilman/pyHalo
 
 .. image:: https://codecov.io/github/dangilman/pyHalo/graph/badge.svg?token=3H5QT3S6OO 
  :target: https://codecov.io/github/dangilman/pyHalo
