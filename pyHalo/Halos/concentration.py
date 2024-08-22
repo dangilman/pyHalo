@@ -29,7 +29,7 @@ class _ConcentrationCDM(object):
         :param z: halo redshift
         :return:
         """
-        if isinstance(m, numpy.float) or isinstance(m, numpy.int):
+        if isinstance(m, float) or isinstance(m, int):
             c = self._evaluate_concentration(m, z)
         else:
             c = numpy.array([self._evaluate_concentration(mi, z) for mi in m])
