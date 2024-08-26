@@ -4,7 +4,7 @@ from scipy.interpolate import interp1d
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.integrate import quad
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from scipy.integrate import simps
+from scipy.integrate import simpson as simps
 from pyHalo.concentration_models import preset_concentration_models
 from lenstronomy.LensModel.lens_model import LensModel
 

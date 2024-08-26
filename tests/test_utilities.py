@@ -1,6 +1,6 @@
 from lenstronomy.LensModel.lens_model import LensModel
 import numpy.testing as npt
-from scipy.integrate import simps
+from scipy.integrate import simpson as simps
 import numpy as np
 from pyHalo.utilities import interpolate_ray_paths, de_broglie_wavelength, delta_sigma, ITSampling, \
     inverse_transform_sampling, delta_kappa, nfw_velocity_dispersion
