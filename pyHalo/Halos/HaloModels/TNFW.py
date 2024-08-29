@@ -1,7 +1,7 @@
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
-
+from scipy.integrate import quad
 
 class TNFWFieldHalo(Halo):
 
@@ -99,6 +99,7 @@ class TNFWFieldHalo(Halo):
 
         if not hasattr(self, '_profile_args'):
             truncation_radius_kpc = self._truncation_class.truncation_radius_halo(self)
+
             self._profile_args = (self.c, truncation_radius_kpc)
         return self._profile_args
 
@@ -113,10 +114,17 @@ class TNFWSubhalo(TNFWFieldHalo):
         Computes the mass inside the virial radius (with truncation effects included)
         :return: the mass inside r = c * r_s
         """
-        if hasattr(self, '_kwargs_lenstronomy'):
-            tau = self._kwargs_lenstronomy[0]['r_trunc'] / self._kwargs_lenstronomy[0]['Rs']
-        else:
-            params_physical = self.params_physical
-            tau = params_physical['r_trunc_kpc'] / params_physical['rs']
-        f = tnfw_mass_fraction(tau, self.c)
-        return f * self.mass
+        def _integrand(r, rs, rhos, rt):
+            x = r/rs
+            tau = rt/rs
+            return 4 * tau **2 * np.pi * r ** 2 * rhos / x / (1+x)**2 / (x**2 + tau**2)
+
+        params_physical = self.params_physical
+        rhos = params_physical['rhos']
+        rs = params_physical['rs']
+        rt = params_physical['r_trunc_kpc']
+        r200 = rs * self.c
+            #tau = params_physical['r_trunc_kpc'] / params_physical['rs']
+        #f = tnfw_mass_fraction(tau, self.c) * self._rescale_norm
+        bound_mass = quad(_integrand, 0, r200, args=(rs, rhos, rt))[0]
+        return bound_mass

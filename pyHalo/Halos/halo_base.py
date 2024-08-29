@@ -66,6 +66,8 @@ class Halo(ABC):
                 delattr(self, '_params_physical')
             if hasattr(self, '_kwargs_lenstronomy'):
                 delattr(self, '_kwargs_lenstronomy')
+            if hasattr(self, '_nfw_params'):
+                delattr(self, '_nfw_params')
 
     @property
     @abstractmethod
