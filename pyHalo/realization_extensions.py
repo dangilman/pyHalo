@@ -11,7 +11,7 @@ from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
 from copy import deepcopy
 from scipy.interpolate import RectBivariateSpline
 import time
-from scipy.integrate import simps
+from scipy.integrate import simpson as simps
 from scipy.special import eval_chebyt
 from scipy.optimize import curve_fit
 from mcfit import Hankel
