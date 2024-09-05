@@ -1,6 +1,8 @@
 import pytest
 import numpy.testing as npt
 from pyHalo.Halos.tidal_truncation import TruncationGalacticus, TruncationGalacticusKeeley24
+from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
+from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
 
@@ -10,7 +12,7 @@ class TestTruncationGalacticus(object):
 
         self.lens_cosmo_instance = LensCosmo(0.5, 1.5)
         chost = 5.0
-        self.tg = TruncationGalacticus(self.lens_cosmo_instance)
+        self.tg = TruncationGalacticus(self.lens_cosmo_instance, chost)
         self.tgk24 = TruncationGalacticusKeeley24(self.lens_cosmo_instance, chost)
 
     def test_interp_k24(self):
@@ -101,11 +103,36 @@ class TestTruncationGalacticus(object):
                 self.c = 16.0
                 self.time_since_infall = 5.0
                 self.z = 0.5
+            def rescale_normalization(self, rescale):
+                return
 
         halo = DummyHalo()
         rt_kpc = self.tg.truncation_radius_halo(halo)
         npt.assert_equal(True, np.isfinite(rt_kpc))
         npt.assert_equal(True, isinstance(rt_kpc, float))
+
+    def test_tg(self):
+        lens_cosmo = LensCosmo(0.5, 2.0,None)
+        truncation_class = TruncationGalacticus(lens_cosmo, c_host=4.0)
+        concentration_class = ConcentrationDiemerJoyce(lens_cosmo.cosmo, scatter=False)
+        mass = 10 ** 8
+        x = 0
+        y = 0
+        r3d = None
+        z = 0.5
+        sub_flag = True
+        halo_args = {}
+        unique_tag = 1
+        tnfw_profile_1 = TNFWSubhalo(mass, x, y, r3d, z, sub_flag,
+                                     lens_cosmo, halo_args, truncation_class, concentration_class, unique_tag)
+        tnfw_profile_1._c = 3.0
+        tnfw_profile_1._time_since_infall = 6.0
+
+        m_bound = tnfw_profile_1.bound_mass
+        rescale_norm = tnfw_profile_1._rescale_norm
+        kwargs, _ = tnfw_profile_1.lenstronomy_params
+        npt.assert_equal(rescale_norm<1, True)
+        npt.assert_equal(m_bound < mass, True)
 
 if __name__ == '__main__':
     pytest.main()

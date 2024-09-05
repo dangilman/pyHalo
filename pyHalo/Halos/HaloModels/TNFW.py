@@ -1,7 +1,7 @@
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
-
+from scipy.integrate import quad
 
 class TNFWFieldHalo(Halo):
 
@@ -99,6 +99,7 @@ class TNFWFieldHalo(Halo):
 
         if not hasattr(self, '_profile_args'):
             truncation_radius_kpc = self._truncation_class.truncation_radius_halo(self)
+
             self._profile_args = (self.c, truncation_radius_kpc)
         return self._profile_args
 

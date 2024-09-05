@@ -80,28 +80,33 @@ class InterpGalacticus(object):
     def __init__(self):
         from pyHalo.Halos.galacticus_truncation.johnsonSUparams import a_fit, \
             b_fit
-        log10c_values = np.linspace(np.log10(2.0), np.log10(384), 25)
-        t_inf_values = np.linspace(0.0, 8.1, 25)
-        a_values = np.array(a_fit).reshape(25, 25)
-        b_values = np.array(b_fit).reshape(25, 25)
-        _points = (t_inf_values, log10c_values)
+        log10c_values = np.linspace(np.log10(2.0), np.log10(384), 10)
+        t_inf_values = np.linspace(0.0, 8.1, 10)
+        chost_values = np.linspace(3.0, 9.0, 10)
+        a_values = np.array(a_fit).reshape(10, 10, 10)
+        b_values = np.array(b_fit).reshape(10, 10, 10)
+        _points = (t_inf_values, log10c_values, chost_values)
         self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
                                                fill_value=None)
         self._b_interp = RegularGridInterpolator(_points, b_values, bounds_error=False,
                                            fill_value=None)
 
-    def __call__(self, log10_concentration_infall, time_since_infall):
+    def __call__(self, log10_concentration_infall, time_since_infall, chost):
         """
         Evaluates the prediction from galacticus for subhalo bound mass
         :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
         :param time_since_infall: the time ellapsed since infall and the deflector redshift
+        :param chost: host halo concentration at z=0.5
         :return: the log10(bound mass divided by the infall mass), plus scatter
         """
         log10_concentration_infall = max(np.log10(2), log10_concentration_infall)
         log10_concentration_infall = min(np.log10(384), log10_concentration_infall)
         time_since_infall = max(0.0, time_since_infall)
         time_since_infall = min(time_since_infall, 8.1)
-        p = (time_since_infall, log10_concentration_infall)
+        #chost = max(3.0, chost)
+        chost = max(6.0, chost) # we're getting some unphysical behavior at chost = 3.0
+        chost = min(9.0, chost)
+        p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
         output = float(johnsonsu.rvs(a, b))
         return output

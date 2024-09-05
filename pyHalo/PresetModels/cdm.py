@@ -17,7 +17,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, two_halo_contribution=True, delta_power_law_index=0.0,
         geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.5,
-        redshift_scaling_factor=0.3, two_halo_Lazar_correction=True, draw_poisson=True):
+        redshift_scaling_factor=0.3, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -57,6 +57,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
     :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
     main deflector presented by Lazar et al. (2021)
+    :param c_host: manually set host halo concentration
     :return: a realization of dark matter halos
     """
 
@@ -90,7 +91,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
                                                                     kwargs_concentration_model_fieldhalos)
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
-    c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
+    if c_host is None:
+        c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
@@ -98,7 +100,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
 
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
-    if truncation_model_subhalos == 'TRUNCATION_GALACTICUS_KEELEY24':
+    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24', 'TRUNCATION_GALACTICUS']:
         kwargs_trunc_subs['c_host'] = c_host
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
 

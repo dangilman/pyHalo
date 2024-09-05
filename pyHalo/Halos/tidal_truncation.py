@@ -4,6 +4,8 @@ from pyHalo.Halos.tnfw_halo_util import tau_mf_interpolation
 from colossus.lss import peaks
 from colossus.halo import splashback
 from pyHalo.Halos.galacticus_truncation.interp_mass_loss import InterpGalacticus, InterpGalacticusKeeley24
+from pyHalo.Halos.galacticus_truncation.transfer_function_density_profile import compute_r_te_and_f_t
+
 
 class TruncationSplashBack(object):
 
@@ -319,12 +321,13 @@ class TruncationGalacticusKeeley24(object):
 
 class TruncationGalacticus(object):
 
-    def __init__(self, lens_cosmo):
+    def __init__(self, lens_cosmo, c_host):
         """
 
-        :param lens_cosmo:
+        :param lens_cosmo: an instance of LensCosmo
+        :param c_host: host halo concentration at z=0.5
         """
-
+        self._chost = c_host
         self._lens_cosmo = lens_cosmo
         self._mass_loss_interp = InterpGalacticus()
         self._tau_mf_interpolation = tau_mf_interpolation()
@@ -349,8 +352,18 @@ class TruncationGalacticus(object):
         :return: the truncation radius in physical kpc
         """
 
-        return self.truncation_radius(halo.mass, halo.c,
-                                      halo.time_since_infall, halo.z)
+        halo_mass = halo.mass
+        infall_concentration = halo.c
+        time_since_infall = halo.time_since_infall
+        log10c = np.log10(infall_concentration)
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
+        m_bound = halo_mass * 10 ** log10mbound_over_minfall
+        _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
+                                                           infall_concentration,
+                                                           halo.z)
+        r_te, f_t = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
+        halo.rescale_normalization(f_t)
+        return r_te
 
     def truncation_radius(self, halo_mass, infall_concentration,
                           time_since_infall, z_eval_angles):
@@ -364,14 +377,13 @@ class TruncationGalacticus(object):
         :return:
         """
         log10c = np.log10(infall_concentration)
-        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall)
-        point = self._make_params_in_bounds_tau_evaluate((log10c, log10mbound_over_minfall))
-        log10tau = float(self._tau_mf_interpolation(point))
-        tau = 10 ** log10tau
-        _, rs, _ = self._lens_cosmo.NFW_params_physical(halo_mass,
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
+        m_bound = halo_mass * 10 ** log10mbound_over_minfall
+        _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
                                                         z_eval_angles)
-        return tau * rs
+        r_te, _ = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
+        return r_te
 
 
 
