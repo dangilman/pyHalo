@@ -106,7 +106,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     kwargs_mc_field['concentration_cdm_class'] = concentration_model_CDM
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
     if c_host is None:
-        c_host = concentration_model_CDM.nfw_concentration(10 ** log_m_host, z_lens)
+        c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
