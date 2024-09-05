@@ -12,7 +12,7 @@ class TestTruncationGalacticus(object):
 
         self.lens_cosmo_instance = LensCosmo(0.5, 1.5)
         chost = 5.0
-        self.tg = TruncationGalacticus(self.lens_cosmo_instance)
+        self.tg = TruncationGalacticus(self.lens_cosmo_instance, chost)
         self.tgk24 = TruncationGalacticusKeeley24(self.lens_cosmo_instance, chost)
 
     def test_interp_k24(self):
@@ -113,7 +113,7 @@ class TestTruncationGalacticus(object):
 
     def test_tg(self):
         lens_cosmo = LensCosmo(0.5, 2.0,None)
-        truncation_class = TruncationGalacticus(lens_cosmo)
+        truncation_class = TruncationGalacticus(lens_cosmo, c_host=4.0)
         concentration_class = ConcentrationDiemerJoyce(lens_cosmo.cosmo, scatter=False)
         mass = 10 ** 8
         x = 0

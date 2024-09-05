@@ -18,7 +18,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
         host_scaling_factor=0.5, redshift_scaling_factor=0.3, two_halo_Lazar_correction=True,
-        draw_poisson=True):
+        draw_poisson=True, c_host=None):
 
     """
     This class generates realizations of dark matter structure in Warm Dark Matter
@@ -63,6 +63,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
     :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
     main deflector presented by Lazar et al. (2021)
+    :param c_host: manually set host halo concentration
     :return: a realization of dark matter halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -104,14 +105,15 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0]
     kwargs_mc_field['concentration_cdm_class'] = concentration_model_CDM
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
-    c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
+    if c_host is None:
+        c_host = concentration_model_CDM.nfw_concentration(10 ** log_m_host, z_lens)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
-    if truncation_model_subhalos == 'TRUNCATION_GALACTICUS_KEELEY24':
+    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24', 'TRUNCATION_GALACTICUS']:
         kwargs_trunc_subs['c_host'] = c_host
     kwargs_trunc_subs['lens_cosmo'] = pyhalo.lens_cosmo
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
@@ -247,7 +249,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
-               host_scaling_factor=0.5, redshift_scaling_factor=0.3, two_halo_Lazar_correction=True):
+        host_scaling_factor=0.5, redshift_scaling_factor=0.3, two_halo_Lazar_correction=True, c_host=None):
 
     """
     This preset model implements a generalized treatment of warm dark matter, or any theory that produces a cutoff in
@@ -290,6 +292,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
     :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
     main deflector presented by Lazar et al. (2021)
+    :param c_host: manually fix the host halo concentration
     :return:
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -320,15 +323,15 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
 
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_concentration_model_fieldhalos)
     concentration_model_CDM = preset_concentration_models('DIEMERJOYCE19')[0](pyhalo.astropy_cosmo)
-    c_host = concentration_model_CDM.nfw_concentration(10 ** log_m_host, z_lens)
+    if c_host is None:
+        c_host = concentration_model_CDM.nfw_concentration(10 ** log_m_host, z_lens)
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
-    if truncation_model_subhalos == 'TRUNCATION_GALACTICUS_KEELEY24':
+    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24', 'TRUNCATION_GALACTICUS']:
         kwargs_trunc_subs['c_host'] = c_host
-
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
     kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)

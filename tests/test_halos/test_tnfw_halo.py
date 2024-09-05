@@ -92,9 +92,9 @@ class TestTNFWHalos(object):
         mtheory = 4 * np.pi * rho_s * rs ** 3 * (np.log(1 + c) - c/(1+c))
         npt.assert_almost_equal(mtheory, tnfw_fieldhalo.mass)
         rmax = c * rs
+
         m_calculated = tnfw_fieldhalo.mass_3d(rmax)
         npt.assert_almost_equal(mtheory/m_calculated, 1.0)
-
 
 if __name__ == '__main__':
     pytest.main()

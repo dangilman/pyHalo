@@ -321,12 +321,13 @@ class TruncationGalacticusKeeley24(object):
 
 class TruncationGalacticus(object):
 
-    def __init__(self, lens_cosmo):
+    def __init__(self, lens_cosmo, c_host):
         """
 
-        :param lens_cosmo:
+        :param lens_cosmo: an instance of LensCosmo
+        :param c_host: host halo concentration at z=0.5
         """
-
+        self._chost = c_host
         self._lens_cosmo = lens_cosmo
         self._mass_loss_interp = InterpGalacticus()
         self._tau_mf_interpolation = tau_mf_interpolation()
@@ -354,9 +355,8 @@ class TruncationGalacticus(object):
         halo_mass = halo.mass
         infall_concentration = halo.c
         time_since_infall = halo.time_since_infall
-
         log10c = np.log10(infall_concentration)
-        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall)
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
         m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                            infall_concentration,
@@ -377,7 +377,7 @@ class TruncationGalacticus(object):
         :return:
         """
         log10c = np.log10(infall_concentration)
-        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall)
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
         m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
