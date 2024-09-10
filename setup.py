@@ -19,10 +19,10 @@ test_requirements = [ ]
 
 setup(
     author="Daniel Gilman",
-    version='1.2.1',
+    version='1.2.2',
     author_email='daniel.gilman@utoronto.ca',
     classifiers=[
-        'Development Status :: 5 - Stable',
+        #'Development Status :: 5 - Stable',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
@@ -33,7 +33,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
-    description="A tool for rendering full mass distributions for gravitational lensing simulations",
+    description="A tool for rendering substructure for gravitational lensing simulations",
     entry_points={
         'console_scripts': [
             'pyHalo=pyHalo.cli:main',
@@ -41,7 +41,7 @@ setup(
     },
     install_requires=requirements,
     license="MIT license",
-    long_description=readme + '\n\n' + history,
+#    long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='pyHalo',
     name='pyhalo',

@@ -45,6 +45,9 @@ class TestSubhalos(object):
                                                       kwargs_mass_function['host_scaling_factor'],
                                                       kwargs_mass_function['redshift_scaling_factor'])
 
+    def test_name(self):
+        npt.assert_string_equal('SUBHALOS', self.model_sigmasub.name)
+
     def test_mass_rendered(self):
 
         model = CDMPowerLaw(self.kwargs_mass_function['log_mlow'], self.kwargs_mass_function['log_mhigh'],

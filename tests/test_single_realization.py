@@ -17,12 +17,30 @@ class TestSingleRealization(object):
     def setup_method(self):
         z_lens = 0.5
         z_source = 1.5
-        self._logmlow = 6.0
+        self._logmlow = 7.0
         self._logmhigh = 9.0
         self.realization = CDM(z_lens, z_source, log_mlow=self._logmlow, log_mhigh=self._logmhigh, sigma_sub=0.05,
-                                   cone_opening_angle_arcsec=12.0)
+                                   cone_opening_angle_arcsec=6.0, truncation_model_subhalos='TRUNCATION_R50')
         self.rendering_classes = self.realization.rendering_classes
 
+    def test_filter_bound_mass(self):
+
+        kwargs_truncation_model_subhalos = {'rt_arcsec': 0.1}
+        realization = CDM(0.5, 2.0, log_mlow=self._logmlow, log_mhigh=self._logmhigh, sigma_sub=0.05,
+                               cone_opening_angle_arcsec=6.0,
+                               LOS_normalization=0.0,
+                               truncation_model_subhalos='CONSTANT',
+                               kwargs_truncation_model_subhalos=kwargs_truncation_model_subhalos)
+        bound_masses = np.array([halo.bound_mass for halo in realization.halos])
+        mcut = 10 ** 6.0
+        inds = np.where(bound_masses >= mcut)[0]
+        total_mass = np.sum(bound_masses[inds])
+        realization_filtered = realization.filter_bound_mass(mcut)
+        bound_masses_filtered = np.array([halo.bound_mass for halo in realization_filtered.halos])
+        inds = np.where(bound_masses_filtered >= mcut)[0]
+        total_mass_filtered = np.sum(bound_masses_filtered[inds])
+        npt.assert_equal(total_mass_filtered, total_mass)
+        npt.assert_equal(True, np.sum(bound_masses_filtered < mcut)==0)
 
     def test_mass_sheet_correction(self):
 
@@ -62,6 +80,14 @@ class TestSingleRealization(object):
         kappa = lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_halos)
         mean_kappa = np.mean(kappa)
         npt.assert_array_less(abs(mean_kappa), 0.04)
+
+        kwargs_mass_sheets, profile_list, z_sheets = self.realization._mass_sheet_correction(self.rendering_classes,
+                                                                                             subtract_exact_sheets=False,
+                                                                                             kappa_scale_subhalos=0.0)
+        for zi, kw in zip(z_sheets, kwargs_mass_sheets):
+            if zi == 0.5:
+                npt.assert_equal(-0.0, kw['kappa'])
+                break
 
     def test_build_from_halos(self):
 

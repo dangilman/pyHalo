@@ -7,6 +7,7 @@ from pyHalo.concentration_models import ConcentrationDiemerJoyce
 
 class TwoHaloContribution(LineOfSightNoSheet):
 
+    name = 'TWO_HALO_TERM'
     """
     This class adds correlated structure associated with the host dark matter halo. The amount of structure added is
     proportional to b * corr, where b is the halo bias as computed by Sheth and Tormen (1999) and corr is the

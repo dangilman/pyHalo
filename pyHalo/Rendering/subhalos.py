@@ -7,7 +7,7 @@ class Subhalos(RenderingClassBase):
     """
     This class generates subhalos, objects that have been accreted onto the host halo of the main deflector.
     """
-
+    name = 'SUBHALOS'
     def __init__(self, mass_function_model, kwargs_mass_function, spatial_distribution_model,
                  geometry, lens_cosmo):
         """

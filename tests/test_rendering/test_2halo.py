@@ -38,6 +38,10 @@ class TestTwoHalo(object):
                                          spatial_distribution_model, geometry, lens_cosmo,
                                          lens_plane_redshifts, delta_z_list, use_Lazar_correction)
 
+    def test_name(self):
+
+        npt.assert_string_equal('TWO_HALO', self.model.name)
+
     def test_boost(self):
 
         z_step = 0.02

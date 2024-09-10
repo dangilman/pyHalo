@@ -8,7 +8,7 @@ class LineOfSightNoSheet(RenderingClassBase):
     This class generates halos between the observer and source that are
     not bound to the host dark matter halo around the main deflector.
     """
-
+    name = 'LINE_OF_SIGHT_NO_SHEET'
     def render(self):
 
         """
@@ -64,7 +64,7 @@ class LineOfSight(LineOfSightNoSheet):
     This class generates halos between the observer and source that are not bound to the host dark matter halo around
     the main deflector, with the inclusion of negative sheets of convergence to remove the mass added in halos
     """
-
+    name = 'LINE_OF_SIGHT'
     def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, zmin=None, zmax=None, *args, **kwargs):
 
         """

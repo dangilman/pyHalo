@@ -7,7 +7,7 @@ from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.single_realization import realization_at_z
 
 class CorrelatedStructure(RenderingClassBase):
-
+    name = 'CORRELATED_STRUCTURE'
     """
     This class generates a population of halos with a spatial distribution that tracks the dark matter density in halos
     at each lens plane

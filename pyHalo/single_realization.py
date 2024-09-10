@@ -122,6 +122,30 @@ class Realization(object):
         self._rendering_center_x = rendering_center_x
         self._rendering_center_y = rendering_center_y
 
+    def filter_bound_mass(self, bound_mass_minimum):
+        """
+        This routine creates an instance of realization after removing halos/subhalos with attributes .bound_mass below
+        a certain threshold
+        :param realization: an instance of realization
+        :param bound_mass_minimum: the mass scale below which to discard halos
+        :return: a realization in which no subhalo has a bound mass less than bound_mass_minimum
+        """
+        halos_new = []
+        for halo in self.halos:
+            if halo.is_subhalo:
+                if halo.bound_mass >= bound_mass_minimum:
+                    halos_new.append(halo)
+            else:
+                halos_new.append(halo)
+        new_realization = Realization.from_halos(halos_new, self.lens_cosmo, self.kwargs_halo_model,
+                                  msheet_correction=self.apply_mass_sheet_correction,
+                                  rendering_classes=self.rendering_classes,
+                                  rendering_center_x=self.rendering_center[0],
+                                  rendering_center_y=self.rendering_center[1],
+                                  geometry=self.geometry)
+        new_realization._has_been_shifted = self._has_been_shifted
+        return new_realization
+
     @classmethod
     def from_halos(cls, halos, lens_cosmo, kwargs_halo_model, msheet_correction, rendering_classes,
                    rendering_center_x=None, rendering_center_y=None, geometry=None):
@@ -131,7 +155,7 @@ class Realization(object):
         :param halos: a list of halo class instances
         :param lens_cosmo: an instance of LensCosmo (see Halos.lens_cosmo)
         :param kwargs_halo_model: keyword arguments for the halo models
-        :param msheet_correction: whether or not to apply a mass sheet correction
+        :param msheet_correction: apply a mass sheet correction
         :param rendering_classes: a list of rendering classes
         :param rendering_center_x: an instance of scipy.interp1d that returns an angular position given a comoving distance.
         The angular coordinate defines the center of the rendering volume, and halos will be distributed symmetrically around it.
@@ -531,21 +555,29 @@ class Realization(object):
                 n += 1
         return n
 
-    def _mass_sheet_correction(self, rendering_classes, subtract_exact_sheets=False,
-                               kappa_scale=1.0, log_mlow_sheets=7.0, log_mhigh_sheets=10.0, zmin=None, zmax=None):
+    def _mass_sheet_correction(self, rendering_classes,
+                               subtract_exact_sheets=False,
+                               kappa_scale_subhalos=1.0,
+                               kappa_scale=1.0,
+                               log_mlow_sheets=7.0,
+                               log_mhigh_sheets=10.0,
+                               zmin=None, zmax=None):
 
         """
         This routine adds the negative mass sheet corrections along the LOS and in the main lens plane.
         The actual physics that determines the amount of negative convergence to add is encoded in the rendering_classes
         (see for example Rendering.Field.PowerLaw.powerlaw_base.py)
 
-        :param rendering_classes:
-        :param subtract_exact_sheets:
-        :param kappa_scale:
-        :param log_mlow_sheets:
-        :param log_mhigh_sheets:
-        :param zmin:
-        :param zmax:
+        :param rendering_classes: a list of rendering classes (see classes in pyHalo/Rendering/)
+        :param subtract_exact_sheets: bool; if True, will calculate the mass in each lens plane and subtract the
+        corresponding amount of convergence
+        :param kappa_scale_subhalos: scales the mass sheets added in the main lens plane
+        :param kappa_scale: rescales the amplitude negative mass convergence sheets
+        (specifying subtract_exact_sheets=True will cause this to have no effect)
+        :param log_mlow_sheets: sets the minimum halo mass to subtract mass
+        :param log_mhigh_sheets: sets the maximum halo mass to subtract mass
+        :param zmin: sets the lower limit in redshift
+        :param zmax: sets upper limit in redshift
         :return:
         """
         kwargs_mass_sheets_out = []
@@ -563,20 +595,20 @@ class Realization(object):
             profiles_out = ['CONVERGENCE'] * len(kwargs_mass_sheets_out)
 
         else:
-            for rendering_class in rendering_classes:
-
+            for i, rendering_class in enumerate(rendering_classes):
                 if rendering_class is None:
                     continue
-
-                kwargs_new, profiles_new, redshifts_new = \
-                    rendering_class.convergence_sheet_correction(kappa_scale, log_mlow_sheets,
-                                                                 log_mhigh_sheets, zmin, zmax)
-
+                elif rendering_class.name == 'SUBHALOS':
+                    kwargs_new, profiles_new, redshifts_new = rendering_class.convergence_sheet_correction(
+                        kappa_scale_subhalos, log_mlow_sheets, log_mhigh_sheets, zmin, zmax)
+                else:
+                    kwargs_new, profiles_new, redshifts_new = rendering_class.convergence_sheet_correction(
+                        kappa_scale, log_mlow_sheets, log_mhigh_sheets, zmin, zmax)
                 kwargs_mass_sheets_out += kwargs_new
                 redshifts_out += redshifts_new
                 profiles_out += profiles_new
 
-        # define the center of mass sheet to be the center of the rendering volume
+        # define the center of mass sheets to be the center of the rendering volume
         centerx_interp, centery_interp = self.rendering_center
         for i, (zi, profile_name) in enumerate(zip(redshifts_out, profiles_out)):
             di = self.lens_cosmo.cosmo.D_C_z(zi)

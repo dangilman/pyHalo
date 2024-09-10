@@ -27,6 +27,9 @@ class TestLineOfSightNoSheet(object):
                  geometry, lens_cosmo, lens_plane_redshifts, delta_z_list)
         self._is_subhalo = False
 
+    def test_name(self):
+        npt.assert_string_equal('LINE_OF_SIGHT_NO_SHEET', self.model.name)
+
     def test_render(self):
 
         masses, x, y, r3d, redshifts, subhalo_flag = self.model.render()
@@ -53,6 +56,9 @@ class TestLineOfSight(object):
         self.model = LineOfSight(mass_function_model, kwargs_mass_function, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshifts, delta_z_list)
         self._is_subhalo = False
+
+    def test_name(self):
+        npt.assert_string_equal('LINE_OF_SIGHT', self.model.name)
 
     def test_render(self):
 
