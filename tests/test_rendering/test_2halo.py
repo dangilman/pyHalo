@@ -40,7 +40,7 @@ class TestTwoHalo(object):
 
     def test_name(self):
 
-        npt.assert_string_equal('TWO_HALO', self.model.name)
+        npt.assert_string_equal('TWO_HALO_TERM', self.model.name)
 
     def test_boost(self):
 
