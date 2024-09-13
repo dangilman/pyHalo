@@ -19,7 +19,7 @@ test_requirements = [ ]
 
 setup(
     author="Daniel Gilman",
-    version='1.2.2',
+    version='1.3.0',
     author_email='daniel.gilman@utoronto.ca',
     classifiers=[
         #'Development Status :: 5 - Stable',
