@@ -34,6 +34,7 @@ class _PowerLawBase(object):
 
         mH = 10 ** self._logmhigh
         mL = 10 ** self._logmlow
+
         if self._draw_poisson:
             ndraw = np.random.poisson(self.n_mean)
         else:

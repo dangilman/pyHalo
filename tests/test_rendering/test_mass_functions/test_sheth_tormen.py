@@ -21,7 +21,7 @@ class TestShethTormen(object):
         geometry_class = Geometry(cosmo, zlens, zsource, opening_angle, 'DOUBLE_CONE')
         delta_power_law_index = -0.1
         kwargs_model = {}
-        kwargs_model['m_pivot'] = 10.0**8
+        kwargs_model['m_pivot'] = 10.0 ** 8
         kwargs_model['log_mlow'] = 6.0
         kwargs_model['log_mhigh'] = 10.0
         kwargs_model['LOS_normalization'] = 1.0
@@ -56,11 +56,8 @@ class TestShethTormen(object):
 
     def test_draw_poisson(self):
 
-        m = self.mass_function.draw()
-        m_poisson = self.mass_function_poisson.draw()
-        n1 = len(m)
-        n2 = len(m_poisson)
-        npt.assert_equal(True, n1!=n2)
+        npt.assert_equal(False, self.mass_function._draw_poisson)
+        npt.assert_equal(True, self.mass_function_poisson._draw_poisson)
 
     def test_from_redshift(self):
         mfunc = ShethTormen.from_redshift(**self._kwargs_from_redshift)
