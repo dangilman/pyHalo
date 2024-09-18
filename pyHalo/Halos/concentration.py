@@ -403,6 +403,8 @@ class _zEvolutionPeakHeight(object):
         :param m: halo mass in units 200c
         :param z: redshift
         :return: the relative evolution of the peak height between z=0 and z=z
+        Note that the choice to divide by peaks.peakHeight(M_h, z) causes a decrease in amplitude with increasing
+        redshift at fixed mass
         """
         M_h = m * self._cosmo.h
         redshift_factor = peaks.peakHeight(M_h, 0.0) / peaks.peakHeight(M_h, z)
@@ -420,3 +422,4 @@ class _zEvolutionBose2016(object):
         """
         redshift_factor = (1 + z) ** (0.026 * z - 0.04)
         return redshift_factor
+

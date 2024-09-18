@@ -1,18 +1,19 @@
 [project]
 name = "pyhalo"
-version = "1.3.0"
+version = "1.3.1"
 authors = [
   { name="Daniel Gilman", email="gilmanda@uchicago.edu" },
 ]
 description = "A python package for generating populations of dark matter halos"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-
+[build-system]
+requires = ["setuptools == 68.2.2"]
 [project.urls]
 "Homepage" = "https://github.com/dangilman/pyHalo"
 "Bug Tracker" = "https://github.com/dangilman/pyHalo/issues"
