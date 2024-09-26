@@ -80,11 +80,11 @@ class InterpGalacticus(object):
     def __init__(self):
         from pyHalo.Halos.galacticus_truncation.johnsonSUparams import a_fit, \
             b_fit
-        log10c_values = np.linspace(np.log10(2.0), np.log10(384), 25)
-        t_inf_values = np.linspace(0.0, 8.1, 25)
-        chost_values = np.linspace(4.0, 9.0, 25)
-        a_values = np.array(a_fit).reshape(25, 25, 25)
-        b_values = np.array(b_fit).reshape(25, 25, 25)
+        log10c_values = np.linspace(np.log10(2.0), np.log10(384), 10)
+        t_inf_values = np.linspace(0.0, 8.1, 10)
+        chost_values = np.linspace(4.0, 9.0, 10)
+        a_values = np.array(a_fit).reshape(10, 10, 10)
+        b_values = np.array(b_fit).reshape(10, 10, 10)
         _points = (t_inf_values, log10c_values, chost_values)
         self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
                                                fill_value=None)
@@ -105,7 +105,7 @@ class InterpGalacticus(object):
         time_since_infall = max(0.0, time_since_infall)
         time_since_infall = min(time_since_infall, 8.1)
         chost = max(4.0, chost)
-        chost = min(9.0, chost)
+        chost = min(8.0, chost)
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
         output = float(johnsonsu.rvs(a, b))
