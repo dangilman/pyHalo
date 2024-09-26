@@ -51,6 +51,13 @@ class TestWDMPowerLaw(object):
         rendered = np.sum(self.mass_function.draw())
         npt.assert_almost_equal(expected / rendered, 1, 2)
 
+    def test_turnover(self):
+
+        m = 10 ** 8
+        ratio = self.mass_function.turnover(m)
+        ratio2 = self.mass_function._turnover(m, **self.mass_function._kwargs_mass_function)
+        npt.assert_almost_equal(ratio, ratio2)
+
 class TestMixedWDMPowerLaw(object):
 
     def setup_method(self):

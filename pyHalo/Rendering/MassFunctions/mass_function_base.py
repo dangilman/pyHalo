@@ -26,6 +26,14 @@ class _PowerLawBase(object):
         self.first_moment = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10**log_mhigh,
                                                    1.0, power_law_index)
 
+    def evaluate(self, m):
+        """
+        Compute d^2N/dmdA
+        :param m:
+        :return: differential halo mass function
+        """
+        return self._normalization * m ** self._index
+
     def draw(self):
 
         """
@@ -80,6 +88,15 @@ class _PowerLawTurnoverBase(object):
                                                          1.0, power_law_index, self._turnover,
                                                      self._kwargs_mass_function)
 
+    def evaluate(self, m):
+        """
+        Compute d^2N/dmdA
+        :param m:
+        :return: differential halo mass function
+        """
+
+        return self._normalization * m ** self._index * self.turnover(m)
+
     def draw(self):
         """
         Samples from the mass function
@@ -92,6 +109,14 @@ class _PowerLawTurnoverBase(object):
         u = np.random.rand(int(len(m)))
         inds = np.where(u < factor)
         return m[inds]
+
+    def turnover(self, m):
+        """
+        Non-private method to compute the suppression of the mass function at a given mass scale
+        :param m: halo mass scale
+        :return: the ratio N / N_cdm
+        """
+        return self._turnover(m, **self._kwargs_mass_function)
 
     @staticmethod
     def _turnover(*args, **kwargs):
@@ -110,7 +135,6 @@ class CDMPowerLaw(_PowerLawBase):
        :param normalization: the amplitude of the mass function
        """
         super(CDMPowerLaw, self).__init__(log_mlow, log_mhigh, power_law_index, draw_poisson, normalization)
-
 
 class WDMPowerLaw(_PowerLawTurnoverBase):
     name = 'WDM_POWER_LAW'
