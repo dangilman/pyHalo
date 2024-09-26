@@ -12,7 +12,7 @@ __all__ = ['ConcentrationDiemerJoyce',
            'ConcentrationPeakHeight']
 
 class _ConcentrationCDM(object):
-
+    _universal_minimum = 1.2 # no concentrations less than this
     def __init__(self, cosmo, scatter=True, scatter_dex=0.2, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
@@ -30,12 +30,16 @@ class _ConcentrationCDM(object):
         :return:
         """
         if isinstance(m, float) or isinstance(m, int):
-            c = self._evaluate_concentration(m, z)
+            c = float(self._evaluate_concentration(m, z))
         else:
             c = numpy.array([self._evaluate_concentration(mi, z) for mi in m])
         if self._scatter:
             log_c = numpy.log(c)
             c = numpy.random.lognormal(log_c, self._scatter_dex)
+        if isinstance(c, float):
+            c = max(c, self._universal_minimum)
+        else:
+            c[numpy.where(c < self._universal_minimum)] = self._universal_minimum
         return c
 
     def _evaluate_concentration(self, *args, **kargs):
@@ -43,7 +47,7 @@ class _ConcentrationCDM(object):
             'Custom concentration class must have a method evaluate_concentration with inputs mass, redshift')
 
 class _ConcentrationTurnover(object):
-
+    _universal_minimum = 1.2
     def __init__(self, cdm_concentration):
         """
 
@@ -59,7 +63,12 @@ class _ConcentrationTurnover(object):
         :return:
         """
         c_cdm = self._cdm_concentration.nfw_concentration(m, z)
-        return c_cdm * self.suppression(m, z)
+        c_wdm = c_cdm * self.suppression(m, z)
+        if isinstance(c_wdm, float):
+            c_wdm = max(c_wdm, self._universal_minimum)
+        else:
+            c_wdm[numpy.where(c_wdm < self._universal_minimum)] = self._universal_minimum
+        return c_wdm
 
     def suppression(self, *args, **kwargs):
         raise Exception('a WDM model with a turnover must have a suppression function')
@@ -114,51 +123,14 @@ class ConcentrationLudlow(_ConcentrationCDM):
         self._mdef = mdef
         super(ConcentrationLudlow, self).__init__(cosmo, scatter, scatter_dex)
 
-    # def _setup_model(self):
-    #     """
-    #     As discussed in the Colossus documentation the evaluation of this model is efficient for large arrays of
-    #     halo masses but inefficient for individual halo masses. Therefore, in this routine we will compute the m-c
-    #     relation on a grid (efficient) and interpolate it to later sample individual conentrations
-    #     :return:
-    #     """
-    #     n = 40
-    #     log10m_array = numpy.log10(numpy.logspace(5, 11, n))
-    #     z_array = numpy.linspace(0, 15, n)
-    #     values = numpy.empty((n, n))
-    #     for i in range(0, len(z_array)):
-    #         values[:, i] = self.evaluate_concentration_colossus(10**log10m_array, z_array[i])
-    #     points = (log10m_array, z_array)
-    #     interp = RegularGridInterpolator(points, values)
-    #     return interp
-
-    # def evaluate_concentration_colossus(self, m, z):
-    #     """
-    #     This function makes a direct call to Colossus to do the calculation of the median halo concentration.
-    #     This is inefficient for individual halo masses
-    #     :param m: halo mass in units 200c
-    #     :param z: halo redshift
-    #     :return: halo concentration
-    #     """
-    #     model = 'ludlow16'
-    #     M_h = m * self._cosmo.h
-    #     c = concentration(M_h, mdef=self._mdef, model=model, z=z)
-    #     return c
-
     def _evaluate_concentration(self, M, z):
 
         """
         Evaluates the concentration of an NFW profile
-
         :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
         :return: halo concentratioon
         """
-        # try:
-        #     M_h = M * self._cosmo.h
-        #     point = (numpy.log10(M_h), z)
-        #     c = float(self._interp(point))
-        # except:
-        #     model = 'ludlow16'
         M_h = M * self._cosmo.h
         z = min(15.0, z)
         c = concentration(M_h, mdef=self._mdef, model='ludlow16', z=z)
@@ -255,9 +227,7 @@ class ConcentrationWDMPolynomial(_ConcentrationTurnover):
         return rescale
 
 class ConcentrationWDMHyperbolic(_ConcentrationTurnover):
-
     name = 'WDM_HYPERBOLIC'
-
     def __init__(self, cosmo, concentration_cdm_class, log_mc, a,  b, scatter=True,
                  scatter_dex=0.2, kwargs_cdm={}):
         """
@@ -292,9 +262,8 @@ class ConcentrationWDMHyperbolic(_ConcentrationTurnover):
         return 0.5 * (1 + numpy.tanh(argument))
 
 class ConcentrationLudlowWDM(_ConcentrationTurnover):
-
     name = 'LUDLOW_WDM'
-
+    _universal_minimum = 1.2  # no concentrations less than this
     points = (numpy.array([1.0, 2.0, 2.7, 3.2, 4.0]),
               numpy.array([6.0, 7.0, 8.0]),
               numpy.array([0.0, 1.0, 2.0, 3.0, 4.0]))
@@ -375,7 +344,12 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
         :return: halo concentration
         """
         c_cdm = self._cdm_concentration.nfw_concentration(m, z)
-        return c_cdm * self.suppression(m, z)
+        c_wdm = c_cdm * self.suppression(m, z)
+        if isinstance(c_wdm, float):
+            c_wdm = max(c_wdm, self._universal_minimum)
+        else:
+            c_wdm[numpy.where(c_wdm < self._universal_minimum)] = self._universal_minimum
+        return c_wdm
 
     def suppression(self, m, z):
         """
