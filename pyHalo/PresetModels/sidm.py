@@ -8,6 +8,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
+        infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, collapsed_halo_profile='SPL_CORE',
@@ -47,6 +48,9 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
+    :param infall_redshift_model: a string that specifies that infall redshift sampling distribution, see the LensCosmo
+    class for details
+    :param kwargs_infall_model: keyword arguments for the infall redshift model
     :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
     :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
     :param log_m_host: log base 10 of the host halo mass [M_sun]
@@ -69,6 +73,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
               concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
               truncation_model_subhalos, kwargs_truncation_model_subhalos,
               truncation_model_fieldhalos, kwargs_truncation_model_fieldhalos,
+              infall_redshift_model, kwargs_infall_model,
               shmf_log_slope, cone_opening_angle_arcsec, log_m_host, r_tidal,
               LOS_normalization, two_halo_contribution, delta_power_law_index,
               geometry_type, kwargs_cosmo)

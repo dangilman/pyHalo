@@ -1,5 +1,6 @@
 import numpy.testing as npt
-from pyHalo.Halos.lens_cosmo import LensCosmo, InfallDistributionGalacticus2024
+from pyHalo.Halos.lens_cosmo import LensCosmo
+from pyHalo.Halos.accretion import InfallDistributionGalacticus2024, InfallDistributionHybrid
 import numpy as np
 import pytest
 from astropy.cosmology import FlatLambdaCDM
@@ -42,14 +43,6 @@ class TestLensCosmo(object):
         sigma_crit = self.lens_cosmo.get_sigma_crit_lensing(0.7, 1.7)
         npt.assert_almost_equal(sigma_crit_mass, sigma_crit * area)
 
-    def test_subhalo_accretion(self):
-
-        zi = [self.lens_cosmo.z_accreted_from_zlens(None, 0.5)
-              for _ in range(0, 25000)]
-        zi = np.array(zi) - 0.5
-        z_median = np.median(zi)
-        npt.assert_almost_equal(z_median / 6.955 / 0.5563, 1, 1)
-
     def test_mhm_convert(self):
 
         mthermal = 5.3
@@ -80,13 +73,32 @@ class TestLensCosmo(object):
         npt.assert_almost_equal(rs_kpc, rs*1000)
         npt.assert_almost_equal(r200_kpc, r200 * 1000)
 
-    def test_z_accretion_class(self):
+    def test_infall(self):
 
         zlens = 0.5
-        pdf = InfallDistributionGalacticus2024(zlens)
-        z = [pdf.z_accreted_from_zlens(zlens) for _ in range(0, 1000)]
-        for zi in z:
-            npt.assert_equal(zi > zlens, True)
+        zsource = 2.0
+
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='HYBRID_INFALL')
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
+
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='DIRECT_INFALL')
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
+
+        infall_time_model = InfallDistributionGalacticus2024
+        kwargs_infall_model = {}
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
+                               kwargs_infall_model=kwargs_infall_model)
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
+
+        infall_time_model = InfallDistributionHybrid
+        kwargs_infall_model = {'log_m_host': 13.0}
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
+                               kwargs_infall_model=kwargs_infall_model)
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
 
 if __name__ == '__main__':
     pytest.main()

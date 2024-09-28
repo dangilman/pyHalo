@@ -15,6 +15,12 @@ from pyHalo.Cosmology.cosmology import Cosmology
 
 class TestPresetModels(object):
 
+    def _test_default_infall_model(self, realization, default):
+
+        lens_cosmo = realization.lens_cosmo
+        infall_redshift_model = lens_cosmo._z_infall_model
+        npt.assert_string_equal(default, infall_redshift_model.name)
+
     def test_CDM(self):
 
         cdm = CDM(0.5, 1.5)
@@ -25,10 +31,14 @@ class TestPresetModels(object):
                   truncation_model_subhalos='TRUNCATION_GALACTICUS')
         cdm3 = CDM(0.6, 1.5, log_m_host=13.3,
                    truncation_model_subhalos='TRUNCATION_GALACTICUS',
-                   host_scaling_factor=4.0, redshift_scaling_factor=2.0)
+                   host_scaling_factor=4.0, redshift_scaling_factor=2.0,
+                   infall_redshift_model='DIRECT_INFALL', kwargs_infall_model={})
         halos2 = len(cdm2.halos)
         halos3 = len(cdm3.halos)
         npt.assert_equal(halos3 > halos2, True)
+
+        self._test_default_infall_model(cdm, 'hybrid')
+        self._test_default_infall_model(cdm3, 'direct')
 
     def test_CDM_correlated_structure_only(self):
 
@@ -40,9 +50,7 @@ class TestPresetModels(object):
         wdm = WDM(0.5, 1.5, 8.0)
         _ = wdm.lensing_quantities()
         _ = preset_model_from_name('WDM')
-
-        _ = WDM(0.5, 1.5, 8.0,
-                  truncation_model_subhalos='TRUNCATION_GALACTICUS')
+        self._test_default_infall_model(wdm, 'hybrid')
 
     def test_ULDM(self):
 
@@ -51,6 +59,7 @@ class TestPresetModels(object):
         uldm = ULDM(0.5, 1.5, -21, flucs_shape=flucs_shape, flucs_args=flucs_args)
         _ = uldm.lensing_quantities()
         _ = preset_model_from_name('ULDM')
+        self._test_default_infall_model(uldm, 'hybrid')
 
     def test_SIDM_core_collapse(self):
         mass_ranges_subhalos = [[6, 8], [8, 10]]
@@ -61,17 +70,20 @@ class TestPresetModels(object):
         probabilities_subhalos, probabilities_field_halos)
         _ = sidm_cc.lensing_quantities()
         _ = preset_model_from_name('SIDM_core_collapse')
+        self._test_default_infall_model(sidm_cc, 'hybrid')
 
     def test_WDM_mixed(self):
         wdm_mixed = WDM_mixed(0.5, 1.5, 8.0, 0.5)
         _ = wdm_mixed.lensing_quantities()
         _ = preset_model_from_name('WDM_mixed')
+        self._test_default_infall_model(wdm_mixed, 'hybrid')
 
     def test_WDM_general(self):
         func = preset_model_from_name('WDMGeneral')
         wdm = func(0.5, 1.5, 7.7, -2.0)
         _ = wdm.lensing_quantities()
         wdm = func(0.5, 1.5, 7.7, -2.0, truncation_model_subhalos='TRUNCATION_GALACTICUS')
+        self._test_default_infall_model(wdm, 'hybrid')
 
     def test_CDM_emulator(self):
 

@@ -13,6 +13,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
+        infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
@@ -48,6 +49,9 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
+    :param infall_redshift_model: a string that specifies that infall redshift sampling distribution, see the LensCosmo
+    class for details
+    :param kwargs_infall_model: keyword arguments for the infall redshift model
     :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
     :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
     :param log_m_host: log base 10 of the host halo mass [M_sun]
@@ -71,6 +75,9 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
     geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
                         cone_opening_angle_arcsec, geometry_type)
+    if kwargs_infall_model == 'HYBRID_INFALL':
+        kwargs_infall_model['log_m_host'] = log_m_host
+    pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
 
     # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
     subhalo_spatial_distribution = ProjectedNFW
@@ -246,10 +253,11 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
 def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
-        host_scaling_factor=0.5, redshift_scaling_factor=0.3, two_halo_Lazar_correction=True, c_host=None):
+        host_scaling_factor=0.55, redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, c_host=None):
 
     """
     This preset model implements a generalized treatment of warm dark matter, or any theory that produces a cutoff in
@@ -300,6 +308,9 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
     geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
                         cone_opening_angle_arcsec, geometry_type)
+    if kwargs_infall_model == 'HYBRID_INFALL':
+        kwargs_infall_model['log_m_host'] = log_m_host
+    pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
 
     # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
     subhalo_spatial_distribution = ProjectedNFW
