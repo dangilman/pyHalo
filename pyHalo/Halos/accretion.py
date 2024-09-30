@@ -34,6 +34,11 @@ class InfallDistributionHybrid(object):
         self._z_lens = z_lens
 
     def __call__(self, m_sub):
+        """
+        Return the infall redshift for a subhalo with infall mass m_sub
+        :param m_sub: infall mass in solar masses
+        :return: infall redshift
+        """
         mass_ratio = self._mass_ratio_in_bounds(m_sub / self._m_host)
         mu = self.z_inf_to_z_host_mean(mass_ratio)
         sig = self.z_inf_to_z_host_std(mass_ratio)
@@ -49,8 +54,8 @@ class InfallDistributionHybrid(object):
         :param massRatio:
         :return:
         """
-        massRatio = max(10 ** -5, massRatio)
-        massRatio = min(10**-0.5, massRatio)
+        massRatio = max(10 ** -5.0, massRatio)
+        massRatio = min(10 ** -0.5, massRatio)
         return massRatio
 
     @staticmethod
