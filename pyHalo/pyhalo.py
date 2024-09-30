@@ -6,10 +6,8 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.defaults import cosmo_default
 
-CODE_VERSION = '1.3.3'
-
 class pyHalo(object):
-
+    CODE_VERSION = '1.3.3'
     """
     The main class used for generating realizations (see example notebook)
     """

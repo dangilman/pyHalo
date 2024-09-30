@@ -16,6 +16,11 @@ class TestpyHalo(object):
         pass
         #self.pyhalo = pyHalo(0.5, 2.)
 
+    def test_version(self):
+
+        pyhalo = pyHalo(0.5, 2.)
+        npt.assert_string_equal(pyhalo.CODE_VERSION, '1.3.3')
+
     def test_create_realizations(self):
         pyhalo = pyHalo(0.5, 2.)
         cone_opening_angle = 6.0
