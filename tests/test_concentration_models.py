@@ -23,9 +23,11 @@ class TestConcentrationModels(object):
     def setup_method(self):
 
         self.model_list = ['DIEMERJOYCE19', 'PEAK_HEIGHT_POWERLAW', 'WDM_HYPERBOLIC',
-                           'WDM_POLYNOMIAL', 'BOSE2016', 'LAROCHE2022', 'LUDLOW2016', 'LUDLOW_WDM']
+                           'WDM_POLYNOMIAL', 'BOSE2016', 'LAROCHE2022', 'LUDLOW2016', 'LUDLOW_WDM',
+                           'BOSE2016_LUDLOW']
         self.model_names = ['DIEMERJOYCE19', 'PEAK_HEIGHT_POWERLAW', 'WDM_HYPERBOLIC',
-                            'WDM_POLYNOMIAL', 'WDM_POLYNOMIAL', 'WDM_POLYNOMIAL', 'LUDLOW2016', 'LUDLOW_WDM']
+                            'WDM_POLYNOMIAL', 'WDM_POLYNOMIAL', 'WDM_POLYNOMIAL', 'LUDLOW2016', 'LUDLOW_WDM',
+                            'WDM_POLYNOMIAL']
 
     def test_models(self):
 
