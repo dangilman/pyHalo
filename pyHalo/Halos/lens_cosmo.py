@@ -40,14 +40,12 @@ class LensCosmo(object):
         if cosmology is None:
             from pyHalo.Cosmology.cosmology import Cosmology
             cosmology = Cosmology()
-
         self.cosmo = cosmology
         self._arcsec = 2 * numpy.pi / 360 / 3600
         self.h = self.cosmo.h
         # critical density of the universe in M_sun h^2 Mpc^-3
         rhoc = un.Quantity(self.cosmo.astropy.critical_density(0), unit=un.Msun / un.Mpc ** 3).value
         self.rhoc = rhoc / self.cosmo.h ** 2
-
         if z_lens is not None and z_source is not None:
             # critical density for lensing in units M_sun * Mpc ^ -2
             self.sigma_crit_lensing = self.get_sigma_crit_lensing(z_lens, z_source)

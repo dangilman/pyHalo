@@ -1,10 +1,11 @@
 import numpy as np
-from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
+from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussian import Gaussian
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
+from pyHalo.Rendering.MassFunctions.gaussian import Gaussian
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.utilities import generate_lens_plane_redshifts, mask_annular
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
@@ -31,6 +32,66 @@ class RealizationExtensions(object):
         """
 
         self._realization = realization
+
+    def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_profile_args,
+                              galaxy_Re=6.0, host_halo_mass=10**13.3, f=3.4e-5, center_x=0, center_y=0):
+        """
+        Add globular clusters at z = z_lens to a realization sampling from a log-normal mass distribution
+        :param log10_mgc_mean: the median log10(mass) of the GC's
+        :param log10_mgc_sigma: the standard deviation of the Gaussian mass function for log10(m)
+        :param rendering_radius_arcsec [arcsec]: sets the area around (center_x, center_y) where the GC's appear; GC's are
+        distributed uniformly in a circule centered at (center_x, center_y) with this radius
+        :param gc_profile_args: the keyword arguments for the GC mass profile, must include "gamma", "gc_size_lightyear",
+        "r_core_fraction", or the logarithmic power law slope, the size of the gc in light years, and the size of the core
+        relative to the size of the GC
+        :param galaxy_Re: galaxy half-light radius
+        :param host_halo_mass: total mass of the host DM halo
+        :param f: the fraction M_gc / M_host from https://arxiv.org/pdf/1602.01105
+        :param coordinate_center_x: center of rendering area in arcsec
+        :param coordinate_center_y: center of rendering area in arcsec
+        :return: an instance of Realization that includes the GC's
+        """
+
+        n = self.number_globular_clusters(log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, galaxy_Re,
+                                          host_halo_mass, f)
+        mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
+        m = mfunc.draw()
+        z = self._realization.lens_cosmo.z_lens
+        uniform_spatial_distribution = Uniform(rendering_radius_arcsec, self._realization.geometry)
+        x, y = uniform_spatial_distribution.draw(len(m), z, center_x, center_y)
+        lens_cosmo = self._realization.lens_cosmo
+        GCS = []
+        for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
+            unique_tag = np.random.rand()
+            profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
+                                      gc_profile_args, unique_tag)
+            GCS.append(profile)
+        gcs_realization = Realization.from_halos(GCS, self._realization.lens_cosmo,
+                                                 self._realization.kwargs_halo_model,
+                                                 self._realization.apply_mass_sheet_correction,
+                                                 self._realization.rendering_classes,
+                                                 self._realization._rendering_center_x,
+                                                 self._realization._rendering_center_y,
+                                                 self._realization.geometry)
+        new_realization = self._realization.join(gcs_realization)
+        return new_realization
+
+    def number_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec,
+                              galaxy_Re=10.0, host_halo_mass=10**13.3, f=3.4e-5):
+        """
+
+        :return:
+        """
+        m_gc = f * host_halo_mass
+        area = np.pi * (6 * galaxy_Re) ** 2 # physical kpc^2
+        surface_mass_density = m_gc / area
+        z = self._realization.lens_cosmo.z_lens
+        kpc_per_arcsec = self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
+        # assuming log-normal mass function
+        integral = np.exp(np.log(10 ** log10_mgc_mean) + np.log(10 ** log10_mgc_sigma) ** 2 / 2)
+        mass_in_gc = np.pi * surface_mass_density * (rendering_radius_arcsec * kpc_per_arcsec) ** 2
+        n = int(mass_in_gc / integral)
+        return n
 
     def toSIDM(self, cross_section):
         """
@@ -503,7 +564,7 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
 
     return fluctuations
 
-def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0.5, r_max=1.5, normalization=False): 
+def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0.5, r_max=1.5, normalization=False):
 
     """
     This function computes the two-point correlation function from a convergence map.
@@ -515,7 +576,7 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0.5,
             of the angles between 0 and 180 degrees.
     :param apply_mask: if True, apply the mask on the convergence map.
     :param r_min: inner radius of mask in units of grid coordinates
-    :param r_max: outer radius of mask in units of grid coordinates. If r_max = None, the size of the convergence map's outside 
+    :param r_max: outer radius of mask in units of grid coordinates. If r_max = None, the size of the convergence map's outside
             boundary becomes the mask's outer boundary.
     :param normalization: if True, apply normalization to the correlation function.
     :return: the two-point correlation function on the (mu, r) coordinate grid.
@@ -553,7 +614,7 @@ def corr_kappa_with_mask(kappa_map, map_size, r, mu, apply_mask=True, r_min=0.5,
         mask_interp = RectBivariateSpline(X_, Y_, mask, kx=1, ky=1, s=0)
     else:
         mask = np.ones(XX_.shape)
-        
+
     kappa_interp = RectBivariateSpline(X_, Y_, kappa_map, kx=5, ky=5, s=0)
 
     corr = np.zeros((r.shape[0], mu.shape[0]))

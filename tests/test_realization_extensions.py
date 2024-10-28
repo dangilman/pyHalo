@@ -8,10 +8,62 @@ import numpy as np
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from pyHalo.Halos.tidal_truncation import TruncationRoche, TruncationRN
 from pyHalo.Halos.lens_cosmo import LensCosmo
+from pyHalo.PresetModels.cdm import CDM
 from scipy.special import eval_chebyt
 
 
 class TestRealizationExtensions(object):
+
+    def test_globular_clusters(self):
+
+        cdm = CDM(0.5, 2.0, sigma_sub=0.01, LOS_normalization=0.1)
+        n_halos_cdm = len(cdm.halos)
+        ext = RealizationExtensions(cdm)
+        log10_mgc_mean = 4.5
+        log10_mgc_sigma = 0.2
+        rendering_radius_arcsec = 10.0
+        galaxy_Re = 10  # kpc
+        center_x = 1.0
+        center_y = 0.0
+        cdm_with_GCs = ext.add_globular_clusters(log10_mgc_mean,
+                                                   log10_mgc_sigma,
+                                                   rendering_radius_arcsec,
+                                                   galaxy_Re,
+                                                   center_x=center_x,
+                                                   center_y=center_y)
+        n_halos_cdm_plus_gcs = len(cdm_with_GCs.halos)
+        npt.assert_equal(n_halos_cdm_plus_gcs>n_halos_cdm, True)
+
+        cdm = CDM(0.5, 2.0, sigma_sub=0.0, LOS_normalization=0.0)
+        ext = RealizationExtensions(cdm)
+        log10_mgc_mean = 4.5
+        log10_mgc_sigma = 0.2
+        rendering_radius_arcsec = 10.0
+        galaxy_Re = 10 # kpc
+        center_x = 1.0
+        center_y = 0.0
+
+        cdm_with_GCs_1 = ext.add_globular_clusters(log10_mgc_mean,
+                                                 log10_mgc_sigma,
+                                                 rendering_radius_arcsec,
+                                                 galaxy_Re,
+                                                 center_x=center_x,
+                                                   center_y=center_y)
+        scale_re = 3
+        cdm_with_GCs_2 = ext.add_globular_clusters(log10_mgc_mean,
+                                                   log10_mgc_sigma,
+                                                   rendering_radius_arcsec,
+                                                   scale_re*galaxy_Re,
+                                                   )
+        number_1 = len(cdm_with_GCs_1.halos)
+        number_2 = len(cdm_with_GCs_2.halos)
+        npt.assert_almost_equal(number_1/number_2 / scale_re**2, 1.0, 1)
+        masses = []
+        for i in range(0, len(cdm_with_GCs_1.halos)):
+            masses.append(cdm_with_GCs_1.halos[i].mass)
+        log10mean_mass = np.mean(np.log10(masses))
+        npt.assert_almost_equal(log10mean_mass/log10_mgc_mean, 1, 1)
+        npt.assert_almost_equal(np.std(np.log10(masses))/log10_mgc_sigma, 1, 1)
 
     def test_toSIDM(self):
 
@@ -446,7 +498,7 @@ class TestRealizationExtensions(object):
 #         corr = np.ones((r.shape[0], mu.shape[0]))
 #         r, xi_0 = xi_l(0, corr, r, mu)
 #         npt.assert_almost_equal(xi_0_real, xi_0)
-# 
+#
 #     def test_xi_l_to_Pk_l(self):
 #         l = 0
 #         x = np.logspace(-3, 3, num=60, endpoint=False)
@@ -467,6 +519,8 @@ class TestRealizationExtensions(object):
 #         npt.assert_array_almost_equal(As, As_fit)
 #         npt.assert_array_almost_equal(n, n_fit)
 
+t = TestRealizationExtensions()
+t.test_globular_clusters()
 
-if __name__ == '__main__':
-      pytest.main()
+# if __name__ == '__main__':
+#       pytest.main()

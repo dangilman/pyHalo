@@ -64,3 +64,4 @@ def _supp_mscale(a, b, c, frac=0.5):
         # This is just here, to tell the fitting function when it goes out of bounds
         return np.nan
     return a / (frac**(1./c) - 1.)**(1./b)
+

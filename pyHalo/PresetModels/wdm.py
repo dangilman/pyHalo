@@ -49,8 +49,8 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
     complete list
     :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
-    :param infall_redshift_model: a string that specifies that infall redshift sampling distribution, see the LensCosmo
-    class for details
+    :param infall_redshift_model: a string that specifies that infall redshift sampling distribution, options are
+    HYBRID_INFALL (accounts for subhalos and sub-subhalos) and DIRECT_INFALL (only subhalos)
     :param kwargs_infall_model: keyword arguments for the infall redshift model
     :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
     :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
