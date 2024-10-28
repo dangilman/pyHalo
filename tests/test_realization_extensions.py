@@ -47,6 +47,7 @@ class TestRealizationExtensions(object):
                                                  log10_mgc_sigma,
                                                  rendering_radius_arcsec,
                                                  galaxy_Re,
+                                                 f=3.4e-4,
                                                  center_x=center_x,
                                                    center_y=center_y)
         scale_re = 3
