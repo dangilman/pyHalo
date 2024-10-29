@@ -9,7 +9,7 @@ from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.PTMass import PTMass
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
 from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
-from pyHalo.Halos.HaloModels.gaussian import Gaussian
+from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
 import numpy as np
 from copy import deepcopy
 
@@ -677,7 +677,7 @@ class Realization(object):
             else:
                 model = ULDMFieldHalo
         elif mdef == 'GAUSSIAN_KAPPA':
-            model = Gaussian
+            model = GaussianHalo
         elif mdef == 'GNFW':
             if is_subhalo:
                 model = GeneralNFWSubhalo

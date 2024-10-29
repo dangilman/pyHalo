@@ -24,11 +24,12 @@ class TestSPLCORE(object):
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
                                   args, 1)
         lenstronomy_ID = profile.lenstronomy_ID
-        npt.assert_string_equal(lenstronomy_ID[0], 'SPLCORE')
+        npt.assert_string_equal(lenstronomy_ID[0], 'SPL_CORE')
 
     def test_lenstronomy_args(self):
 
-        mass = 10 ** 5
+        logM = 5.0
+        mass = 10 ** logM
         args = {'gamma': 2.5,
                 'r_core_fraction': 0.05,
                 'gc_size_lightyear': 100}
@@ -45,7 +46,7 @@ class TestSPLCORE(object):
         sigma_crit_mpc = self.lens_cosmo.get_sigma_crit_lensing(profile.z, self.lens_cosmo.z_source)
         kpc_per_arcsec = self.lens_cosmo.cosmo.kpc_proper_per_asec(profile.z)
         sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
-        npt.assert_almost_equal(np.log10(mass), np.log10(mass * sigma_crit_arcsec))
+        npt.assert_almost_equal(logM, np.log10(mass * sigma_crit_arcsec))
 
 if __name__ == '__main__':
     pytest.main()

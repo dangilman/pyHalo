@@ -2,7 +2,7 @@ import numpy as np
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.single_realization import Realization
-from pyHalo.Halos.HaloModels.gaussian import Gaussian
+from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Rendering.MassFunctions.gaussian import Gaussian
@@ -557,10 +557,10 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
 
     args_fluc=[{'amp': amps[i], 'sigma': sigs[i], 'center_x': xs[i], 'center_y': ys[i]} for i in range(len(amps))]
     masses = np.absolute(amps)
-    fluctuations = [Gaussian(masses[i], xs[i], ys[i], None, realization.lens_cosmo.z_lens,
-                             True, realization.lens_cosmo, args_fluc[i],
-                             truncation_class=None, concentration_class=None,
-                             unique_tag=np.random.rand()) for i in range(len(amps))]
+    fluctuations = [GaussianHalo(masses[i], xs[i], ys[i], None, realization.lens_cosmo.z_lens,
+                                 True, realization.lens_cosmo, args_fluc[i],
+                                 truncation_class=None, concentration_class=None,
+                                 unique_tag=np.random.rand()) for i in range(len(amps))]
 
     return fluctuations
 

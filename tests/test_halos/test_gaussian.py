@@ -1,6 +1,6 @@
 import numpy.testing as npt
 import numpy as np
-from pyHalo.Halos.HaloModels.gaussian import Gaussian
+from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from astropy.cosmology import FlatLambdaCDM
@@ -22,9 +22,9 @@ class TestGaussianHalo(object):
         lens_cosmo = LensCosmo(z, 2., cosmo)
         profile_args = {'amp':1,'sigma':1,'center_x':1.0,'center_y':1.0}
         sub_flag = False
-        self.halo = Gaussian(mass, x, y, r3d, z,
-                               sub_flag, lens_cosmo,
-                               profile_args, None, None, unique_tag=np.random.rand())
+        self.halo = GaussianHalo(mass, x, y, r3d, z,
+                                 sub_flag, lens_cosmo,
+                                 profile_args, None, None, unique_tag=np.random.rand())
 
     def test_lenstronomy_params(self):
 

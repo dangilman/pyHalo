@@ -2,7 +2,7 @@ from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.gaussian import Gaussian
 import numpy as np
 
-class Gaussian(Halo):
+class GaussianHalo(Halo):
     """
     The base class for a Gaussian fluctuation
 
@@ -19,8 +19,8 @@ class Gaussian(Halo):
         self._concentration_class = concentration_class
         self._truncation_class = truncation_class
         mdef = 'GAUSSIAN_KAPPA'
-        super(Gaussian, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                            lens_cosmo_instance, args, unique_tag, fixed_position=True)
+        super(GaussianHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
+                                           lens_cosmo_instance, args, unique_tag, fixed_position=True)
 
     @property
     def profile_args(self):
