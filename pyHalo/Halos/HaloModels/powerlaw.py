@@ -116,3 +116,75 @@ class PowerLawFieldHalo(PowerLawSubhalo):
         Returns the redshift at which to evaluate the concentration-mass relation
         """
         return self.z
+
+class GlobularCluster(Halo):
+
+    def __init__(self, mass, x, y, z, lens_cosmo_instance, args, unique_tag):
+        """
+        A mass profile model for a globular cluster
+        :param mass: the total mass of the GC
+        :param x: x coordinate [arcsec]
+        :param y: y coordinate [arcsec]
+        :param z: redshift
+        :param lens_cosmo_instance: an instance of LensCosmo class
+        :param args: keyword arguments for the profile, must contain 'gamma', 'r_core_fraction', 'gc_size_lightyear'
+        which are the logarithmic profile slope outside the core, the core size in units of the GC size, and the gc size
+        in light years. The size and mass are related by
+        gc_size = gc_size_lightyear (m / 10^5)^1/3
+        The mass is the total mass inside a sphere with radius gc_size
+        :param unique_tag:
+        """
+        self._prof = SPLCORE()
+        self._lens_cosmo = lens_cosmo_instance
+        mdef = 'SPL_CORE'
+        super(GlobularCluster, self).__init__(mass, x, y, None, mdef, z, True,
+                                              lens_cosmo_instance, args, unique_tag)
+
+    @property
+    def lenstronomy_params(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_lenstronomy_args'):
+
+            profile_args = self.profile_args
+            rho0 = profile_args['rho0']
+            r_core_arcsec = profile_args['r_core_arcsec']
+            gamma = profile_args['gamma']
+            sigma0 = rho0 * r_core_arcsec
+            self._lenstronomy_args = [{'sigma0': sigma0, 'gamma': gamma, 'center_x': self.x, 'center_y': self.y,
+                                       'r_core': r_core_arcsec}]
+        return self._lenstronomy_args, None
+
+    @property
+    def profile_args(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_profile_args'):
+            kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            gamma = self._args['gamma']
+            r_core_fraction = self._args['r_core_fraction']
+            gc_size_lightyear_0 = self._args['gc_size_lightyear']
+            sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+            sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
+            kpc_per_lightyear = 0.3 * 1e-3
+            gc_size = gc_size_lightyear_0 * (self.mass / 10 ** 5) ** (1 / 3) * kpc_per_lightyear
+            r_core_arcsec = r_core_fraction * gc_size
+            rho0 = self.mass / self._prof.mass_3d(gc_size, sigma_crit_arcsec, r_core_arcsec, gamma)
+            self._profile_args = {'rho0': rho0, 'gc_size': gc_size, 'gamma': gamma, 'r_core_arcsec': r_core_arcsec}
+        return self._profile_args
+
+    @property
+    def lenstronomy_ID(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['SPL_CORE']
+
+    @property
+    def z_eval(self):
+        """
+        Returns the redshift at which to evalate the concentration-mass relation
+        """
+        return self.z

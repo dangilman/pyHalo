@@ -15,7 +15,6 @@ def preset_concentration_models(model_name, kwargs_model=None):
         kwargs_model_return = {}
     else:
         kwargs_model_return = deepcopy(kwargs_model)
-
     if model_name == 'DIEMERJOYCE19':
         return ConcentrationDiemerJoyce, kwargs_model_return
     elif model_name == 'LUDLOW2016':
