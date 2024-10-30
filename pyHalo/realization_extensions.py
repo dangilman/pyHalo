@@ -3,6 +3,7 @@ from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo,
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
+from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Rendering.MassFunctions.gaussian import Gaussian
@@ -40,7 +41,7 @@ class RealizationExtensions(object):
         :param log10_mgc_mean: the median log10(mass) of the GC's
         :param log10_mgc_sigma: the standard deviation of the Gaussian mass function for log10(m)
         :param rendering_radius_arcsec [arcsec]: sets the area around (center_x, center_y) where the GC's appear; GC's are
-        distributed uniformly in a circule centered at (center_x, center_y) with this radius
+        distributed uniformly in a circle centered at (center_x, center_y) with this radius
         :param gc_profile_args: the keyword arguments for the GC mass profile, must include "gamma", "gc_size_lightyear",
         "r_core_fraction", or the logarithmic power law slope, the size of the gc in light years, and the size of the core
         relative to the size of the GC
@@ -51,7 +52,6 @@ class RealizationExtensions(object):
         :param coordinate_center_y: center of rendering area in arcsec
         :return: an instance of Realization that includes the GC's
         """
-
         n = self.number_globular_clusters(log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, galaxy_Re,
                                           host_halo_mass, f)
         mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
@@ -79,7 +79,7 @@ class RealizationExtensions(object):
     def number_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec,
                               galaxy_Re=10.0, host_halo_mass=10**13.3, f=3.4e-5):
         """
-
+        Compute the number of globular clusters from their mass function (see documentation in add_globular_clusters)
         :return:
         """
         m_gc = f * host_halo_mass
@@ -93,34 +93,62 @@ class RealizationExtensions(object):
         n = int(mass_in_gc / integral)
         return n
 
-    def toSIDM(self, cross_section):
+    def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling):
         """
-
-        :param cross_section: a class with a method effective_cross_section(v) that takes as input a velocity scale
-        equal to 0.64 * v_max and returns an effective cross section in units cm^2 / gram
-        :return: a realization where all halos aree transformed into SIDM halos using the parameteric model by
-        Yang et al. (2023) (https://arxiv.org/pdf/2305.16176.pdf)
+        Transform a single NFW profile to an SIDM profile based on the halo age, its status as a subhalo or a field halo,
+        and the core collapse timescale
+        :param halo: an instance of a Halo model
+        :param t_c: SIDM collapse timescale in Gyr
+        :param median_mc_relation: the concentration-mass relation used to create the CDM realization with scatter=False
+        :param mass_bin_center:
+        :return : an SIDM halo derived from the original profile
         """
-
         from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
+
+        if halo.is_subhalo:
+
+            subhalo_flag = True
+            kwargs_profile = {'lambda_t': subhalo_evolution_scaling, 'sidm_timescale': t_c}
+            new_halo = TNFWCSubhaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
+                                        halo.lens_cosmo, kwargs_profile,
+                                        halo._truncation_class, halo._concentration_class,
+                                        halo.unique_tag)
+            new_halo._z_infall = halo.z_infall
+        else:
+
+            subhalo_flag = False
+            kwargs_profile = {'lambda_t': 1.0, 'sidm_timescale': t_c}
+            new_halo = TNFWCFieldHaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
+                                          halo.lens_cosmo, kwargs_profile,
+                                          halo._truncation_class, halo._concentration_class,
+                                          halo.unique_tag)
+        return new_halo
+
+    def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling):
+        """
+        This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
+        https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate
+
+        :param mass_bin_list: a list with len(core_collapse_timescale_list) of lists that specify log10mass ranges
+        :param core_collapse_timescale_list: the core collapse timescale in each mass bin in log10(Gyr)
+        :return:
+        """
+
         sidm_halos = []
-        kwargs_profile = {'SIDM_CROSS_SECTION': cross_section}
         for halo in self._realization.halos:
-            if halo.is_subhalo:
-                new_halo = TNFWCSubhaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, False,
-                                              halo.lens_cosmo, kwargs_profile,
-                                              halo._truncation_class, halo._concentration_class,
-                                              halo.unique_tag)
-                new_halo._rperi_units_r200 = halo.rperi_units_r200
-                new_halo._time_since_infall = halo.time_since_infall
+            for bin_index, mass_bin in enumerate(mass_bin_list):
+                if np.log10(halo.mass) >= mass_bin[0] and np.log10(halo.mass) < mass_bin[1]:
+                    t_c = 10 ** core_collapse_timescale_list[bin_index]
+                    break
             else:
-                new_halo = TNFWCFieldHaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, False,
-                                              halo.lens_cosmo, kwargs_profile,
-                                              halo._truncation_class, halo._concentration_class,
-                                              halo.unique_tag)
-            new_halo._c = halo.c
-            new_halo._zeval = halo.z_eval
-            new_halo._halo_age = halo.halo_age
+                raise Exception('halo mass '+str(np.log10(halo.mass))+' not inside the minimum/maximum mass ranges')
+            c_halo = halo.c
+            c_median = halo._concentration_class.nfw_concentration(halo.mass,
+                                                                   halo.z_eval,
+                                                                   force_no_scatter=True)
+            delta_c = c_halo / c_median
+            concentration_factor = delta_c ** (7/2)
+            new_halo = self.toSIDM_single_halo(halo, concentration_factor * t_c, subhalo_evolution_scaling)
             sidm_halos.append(new_halo)
 
         new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,

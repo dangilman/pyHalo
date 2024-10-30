@@ -1,6 +1,6 @@
 from pyHalo.PresetModels.cdm import CDM, CDMCorrelatedStructure
 from pyHalo.PresetModels.wdm import WDM, WDM_mixed
-from pyHalo.PresetModels.sidm import SIDM_core_collapse
+from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.preset_models import preset_model_from_name
 from pyHalo.PresetModels.external import CDMFromEmulator, DMFromGalacticus
@@ -51,6 +51,15 @@ class TestPresetModels(object):
         _ = wdm.lensing_quantities()
         _ = preset_model_from_name('WDM')
         self._test_default_infall_model(wdm, 'hybrid')
+
+    def test_SIDM(self):
+
+        mass_ranges = [[6, 8], [8, 10]]
+        collapse_times = [10.5, 1.0]
+        sidm = SIDM_parametric(0.5, 1.5, mass_ranges, collapse_times)
+        _ = sidm.lensing_quantities()
+        _ = preset_model_from_name('SIDM_parametric')
+        self._test_default_infall_model(sidm, 'hybrid')
 
     def test_ULDM(self):
 

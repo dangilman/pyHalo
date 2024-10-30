@@ -22,11 +22,12 @@ class _ConcentrationCDM(object):
         self._scatter = scatter
         self._scatter_dex = scatter_dex
 
-    def nfw_concentration(self, m, z):
+    def nfw_concentration(self, m, z, force_no_scatter=False):
         """
         Evaluates the concentration of a halo of mass 'm' at redshift z
         :param M: halo mass [M_sun]
         :param z: halo redshift
+        :param force_no_scatter: bool; if True, will return the median concentation
         :return:
         """
         if isinstance(m, float) or isinstance(m, int):
@@ -34,8 +35,11 @@ class _ConcentrationCDM(object):
         else:
             c = numpy.array([self._evaluate_concentration(mi, z) for mi in m])
         if self._scatter:
-            log_c = numpy.log(c)
-            c = numpy.random.lognormal(log_c, self._scatter_dex)
+            if force_no_scatter:
+                pass
+            else:
+                log_c = numpy.log(c)
+                c = numpy.random.lognormal(log_c, self._scatter_dex)
         if isinstance(c, float):
             c = max(c, self._universal_minimum)
         else:
