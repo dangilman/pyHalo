@@ -100,6 +100,13 @@ class TestLensCosmo(object):
         z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
         npt.assert_equal(True, z_infall > zlens)
 
+    def test_sidm_halo_age(self):
+
+        z, z_infall, lambda_t, zform = 0.5, 5.0, 1.0, 10.0
+        halo_age = self.lens_cosmo.sidm_halo_effective_age(z, z_infall, lambda_t, zform=10.0)
+        halo_age_2 = self.lens_cosmo.sidm_halo_effective_age(z, z_infall, 2*lambda_t, zform=10.0)
+        npt.assert_equal(halo_age_2 > halo_age, True)
+
 if __name__ == '__main__':
     pytest.main()
 

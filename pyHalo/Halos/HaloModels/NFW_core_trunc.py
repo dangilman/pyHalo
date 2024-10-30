@@ -72,12 +72,13 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        # This class must have a cross section model supplied through the kwargs_special argument
-        self._sidm_cross_section = args['SIDM_CROSS_SECTION']
-        _check_valid_cross_section(self._sidm_cross_section)
         super(TNFWCFieldHaloSIDM, self).__init__(mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args,
                  truncation_class, concentration_class, unique_tag)
+
+    @property
+    def halo_effective_age(self):
+        return self.halo_age
 
     @property
     def sidm_timescale(self):
@@ -85,17 +86,7 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
         Computes the timescale given by Equation 2.2 in https://arxiv.org/pdf/2305.16176.pdf
         :return:
         """
-        if not hasattr(self, '_sidm_timescale'):
-            rho_s, rs, _ = self.nfw_params
-            C = 0.75
-            G = 4.3e-6
-            conversion_fac = 2.135788e-10
-            vmax = 1.65 * np.sqrt(G * rho_s * rs ** 2) # fixed for an NFW profile
-            v_scale = np.sqrt(4 * np.pi * G * rho_s * rs ** 2)
-            sigma_eff = self._sidm_cross_section.effective_cross_section(0.64 * vmax)
-            denom = sigma_eff * rho_s * v_scale * conversion_fac
-            self._sidm_timescale = self._scale_evolution_timescale * 150 / C / denom
-        return self._sidm_timescale
+        return self._args['sidm_timescale']
 
     @property
     def t_over_tc(self):
@@ -103,7 +94,7 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
         Computes the dimensionless timescale for the halo evolution
         :return:
         """
-        return self.halo_age / self.sidm_timescale
+        return self.halo_effective_age / self.sidm_timescale
 
     @property
     def lenstronomy_params(self):
@@ -130,21 +121,60 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
 
     def profile_args(self):
         """
-        TODO: the parameterization for the density profile presented by Yang et al. doesn't conserve mass.
         I temporarily fix this by rescaling the normalization to conserve mass at all times
 
         Computes the time-evolving profile parameters
         :return: the density normalization, scale radius, and core radius for thee SIDM halo
         """
         if not hasattr(self, '_profile_args'):
-            t = min(self._regularize_t_over_tc, self.t_over_tc)
-            rhos_0, rs_0, r200_0 = self.nfw_params
-            rho_s = rhos_0 * rho_s_evolution(t)
-            rs_kpc = rs_0 * rs_evolution(t)
-            rc_kpc = rs_0 * rc_evolution(t)
+            t = self.t_over_tc
             rt_kpc = self._truncation_class.truncation_radius_halo(self)
-            self._profile_args = (1.0 * rho_s, rs_kpc, rc_kpc, rt_kpc, r200_0)
+            rho_s, rs_kpc, rc_kpc = self.get_params(t)
+            r200_0 = self.nfw_params[-1]
+            self._profile_args = (rho_s, rs_kpc, rc_kpc, rt_kpc, r200_0)
         return self._profile_args
+
+    def get_params(self, t_over_tc):
+        """
+
+        :param t:
+        :return:
+        """
+        rhos_0, rs_0, r200_0 = self.nfw_params
+        t_cut = 1.001
+        t_max = 1.7
+        t_over_tc = min(t_max, t_over_tc)
+        t_min = 1e-2
+        if t_over_tc < t_min:
+            rho_s = rhos_0
+            rs_kpc = rs_0
+            rc_kpc = 0.0
+        elif t_over_tc < t_cut:
+            rho_s = rhos_0 * rho_s_evolution(t_over_tc)
+            rs_kpc = rs_0 * rs_evolution(t_over_tc)
+            rc_kpc = rs_0 * rc_evolution(t_over_tc)
+        else:
+            rhos_0, rs_0, r200_0 = self.nfw_params
+            rhos_last = rhos_0 * rho_s_evolution(t_cut)
+            rs_kpc_last = rs_0 * rs_evolution(t_cut)
+            rc_kpc_last = rs_0 * rc_evolution(t_cut)
+            profile_args = (rhos_last, rs_kpc_last, rc_kpc_last, 100 * r200_0, r200_0)
+            total_mass = self.mass_3d(r200_0, profile_args)
+            rc_kpc = rs_0 * rc_extrapolation(t_over_tc)
+            rs_kpc = rs_0 * rs_extrapolation(t_over_tc)
+            rho_s = self.rhos_extrapolation(total_mass, rs_kpc, rc_kpc)
+
+        return rho_s, rs_kpc, rc_kpc
+
+    def rhos_extrapolation(self, total_mass, rs_kpc, rc_kpc):
+        """
+
+        :return:
+        """
+        r200_0 = self.nfw_params[-1]
+        profile_args_integral = (1.0, rs_kpc, rc_kpc, 100 * r200_0, r200_0)
+        m_integral = self.mass_3d(r200_0, profile_args_integral)
+        return total_mass / m_integral
 
     @property
     def params_physical(self):
@@ -164,8 +194,6 @@ class TNFWCSubhaloSIDM(TNFWCFieldHaloSIDM):
     """
     Implements a temporal evolution of the halo profile based on Yang et al. (2023)
     https://arxiv.org/pdf/2305.16176.pdf
-
-    TODO: add something here to account for tidal effects
     """
     def __init__(self, mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args,
@@ -179,6 +207,12 @@ class TNFWCSubhaloSIDM(TNFWCFieldHaloSIDM):
         super(TNFWCSubhaloSIDM, self).__init__(mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args,
                  truncation_class, concentration_class, unique_tag)
+
+    @property
+    def halo_effective_age(self):
+        if not hasattr(self, '_halo_effective_age'):
+            self._halo_effective_age = self.lens_cosmo.sidm_halo_effective_age(self.z, self.z_infall, self._args['lambda_t'])
+        return self._halo_effective_age
 
 def _check_valid_cross_section(cross_section):
     """
@@ -222,3 +256,24 @@ def rc_evolution(tr):
     """
 
     return 1.06419 * np.sqrt(tr) - 1.33207 * tr + 0.431133 * tr ** 2 - 0.148087 * tr ** 3 + 0.024455 * tr ** 4
+
+def rs_extrapolation(tr, t0=0.5, c1=0.47, c2=2.4):
+    """
+
+    :param tr:
+    :return:
+    """
+    return rs_evolution(t0) * np.exp(-c1 * (tr - t0) - c2 * (tr - t0) ** 3)
+
+def rc_extrapolation(t_over_tc, t0=0.5, c1=0.28):
+    """
+
+    :param t_over_tc:
+    :param t0:
+    :param c1:
+    :return:
+    """
+    rc = rc_evolution(t0) - c1 * (t_over_tc - t0)
+    if rc < 0.00001:
+        rc = 0.00001
+    return rc

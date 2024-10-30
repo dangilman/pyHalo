@@ -104,7 +104,6 @@ class Realization(object):
         if halos is None:
             for mi, xi, yi, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r3d,
                            mdefs, z, subhalo_flag):
-
                 unique_tag = np.random.rand()
                 model = self._load_halo_model(mi, xi, yi, r3di, mdefi, zi, sub_flag, self.lens_cosmo,
                                               kwargs_halo_model, unique_tag)

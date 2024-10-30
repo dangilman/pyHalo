@@ -79,41 +79,30 @@ class TestRealizationExtensions(object):
         truncation_class = TruncationRN(lens_cosmo, 100.0)
         concentration_class = ConcentrationDiemerJoyce(astropy_instance, scatter=False)
 
-        class DummyCrossSection(object):
-
-            def effective_cross_section(self, v):
-                return 100.0
-
         kwargs_halo_model = {'concentration_model': concentration_class,
                              'truncation_model': truncation_class,
                              'kwargs_density_profile': {'evaluate_mc_at_zlens': True}}
-        cross_section = DummyCrossSection()
+
         mdef = 'TNFW'
-        single_halo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=False,
+        single_halo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=True,
                                  kwargs_halo_model=kwargs_halo_model)
+
+        single_halo.halo_age = 1.0
         ext = RealizationExtensions(single_halo)
-        single_halo_sidm_1 = ext.toSIDM(cross_section)
-
-        single_subhalo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=True,
-                                 kwargs_halo_model=kwargs_halo_model)
-        ext = RealizationExtensions(single_subhalo)
-        single_subhalo_sidm_1 = ext.toSIDM(cross_section)
-
-        mdef = 'TNFWC_SIDM'
-        kwargs_halo_model['kwargs_density_profile']['SIDM_CROSS_SECTION'] = cross_section
-        single_halo_sidm_2 = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=False,
-                                 kwargs_halo_model=kwargs_halo_model)
-        single_subhalo_sidm_2 = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=True,
-                                 kwargs_halo_model=kwargs_halo_model)
-        kwargs_lens_1 = single_halo_sidm_1.lensing_quantities(add_mass_sheet_correction=False)[2][0]
-        kwargs_lens_2 = single_halo_sidm_2.lensing_quantities(add_mass_sheet_correction=False)[2][0]
-
-        kwargs_lens_3 = single_subhalo_sidm_1.lensing_quantities(add_mass_sheet_correction=False)[2][0]
-        kwargs_lens_4 = single_subhalo_sidm_2.lensing_quantities(add_mass_sheet_correction=False)[2][0]
-
-        for kw in kwargs_lens_1.keys():
-            npt.assert_almost_equal(kwargs_lens_1[kw], kwargs_lens_2[kw])
-            npt.assert_almost_equal(kwargs_lens_4[kw], kwargs_lens_3[kw])
+        subhalo_evolution_scaling = 1.0
+        mass_in_list = [[6, 10]]
+        time_scale_array = np.linspace(0.5, 1.5, 10)
+        m = np.log10(single_halo.masses[0])
+        for ti in time_scale_array:
+            core_collapse_timescale_list = [ti]
+            single_halo_sidm_1 = ext.toSIDM(mass_in_list, core_collapse_timescale_list, subhalo_evolution_scaling)
+            m_new = np.log10(single_halo_sidm_1.halos[0].mass_3d('r200'))
+            npt.assert_almost_equal(m_new/m, 1.0, 2)
+        subhalo_evolution_scaling = 2.0
+        core_collapse_timescale_list = [1.1]
+        single_halo_sidm_2 = ext.toSIDM(mass_in_list, core_collapse_timescale_list, subhalo_evolution_scaling)
+        npt.assert_equal(single_halo_sidm_2.halos[0].halo_effective_age >
+                         single_halo_sidm_1.halos[0].halo_effective_age, True)
 
     def test_add_core_collapsed_halos(self):
 
@@ -520,8 +509,5 @@ class TestRealizationExtensions(object):
 #         npt.assert_array_almost_equal(As, As_fit)
 #         npt.assert_array_almost_equal(n, n_fit)
 
-t = TestRealizationExtensions()
-t.test_globular_clusters()
-
-# if __name__ == '__main__':
-#       pytest.main()
+if __name__ == '__main__':
+      pytest.main()

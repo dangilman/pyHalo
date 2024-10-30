@@ -328,3 +328,19 @@ class LensCosmo(object):
         rho_average = m_host / volume
         g = 4.3e-6
         return 0.5427 / numpy.sqrt(g*rho_average)
+
+    def sidm_halo_effective_age(self, z, z_infall, lambda_t, zform=10.0):
+        """
+        Calculates a time since z = zform t_1 + t_2 where t_1 is the time from formation to infall, and t_2
+        is the time from infall to redshift z times lambda_t
+        :param z: halo redshift at the time of lensing
+        :param z_infall: infall redshift
+        :param lambda_t: rescales the passage of time since the halo becomes a subhalo
+        :param zform: formation redshift
+        :return: "age" in Gyr
+        """
+        if z_infall > 10:
+            z_infall = 10
+        time_formation_to_infall = self.cosmo.halo_age(z_infall, zform=zform)
+        time_infall_to_z = self.cosmo.halo_age(z, zform=z_infall)
+        return time_formation_to_infall + lambda_t * time_infall_to_z

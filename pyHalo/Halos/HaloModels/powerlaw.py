@@ -83,8 +83,10 @@ class PowerLawSubhalo(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_profile_args'):
-
-            concentration = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
+            if 'c' not in list(self._args.keys()):
+                concentration = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
+            else:
+                concentration = self._args['c']
             gamma = self._args['log_slope_halo']
             x_core_halo = self._args['x_core_halo']
             self._profile_args = (concentration, gamma, x_core_halo)

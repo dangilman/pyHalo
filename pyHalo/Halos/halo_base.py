@@ -215,3 +215,15 @@ class Halo(ABC):
             rmax = self.nfw_params[2]
         _integrand = lambda r: 4 * np.pi * r ** 2 * self.density_profile_3d(r, profile_args)
         return quad(_integrand, 0, rmax)[0]
+
+    def logarithmic_profile_slope(self, r, profile_args=None):
+        """
+
+        :param r:
+        :param profile_args:
+        :return:
+        """
+        density = self.density_profile_3d(r, profile_args)
+        log_density = np.log(density)
+        logr = np.log(r)
+        return np.gradient(log_density, logr)
