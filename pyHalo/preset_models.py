@@ -22,6 +22,9 @@ def preset_model_from_name(name):
     elif name == 'SIDM_core_collapse':
         from pyHalo.PresetModels.sidm import SIDM_core_collapse
         return SIDM_core_collapse
+    elif name == 'SIDM_parametric':
+        from pyHalo.PresetModels.sidm import SIDM_parametric
+        return SIDM_parametric
     elif name == 'ULDM':
         from pyHalo.PresetModels.uldm import ULDM
         return ULDM
