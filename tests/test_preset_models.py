@@ -59,7 +59,7 @@ class TestPresetModels(object):
         sidm = SIDM_parametric(0.5, 1.5, mass_ranges, collapse_times)
         _ = sidm.lensing_quantities()
         _ = preset_model_from_name('SIDM_parametric')
-        self._test_default_infall_model(sidm, 'HYBRID')
+        self._test_default_infall_model(sidm, 'hybrid')
 
     def test_ULDM(self):
 
