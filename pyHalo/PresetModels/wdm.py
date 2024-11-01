@@ -169,17 +169,17 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
                          'truncation_model_field_halos': truncation_model_fieldhalos,
                          'concentration_model_field_halos': concentration_model_fieldhalos,
                          'kwargs_density_profile': kwargs_density_profile}
-    realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
+    realization = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction,
-                                     nrealizations=1)
+                                     nrealizations=1)]0]
     if add_globular_clusters:
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
         kwargs_globular_clusters['host_halo_mass'] = 10 ** log_m_host
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
-    return realization_list[0]
+    return realization
 
 
 def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
