@@ -1,6 +1,6 @@
 import numpy.testing as npt
 import numpy as np
-from pyHalo.Halos.HaloModels.PTMass import PTMass
+from pyHalo.Halos.HaloModels.blackhole import BlackHole
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -17,7 +17,7 @@ class TestPTMass(object):
         self.truncation_class = None
         self.concentration_class = None
         kwargs_profile = {}
-        self.ptmass = PTMass(10**9, 1.0, 1.0, None, self.zhalo, False, self.lens_cosmo, kwargs_profile, None, None, 1.0)
+        self.ptmass = BlackHole(10 ** 9, 1.0, 1.0, None, self.zhalo, False, self.lens_cosmo, kwargs_profile, None, None, 1.0)
 
     def test_lenstronomy_ID(self):
 
@@ -38,8 +38,8 @@ class TestPTMass(object):
         is_subhalo = False
         kwargs_profile = {}
         unique_tag = 0.1
-        ptmass = PTMass(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
-                                      self.truncation_class, self.concentration_class, unique_tag)
+        ptmass = BlackHole(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                           self.truncation_class, self.concentration_class, unique_tag)
         kwargs, _ = ptmass.lenstronomy_params
         theta_E = kwargs[0]['theta_E']
         theta_E_theory = self.lens_cosmo.point_mass_factor_z(ptmass.z) * np.sqrt(10**8)

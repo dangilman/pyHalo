@@ -8,7 +8,8 @@ class PowerLawSubhalo(Halo):
     The base class for a halo modeled as a power law profile
     """
     def __init__(self, mass, x, y, r3d, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class,
+                 concentration_class, unique_tag):
         """
         See documentation in base class (Halos/halo_base.py)
         """
@@ -141,7 +142,8 @@ class GlobularCluster(Halo):
         mdef = 'SPL_CORE'
         is_subhalo = False
         super(GlobularCluster, self).__init__(mass, x, y, None, mdef, z, is_subhalo,
-                                              lens_cosmo_instance, args, unique_tag)
+                                              lens_cosmo_instance, args, unique_tag,
+                                              fixed_position=True)
 
     @property
     def lenstronomy_params(self):
