@@ -6,7 +6,7 @@ from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawFieldHalo, PowerLawSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
-from pyHalo.Halos.HaloModels.PTMass import PTMass
+from pyHalo.Halos.HaloModels.blackhole import BlackHole
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
 from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
 from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
@@ -667,7 +667,7 @@ class Realization(object):
             else:
                 model = TNFWCFieldHaloSIDM
         elif mdef == 'PT_MASS':
-            model = PTMass
+            model = BlackHole
         elif mdef == 'PJAFFE':
             model = PJaffeSubhalo
         elif mdef == 'ULDM':
