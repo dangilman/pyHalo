@@ -52,7 +52,7 @@ class RealizationExtensions(object):
         :param coordinate_center_y: center of rendering area in arcsec
         :return: an instance of Realization that includes the GC's
         """
-        if isinstance(center_x, int) or isinstance(center_x, np.ndarray):
+        if isinstance(center_x, int) or isinstance(center_x, float):
             center_x = [center_x]
             center_y = [center_y]
         assert len(center_x) == len(center_y)
