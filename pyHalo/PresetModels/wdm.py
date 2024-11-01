@@ -173,7 +173,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction,
-                                     nrealizations=1)]0]
+                                     nrealizations=1)[0]
     if add_globular_clusters:
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
