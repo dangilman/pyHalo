@@ -11,7 +11,6 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.PresetModels.cdm import CDM
 from scipy.special import eval_chebyt
 
-
 class TestRealizationExtensions(object):
 
     def test_globular_clusters(self):

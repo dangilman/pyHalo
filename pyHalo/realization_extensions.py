@@ -52,28 +52,38 @@ class RealizationExtensions(object):
         :param coordinate_center_y: center of rendering area in arcsec
         :return: an instance of Realization that includes the GC's
         """
-        n = self.number_globular_clusters(log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, galaxy_Re,
-                                          host_halo_mass, f)
-        mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
-        m = mfunc.draw()
-        z = self._realization.lens_cosmo.z_lens
-        uniform_spatial_distribution = Uniform(rendering_radius_arcsec, self._realization.geometry)
-        x, y = uniform_spatial_distribution.draw(len(m), z, center_x, center_y)
-        lens_cosmo = self._realization.lens_cosmo
-        GCS = []
-        for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
-            unique_tag = np.random.rand()
-            profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
-                                      gc_profile_args, unique_tag)
-            GCS.append(profile)
-        gcs_realization = Realization.from_halos(GCS, self._realization.lens_cosmo,
-                                                 self._realization.kwargs_halo_model,
-                                                 self._realization.apply_mass_sheet_correction,
-                                                 self._realization.rendering_classes,
-                                                 self._realization._rendering_center_x,
-                                                 self._realization._rendering_center_y,
-                                                 self._realization.geometry)
-        new_realization = self._realization.join(gcs_realization)
+        if isinstance(center_x, int) or isinstance(center_x, float):
+            center_x = [center_x]
+            center_y = [center_y]
+        assert len(center_x) == len(center_y)
+        GC_realization = None
+        for x_center, y_center in zip(center_x, center_y):
+            n = self.number_globular_clusters(log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, galaxy_Re,
+                                              host_halo_mass, f)
+            mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
+            m = mfunc.draw()
+            z = self._realization.lens_cosmo.z_lens
+            uniform_spatial_distribution = Uniform(rendering_radius_arcsec, self._realization.geometry)
+            x, y = uniform_spatial_distribution.draw(len(m), z, x_center, y_center)
+            lens_cosmo = self._realization.lens_cosmo
+            GCS = []
+            for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
+                unique_tag = np.random.rand()
+                profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
+                                          gc_profile_args, unique_tag)
+                GCS.append(profile)
+            gcs_realization = Realization.from_halos(GCS, self._realization.lens_cosmo,
+                                                     self._realization.kwargs_halo_model,
+                                                     self._realization.apply_mass_sheet_correction,
+                                                     self._realization.rendering_classes,
+                                                     self._realization._rendering_center_x,
+                                                     self._realization._rendering_center_y,
+                                                     self._realization.geometry)
+            if GC_realization is None:
+                GC_realization = gcs_realization
+            else:
+                GC_realization = GC_realization.join(gcs_realization)
+        new_realization = self._realization.join(GC_realization)
         return new_realization
 
     def number_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec,

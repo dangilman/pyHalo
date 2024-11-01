@@ -18,7 +18,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6.,
         log_m_host=13.3,  r_tidal=0.25, LOS_normalization=1.0, two_halo_contribution=True,
         delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
-        redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0):
+        redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
+        add_globular_clusters=False, kwargs_globular_clusters=None):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -62,9 +63,10 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
     main deflector presented by Lazar et al. (2021)
     :param c_host: manually set host halo concentration
+    :param add_globular_clusters: bool; include a population of globular clusters around image positions
+    :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
     :return: a realization of dark matter halos
     """
-
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
     pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
     # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
@@ -73,7 +75,6 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     if infall_redshift_model == 'HYBRID_INFALL':
         kwargs_infall_model['log_m_host'] = log_m_host
     pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
-
     # NOW WE SET THE MASS FUNCTION CLASSES FOR SUBHALOS AND FIELD HALOS
     # NOTE: MASS FUNCTION CLASSES SHOULD NOT BE INSTANTIATED HERE
     mass_function_model_subhalos = CDMPowerLaw
@@ -159,13 +160,17 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                          'truncation_model_field_halos': truncation_model_fieldhalos,
                          'concentration_model_field_halos': concentration_model_fieldhalos,
                          'kwargs_density_profile': {}}
-
-    realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
+    realization = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction,
-                                     nrealizations=1)
-    return realization_list[0]
+                                     nrealizations=1)[0]
+    if add_globular_clusters:
+        from pyHalo.realization_extensions import RealizationExtensions
+        ext = RealizationExtensions(realization)
+        kwargs_globular_clusters['host_halo_mass'] = 10 ** log_m_host
+        realization = ext.add_globular_clusters(**kwargs_globular_clusters)
+    return realization
 
 def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
         concentration_model='DIEMERJOYCE19', kwargs_concentration_model={},
