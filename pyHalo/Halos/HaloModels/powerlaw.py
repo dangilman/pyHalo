@@ -139,7 +139,8 @@ class GlobularCluster(Halo):
         self._prof = SPLCORE()
         self._lens_cosmo = lens_cosmo_instance
         mdef = 'SPL_CORE'
-        super(GlobularCluster, self).__init__(mass, x, y, None, mdef, z, True,
+        is_subhalo = False
+        super(GlobularCluster, self).__init__(mass, x, y, None, mdef, z, is_subhalo,
                                               lens_cosmo_instance, args, unique_tag)
 
     @property
