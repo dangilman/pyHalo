@@ -81,6 +81,7 @@ class TestPresetModels(object):
                                     'center_x': [0.5, 1.0],
                                     'center_y': [-1, 0]}
         wdm = WDM(0.5, 1.5,
+                  7.7,
                   add_globular_clusters=True,
                   kwargs_globular_clusters=kwargs_globular_clusters)
         _ = wdm.lensing_quantities()
