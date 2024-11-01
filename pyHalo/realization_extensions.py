@@ -55,8 +55,7 @@ class RealizationExtensions(object):
         if isinstance(center_x, int) or isinstance(center_x, np.ndarray):
             center_x = [center_x]
             center_y = [center_y]
-        else:
-            assert len(center_x) == len(center_y)
+        assert len(center_x) == len(center_y)
         GC_realization = None
         for x_center, y_center in zip(center_x, center_y):
             n = self.number_globular_clusters(log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, galaxy_Re,
