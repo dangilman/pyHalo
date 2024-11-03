@@ -13,6 +13,19 @@ from scipy.special import eval_chebyt
 
 class TestRealizationExtensions(object):
 
+    def test_black_holes(self):
+
+        cdm = CDM(0.5, 2.0, sigma_sub=0.0, LOS_normalization=1.0)
+        ext = RealizationExtensions(cdm)
+        log10_m_ratio = 0.0
+        log10_f = np.log10(0.5)
+        mbh = ext.add_black_holes(log10_m_ratio,
+                                  log10_f,
+                                  log10_mlow_halos_subres=6.0)
+        for bh, nfw in zip(mbh.halos, cdm.halos):
+            npt.assert_almost_equal(bh.mass/2, nfw.mass)
+            npt.assert_almost_equal(bh.redshift, nfw.redshift)
+
     def test_globular_clusters(self):
 
         cdm = CDM(0.5, 2.0, sigma_sub=0.01, LOS_normalization=0.1)

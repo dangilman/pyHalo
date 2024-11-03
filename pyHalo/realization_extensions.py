@@ -3,13 +3,14 @@ from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo,
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
-from pyHalo.concentration_models import preset_concentration_models
+from pyHalo.Halos.HaloModels.blackhole import BlackHole
+from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen
 from pyHalo.Rendering.correlated_structure import CorrelatedStructure
 from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Rendering.MassFunctions.gaussian import Gaussian
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.utilities import generate_lens_plane_redshifts, mask_annular
-from pyHalo.Rendering.SpatialDistributions.uniform import Uniform
+from pyHalo.Rendering.SpatialDistributions.uniform import Uniform, LensConeUniform
 from copy import deepcopy
 from scipy.interpolate import RectBivariateSpline
 import time
@@ -33,6 +34,106 @@ class RealizationExtensions(object):
         """
 
         self._realization = realization
+
+    def add_black_holes(self, log10_mass_ratio,
+                        f,
+                        log10_mlow_halos_subres=5.0,
+                        log10_min_mbh=4.5,
+                        log_mlow_halos=6.0,
+                        log10_mass_maximum=6.7,
+                        LOS_normalization=1.0):
+        """
+        Add a population of black holes in the center of halos
+        :param log10_mass_ratio: the ratio of the black hole to the mass of the host halo
+        :param f: the fraction of halos with a bh seed
+        :param log10_mlow_halos_subres: the minimum halo mass in which to inject BH seeds; this should be lower than the
+        minimum halo mass used to create the realization (log_mlow_halos)
+        :param log10_min_mbh: the minimum bh mass rendered
+        :param log_mlow_halos: the minimum halo mass of explicitely rendered halos in the realization
+        :param log10_mass_maximum: the maximum mass of the BH seeds
+        :param LOS_normalization: the overal normalization of the LOS halo mass function relative to Sheth Tormen
+        :return: a population of black holes
+        """
+        # first we inject seeds into rendered halos (down to log10_minimum_halo_mass)
+        black_hole_list = []
+        for halo in self._realization.halos:
+            u = np.random.rand()
+            if u > f:
+                # no BH in this halo
+                continue
+            kpc_per_arcsec = self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(halo.z)
+            x_center_halo, y_center_halo = halo.x, halo.y
+            m_bh = min(10**log10_mass_maximum, halo.mass * 10 ** log10_mass_ratio)
+            halo_scale_radius_arcsec = halo.nfw_params[1] / kpc_per_arcsec
+            theta = np.random.uniform(0, 2*np.pi)
+            costheta, sintheta = np.cos(theta), np.sin(theta)
+            R = np.sqrt(np.random.uniform(0, halo_scale_radius_arcsec ** 2))
+            x_bh, y_bh = x_center_halo + R * costheta, y_center_halo + R * sintheta
+            if m_bh > 10**log10_min_mbh:
+                mbh = BlackHole(m_bh,
+                               x_bh,
+                               y_bh,
+                               r3d=None,
+                               z=halo.z,
+                               sub_flag=False,
+                               lens_cosmo_instance=halo.lens_cosmo,
+                               args={},
+                               truncation_class=None,
+                               concentration_class=None,
+                               unique_tag=np.random.rand(),
+                               fixed_position=False)
+                black_hole_list.append(mbh)
+
+        plane_redshifts = self._realization.unique_redshifts
+        delta_z = []
+        for i, zi in enumerate(plane_redshifts[0:-1]):
+            delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
+        delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
+
+        for (zi, delta_zi) in zip(plane_redshifts, delta_z):
+            kwargs_model_subres = {'m_pivot': 10 ** 8,
+                               'log_mlow': log10_mlow_halos_subres,
+                               'log_mhigh': log_mlow_halos,
+                               'LOS_normalization': f * LOS_normalization,
+                               'delta_power_law_index': 0.0,
+                               'draw_poisson': True}
+            mfunc_sub_resolution = ShethTormen.from_redshift(zi, delta_zi,
+                                                             self._realization.geometry,
+                                                             kwargs_model_subres)
+            mass_sub_resolution = mfunc_sub_resolution.draw()
+            uniform_spatial_distribution = LensConeUniform(self._realization.geometry.cone_opening_angle,
+                                                           self._realization.geometry)
+            x_kpc, y_kpc = uniform_spatial_distribution.draw(len(mass_sub_resolution),
+                                                             zi)
+            kpc_per_arcsec = self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(zi)
+            x = x_kpc / kpc_per_arcsec
+            y = y_kpc / kpc_per_arcsec
+            for m_bh, x_bh, y_bh in zip(mass_sub_resolution, x, y):
+                if m_bh > 10 ** log10_min_mbh:
+                    mbh = BlackHole(m_bh * 10 ** log10_mass_ratio,
+                                    x_bh,
+                                    y_bh,
+                                    r3d=None,
+                                    z=zi,
+                                    sub_flag=False,
+                                    lens_cosmo_instance=self._realization.lens_cosmo,
+                                    args={},
+                                    truncation_class=None,
+                                    concentration_class=None,
+                                    unique_tag=np.random.rand(),
+                                    fixed_position=False)
+                    black_hole_list.append(mbh)
+
+        mbh_realization = Realization.from_halos(black_hole_list, self._realization.lens_cosmo,
+                                   self._realization.kwargs_halo_model,
+                                   self._realization.apply_mass_sheet_correction,
+                                   self._realization.rendering_classes,
+                                   self._realization._rendering_center_x,
+                                   self._realization._rendering_center_y,
+                                   self._realization.geometry)
+        return mbh_realization
+        # now we add mbh seeds into the "background" population of DM halos we didn't explicitely model
+
 
     def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_profile_args,
                               galaxy_Re=6.0, host_halo_mass=10**13.3, f=3.4e-5, center_x=0, center_y=0):

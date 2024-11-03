@@ -1,5 +1,6 @@
 from pyHalo.PresetModels.cdm import CDM, CDMCorrelatedStructure
 from pyHalo.PresetModels.wdm import WDM, WDM_mixed
+from pyHalo.PresetModels.mbh import CDM_plus_BH
 from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.preset_models import preset_model_from_name
@@ -120,6 +121,17 @@ class TestPresetModels(object):
         _ = wdm_mixed.lensing_quantities()
         _ = preset_model_from_name('WDM_mixed')
         self._test_default_infall_model(wdm_mixed, 'hybrid')
+
+    def test_CDM_blackholes(self):
+        
+        model = preset_model_from_name('CDM_plus_BH')
+        cdm_bh = model(0.5,
+                             1.5,
+                             -0.2,
+                             -0.3,
+                             sigma_sub=0.01)
+        _ = cdm_bh.lensing_quantities()
+        _ = preset_model_from_name('CDM_plus_BH')
 
     def test_WDM_general(self):
         func = preset_model_from_name('WDMGeneral')

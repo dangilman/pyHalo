@@ -40,6 +40,9 @@ def preset_model_from_name(name):
     elif name == "DMGalacticus":
         from pyHalo.PresetModels.external import DMFromGalacticus
         return DMFromGalacticus
+    elif name == 'CDM_plus_BH':
+        from pyHalo.PresetModels.mbh import CDM_plus_BH
+        return CDM_plus_BH
     else:
         raise Exception('preset model '+ str(name)+' not recognized!')
 
