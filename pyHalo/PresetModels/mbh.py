@@ -22,6 +22,8 @@ def CDM_plus_BH(z_lens,
                  kwargs_globular_clusters=None):
     """
     Add a population of black holes to a CDM realization
+    some literature:
+    - https://arxiv.org/pdf/0709.0529 (evolution of Mbh seeds)
     :param z_lens: lens redshift
     :param z_source: source redshift
     :param log10_mass_ratio: the ratio of the black hole mass to the host halo mass

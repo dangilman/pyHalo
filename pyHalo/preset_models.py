@@ -25,6 +25,9 @@ def preset_model_from_name(name):
     elif name == 'SIDM_parametric':
         from pyHalo.PresetModels.sidm import SIDM_parametric
         return SIDM_parametric
+    elif name == 'SIDM_parametric_fixedbins':
+        from pyHalo.PresetModels.sidm import SIDM_parametric_fixedbins
+        return SIDM_parametric_fixedbins
     elif name == 'ULDM':
         from pyHalo.PresetModels.uldm import ULDM
         return ULDM
