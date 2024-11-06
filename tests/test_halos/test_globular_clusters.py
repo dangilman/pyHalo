@@ -48,7 +48,7 @@ class TestSPLCORE(object):
                                   args, 1)
         profile_args = profile.profile_args
         rho0 = profile_args['rho0']
-        r_core = profile_args['r_core_arcsec']
+        r_core = profile_args['r_core_kpc']
         r_max = profile_args['gc_size']
         gamma = profile_args['gamma']
         total_mass = profile._prof.mass_3d(r_max, rho0, r_core, gamma)
