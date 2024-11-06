@@ -182,7 +182,7 @@ class GlobularCluster(Halo):
             r_core_kpc = r_core_fraction * gc_size_kpc
             rho0 = self.mass / self._prof.mass_3d(gc_size_kpc, 1.0, r_core_kpc, gamma)
             self._profile_args = {'rho0': rho0, 'gc_size': gc_size_kpc,
-                                  'gamma': gamma, 'r_core_arcsec': r_core_kpc}
+                                  'gamma': gamma, 'r_core_kpc': r_core_kpc}
         return self._profile_args
 
     @property
