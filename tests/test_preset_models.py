@@ -41,18 +41,10 @@ class TestPresetModels(object):
         self._test_default_infall_model(cdm, 'hybrid')
         self._test_default_infall_model(cdm3, 'direct')
 
-        gc_profile_args = {'gamma': 2.5,
-                           'gc_size_lightyear': 250,
-                           'r_core_fraction': 0.05}
         kwargs_globular_clusters = {'log10_mgc_mean': 5.0,
                                     'log10_mgc_sigma': 0.5,
                                     'rendering_radius_arcsec': 0.1,
-                                    'gc_profile_args': gc_profile_args,
-                                    'galaxy_Re': 6.0,
-                                    'host_halo_mass': 10**13.3,
-                                    'f': 3.4e-5,
-                                    'center_x': [0.5, 1.0],
-                                    'center_y': [-1, 0]}
+                                    }
         cdm = CDM(0.5, 1.5,
                   add_globular_clusters=True,
                   kwargs_globular_clusters=kwargs_globular_clusters)
@@ -69,18 +61,10 @@ class TestPresetModels(object):
         _ = wdm.lensing_quantities()
         _ = preset_model_from_name('WDM')
         self._test_default_infall_model(wdm, 'hybrid')
-        gc_profile_args = {'gamma': 2.5,
-                           'gc_size_lightyear': 250,
-                           'r_core_fraction': 0.05}
         kwargs_globular_clusters = {'log10_mgc_mean': 5.0,
                                     'log10_mgc_sigma': 0.5,
                                     'rendering_radius_arcsec': 0.1,
-                                    'gc_profile_args': gc_profile_args,
-                                    'galaxy_Re': 6.0,
-                                    'host_halo_mass': 10 ** 13.3,
-                                    'f': 3.4e-5,
-                                    'center_x': [0.5, 1.0],
-                                    'center_y': [-1, 0]}
+                                    }
         wdm = WDM(0.5, 1.5,
                   7.7,
                   add_globular_clusters=True,
@@ -143,18 +127,10 @@ class TestPresetModels(object):
         _ = wdm.lensing_quantities()
         wdm = func(0.5, 1.5, 7.7, -2.0, truncation_model_subhalos='TRUNCATION_GALACTICUS')
         self._test_default_infall_model(wdm, 'hybrid')
-        gc_profile_args = {'gamma': 2.5,
-                           'gc_size_lightyear': 250,
-                           'r_core_fraction': 0.05}
         kwargs_globular_clusters = {'log10_mgc_mean': 5.0,
                                     'log10_mgc_sigma': 0.5,
                                     'rendering_radius_arcsec': 0.1,
-                                    'gc_profile_args': gc_profile_args,
-                                    'galaxy_Re': 6.0,
-                                    'host_halo_mass': 10 ** 13.3,
-                                    'f': 3.4e-5,
-                                    'center_x': [0.5, 1.0],
-                                    'center_y': [-1, 0]}
+                                    }
         wdm = func(0.5, 1.5, 7.7, -2.5,
                   add_globular_clusters=True,
                   kwargs_globular_clusters=kwargs_globular_clusters)

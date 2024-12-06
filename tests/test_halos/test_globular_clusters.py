@@ -19,8 +19,8 @@ class TestSPLCORE(object):
 
         mass = 10 ** 5
         args = {'gamma': 2.5,
-                'r_core_fraction': 0.05,
-                'gc_size_lightyear': 100}
+                'gc_size_lightyear': 100,
+                'gc_concentration': 50}
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
                                   args, 1)
         lenstronomy_ID = profile.lenstronomy_ID
@@ -31,8 +31,8 @@ class TestSPLCORE(object):
         logM = 5.0
         mass = 10 ** logM
         args = {'gamma': 2.5,
-                'r_core_fraction': 0.05,
-                'gc_size_lightyear': 100}
+                'gc_size_lightyear': 100,
+                'gc_concentration': 50}
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
                                   args, 1)
         lenstronomy_args, _ = profile.lenstronomy_params
@@ -42,15 +42,15 @@ class TestSPLCORE(object):
         logM = 5.0
         mass = 10 ** logM
         args = {'gamma': 2.5,
-                'r_core_fraction': 0.05,
-                'gc_size_lightyear': 100}
+                'gc_size_lightyear': 100,
+                'gc_concentration': 50}
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
                                   args, 1)
         profile_args = profile.profile_args
-        rho0 = profile_args['rho0']
-        r_core = profile_args['r_core_kpc']
-        r_max = profile_args['gc_size']
-        gamma = profile_args['gamma']
+        rho0 = profile_args[0]
+        r_core = profile_args[3]
+        r_max = profile_args[1]
+        gamma = profile_args[2]
         total_mass = profile._prof.mass_3d(r_max, rho0, r_core, gamma)
         npt.assert_almost_equal(total_mass, mass)
 
@@ -59,7 +59,7 @@ class TestSPLCORE(object):
         sigma0 = lenstronomy_args[0]['sigma0']
         rcore = lenstronomy_args[0]['r_core']
         gamma = lenstronomy_args[0]['gamma']
-        r_max = profile_args['gc_size'] / kpc_per_arcsec
+        r_max = profile_args[1] / kpc_per_arcsec
         sigma_crit_mpc = profile.lens_cosmo.get_sigma_crit_lensing(profile.z, profile.lens_cosmo.z_source)
         sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
         total_mass = profile._prof.mass_3d(r_max, sigma0/rcore, rcore, gamma) * sigma_crit_arcsec

@@ -9,7 +9,7 @@ from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from pyHalo.Halos.tidal_truncation import TruncationRoche, TruncationRN
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.PresetModels.cdm import CDM
-from scipy.special import eval_chebyt
+from lenstronomy.LensModel.Profiles.splcore import SPLCORE
 
 class TestRealizationExtensions(object):
 
@@ -34,49 +34,53 @@ class TestRealizationExtensions(object):
         log10_mgc_mean = 4.5
         log10_mgc_sigma = 0.2
         rendering_radius_arcsec = 10.0
-        galaxy_Re = 10  # kpc
-        center_x = 1.0
-        center_y = 0.0
-        cdm_with_GCs = ext.add_globular_clusters(log10_mgc_mean,
-                                                   log10_mgc_sigma,
-                                                   rendering_radius_arcsec,
-                                                   galaxy_Re,
-                                                   center_x=center_x,
-                                                   center_y=center_y)
+        gamma_mean = 2.0
+        gamma_sigma = 0.2
+        gc_concentration_mean = 50
+        gc_concentration_sigma = 20
+        gc_size_mean = 300
+        gc_size_sigma = 150
+        gc_surface_mass_density = 1e6
+        cdm_with_GCs = ext.add_globular_clusters(
+            log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean, gamma_sigma,
+            gc_concentration_mean, gc_concentration_sigma, gc_size_mean, gc_size_sigma, gc_surface_mass_density,
+            center_x=0, center_y=0
+        )
         n_halos_cdm_plus_gcs = len(cdm_with_GCs.halos)
         npt.assert_equal(n_halos_cdm_plus_gcs>n_halos_cdm, True)
 
-        cdm = CDM(0.5, 2.0, sigma_sub=0.0, LOS_normalization=0.0)
-        ext = RealizationExtensions(cdm)
-        log10_mgc_mean = 4.5
-        log10_mgc_sigma = 0.2
-        rendering_radius_arcsec = 10.0
-        galaxy_Re = 10 # kpc
-        center_x = 1.0
-        center_y = 0.0
+        cdm0 = CDM(0.5, 2.0, sigma_sub=0.0, LOS_normalization=0.0)
+        ext_onlygc = RealizationExtensions(cdm0)
+        gcs = ext_onlygc.add_globular_clusters(
+            log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean, gamma_sigma,
+            gc_concentration_mean, gc_concentration_sigma, gc_size_mean, gc_size_sigma, gc_surface_mass_density,
+            center_x=0, center_y=0
+        )
+        profile = SPLCORE()
+        kpc_per_arcsec = cdm0.lens_cosmo.cosmo.kpc_proper_per_asec(0.5)
+        sigma_crit_mpc = cdm0.lens_cosmo.get_sigma_crit_lensing(0.5, 2.0)
+        sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
+        mass_total = 0
+        for gc in gcs.halos:
+            profile_args = gc.profile_args
+            rho0 = profile_args[0]
+            R = profile_args[1]
+            gamma = profile_args[2]
+            rc = profile_args[3]
+            m_theory = profile.mass_3d(R, rho0, rc, gamma)
+            npt.assert_almost_equal(m_theory, gc.mass)
+            lenstronomy_params = gc.lenstronomy_params[0][0]
+            rho0_arcsec = lenstronomy_params['sigma0'] / lenstronomy_params['r_core']
+            R_arcsec = R / kpc_per_arcsec
+            gamma = lenstronomy_params['gamma']
+            rc_arcsec = lenstronomy_params['r_core']
+            m_theory = profile.mass_3d(R_arcsec, rho0_arcsec, rc_arcsec, gamma) * sigma_crit_arcsec
+            npt.assert_almost_equal(m_theory, gc.mass)
+            mass_total += m_theory
 
-        cdm_with_GCs_1 = ext.add_globular_clusters(log10_mgc_mean,
-                                                 log10_mgc_sigma,
-                                                 rendering_radius_arcsec,
-                                                 galaxy_Re,
-                                                 f=3.4e-4,
-                                                 center_x=center_x,
-                                                   center_y=center_y)
-        scale_re = 3
-        cdm_with_GCs_2 = ext.add_globular_clusters(log10_mgc_mean,
-                                                   log10_mgc_sigma,
-                                                   rendering_radius_arcsec,
-                                                   scale_re*galaxy_Re,
-                                                   )
-        number_1 = len(cdm_with_GCs_1.halos)
-        number_2 = len(cdm_with_GCs_2.halos)
-        npt.assert_almost_equal(number_1/number_2 / scale_re**2, 1.0, 1)
-        masses = []
-        for i in range(0, len(cdm_with_GCs_1.halos)):
-            masses.append(cdm_with_GCs_1.halos[i].mass)
-        log10mean_mass = np.mean(np.log10(masses))
-        npt.assert_almost_equal(log10mean_mass/log10_mgc_mean, 1, 1)
-        npt.assert_almost_equal(np.std(np.log10(masses))/log10_mgc_sigma, 1, 1)
+        area = np.pi * (kpc_per_arcsec * rendering_radius_arcsec) ** 2
+        sigma = mass_total / area
+        npt.assert_almost_equal(sigma / gc_surface_mass_density, 1, 2)
 
     def test_toSIDM(self):
 
@@ -521,5 +525,8 @@ class TestRealizationExtensions(object):
 #         npt.assert_array_almost_equal(As, As_fit)
 #         npt.assert_array_almost_equal(n, n_fit)
 
-if __name__ == '__main__':
-      pytest.main()
+t=  TestRealizationExtensions()
+t.test_globular_clusters()
+#
+# if __name__ == '__main__':
+#       pytest.main()

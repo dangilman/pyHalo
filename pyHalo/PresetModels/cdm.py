@@ -168,7 +168,6 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     if add_globular_clusters:
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
-        kwargs_globular_clusters['host_halo_mass'] = 10 ** log_m_host
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
     return realization
 

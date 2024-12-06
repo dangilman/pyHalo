@@ -134,23 +134,27 @@ class RealizationExtensions(object):
         return mbh_realization
         # now we add mbh seeds into the "background" population of DM halos we didn't explicitely model
 
-
-    def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_profile_args,
-                              galaxy_Re=6.0, host_halo_mass=10**13.3, f=3.4e-5, center_x=0, center_y=0):
+    def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean=2.2,
+                              gamma_sigma=0.2, gc_concentration_mean=80, gc_concentration_sigma=20,
+                              gc_size_mean=100, gc_size_sigma=10, gc_surface_mass_density=10 ** 5,
+                              center_x=0, center_y=0):
         """
-        Add globular clusters at z = z_lens to a realization sampling from a log-normal mass distribution
+        Add globular clusters at main deflector redshift following a log-normal mass distribution
         :param log10_mgc_mean: the median log10(mass) of the GC's
         :param log10_mgc_sigma: the standard deviation of the Gaussian mass function for log10(m)
         :param rendering_radius_arcsec [arcsec]: sets the area around (center_x, center_y) where the GC's appear; GC's are
         distributed uniformly in a circle centered at (center_x, center_y) with this radius
-        :param gc_profile_args: the keyword arguments for the GC mass profile, must include "gamma", "gc_size_lightyear",
-        "r_core_fraction", or the logarithmic power law slope, the size of the gc in light years, and the size of the core
-        relative to the size of the GC
-        :param galaxy_Re: galaxy half-light radius
-        :param host_halo_mass: total mass of the host DM halo
-        :param f: the fraction M_gc / M_host from https://arxiv.org/pdf/1602.01105
-        :param coordinate_center_x: center of rendering area in arcsec
-        :param coordinate_center_y: center of rendering area in arcsec
+        :param gamma_mean: the mean logarithmic power-law slope for the GCs
+        :param gamma_sigma: half the width of the slope distribution around gamma mean, assuming a uniform distribution
+        :param gc_concentration_mean: the ratio of the GC core size to the total size, where the total size is defined as
+        the radius enclosing the stated mass of the GC
+        :param gc_concentration_sigma: half the width of the distribution around gc_concentration_mean
+        :param gc_size_mean: the typical radial extend of the GC in light years
+        (the mass is defined as the mass inside this radius)
+        :param gc_size_sigma: half the width of the uniform distribution of gc size
+        :param gc_surface_mass_density: the surface mass density of GCs in units of M_sun / kpc^2
+        :param center_x: center of rendering area in arcsec
+        :param center_y: center of rendering area in arcsec
         :return: an instance of Realization that includes the GC's
         """
         if isinstance(center_x, int) or isinstance(center_x, float):
@@ -158,19 +162,30 @@ class RealizationExtensions(object):
             center_y = [center_y]
         assert len(center_x) == len(center_y)
         GC_realization = None
+        lens_cosmo = self._realization.lens_cosmo
+        z = self._realization.lens_cosmo.z_lens
+        kpc_per_arcsec = self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
+        # determine number of GCs
+        integral = np.exp(np.log(10 ** log10_mgc_mean) + np.log(10 ** log10_mgc_sigma) ** 2 / 2)
+        mass_in_gc = np.pi * gc_surface_mass_density * (rendering_radius_arcsec * kpc_per_arcsec) ** 2
+        n = int(mass_in_gc / integral)
+        mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
         for x_center, y_center in zip(center_x, center_y):
-            n = self.number_globular_clusters(log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, galaxy_Re,
-                                              host_halo_mass, f)
-            mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
             m = mfunc.draw()
-            z = self._realization.lens_cosmo.z_lens
             uniform_spatial_distribution = Uniform(rendering_radius_arcsec, self._realization.geometry)
             x_kpc, y_kpc = uniform_spatial_distribution.draw(len(m), z, 1.0, x_center, y_center)
             x = x_kpc / self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
             y = y_kpc / self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
-            lens_cosmo = self._realization.lens_cosmo
             GCS = []
             for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
+                gamma = np.random.uniform(gamma_mean - gamma_sigma, gamma_mean + gamma_sigma)
+                gc_concentration = np.random.uniform(gc_concentration_mean - gc_concentration_sigma,
+                                                     gc_concentration_mean + gc_concentration_sigma)
+                gc_size = np.random.uniform(gc_size_mean - gc_size_sigma, gc_size_mean + gc_size_sigma)
+                gc_size_lightyear = gc_size * (m_gc / 10 ** 5) ** (1/3)
+                gc_profile_args = {'gamma': gamma,
+                                   'gc_size_lightyear': gc_size_lightyear,
+                                   'gc_concentration': gc_concentration}
                 unique_tag = np.random.rand()
                 profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
                                           gc_profile_args, unique_tag)
@@ -188,23 +203,6 @@ class RealizationExtensions(object):
                 GC_realization = GC_realization.join(gcs_realization)
         new_realization = self._realization.join(GC_realization)
         return new_realization
-
-    def number_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec,
-                              galaxy_Re=10.0, host_halo_mass=10**13.3, f=3.4e-5):
-        """
-        Compute the number of globular clusters from their mass function (see documentation in add_globular_clusters)
-        :return:
-        """
-        m_gc = f * host_halo_mass
-        area = np.pi * (6 * galaxy_Re) ** 2 # physical kpc^2
-        surface_mass_density = m_gc / area
-        z = self._realization.lens_cosmo.z_lens
-        kpc_per_arcsec = self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
-        # assuming log-normal mass function
-        integral = np.exp(np.log(10 ** log10_mgc_mean) + np.log(10 ** log10_mgc_sigma) ** 2 / 2)
-        mass_in_gc = np.pi * surface_mass_density * (rendering_radius_arcsec * kpc_per_arcsec) ** 2
-        n = int(mass_in_gc / integral)
-        return n
 
     def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling):
         """

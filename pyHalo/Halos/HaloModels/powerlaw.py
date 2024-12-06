@@ -130,11 +130,10 @@ class GlobularCluster(Halo):
         :param y: y coordinate [arcsec]
         :param z: redshift
         :param lens_cosmo_instance: an instance of LensCosmo class
-        :param args: keyword arguments for the profile, must contain 'gamma', 'r_core_fraction', 'gc_size_lightyear'
-        which are the logarithmic profile slope outside the core, the core size in units of the GC size, and the gc size
-        in light years. The size and mass are related by
-        gc_size = gc_size_lightyear (m / 10^5)^1/3
-        The mass is the total mass inside a sphere with radius gc_size
+        :param args: keyword arguments for the profile, must contain 'gamma', 'gc_size_lightyear', 'gc_concentration'
+        which are the logarithmic profile slope outside the core, the size of the GC in lightyears
+        (the mass is defined as the mass inside a sphere with this radius), and the 'concentration' which is the ratio
+         of the gc core size to total size
         :param unique_tag:
         """
         self._prof = SPLCORE()
@@ -151,16 +150,14 @@ class GlobularCluster(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_lenstronomy_args'):
+            kpc_per_lightyear = 0.31 * 1e-3
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             gamma = self._args['gamma']
-            r_core_fraction = self._args['r_core_fraction']
-            gc_size_lightyear_0 = self._args['gc_size_lightyear']
+            gc_size_lightyear = self._args['gc_size_lightyear']
+            gc_size_arcsec = gc_size_lightyear * kpc_per_lightyear / kpc_per_arcsec
+            r_core_arcsec = gc_size_arcsec/self._args['gc_concentration']
             sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
             sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
-            kpc_per_lightyear = 0.3 * 1e-3
-            gc_size_kpc = gc_size_lightyear_0 * (self.mass / 10 ** 5) ** (1 / 3) * kpc_per_lightyear
-            gc_size_arcsec = gc_size_kpc / kpc_per_arcsec
-            r_core_arcsec = r_core_fraction * gc_size_arcsec
             rho0 = self.mass / self._prof.mass_3d(gc_size_arcsec, sigma_crit_arcsec, r_core_arcsec, gamma)
             sigma0 = rho0 * r_core_arcsec
             self._lenstronomy_args = [{'sigma0': sigma0, 'gamma': gamma, 'center_x': self.x, 'center_y': self.y,
@@ -174,15 +171,14 @@ class GlobularCluster(Halo):
         """
         if not hasattr(self, '_profile_args'):
 
+            kpc_per_lightyear = 0.31 * 1e-3
             gamma = self._args['gamma']
-            r_core_fraction = self._args['r_core_fraction']
-            gc_size_lightyear_0 = self._args['gc_size_lightyear']
-            kpc_per_lightyear = 0.3 * 1e-3
-            gc_size_kpc = gc_size_lightyear_0 * (self.mass / 10 ** 5) ** (1 / 3) * kpc_per_lightyear
-            r_core_kpc = r_core_fraction * gc_size_kpc
+            gc_size_lightyear = self._args['gc_size_lightyear']
+            c = self._args['gc_concentration']
+            gc_size_kpc = gc_size_lightyear * kpc_per_lightyear
+            r_core_kpc = gc_size_kpc / c
             rho0 = self.mass / self._prof.mass_3d(gc_size_kpc, 1.0, r_core_kpc, gamma)
-            self._profile_args = {'rho0': rho0, 'gc_size': gc_size_kpc,
-                                  'gamma': gamma, 'r_core_kpc': r_core_kpc}
+            self._profile_args = (rho0, gc_size_kpc, gamma, r_core_kpc)
         return self._profile_args
 
     @property
