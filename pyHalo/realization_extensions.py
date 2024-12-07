@@ -135,7 +135,7 @@ class RealizationExtensions(object):
         # now we add mbh seeds into the "background" population of DM halos we didn't explicitely model
 
     def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean=2.2,
-                              gamma_sigma=0.2, gc_concentration_mean=80, gc_concentration_sigma=20,
+                              gamma_sigma=0.2, gc_concentration_mean=100, gc_concentration_sigma=20,
                               gc_size_mean=100, gc_size_sigma=10, gc_surface_mass_density=10 ** 5,
                               center_x=0, center_y=0):
         """
@@ -201,6 +201,7 @@ class RealizationExtensions(object):
                 GC_realization = gcs_realization
             else:
                 GC_realization = GC_realization.join(gcs_realization)
+        print('added '+str(len(GC_realization.halos))+' globular clusters... ')
         new_realization = self._realization.join(GC_realization)
         return new_realization
 
