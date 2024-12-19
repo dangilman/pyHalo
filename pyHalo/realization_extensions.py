@@ -201,7 +201,7 @@ class RealizationExtensions(object):
                 GC_realization = gcs_realization
             else:
                 GC_realization = GC_realization.join(gcs_realization)
-        print('added '+str(len(GC_realization.halos))+' globular clusters... ')
+        # print('added '+str(len(GC_realization.halos))+' globular clusters... ')
         new_realization = self._realization.join(GC_realization)
         return new_realization
 
@@ -334,13 +334,16 @@ class RealizationExtensions(object):
     def add_core_collapsed_halos(self, indexes, halo_profile='SPL_CORE',**kwargs_halo):
 
         """
-        This function turns NFW halos in a realization into profiles modeled as PseudoJaffe profiles
-        with 1/r^2 central density profiles with the same total mass as the original NFW
-        profile.
+        This function turns NFW halos into profiles that are meant to represent core-collapsed SIDM halos. The halo
+        profile can be specified through either SPL_CORE or GNFW, see the SIDM example notebooks for detials
 
         :param indexes: the indexes of halos in the realization to transform into powerlaw or generalized nfw profiles
         :param halo_profile: specifies whether to transform to powerlaw (SPL_CORE) or generalized_nfw profile (GNFW)
         :param kwargs_halo: the keyword arguments for the collapsed halo profile
+        For SPL_CORE: should include 'log_slope_halo' and 'x_core_halo', the log profile slope and core size in units of
+        NFW r_s
+        For GNFW: should include 'gamma_inner' and 'gamma_outer', the logarithmic profile slopes interior to and exterior
+        to NFW r_s
         :return: A new instance of Realization where the halos indexed by indexes
         in the original realization have their mass definitions changed to PsuedoJaffe
         """
