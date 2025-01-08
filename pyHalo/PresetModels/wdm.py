@@ -18,7 +18,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
-        host_scaling_factor=0.5, redshift_scaling_factor=0.3, two_halo_Lazar_correction=True,
+        host_scaling_factor=0.55, redshift_scaling_factor=0.37, two_halo_Lazar_correction=True,
         draw_poisson=True, c_host=None, add_globular_clusters=False, kwargs_globular_clusters=None):
 
     """
