@@ -7,6 +7,7 @@ from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
 from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.pyhalo import pyHalo
 from pyHalo.truncation_models import truncation_models
+from pyHalo.realization_extensions import RealizationExtensions
 
 
 def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
@@ -166,7 +167,6 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                                      two_halo_Lazar_correction,
                                      nrealizations=1)[0]
     if add_globular_clusters:
-        from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
     return realization

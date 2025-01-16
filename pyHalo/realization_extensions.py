@@ -132,7 +132,6 @@ class RealizationExtensions(object):
                                    self._realization._rendering_center_y,
                                    self._realization.geometry)
         return mbh_realization
-        # now we add mbh seeds into the "background" population of DM halos we didn't explicitely model
 
     def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean=2.2,
                               gamma_sigma=0.2, gc_concentration_mean=100, gc_concentration_sigma=20,
@@ -236,13 +235,14 @@ class RealizationExtensions(object):
                                           halo.unique_tag)
         return new_halo
 
-    def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling):
+    def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling, set_bound_mass=True):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
         https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate
 
         :param mass_bin_list: a list with len(core_collapse_timescale_list) of lists that specify log10mass ranges
         :param core_collapse_timescale_list: the core collapse timescale in each mass bin in log10(Gyr)
+        :param set_bound_mass: bool; assign SIDM subhalos a bound mass attribute equal to the CDM counterpart
         :return:
         """
 
@@ -261,6 +261,8 @@ class RealizationExtensions(object):
             delta_c = c_halo / c_median
             concentration_factor = delta_c ** (7/2)
             new_halo = self.toSIDM_single_halo(halo, concentration_factor * t_c, subhalo_evolution_scaling)
+            if set_bound_mass and halo.is_subhalo:
+                new_halo.set_bound_mass(halo.bound_mass)
             sidm_halos.append(new_halo)
 
         new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,

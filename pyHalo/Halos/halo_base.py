@@ -148,10 +148,20 @@ class Halo(ABC):
             self._rperi_units_r200 = 10**float(_log10_rpericenter_sampling(n_samples=1.0))
         return self._rperi_units_r200
 
+    def set_bound_mass(self, bound_mass):
+        """
+        Allows the explicit assignment of bound mass to halos
+        :param bound_mass: the bound mass
+        """
+        self._bound_mass = bound_mass
+
     @property
     def bound_mass(self):
-        raise Exception('this halo class does not have a bound mass attribute because the profile does not have '
+        if not hasattr(self, '_bound_mass'):
+            raise Exception('this halo class does not have a bound mass attribute because the profile does not have '
                         'a tidal truncation radius')
+        else:
+            return self._bound_mass
 
     @property
     def halo_age(self):

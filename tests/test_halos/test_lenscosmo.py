@@ -107,6 +107,26 @@ class TestLensCosmo(object):
         halo_age_2 = self.lens_cosmo.sidm_halo_effective_age(z, z_infall, 2*lambda_t, zform=10.0)
         npt.assert_equal(halo_age_2 > halo_age, True)
 
+    def test_nfw_params(self):
+
+        m, c, z = 10**8, 11.0, 0.5
+        rhos, rs, r200 = self.lens_cosmo.nfwParam_physical(m,c,z)
+        Rs_Angle, Theta_Rs = self.lens_cosmo.nfw_physical2angle(m,c,z)
+        rs_angle, theta_rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rhos, rs, z)
+        npt.assert_almost_equal(Rs_Angle, rs_angle)
+        npt.assert_almost_equal(Theta_Rs, theta_rs)
+
+        rhos_kpc, rs_kpc, r200_kpc = self.lens_cosmo.NFW_params_physical(m, c, z)
+        npt.assert_almost_equal(rhos_kpc, rhos * 1e-9)
+        npt.assert_almost_equal(rs_kpc, rs * 1e3)
+        rs_angle, theta_rs = self.lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_kpc * 1e9,
+                                                                              rs_kpc * 1e-3,
+                                                                              z)
+        npt.assert_almost_equal(Rs_Angle, rs_angle)
+        npt.assert_almost_equal(Theta_Rs, theta_rs)
+
+
+
 if __name__ == '__main__':
     pytest.main()
 

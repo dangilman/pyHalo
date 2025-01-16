@@ -92,7 +92,8 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
-        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, add_globular_clusters=False,
+                    kwargs_globular_clusters=None):
     """
 
     Generates realizations of SIDM halos in terms of the core collapse timescale in different mass bins using the
@@ -136,6 +137,8 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
     :param collapsed_halo_profile: string that sets the density profile of core-collapsed halos
     currently implemented models are SPL_CORE and GNFW (see example notebook)
     :param kwargs_collapsed_profile: keyword arguments for the collapsed profile (see example notebook)
+    :param add_globular_clusters: bool; include a population of globular clusters around image positions
+    :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
     :return: a realization of dark matter structure in SIDM
     """
     two_halo_contribution = True
@@ -151,9 +154,12 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
               geometry_type, kwargs_cosmo)
     extension = RealizationExtensions(cdm)
     sidm = extension.toSIDM(log10_mass_ranges, collapse_timescales, subhalo_time_scaling)
+    if add_globular_clusters:
+        ext = RealizationExtensions(sidm)
+        sidm = ext.add_globular_clusters(**kwargs_globular_clusters)
     return sidm
 
-def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_75, t0_75_85, t0_85_10, subhalo_time_scaling=1.0,
+def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_8, t0_8_mhigh, subhalo_time_scaling=1.0,
         sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
@@ -161,19 +167,20 @@ def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_75, t0_75_85, t0_85_10, 
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
-        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
+        add_globular_clusters=False, kwargs_globular_clusters=None):
     """
     This function uses the SIDM_parametric model with a preset list of logarithmic mass bins 10^log_mlow - 10^7.5,
     10^7.5-10^8.5, 10^8.5-10^10. The three parameters t0_mlow_75, t0_75_85, t0_85_10 set the collapse timescale in each
     bin. For detailed documentation for the rest of the arguments, see the documentation in the SIDM_parametric function
-    :param t0_mlow_75: core collapse timescale log10(Gyr) in the mass range 10^log_mlow - 10^7.5
-    :param t0_75_85: core collapse timescale log10(Gyr) in the mass range 10^7.5 - 10^8.5
-    :param t0_85_10: core collapse timescale log10(Gyr) in the mass range 10^8.5 - 10^10
+    :param t0_mlow_8: core collapse timescale log10(Gyr) in the mass range 10^log_mlow - 10^8
+    :param t0_8_mhigh: core collapse timescale log10(Gyr) in the mass range 10^8 - 10^log_mhigh
+    :param subhalo_time_scaling: rescales the timescale for subhalos
     """
-    if log_mlow > 7.5:
-        raise Exception('to use this function log_mlow must be < 7.5')
-    log10_mass_ranges = [[log_mlow, 7.5], [7.5, 8.5], [8.5, 10.0]]
-    collapse_timescales = [t0_mlow_75, t0_75_85, t0_85_10]
+    if log_mlow > 8:
+        raise Exception('to use this function log_mlow must be < 8')
+    log10_mass_ranges = [[log_mlow, 8.0], [8.0, log_mhigh]]
+    collapse_timescales = [t0_mlow_8, t0_8_mhigh]
     return SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, subhalo_time_scaling,
         sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
@@ -182,4 +189,5 @@ def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_75, t0_75_85, t0_85_10, 
         infall_redshift_model, kwargs_infall_model,
         truncation_model_fieldhalos, kwargs_truncation_model_fieldhalos,
         shmf_log_slope, cone_opening_angle_arcsec, log_m_host,  r_tidal,
-        LOS_normalization, geometry_type, kwargs_cosmo)
+        LOS_normalization, geometry_type, kwargs_cosmo,
+        add_globular_clusters, kwargs_globular_clusters)

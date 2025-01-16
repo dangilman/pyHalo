@@ -75,18 +75,20 @@ class TNFWFieldHalo(Halo):
         """
         if not hasattr(self, '_kwargs_lenstronomy'):
 
-            [concentration, rt] = self.profile_args
-            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
-
+            [_, rt] = self.profile_args
+            #Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+            rhos_kpc, rs_kpc, _ = self.nfw_params
+            rhos_mpc = rhos_kpc * 1e9
+            rs_mpc = rs_kpc * 1e-3
+            Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc,
+                                                                                   rs_mpc,
+                                                                                   self.z)
             x, y = np.round(self.x, 4), np.round(self.y, 4)
-
             Rs_angle = np.round(Rs_angle, 10)
             theta_Rs = np.round(theta_Rs, 10)
             r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-
             kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle,
                       'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
-
             self._kwargs_lenstronomy = kwargs
 
         return self._kwargs_lenstronomy, None
@@ -96,10 +98,8 @@ class TNFWFieldHalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-
         if not hasattr(self, '_profile_args'):
             truncation_radius_kpc = self._truncation_class.truncation_radius_halo(self)
-
             self._profile_args = (self.c, truncation_radius_kpc)
         return self._profile_args
 

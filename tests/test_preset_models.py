@@ -81,7 +81,7 @@ class TestPresetModels(object):
         self._test_default_infall_model(sidm, 'hybrid')
 
         model = preset_model_from_name('SIDM_parametric_fixedbins')
-        realization = model(0.5, 1.5, 10.0, 5.0, 1.0)
+        realization = model(0.5, 1.5, 5.0, 1.0)
         _ = realization.lensing_quantities()
 
     def test_ULDM(self):
