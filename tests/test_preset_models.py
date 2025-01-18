@@ -1,6 +1,5 @@
 from pyHalo.PresetModels.cdm import CDM, CDMCorrelatedStructure
 from pyHalo.PresetModels.wdm import WDM, WDM_mixed
-from pyHalo.PresetModels.mbh import CDM_plus_BH
 from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.preset_models import preset_model_from_name

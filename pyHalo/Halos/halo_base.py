@@ -180,7 +180,6 @@ class Halo(ABC):
         """
         Computes the halo concentration (once)
         """
-
         raise Exception('this class does not have a well-defined concentration parameter')
 
     @property

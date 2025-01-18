@@ -1,7 +1,6 @@
 from pyHalo.PresetModels.cdm import CDM
 from pyHalo.realization_extensions import RealizationExtensions
 
-
 def CDM_plus_BH(z_lens,
                  z_source,
                  log10_mass_ratio,
@@ -48,8 +47,7 @@ def CDM_plus_BH(z_lens,
 
     cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh,
               log10_sigma_sub, shmf_log_slope=shmf_log_slope, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
-              log_m_host=log_m_host, LOS_normalization=LOS_normalization, geometry_type=geometry_type,
-              add_globular_clusters=add_globular_clusters, kwargs_globular_clusters=kwargs_globular_clusters)
+              log_m_host=log_m_host, LOS_normalization=LOS_normalization, geometry_type=geometry_type)
     ext = RealizationExtensions(cdm)
     mbh = ext.add_black_holes(log10_mass_ratio,
                         10**log10_occupation_frac,
@@ -59,4 +57,7 @@ def CDM_plus_BH(z_lens,
                         log10_mass_maximum,
                         LOS_normalization)
     realization = cdm.join(mbh)
+    if add_globular_clusters:
+        ext = RealizationExtensions(realization)
+        realization = ext.add_globular_clusters(**kwargs_globular_clusters)
     return realization
