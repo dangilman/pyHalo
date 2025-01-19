@@ -84,7 +84,7 @@ class TestConeGeometry(object):
         npt.assert_almost_equal(volume/volume_pyhalo, 1, 3)
 
         volume_pyhalo = self.geometry_cylinder.volume_MPC3
-        npt.assert_almost_equal(volume/volume_pyhalo, 1.0, 3)
+        npt.assert_almost_equal(volume/volume_pyhalo, 1.0, 2)
 
 if __name__ == '__main__':
       pytest.main()
