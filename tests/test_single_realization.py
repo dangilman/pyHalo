@@ -6,6 +6,7 @@ from scipy.interpolate import interp1d
 from copy import deepcopy
 import pytest
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce, ConcentrationPeakHeight
+from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.Halos.tidal_truncation import TruncationRN
 from pyHalo.PresetModels.cdm import CDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
@@ -337,6 +338,48 @@ class TestSingleRealization(object):
         npt.assert_equal(len(lens_model_list), 1)
         npt.assert_string_equal(lens_model_list[0], 'POINT_MASS')
 
+    def test_filter_subhalos(self):
+
+        zlens = 0.5
+        halo_mass_1 = 10 ** 8.1
+        x_arcsec_1 = 1.0 + 0.1
+        y_arcsec_1 = 0.0
+        y_arcsec_2 = 0.5 - 0.1
+        z_halo = 0.5
+        zsource = 1.5
+        mass_definition = 'NFW'
+        subhalo_flag = True
+        lens_cosmo = LensCosmo(zlens, zsource)
+        astropy_class = lens_cosmo.cosmo
+        model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
+        kwargs_concentration_model['scatter'] = False
+        kwargs_concentration_model['cosmo'] = astropy_class
+        concentration_model = model(**kwargs_concentration_model)
+        halo_truncation_model = None  # an NFW halo has no formal truncation radius, so we don't need to specify this
+        kwargs_halo_model = {'truncation_model': halo_truncation_model,
+                             'concentration_model': concentration_model,
+                             'kwargs_density_profile': {}}
+
+        single_halo_1 = SingleHalo(halo_mass_1, x_arcsec_1, y_arcsec_1, mass_definition, z_halo, zlens, zsource,
+                                 None, subhalo_flag, kwargs_halo_model=kwargs_halo_model)
+
+        aperture_radius = 0.2
+        new_realization = single_halo_1.filter_subhalos(aperture_radius, log10_mass_minimum=7.0,
+                                                        x_coords=[x_arcsec_1+0.05], y_coords=[y_arcsec_2-0.03])
+        npt.assert_equal(1, len(new_realization.halos))
+
+        new_realization = single_halo_1.filter_subhalos(aperture_radius, log10_mass_minimum=7.0,
+                                                        x_coords=[x_arcsec_1+0.3], y_coords=[y_arcsec_2])
+        npt.assert_equal(1, len(new_realization.halos))
+
+        new_realization = single_halo_1.filter_subhalos(aperture_radius, log10_mass_minimum=8.5,
+                                                        x_coords=[x_arcsec_1 + 0.3], y_coords=[y_arcsec_2])
+        npt.assert_equal(0, len(new_realization.halos))
+
+        new_realization = single_halo_1.filter_subhalos(aperture_radius, log10_mass_minimum=7.5,
+                                                        x_coords=[x_arcsec_1 + 1], y_coords=[y_arcsec_2-1])
+        npt.assert_equal(1, len(new_realization.halos))
+
     def test_realization_at_z(self):
 
         realatz, inds = realization_at_z(self.realization, 0.5, 0., 0., 1)
@@ -464,6 +507,7 @@ class TestSingleRealization(object):
         fig = plt.figure(1)
         ax1 = plt.subplot(111, projection='3d')
         self.realization.plot(ax1)
+
 
 if __name__ == '__main__':
     pytest.main()

@@ -31,7 +31,7 @@ class Halo(ABC):
         :param lens_cosmo_instance: an instance of LensCosmo
         :param args: keyword arguments that include default settings for the halo
         :param unique_tag: a random number with 16 decimal places that uniquely identifies each halo
-        :param fixed_position: determiens whether halos can be moved around when aligning a realization with
+        :param fixed_position: determines whether halos can be moved around when aligning a realization with
         the rendering volume
         """
 

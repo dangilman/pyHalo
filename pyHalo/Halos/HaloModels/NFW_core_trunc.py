@@ -144,8 +144,8 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
         t_cut = 1.001
         t_max = 1.7
         t_over_tc = min(t_max, t_over_tc)
-        t_min = 1e-2
-        if t_over_tc < t_min:
+
+        if t_over_tc < 0.1:
             rho_s = rhos_0
             rs_kpc = rs_0
             rc_kpc = 0.0

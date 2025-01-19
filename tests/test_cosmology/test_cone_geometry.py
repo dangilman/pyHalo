@@ -118,6 +118,9 @@ class TestConeGeometry(object):
         volume_true = 1./3 * np.pi * radius_radians ** 2 * dz ** 2 * ds
         npt.assert_almost_equal(volume_true, volume_pyhalo, 3)
 
+        volume_pyhalo = geo.volume_MPC3
+        npt.assert_almost_equal(volume_true, volume_pyhalo, 3)
+
     def test_cone(self):
 
         cone_arcsec = 4

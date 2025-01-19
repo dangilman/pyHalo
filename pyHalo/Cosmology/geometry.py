@@ -46,6 +46,19 @@ class Geometry(object):
         self.kpc_per_arcsec_zlens = self.cosmo.kpc_proper_per_asec(self._zlens)
         self._reduced_to_phys = self._geometrytype._reduced_to_phys
 
+    @property
+    def volume_MPC3(self):
+        """
+        Calculate the comoving volume of the rendering area
+        :return: comoving volume in Mpc^3
+        """
+        volume = 0
+        delta_z = 0.01
+        z = np.arange(0.0, self._zsource, delta_z)
+        for i in range(0, len(z) - 1):
+            volume += self.volume_element_comoving(z[i], delta_z)
+        return volume
+
     def rendering_scale(self, z):
 
         return self._geometrytype.rendering_scale(z)

@@ -183,6 +183,39 @@ class Realization(object):
         """
         return self._rendering_center_x, self._rendering_center_y
 
+    def filter_subhalos(self, aperture_radius_arcsec, log10_mass_minimum, x_coords, y_coords):
+        """
+        Remove subhalos if their mass is < log10_mass_minimum and they are greater than R_max arcsec from any
+        coordinate in x_coords/ycoords
+        :param aperture_radius_arcsec: aperture radius in arcseconds
+        :param log10_mass_minimum: log base 10 minimum halo mass
+        :param x_coords: list of x coordinates in arcsec
+        :param y_coords: listof y coordinates in arcsec
+        :return: a realization with the subhalos meeting the above selection cuts removed
+        """
+        halos = []
+        for halo in self.halos:
+            if halo.is_subhalo:
+                if halo.mass > 10 ** log10_mass_minimum:
+                    keep = True
+                else:
+                    for (xi, yi) in zip(x_coords, y_coords):
+                        dx = xi - halo.x
+                        dy = yi - halo.y
+                        dr = np.hypot(dx, dy)
+                        if dr < aperture_radius_arcsec:
+                            keep = True
+                            break
+                    else:
+                        keep = False
+            else:
+                keep = True
+            if keep:
+                halos.append(halo)
+        return Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model,
+                                      self.apply_mass_sheet_correction, self.rendering_classes,
+                                      self._rendering_center_x, self._rendering_center_y, self.geometry)
+
     def filter(self, aperture_radius_front,
                aperture_radius_back,
                log_mass_allowed_in_aperture_front,
