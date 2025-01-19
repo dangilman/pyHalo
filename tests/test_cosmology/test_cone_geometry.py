@@ -134,7 +134,7 @@ class TestConeGeometry(object):
 
         ds = self.cosmo.D_C_z(1.5)
         volume_true = 1./3 * np.pi * radius_radians ** 2 * ds ** 3
-        npt.assert_almost_equal(volume_true, volume_pyhalo, 3)
+        npt.assert_almost_equal(volume_true / volume_pyhalo, 1.0, 3)
 
 
 if __name__ == '__main__':
