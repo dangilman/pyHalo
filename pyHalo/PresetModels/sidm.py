@@ -85,7 +85,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     return sidm
 
 def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, subhalo_time_scaling=1.0,
-        sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+        rescale_sidm_normalization=1.0, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -105,6 +105,7 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
     :param collapse_timescales: a list of core collapse timescales in log10 Gyr for halos in each bin, e.g. [6.0, 1.0]
     :param subhalo_time_scaling: a number that makes time pass quicker (>1) or lower (<1) for subhalos relative to
     field halos
+    :param rescale_sidm_normalization: rescales the overall normalization of SIDM profiles
     :param sigma_sub: normalization of the subhalo mass function
     :param log10_sigma_sub: normalization of the subhalo mass function in log units (overwrites sigma_sub)
     :param log_mlow: log base 10 of the minimum halo mass to render
@@ -153,7 +154,8 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
               LOS_normalization, two_halo_contribution, delta_power_law_index,
               geometry_type, kwargs_cosmo)
     extension = RealizationExtensions(cdm)
-    sidm = extension.toSIDM(log10_mass_ranges, collapse_timescales, subhalo_time_scaling)
+    sidm = extension.toSIDM(log10_mass_ranges, collapse_timescales, subhalo_time_scaling,
+                            rescale_sidm_normalization)
     if add_globular_clusters:
         ext = RealizationExtensions(sidm)
         sidm = ext.add_globular_clusters(**kwargs_globular_clusters)

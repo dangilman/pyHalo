@@ -226,7 +226,7 @@ class RealizationExtensions(object):
             new_halo._c = halo.c
             new_halo._z_infall = halo.z_infall
             rt_kpc_nfw = profile_args_nfw[1]
-            rescale_norm = halo._rescale_norm
+            rescale_norm = halo._rescale_norm * rescale_normalization
             new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
         else:
             subhalo_flag = False
@@ -236,20 +236,24 @@ class RealizationExtensions(object):
                                           halo._truncation_class, halo._concentration_class,
                                           halo.unique_tag)
             rt_kpc_nfw = profile_args_nfw[1]
-            rescale_norm = halo._rescale_norm
+            rescale_norm = halo._rescale_norm * rescale_normalization
             new_halo._c = halo.c
             new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
         return new_halo
 
-    def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling, set_bound_mass=True):
+    def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling,
+               rescale_sidm_normalization=1.0,
+               set_bound_mass=True):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
-        https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate
+        https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse
 
-        :param mass_bin_list: a list with len(core_collapse_timescale_list) of lists that specify log10mass ranges
-        :param core_collapse_timescale_list: the core collapse timescale in each mass bin in log10(Gyr)
-        :param set_bound_mass: bool; assign SIDM subhalos a bound mass attribute equal to the CDM counterpart
-        :return:
+        :param mass_bin_list: a list of mass ranges in log10 e.g. [[6, 8], [8, 10]]
+        :param core_collapse_timescale_list: a list of core collapse timescales in log10 Gyr in each mass range e.g. [0.5, 1.0]
+        :param subhalo_evolution_scaling: rescales the collpse timescale for subhalos relative to field halos
+        :param rescale_sidm_normalization: rescales the profile normalization of SIDM halos to match the CDM lensing signal
+        :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
+        :return: a realization of SIDM halos created from the population of CDM halos
         """
 
         sidm_halos = []
@@ -268,7 +272,8 @@ class RealizationExtensions(object):
             concentration_factor = delta_c ** (7/2)
             new_halo = self.toSIDM_single_halo(halo,
                                                concentration_factor * t_c,
-                                               subhalo_evolution_scaling)
+                                               subhalo_evolution_scaling,
+                                               rescale_sidm_normalization)
             if set_bound_mass and halo.is_subhalo:
                 new_halo.set_bound_mass(halo.bound_mass)
             sidm_halos.append(new_halo)
