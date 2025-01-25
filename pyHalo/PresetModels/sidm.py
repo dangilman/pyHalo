@@ -162,7 +162,7 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
     return sidm
 
 def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_8, t0_8_mhigh, subhalo_time_scaling=1.0,
-        sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+        rescale_sidm_normalization=1.0, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -184,7 +184,7 @@ def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_8, t0_8_mhigh, subhalo_t
     log10_mass_ranges = [[log_mlow, 8.0], [8.0, log_mhigh]]
     collapse_timescales = [t0_mlow_8, t0_8_mhigh]
     return SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, subhalo_time_scaling,
-        sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
+        rescale_sidm_normalization, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
         truncation_model_subhalos, kwargs_truncation_model_subhalos,
