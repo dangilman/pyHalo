@@ -2,7 +2,8 @@ from pyHalo.Halos.halo_base import Halo
 import numpy as np
 
 class NFWFieldHalo(Halo):
-
+    # we use the pseudo nfw methods to normalize profile
+    _pseudo_nfw = False
     """
     The main class for an NFW field halo profile without truncation
 

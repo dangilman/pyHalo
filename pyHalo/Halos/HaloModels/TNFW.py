@@ -4,7 +4,8 @@ from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
 from scipy.integrate import quad
 
 class TNFWFieldHalo(Halo):
-
+    # we use the pseudo nfw methods to normalize profile
+    _pseudo_nfw = False
     """
     The base class for a truncated NFW halo
     """
@@ -58,8 +59,10 @@ class TNFWFieldHalo(Halo):
             c, rt = self.profile_args
         else:
             c, rt = profile_args
-        rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval)
-        tau = rt/rs
+        params = self.params_physical
+        rhos = params['rhos']
+        rs = params['rs']
+        tau = rt / rs
         x = r / rs
         rho_nfw = rhos / x / (1 + x) ** 2
         return rho_nfw * tau ** 2 / (tau ** 2 + x ** 2)
@@ -103,7 +106,6 @@ class TNFWFieldHalo(Halo):
         if not hasattr(self, '_kwargs_lenstronomy'):
 
             [_, rt] = self.profile_args
-            #Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
             rhos_kpc, rs_kpc, _ = self.nfw_params
             rhos_mpc = rhos_kpc * 1e9
             rs_mpc = rs_kpc * 1e-3

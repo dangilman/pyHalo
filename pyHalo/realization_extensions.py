@@ -204,18 +204,17 @@ class RealizationExtensions(object):
         new_realization = self._realization.join(GC_realization)
         return new_realization
 
-    def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling):
+    def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling, rescale_normalization=1.0):
         """
-        Transform a single NFW profile to an SIDM profile based on the halo age, its status as a subhalo or a field halo,
-        and the core collapse timescale
-        :param halo: an instance of a Halo model
-        :param t_c: SIDM collapse timescale in Gyr
-        :param median_mc_relation: the concentration-mass relation used to create the CDM realization with scatter=False
-        :param mass_bin_center:
-        :return : an SIDM halo derived from the original profile
+        Transform a single NFW profile into a cored or core-collapsed SIDM profile
+        :param halo: an instance of a Halo class for the CDM profile
+        :param t_c: the collapse timescale in Gyr
+        :param subhalo_evolution_scaling: rescales the core collapse timescale for subhalos
+        :param rescale_normalization: rescales the overall normalization of the sidm profile relative to CDM profile
+        :return: the Halo class transformed to an SIDM profile
         """
         from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
-
+        profile_args_nfw = halo.profile_args
         if halo.is_subhalo:
             subhalo_flag = True
             kwargs_profile = {'lambda_t': subhalo_evolution_scaling, 'sidm_timescale': t_c}
@@ -226,6 +225,9 @@ class RealizationExtensions(object):
             # force the concentrations to match
             new_halo._c = halo.c
             new_halo._z_infall = halo.z_infall
+            rt_kpc_nfw = profile_args_nfw[1]
+            rescale_norm = halo._rescale_norm
+            new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
         else:
             subhalo_flag = False
             kwargs_profile = {'lambda_t': 1.0, 'sidm_timescale': t_c}
@@ -233,7 +235,10 @@ class RealizationExtensions(object):
                                           halo.lens_cosmo, kwargs_profile,
                                           halo._truncation_class, halo._concentration_class,
                                           halo.unique_tag)
+            rt_kpc_nfw = profile_args_nfw[1]
+            rescale_norm = halo._rescale_norm
             new_halo._c = halo.c
+            new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
         return new_halo
 
     def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling, set_bound_mass=True):

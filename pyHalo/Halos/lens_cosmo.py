@@ -197,6 +197,8 @@ class LensCosmo(object):
         :param c: concentration
         :return: rho0 [Msun/Mpc^3], Rs [Mpc], r200 [Mpc]
         """
+        if pseudo_nfw is None:
+            raise Exception('psuedo_nfw must be specified in Halo class when accessing nfw parameters!')
         r200 = self._nfw_param.r200_M(m * self.h, z) / self.h  # physical radius r200
         if pseudo_nfw:
             rho0 = self._nfw_param.rho0_c_pseudoNFW(c, z) * self.h ** 2 # physical density in M_sun/Mpc**3

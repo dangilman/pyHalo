@@ -3,7 +3,7 @@ from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePo
 import numpy as np
 
 class GeneralNFWSubhalo(Halo):
-
+    _pseudo_nfw = True
     """
     The base class for a halo with a logarithmic inner slope gamma_inner and a logarithmic outer profile
     slope gamma_outer. The normalization is defined in terms of a parameter x_match, defined as the multiple of

@@ -13,6 +13,8 @@ _log10_rpericenter_sampling = ITSampling(_log10_rperi_bins, _cdf)
 
 class Halo(ABC):
 
+    # this should be set inside the individual halo classes that access NFW parameters
+    _pseudo_nfw = None
     def __init__(self, mass=None, x=None, y=None, r3d=None, mdef=None, z=None,
                  sub_flag=None, lens_cosmo_instance=None, args={}, unique_tag=None, fixed_position=False):
 
@@ -66,8 +68,6 @@ class Halo(ABC):
                 delattr(self, '_params_physical')
             if hasattr(self, '_kwargs_lenstronomy'):
                 delattr(self, '_kwargs_lenstronomy')
-            if hasattr(self, '_nfw_params'):
-                delattr(self, '_nfw_params')
 
     @property
     @abstractmethod
@@ -206,11 +206,7 @@ class Halo(ABC):
         :return: rs, r200 and rho_s in units kpc, kpc, and M_sun / kpc^3
         """
         if not hasattr(self, '_nfw_params'):
-            if self.mdef in ['TNFWC', 'GNFW']:
-                pseudo_nfw = True
-            else:
-                pseudo_nfw = False
-            rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z, pseudo_nfw)
+            rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z, self._pseudo_nfw)
             self._nfw_params = [rhos, rs, r200]
         return self._nfw_params[0], self._nfw_params[1], self._nfw_params[2]
 

@@ -4,7 +4,9 @@ import numpy as np
 
 
 class _TNFWCBaseClass(Halo):
-
+    # we use the pseudo nfw methods to normalize profile
+    _pseudo_nfw = True
+    _rt_kpc = None
     """
     The base class for a cored and truncated NFW halo
     """
@@ -39,7 +41,7 @@ class _TNFWCBaseClass(Halo):
         tau = rt_kpc / rs_kpc
         beta = rc_kpc / rs_kpc
         x = r / rs_kpc
-        return rho_s_kpc * tau ** 2 / (beta ** 2 + x**2) ** 0.5 / (tau ** 2 + x ** 2) / (1 + x ** 2)
+        return self._rescale_norm * rho_s_kpc * tau ** 2 / (beta ** 2 + x**2) ** 0.5 / (tau ** 2 + x ** 2) / (1 + x ** 2)
 
     @property
     def lenstronomy_ID(self):
@@ -109,7 +111,7 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
             Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(1e9*rhos_kpc,
                                                                                    1e-3*rs_kpc,
                                                                                    self.z,
-                                                                                   pseudo_nfw=True)
+                                                                                   pseudo_nfw=self._pseudo_nfw)
             r_trunc_angle = rt_kpc / dd_kpc / arcsec
             r_core_angle = max(1e-6 * Rs_angle, rc_kpc / dd_kpc / arcsec)
             x, y = np.round(self.x, 4), np.round(self.y, 4)
@@ -118,6 +120,17 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
             self._kwargs_lenstronomy = kwargs
 
         return self._kwargs_lenstronomy, None
+
+    def set_tidal_evolution(self, rt_kpc, rescale_norm):
+        """
+        Allows one to manually set the tidal evolution to circument a second evaluation of truncation model
+        :param rt_kpc: truncation radius [kpc]
+        :param rescale_norm: rescales the overall normalization
+        :return:
+        """
+        self._rt_kpc = rt_kpc
+        self._rescale_norm = rescale_norm
+        self._rescaled_once = True
 
     def profile_args(self):
         """
@@ -128,7 +141,9 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
         """
         if not hasattr(self, '_profile_args'):
             t = self.t_over_tc
-            rt_kpc = self._truncation_class.truncation_radius_halo(self)
+            if self._rt_kpc is None:
+                self._rt_kpc = self._truncation_class.truncation_radius_halo(self)
+            rt_kpc = self._rt_kpc
             rho_s, rs_kpc, rc_kpc = self.get_params(t)
             r200_0 = self.nfw_params[-1]
             self._profile_args = (rho_s, rs_kpc, rc_kpc, rt_kpc, r200_0)
