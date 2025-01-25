@@ -211,7 +211,9 @@ class TNFWCSubhaloSIDM(TNFWCFieldHaloSIDM):
     @property
     def halo_effective_age(self):
         if not hasattr(self, '_halo_effective_age'):
-            self._halo_effective_age = self.lens_cosmo.sidm_halo_effective_age(self.z, self.z_infall, self._args['lambda_t'])
+            self._halo_effective_age = self.lens_cosmo.sidm_halo_effective_age(self.z,
+                                                                               self.z_infall,
+                                                                               self._args['lambda_t'])
         return self._halo_effective_age
 
 def _check_valid_cross_section(cross_section):

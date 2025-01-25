@@ -217,22 +217,23 @@ class RealizationExtensions(object):
         from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
 
         if halo.is_subhalo:
-
             subhalo_flag = True
             kwargs_profile = {'lambda_t': subhalo_evolution_scaling, 'sidm_timescale': t_c}
             new_halo = TNFWCSubhaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
                                         halo.lens_cosmo, kwargs_profile,
                                         halo._truncation_class, halo._concentration_class,
                                         halo.unique_tag)
+            # force the concentrations to match
+            new_halo._c = halo.c
             new_halo._z_infall = halo.z_infall
         else:
-
             subhalo_flag = False
             kwargs_profile = {'lambda_t': 1.0, 'sidm_timescale': t_c}
             new_halo = TNFWCFieldHaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
                                           halo.lens_cosmo, kwargs_profile,
                                           halo._truncation_class, halo._concentration_class,
                                           halo.unique_tag)
+            new_halo._c = halo.c
         return new_halo
 
     def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling, set_bound_mass=True):
@@ -260,7 +261,9 @@ class RealizationExtensions(object):
                                                                    force_no_scatter=True)
             delta_c = c_halo / c_median
             concentration_factor = delta_c ** (7/2)
-            new_halo = self.toSIDM_single_halo(halo, concentration_factor * t_c, subhalo_evolution_scaling)
+            new_halo = self.toSIDM_single_halo(halo,
+                                               concentration_factor * t_c,
+                                               subhalo_evolution_scaling)
             if set_bound_mass and halo.is_subhalo:
                 new_halo.set_bound_mass(halo.bound_mass)
             sidm_halos.append(new_halo)

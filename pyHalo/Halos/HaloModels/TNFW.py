@@ -21,6 +21,33 @@ class TNFWFieldHalo(Halo):
         super(TNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
 
+    @classmethod
+    def simple_setup(cls, mass, x, y, z, tau, lens_cosmo,
+                     concentration_model='DIEMERJOYCE19'):
+        """
+        Creates an instance of the TNFWFieldHalo class with some default assumptions for the concentration-mass relation
+        and truncation
+        :param mass: halo mass
+        :param x: halo x-coordinate [arcsec]
+        :param y: halo y-coordinate [arcsec]
+        :param z: halo redshift
+        :param tau: the truncation radius in units of rs
+        :param lens_cosmo: an instance of lens_cosmo class
+        :param concentration_model: the concentration-mass relation model
+        :return: an instance of TNFWFieldHalo class
+        """
+        r3d = None
+        sub_flag = False
+        args = {}
+        from pyHalo.concentration_models import preset_concentration_models
+        from pyHalo.truncation_models import truncation_models
+        _c_model, _ = preset_concentration_models(concentration_model)
+        _t_model, _ = truncation_models('MULTIPLE_RS')
+        concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
+        truncation_class = _t_model(lens_cosmo, tau)
+        return TNFWFieldHalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
+                             truncation_class, concentration_class, 1.0)
+
     def density_profile_3d(self, r, profile_args=None):
         """
         Computes the 3-D density profile of the halo

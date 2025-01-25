@@ -22,6 +22,16 @@ class TestTNFWHalos(object):
         self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
         self.lclenstronomy = LensCosmoLenstronomy(self.zhalo, self.zsource, astropy)
 
+    def test_simple_setup(self):
+        mass = 10 ** 8
+        x = 0.0
+        y = 0.0
+        z = 0.5
+        tau = 2.2
+        halo = TNFWFieldHalo.simple_setup(mass, x, y, z, tau, self.lens_cosmo)
+        kwargs, _ = halo.lenstronomy_params
+        npt.assert_almost_equal(kwargs[0]['r_trunc']/kwargs[0]['Rs'], tau, 3)
+
     def test_lenstronomy_params(self):
 
         m = 10 ** 8

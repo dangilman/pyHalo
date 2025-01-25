@@ -251,6 +251,20 @@ class TruncateMeanDensity(object):
         _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, halo_redshift)
         return rs * rt_over_rs
 
+class Multiple_RS(object):
+    """
+    Sets the concentration to a constant multiple of the halo scale radius; note this will only work with a class
+    that has defined NFW parameters
+    """
+    def __init__(self, lens_cosmo, tau):
+        self.tau = tau
+    def truncation_radius_halo(self, halo):
+        nfw_params = halo.nfw_params
+        rs = nfw_params[1]
+        return self.tau * rs
+    def truncation_radius(self, rs):
+        return self.tau * rs
+
 class ConstantTruncationArcsec(object):
     """A constant truncation radius in arcsec"""
     def __init__(self, lens_cosmo, rt_arcsec):

@@ -2,7 +2,8 @@ import pytest
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
-from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity, ConstantTruncationArcsec
+from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity, \
+    ConstantTruncationArcsec, Multiple_RS
 from pyHalo.truncation_models import truncation_models
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
@@ -22,14 +23,32 @@ class TestTruncation(object):
         model_name_list = ['TRUNCATION_R50', 'TRUNCATION_RN', 'TRUNCATION_ROCHE', 'TRUNCATION_ROCHE_GILMAN2020',
                            'SPLASHBACK', 'TRUNCATION_MEAN_DENSITY', 'CONSTANT',
                            'TRUNCATION_GALACTICUS',
-                           'TRUNCATION_GALACTICUS_KEELEY24']
+                           'TRUNCATION_GALACTICUS_KEELEY24',
+                           'MULTIPLE_RS']
         kwargs_model_list = [{}, {'LOS_truncation_factor': 50.}, {'RocheNorm': 1.0, 'm_power': 1./3, 'RocheNu': 2.0/3.0}, {},
-                             {}, {}, {'rt_arcsec': 1.0}, {'c_host': 5.0}, {'c_host': 9.0}]
+                             {}, {}, {'rt_arcsec': 1.0}, {'c_host': 5.0}, {'c_host': 9.0}, {'tau': 1.0}]
         for model,kwargs in zip(model_name_list, kwargs_model_list):
             mod, kw = truncation_models(model)
             kwargs.update(kw)
             kwargs['lens_cosmo'] = self.lenscosmo
             _ = mod(**kwargs)
+
+    def test_truncation_tau(self):
+
+        class DummyHalo(object):
+            def __init__(self, rs):
+                self.rs = rs
+            @property
+            def nfw_params(self):
+                return [None, self.rs, None]
+
+        halo = DummyHalo(4.5)
+        truncation_tau = Multiple_RS(self.lenscosmo, tau=2.0)
+        rt = truncation_tau.truncation_radius_halo(halo)
+        npt.assert_almost_equal(rt, 2.0 * 4.5)
+        rt = truncation_tau.truncation_radius(1.0)
+        npt.assert_almost_equal(rt, 2.0)
+
 
     def test_truncation_RN(self):
 

@@ -102,7 +102,7 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
     :param z_lens: main deflector redshift
     :param z_source: source redshift
     :param log10_mass_ranges: a list of lists specifying halo mass ranges, e.g. [[6, 8], [8, 10]]
-    :param collapse_timescales: a list of core collapse timescales in Gyr for halos in each bin, e.g. [6.0, 1.0]
+    :param collapse_timescales: a list of core collapse timescales in log10 Gyr for halos in each bin, e.g. [6.0, 1.0]
     :param subhalo_time_scaling: a number that makes time pass quicker (>1) or lower (<1) for subhalos relative to
     field halos
     :param sigma_sub: normalization of the subhalo mass function

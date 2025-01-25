@@ -1,6 +1,6 @@
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, \
     AdiabaticTidesTruncation, TruncationSplashBack, TruncateMeanDensity, \
-    TruncationGalacticus, ConstantTruncationArcsec, TruncationGalacticusKeeley24
+    TruncationGalacticus, ConstantTruncationArcsec, TruncationGalacticusKeeley24, Multiple_RS
 
 
 def truncation_models(model_name):
@@ -33,6 +33,8 @@ def truncation_models(model_name):
         return TruncationGalacticusKeeley24, kwargs_model
     elif model_name == 'CONSTANT':
         return ConstantTruncationArcsec, kwargs_model
+    elif model_name == 'MULTIPLE_RS':
+        return Multiple_RS, kwargs_model
     else:
         raise Exception('model '+str(model_name)+' not recognized')
 
