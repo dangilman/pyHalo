@@ -346,3 +346,4 @@ class LensCosmo(object):
         time_formation_to_infall = self.cosmo.halo_age(z_infall, zform=zform)
         time_infall_to_z = self.cosmo.halo_age(z, zform=z_infall)
         return time_formation_to_infall + lambda_t * time_infall_to_z
+
