@@ -1,7 +1,8 @@
 import numpy.testing as npt
 import numpy as np
-from pyHalo.Halos.HaloModels.NFW_core_trunc import Hybrid, HybridSubhalo, TNFWFieldHalo, TNFWSubhalo, \
+from pyHalo.Halos.HaloModels.NFW_core_trunc import Hybrid, HybridSubhalo, \
     TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.truncation_models import ConstantTruncationArcsec
 from pyHalo.concentration_models import ConcentrationDiemerJoyce
 from pyHalo.Halos.lens_cosmo import LensCosmo
