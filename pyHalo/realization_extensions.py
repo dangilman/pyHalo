@@ -51,6 +51,8 @@ class RealizationExtensions(object):
                                     halo.z, halo.is_subhalo, halo.lens_cosmo,
                                     args, halo._truncation_class, halo._concentration_class,
                                     halo.unique_tag)
+            if halo.is_subhalo:
+                prompt_cusp.set_bound_mass(halo.bound_mass)
             halo._rescale_norm *= (1 - mass_fraction)
             halo_list.append(halo)
             halo_list.append(prompt_cusp)
