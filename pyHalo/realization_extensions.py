@@ -35,6 +35,35 @@ class RealizationExtensions(object):
 
         self._realization = realization
 
+    def add_prompt_cusps(self, mass_fraction):
+        """
+
+        :param mass_fraction:
+        :return:
+        """
+        from pyHalo.Halos.HaloModels.prompt_cusp import PrompCusp
+        halo_list = []
+        for halo in self._realization.halos:
+            _ = halo.profile_args # need to set this before doing anything else
+            rs = halo.nfw_params[1]
+            args = {'mass_fraction': mass_fraction, 'rs_kpc': rs}
+            prompt_cusp = PrompCusp(halo.mass, halo.x, halo.y, halo.r3d,
+                                    halo.z, halo.is_subhalo, halo.lens_cosmo,
+                                    args, halo._truncation_class, halo._concentration_class,
+                                    halo.unique_tag)
+            halo._rescale_norm *= (1 - mass_fraction)
+            halo_list.append(halo)
+            halo_list.append(prompt_cusp)
+
+        realization = Realization.from_halos(halo_list, self._realization.lens_cosmo,
+                               self._realization.kwargs_halo_model,
+                               self._realization.apply_mass_sheet_correction,
+                               self._realization.rendering_classes,
+                               self._realization._rendering_center_x,
+                               self._realization._rendering_center_y,
+                               self._realization.geometry)
+        return realization
+
     def add_black_holes(self, log10_mass_ratio,
                         f,
                         log10_mlow_halos_subres=5.0,

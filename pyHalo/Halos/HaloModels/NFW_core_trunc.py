@@ -1,6 +1,5 @@
 from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.nfw_core_truncated import TNFWC as TNFWLenstronomy
-from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 import numpy as np
 
 
@@ -132,6 +131,8 @@ class TNFWCFieldHaloSIDM(_TNFWCBaseClass):
         self._rt_kpc = rt_kpc
         self._rescale_norm = rescale_norm
         self._rescaled_once = True
+        if hasattr(self, '_kwargs_lenstronomy'):
+            delattr(self, '_kwargs_lenstronomy')
 
     def profile_args(self):
         """

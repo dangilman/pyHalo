@@ -63,7 +63,7 @@ class Halo(ABC):
             pass
         else:
             self._rescaled_once = True
-            self._rescale_norm = factor
+            self._rescale_norm *= factor
             if hasattr(self, '_params_physical'):
                 delattr(self, '_params_physical')
             if hasattr(self, '_kwargs_lenstronomy'):

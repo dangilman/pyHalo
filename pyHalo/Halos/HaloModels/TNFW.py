@@ -49,7 +49,7 @@ class TNFWFieldHalo(Halo):
         return TNFWFieldHalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
                              truncation_class, concentration_class, 1.0)
 
-    def density_profile_3d(self, r, profile_args=None):
+    def density_profile_3d(self, r, profile_args=None, scaling=1.0):
         """
         Computes the 3-D density profile of the halo
         :param r: distance from center of halo [kpc]
@@ -59,13 +59,11 @@ class TNFWFieldHalo(Halo):
             c, rt = self.profile_args
         else:
             c, rt = profile_args
-        params = self.params_physical
-        rhos = params['rhos']
-        rs = params['rs']
+        rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval)
         tau = rt / rs
         x = r / rs
         rho_nfw = rhos / x / (1 + x) ** 2
-        return rho_nfw * tau ** 2 / (tau ** 2 + x ** 2)
+        return scaling * rho_nfw * tau ** 2 / (tau ** 2 + x ** 2)
 
     @property
     def lenstronomy_ID(self):
