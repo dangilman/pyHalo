@@ -1,5 +1,6 @@
 from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.nfw_core_truncated import TNFWC as TNFWLenstronomy
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 import numpy as np
 
 
@@ -230,6 +231,93 @@ class TNFWCSubhaloSIDM(TNFWCFieldHaloSIDM):
                                                                                self.z_infall,
                                                                                self._args['lambda_t'])
         return self._halo_effective_age
+
+class Hybrid(Halo):
+
+    """
+    A hybrid TNFW + TNFWC profile with a relative weighting between them
+    """
+    def __init__(self, tnfw_halo, tnfwc_halo, rescaling_factor):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+
+        c = tnfw_halo.c
+        tnfwc_halo._c = c
+        self.tnfw_halo = tnfw_halo
+        self.tnfwc_halo = tnfwc_halo
+        mdef = 'TNFWC_HYBRID'
+        self._rescaling_factor = rescaling_factor
+        super(Hybrid, self).__init__(self.tnfw_halo.mass, self.tnfw_halo.x, self.tnfw_halo.y,
+                                     self.tnfw_halo.r3d, mdef, self.tnfw_halo.z,
+                                     self.tnfw_halo.is_subhalo, self.tnfw_halo.lens_cosmo,
+                                     self.tnfw_halo._args, self.tnfw_halo.unique_tag)
+
+    @property
+    def c(self):
+        """
+        Computes the halo concentration (once)
+        """
+
+        if not hasattr(self, '_c'):
+            self._c = self.tnfw_halo.c
+        return self._c
+
+    def profile_args(self):
+        return [self.tnfw_halo.profile_args(), self.tnfwc_halo.profile_args()]
+
+    @property
+    def lenstronomy_params(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_kwargs_lenstronomy'):
+            lenstronomy_params_tnfw = self.tnfw_halo.lenstronomy_params[0]
+            lenstronomy_params_tnfwc = self.tnfwc_halo.lenstronomy_params[0]
+            lenstronomy_params_tnfw[0]['alpha_Rs'] *= 1-self._rescaling_factor
+            lenstronomy_params_tnfwc[0]['alpha_Rs'] *= self._rescaling_factor
+            self._kwargs_lenstronomy = lenstronomy_params_tnfw + lenstronomy_params_tnfwc
+        return self._kwargs_lenstronomy, None
+
+    @property
+    def nfw_params(self):
+        """
+        Computes the nfw profile parameters (rs,rho_s) from mass and concentration
+        :return: rs, r200 and rho_s in units kpc, kpc, and M_sun / kpc^3
+        """
+        if not hasattr(self, '_nfw_params'):
+            self._nfw_params_tnfw = self.tnfw_halo.nfw_params
+            self._nfw_params_tnfwc = self.tnfwc_halo.nfw_params
+            self._nfw_params = [self._nfw_params_tnfw, self._nfw_params_tnfwc]
+        return [self._nfw_params[0][0], self._nfw_params[1][0]], \
+               [self._nfw_params[0][1], self._nfw_params[1][1]], \
+               [self._nfw_params[0][2], self._nfw_params[1][2]]
+
+    @property
+    def lenstronomy_ID(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['TNFW', 'TNFWC']
+
+    def density_profile_3d(self, r, profile_args=None):
+        """
+        Computes the 3-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        rho_tnfw = self.tnfw_halo.density_profile_3d(r)
+        rho_tnfwc = self.tnfwc_halo.density_profile_3d(r)
+        return rho_tnfw * (1-self._rescaling_factor) + rho_tnfwc * self._rescaling_factor
+
+class HybridSubhalo(Hybrid):
+
+    def __init__(self, tnfw_halo, tnfwc_halo, rescaling_factor):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        tnfwc_halo._z_infall = tnfw_halo.z_infall
+        super(HybridSubhalo, self).__init__(tnfw_halo, tnfwc_halo, rescaling_factor)
 
 def _check_valid_cross_section(cross_section):
     """

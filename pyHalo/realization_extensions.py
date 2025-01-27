@@ -204,7 +204,7 @@ class RealizationExtensions(object):
         new_realization = self._realization.join(GC_realization)
         return new_realization
 
-    def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling, rescale_normalization=1.0):
+    def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class for the CDM profile
@@ -213,8 +213,9 @@ class RealizationExtensions(object):
         :param rescale_normalization: rescales the overall normalization of the sidm profile relative to CDM profile
         :return: the Halo class transformed to an SIDM profile
         """
-        from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
+        from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM, HybridSubhalo, Hybrid
         profile_args_nfw = halo.profile_args
+        t_over_tc_cut = 0.25
         if halo.is_subhalo:
             subhalo_flag = True
             kwargs_profile = {'lambda_t': subhalo_evolution_scaling, 'sidm_timescale': t_c}
@@ -222,11 +223,15 @@ class RealizationExtensions(object):
                                         halo.lens_cosmo, kwargs_profile,
                                         halo._truncation_class, halo._concentration_class,
                                         halo.unique_tag)
+            new_halo._c = halo.c
+            new_halo._z_infall = halo.z_infall
+            rt_kpc_nfw = profile_args_nfw[1]
+            new_halo.set_tidal_evolution(rt_kpc_nfw, halo._rescale_norm)
             # force the concentrations to match
             new_halo._c = halo.c
             new_halo._z_infall = halo.z_infall
             rt_kpc_nfw = profile_args_nfw[1]
-            rescale_norm = halo._rescale_norm * rescale_normalization
+            rescale_norm = halo._rescale_norm
             new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
         else:
             subhalo_flag = False
@@ -236,13 +241,22 @@ class RealizationExtensions(object):
                                           halo._truncation_class, halo._concentration_class,
                                           halo.unique_tag)
             rt_kpc_nfw = profile_args_nfw[1]
-            rescale_norm = halo._rescale_norm * rescale_normalization
+            rescale_norm = halo._rescale_norm
             new_halo._c = halo.c
             new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
-        return new_halo
+
+        if new_halo.t_over_tc <= t_over_tc_cut:
+            # make a Hybrid profile; when rescale=1 NFW halo goes away
+            rescale = new_halo.t_over_tc / t_over_tc_cut
+            if subhalo_flag:
+                sidm_halo = HybridSubhalo(halo, new_halo, rescale)
+            else:
+                sidm_halo = Hybrid(halo, new_halo, rescale)
+            return sidm_halo
+        else:
+            return new_halo
 
     def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling,
-               rescale_sidm_normalization=1.0,
                set_bound_mass=True):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
@@ -251,7 +265,6 @@ class RealizationExtensions(object):
         :param mass_bin_list: a list of mass ranges in log10 e.g. [[6, 8], [8, 10]]
         :param core_collapse_timescale_list: a list of core collapse timescales in log10 Gyr in each mass range e.g. [0.5, 1.0]
         :param subhalo_evolution_scaling: rescales the collpse timescale for subhalos relative to field halos
-        :param rescale_sidm_normalization: rescales the profile normalization of SIDM halos to match the CDM lensing signal
         :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
         :return: a realization of SIDM halos created from the population of CDM halos
         """
@@ -272,8 +285,7 @@ class RealizationExtensions(object):
             concentration_factor = delta_c ** (7/2)
             new_halo = self.toSIDM_single_halo(halo,
                                                concentration_factor * t_c,
-                                               subhalo_evolution_scaling,
-                                               rescale_sidm_normalization)
+                                               subhalo_evolution_scaling)
             if set_bound_mass and halo.is_subhalo:
                 new_halo.set_bound_mass(halo.bound_mass)
             sidm_halos.append(new_halo)
