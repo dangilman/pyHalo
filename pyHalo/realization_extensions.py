@@ -218,33 +218,28 @@ class RealizationExtensions(object):
         t_over_tc_cut = 0.25
         if halo.is_subhalo:
             subhalo_flag = True
-            kwargs_profile = {'lambda_t': subhalo_evolution_scaling, 'sidm_timescale': t_c}
+            kwargs_profile = {'lambda_t': subhalo_evolution_scaling,
+                              'sidm_timescale': t_c}
             new_halo = TNFWCSubhaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
                                         halo.lens_cosmo, kwargs_profile,
                                         halo._truncation_class, halo._concentration_class,
                                         halo.unique_tag)
-            new_halo._c = halo.c
             new_halo._z_infall = halo.z_infall
-            rt_kpc_nfw = profile_args_nfw[1]
-            new_halo.set_tidal_evolution(rt_kpc_nfw, halo._rescale_norm)
-            # force the concentrations to match
-            new_halo._c = halo.c
-            new_halo._z_infall = halo.z_infall
-            rt_kpc_nfw = profile_args_nfw[1]
-            rescale_norm = halo._rescale_norm
-            new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
+
+
         else:
             subhalo_flag = False
-            kwargs_profile = {'lambda_t': 1.0, 'sidm_timescale': t_c}
+            kwargs_profile = {'lambda_t': 1.0,
+                              'sidm_timescale': t_c}
             new_halo = TNFWCFieldHaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
                                           halo.lens_cosmo, kwargs_profile,
                                           halo._truncation_class, halo._concentration_class,
                                           halo.unique_tag)
-            rt_kpc_nfw = profile_args_nfw[1]
-            rescale_norm = halo._rescale_norm
-            new_halo._c = halo.c
-            new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
 
+        new_halo._c = halo.c
+        rt_kpc_nfw = profile_args_nfw[1]
+        rescale_norm = halo._rescale_norm
+        new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
         if new_halo.t_over_tc <= t_over_tc_cut:
             # make a Hybrid profile; when rescale=1 NFW halo goes away
             rescale = new_halo.t_over_tc / t_over_tc_cut
@@ -286,6 +281,7 @@ class RealizationExtensions(object):
             new_halo = self.toSIDM_single_halo(halo,
                                                concentration_factor * t_c,
                                                subhalo_evolution_scaling)
+            new_halo.delta_c = delta_c
             if set_bound_mass and halo.is_subhalo:
                 new_halo.set_bound_mass(halo.bound_mass)
             sidm_halos.append(new_halo)

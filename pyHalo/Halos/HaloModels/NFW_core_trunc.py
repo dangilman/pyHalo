@@ -254,6 +254,26 @@ class Hybrid(Halo):
                                      self.tnfw_halo._args, self.tnfw_halo.unique_tag)
 
     @property
+    def halo_effective_age(self):
+        return self.tnfwc_halo.halo_effective_age
+
+    @property
+    def t_over_tc(self):
+        """
+
+        :return:
+        """
+        return self.tnfwc_halo.t_over_tc
+
+    @property
+    def sidm_timescale(self):
+        """
+
+        :return:
+        """
+        return self.tnfwc_halo.sidm_timescale
+
+    @property
     def c(self):
         """
         Computes the halo concentration (once)
