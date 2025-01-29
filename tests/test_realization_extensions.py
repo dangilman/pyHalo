@@ -107,7 +107,7 @@ class TestRealizationExtensions(object):
         ext = RealizationExtensions(single_halo)
         log10_subhalo_time_scaling = 0.0
         mass_in_list = [[6, 10]]
-        sigma_eff_array = np.linspace(1, 1000, 10)
+        sigma_eff_array = np.linspace(1000, 5000, 3)
         m = np.log10(single_halo.masses[0])
         for sig in sigma_eff_array:
             single_halo_sidm_1 = ext.toSIDM_from_cross_section(mass_in_list,
@@ -447,6 +447,9 @@ class TestRealizationExtensions(object):
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
 
+if __name__ == '__main__':
+      pytest.main()
+
 # class TestCorrelationComputation(object):
 #
 #     def setup_method(self):
@@ -527,5 +530,4 @@ class TestRealizationExtensions(object):
 #         npt.assert_array_almost_equal(n, n_fit)
 
 #
-if __name__ == '__main__':
-      pytest.main()
+
