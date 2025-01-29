@@ -27,7 +27,7 @@ class _ConcentrationCDM(object):
         Evaluates the concentration of a halo of mass 'm' at redshift z
         :param M: halo mass [M_sun]
         :param z: halo redshift
-        :param force_no_scatter: bool; if True, will return the median concentation
+        :param force_no_scatter: bool; if True, will return the median concentration
         :return:
         """
         if isinstance(m, float) or isinstance(m, int):

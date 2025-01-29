@@ -111,12 +111,12 @@ class TestRealizationExtensions(object):
         m = np.log10(single_halo.masses[0])
         for ti in time_scale_array:
             core_collapse_timescale_list = [ti]
-            single_halo_sidm_1 = ext.toSIDM(mass_in_list, core_collapse_timescale_list, subhalo_evolution_scaling)
+            single_halo_sidm_1 = ext.toSIDM_from_timescale(mass_in_list, core_collapse_timescale_list, subhalo_evolution_scaling)
             m_new = np.log10(single_halo_sidm_1.halos[0].mass_3d('r200'))
             npt.assert_almost_equal(m_new/m, 1.0, 2)
         subhalo_evolution_scaling = 2.0
         core_collapse_timescale_list = [1.1]
-        single_halo_sidm_2 = ext.toSIDM(mass_in_list, core_collapse_timescale_list, subhalo_evolution_scaling)
+        single_halo_sidm_2 = ext.toSIDM_from_timescale(mass_in_list, core_collapse_timescale_list, subhalo_evolution_scaling)
         npt.assert_equal(single_halo_sidm_2.halos[0].halo_effective_age >
                          single_halo_sidm_1.halos[0].halo_effective_age, True)
 

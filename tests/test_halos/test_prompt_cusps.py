@@ -15,6 +15,7 @@ class TestPromptCusp(object):
     def setup_method(self):
 
         halo_mass = 10 ** 8
+        self.nfw_mass = halo_mass
         x_arcsec = 0.
         y_arcsec = 0.0
         z_halo = 0.5
@@ -50,15 +51,25 @@ class TestPromptCusp(object):
         nfw_halo = realization_with_PS.halos[0]
         ps_halo = realization_with_PS.halos[1]
 
-        r = np.linspace(0.001, nfw_halo.c, 10000) * rs_kpc
+        r = np.linspace(0.0001, nfw_halo.c, 100000) * rs_kpc
         rho_nfw = nfw_halo.density_profile_3d(r, scaling=1-mass_fraction)
         rho_ps = ps_halo.density_profile_3d(r)
         rho_total = rho_nfw + rho_ps
+        rho_ps_interp = interp1d(r, rho_ps)
+        rho_nfw_interp = interp1d(r, rho_nfw)
         rho_total_interp = interp1d(r, rho_total)
 
         mass_integrand_total = lambda x: 4 * np.pi * x ** 2 * rho_total_interp(x)
-        total_mass = quad(mass_integrand_total, 0.001*rs_kpc, rs_kpc * nfw_halo.c)[0]
-        npt.assert_almost_equal(-1 + total_mass/nfw_halo.mass, 0.0, 0.025)
+        mass_integrand_ps = lambda x: 4 * np.pi * x ** 2 * rho_ps_interp(x)
+        mass_integrand_nfw = lambda x: 4 * np.pi * x ** 2 * rho_nfw_interp(x)
+
+        rmax = rs_kpc * nfw_halo.c
+        total_mass = quad(mass_integrand_total, 0.001*rs_kpc, rmax)[0]
+        npt.assert_almost_equal(-1 + total_mass / nfw_halo.mass, 0.0, 0.025)
+
+        rmax = rs_kpc
+        ps_mass = quad(mass_integrand_ps, 0.001 * rs_kpc, rmax)[0]
+        npt.assert_almost_equal(-1 + ps_mass / (self.nfw_mass * mass_fraction), 0, 2)
 
     def test_rescaling_normalization(self):
 

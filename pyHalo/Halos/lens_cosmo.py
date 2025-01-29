@@ -22,7 +22,6 @@ class NFWParampyHalo(NFWParam):
         """
         return 2 * c ** 3 * self.rhoc_z(z) * 200 / (3 * numpy.log(1+c**2))
 
-
 class LensCosmo(object):
 
     def __init__(self, z_lens=None, z_source=None, cosmology=None,
@@ -347,3 +346,31 @@ class LensCosmo(object):
         time_infall_to_z = self.cosmo.halo_age(z, zform=z_infall)
         return time_formation_to_infall + lambda_t * time_infall_to_z
 
+    def sidm_collapse_timescale(self, rhos, rs, sigma_eff):
+        """
+        Calculate the SIDM timescale from NFW halo parameters and an effective cross section (Essig et al. 2019)
+        :param rhos: NFW halo density scale
+        :param rs: NFW halo scale radius
+        :param sigma_eff: an "effective" cross section
+        :return: timescale in Gyr
+        """
+        C = 0.75
+        G = 4.3e-6 # kpc/M (km/sec)^2
+        const1 = 2.0889e-10 # one cm^2 per gram in kpc^2 per M_sun
+        const2 = 1.05e-33 # kpc km^2 / s^2 / solar mass in kpc^3 / m_sun / s^2
+        denom = const1 * sigma_eff * rhos * rs * numpy.sqrt(4 * numpy.pi * G * rhos * const2)
+        tc_seconds = 150 / C / denom
+        tc_gyr = tc_seconds * 3.171e-17
+        return tc_gyr
+
+    @staticmethod
+    def nfw_vmax(rhos, rs):
+        """
+        Calculate vmax for an NFW profile
+        :param rhos: density normalization [solar mass / kpc^3]
+        :param rs: scale radius [kpc]
+        :return: vmax [km/sec]
+        """
+        G = 4.3e-6 # kpc / solar mass * (km/sec)^2
+        vmax = 1.64 * numpy.sqrt(G * rhos * rs ** 2)
+        return vmax

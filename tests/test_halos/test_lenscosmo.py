@@ -125,6 +125,34 @@ class TestLensCosmo(object):
         npt.assert_almost_equal(Rs_Angle, rs_angle)
         npt.assert_almost_equal(Theta_Rs, theta_rs)
 
+    def test_sidm_timescale(self):
+
+        # test scaling with halo mass
+        m1 = 10 ** 10
+        c1 = 5
+        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(m1, c1, 0.5)
+        tc1 = self.lens_cosmo.sidm_collapse_timescale(rhos, rs, 10.0)
+        m2 = 10 ** 8
+        c2 = 5
+        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(m2, c2, 0.5)
+        tc2 = self.lens_cosmo.sidm_collapse_timescale(rhos, rs, 10.0)
+        npt.assert_almost_equal((m2/m1) ** (-1/3), tc2/tc1, 6)
+
+        # test scaling with concentration
+        m1 = 10 ** 8
+        c1 = 10
+        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(m1, c1, 0.5)
+        tc1 = self.lens_cosmo.sidm_collapse_timescale(rhos, rs, 10.0)
+        m2 = 10 ** 8
+        c2 = 20
+        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(m2, c2, 0.5)
+        tc2 = self.lens_cosmo.sidm_collapse_timescale(rhos, rs, 10.0)
+        npt.assert_almost_equal((c2 / c1) ** (-7 / 2), tc2 / tc1, 1)
+
+        rhos = 2.74e8
+        rs = 0.141
+        tc_yangetal_2023 = self.lens_cosmo.sidm_collapse_timescale(rhos, rs, 7.1)
+        npt.assert_almost_equal(tc_yangetal_2023, 28.07, 2)
 
 
 if __name__ == '__main__':

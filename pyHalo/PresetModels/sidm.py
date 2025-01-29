@@ -84,8 +84,8 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     sidm = extension.add_core_collapsed_halos(index_collapsed, collapsed_halo_profile, **kwargs_collapsed_profile)
     return sidm
 
-def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, subhalo_time_scaling=1.0,
-        rescale_sidm_normalization=1.0, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, subhalo_time_scaling=1.0,
+        sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -96,16 +96,15 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
                     kwargs_globular_clusters=None):
     """
 
-    Generates realizations of SIDM halos in terms of the core collapse timescale in different mass bins using the
+    Generates realizations of SIDM halos in terms of the effective scattering cross section in different mass bins using the
     parametric model by Yang et al.
 
     :param z_lens: main deflector redshift
     :param z_source: source redshift
     :param log10_mass_ranges: a list of lists specifying halo mass ranges, e.g. [[6, 8], [8, 10]]
-    :param collapse_timescales: a list of core collapse timescales in log10 Gyr for halos in each bin, e.g. [6.0, 1.0]
+    :param log10_effective_cross_section_list: a list of effective cross sections log10(sigma) for halos in each bin, e.g. [6.0, 1.0]
     :param subhalo_time_scaling: a number that makes time pass quicker (>1) or lower (<1) for subhalos relative to
     field halos
-    :param rescale_sidm_normalization: rescales the overall normalization of SIDM profiles
     :param sigma_sub: normalization of the subhalo mass function
     :param log10_sigma_sub: normalization of the subhalo mass function in log units (overwrites sigma_sub)
     :param log_mlow: log base 10 of the minimum halo mass to render
@@ -154,15 +153,16 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, su
               LOS_normalization, two_halo_contribution, delta_power_law_index,
               geometry_type, kwargs_cosmo)
     extension = RealizationExtensions(cdm)
-    sidm = extension.toSIDM(log10_mass_ranges, collapse_timescales, subhalo_time_scaling,
-                            rescale_sidm_normalization)
+    sidm = extension.toSIDM_from_cross_section(log10_mass_ranges,
+                                               log10_effective_cross_section_list,
+                                               subhalo_time_scaling)
     if add_globular_clusters:
         ext = RealizationExtensions(sidm)
         sidm = ext.add_globular_clusters(**kwargs_globular_clusters)
     return sidm
 
-def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_8, t0_8_mhigh, subhalo_time_scaling=1.0,
-        rescale_sidm_normalization=1.0, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh, subhalo_time_scaling=1.0,
+        sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -173,18 +173,18 @@ def SIDM_parametric_fixedbins(z_lens, z_source, t0_mlow_8, t0_8_mhigh, subhalo_t
         add_globular_clusters=False, kwargs_globular_clusters=None):
     """
     This function uses the SIDM_parametric model with a preset list of logarithmic mass bins 10^log_mlow - 10^7.5,
-    10^7.5-10^8.5, 10^8.5-10^10. The three parameters t0_mlow_75, t0_75_85, t0_85_10 set the collapse timescale in each
-    bin. For detailed documentation for the rest of the arguments, see the documentation in the SIDM_parametric function
-    :param t0_mlow_8: core collapse timescale log10(Gyr) in the mass range 10^log_mlow - 10^8
-    :param t0_8_mhigh: core collapse timescale log10(Gyr) in the mass range 10^8 - 10^log_mhigh
+    10^7.5-10^8.5, 10^8.5-10^10. The two parameters log10_sigma_eff_mlow_8 and log10_sigma_eff_8_mhigh set the cross section
+     in each mass bin. For detailed documentation for the rest of the arguments, see the documentation in the SIDM_parametric function
+    :param log10_sigma_eff_mlow_8: effective cross section in the mass range 10^log_mlow - 10^8
+    :param log10_sigma_eff_8_mhigh: effective cross section in the mass range 10^8 - 10^log_mhigh
     :param subhalo_time_scaling: rescales the timescale for subhalos
     """
     if log_mlow > 8:
         raise Exception('to use this function log_mlow must be < 8')
     log10_mass_ranges = [[log_mlow, 8.0], [8.0, log_mhigh]]
-    collapse_timescales = [t0_mlow_8, t0_8_mhigh]
-    return SIDM_parametric(z_lens, z_source, log10_mass_ranges, collapse_timescales, subhalo_time_scaling,
-        rescale_sidm_normalization, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
+    log10_effective_cross_section_list = [log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh]
+    return SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list,
+        subhalo_time_scaling, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
         truncation_model_subhalos, kwargs_truncation_model_subhalos,

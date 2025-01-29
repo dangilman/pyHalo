@@ -246,7 +246,7 @@ class RealizationExtensions(object):
         """
         from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM, HybridSubhalo, Hybrid
         profile_args_nfw = halo.profile_args
-        t_over_tc_cut = 0.25
+        t_over_tc_cut = 0.2
         if halo.is_subhalo:
             subhalo_flag = True
             kwargs_profile = {'lambda_t': subhalo_evolution_scaling,
@@ -271,7 +271,7 @@ class RealizationExtensions(object):
         rt_kpc_nfw = profile_args_nfw[1]
         rescale_norm = halo._rescale_norm
         new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
-        if new_halo.t_over_tc <= t_over_tc_cut:
+        if new_halo.t_over_tc < t_over_tc_cut:
             # make a Hybrid profile; when rescale=1 NFW halo goes away
             rescale = new_halo.t_over_tc / t_over_tc_cut
             if subhalo_flag:
@@ -282,8 +282,53 @@ class RealizationExtensions(object):
         else:
             return new_halo
 
-    def toSIDM(self, mass_bin_list, core_collapse_timescale_list, subhalo_evolution_scaling,
-               set_bound_mass=True):
+    def toSIDM_from_cross_section(self, mass_bin_list,
+                                  log10_effective_cross_section_list,
+                                  subhalo_evolution_scaling,
+                                  set_bound_mass=True):
+        """
+        This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
+        https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse.
+        Here, t_c is the core collapse timescale (Essig et al. 2019), as calculated in LensCosmo class.
+        :param mass_bin_list: a list of mass ranges in log10 e.g. [[6, 8], [8, 10]]
+        :param log10_effective_cross_section_list: a list of effective cross sections in each mass range given in log10(cm^2 / gram)
+        :param subhalo_evolution_scaling: rescales the collpse timescale for subhalos relative to field halos
+        :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
+        :return: a realization of SIDM halos created from the population of CDM halos
+        :return: a realization of SIDM halos created from the population of CDM halos
+        """
+        sidm_halos = []
+        for halo in self._realization.halos:
+            for bin_index, mass_bin in enumerate(mass_bin_list):
+                if np.log10(halo.mass) >= mass_bin[0] and np.log10(halo.mass) < mass_bin[1]:
+                    sigma_eff = 10 ** log10_effective_cross_section_list[bin_index]
+                    break
+            else:
+                raise Exception('halo mass ' + str(np.log10(halo.mass)) + ' not inside the minimum/maximum mass ranges')
+            rhos, rs, _ = halo.nfw_params
+            t_c = self._realization.lens_cosmo.sidm_collapse_timescale(rhos, rs, sigma_eff)
+            new_halo = self.toSIDM_single_halo(halo,
+                                               t_c,
+                                               subhalo_evolution_scaling)
+            if set_bound_mass and halo.is_subhalo:
+                new_halo.set_bound_mass(halo.bound_mass)
+            sidm_halos.append(new_halo)
+
+        new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo,
+                                                 self._realization.kwargs_halo_model,
+                                                 self._realization.apply_mass_sheet_correction,
+                                                 self._realization.rendering_classes,
+                                                 self._realization._rendering_center_x,
+                                                 self._realization._rendering_center_y,
+                                                 self._realization.geometry)
+        new_realization._has_been_shifted = self._realization._has_been_shifted
+        return new_realization
+
+
+    def toSIDM_from_timescale(self, mass_bin_list,
+                              core_collapse_timescale_list,
+                              subhalo_evolution_scaling,
+                              set_bound_mass=True):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
         https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse
