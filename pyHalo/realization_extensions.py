@@ -284,7 +284,7 @@ class RealizationExtensions(object):
 
     def toSIDM_from_cross_section(self, mass_bin_list,
                                   log10_effective_cross_section_list,
-                                  subhalo_evolution_scaling,
+                                  log10_subhalo_time_scaling,
                                   set_bound_mass=True):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
@@ -292,7 +292,7 @@ class RealizationExtensions(object):
         Here, t_c is the core collapse timescale (Essig et al. 2019), as calculated in LensCosmo class.
         :param mass_bin_list: a list of mass ranges in log10 e.g. [[6, 8], [8, 10]]
         :param log10_effective_cross_section_list: a list of effective cross sections in each mass range given in log10(cm^2 / gram)
-        :param subhalo_evolution_scaling: rescales the collpse timescale for subhalos relative to field halos
+        :param log10_subhalo_time_scaling: rescales the collpse timescale for subhalos relative to field halos
         :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
         :return: a realization of SIDM halos created from the population of CDM halos
         :return: a realization of SIDM halos created from the population of CDM halos
@@ -309,7 +309,7 @@ class RealizationExtensions(object):
             t_c = self._realization.lens_cosmo.sidm_collapse_timescale(rhos, rs, sigma_eff)
             new_halo = self.toSIDM_single_halo(halo,
                                                t_c,
-                                               subhalo_evolution_scaling)
+                                               10**log10_subhalo_time_scaling)
             if set_bound_mass and halo.is_subhalo:
                 new_halo.set_bound_mass(halo.bound_mass)
             sidm_halos.append(new_halo)
@@ -321,52 +321,6 @@ class RealizationExtensions(object):
                                                  self._realization._rendering_center_x,
                                                  self._realization._rendering_center_y,
                                                  self._realization.geometry)
-        new_realization._has_been_shifted = self._realization._has_been_shifted
-        return new_realization
-
-
-    def toSIDM_from_timescale(self, mass_bin_list,
-                              core_collapse_timescale_list,
-                              subhalo_evolution_scaling,
-                              set_bound_mass=True):
-        """
-        This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
-        https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse
-
-        :param mass_bin_list: a list of mass ranges in log10 e.g. [[6, 8], [8, 10]]
-        :param core_collapse_timescale_list: a list of core collapse timescales in log10 Gyr in each mass range e.g. [0.5, 1.0]
-        :param subhalo_evolution_scaling: rescales the collpse timescale for subhalos relative to field halos
-        :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
-        :return: a realization of SIDM halos created from the population of CDM halos
-        """
-
-        sidm_halos = []
-        for halo in self._realization.halos:
-            for bin_index, mass_bin in enumerate(mass_bin_list):
-                if np.log10(halo.mass) >= mass_bin[0] and np.log10(halo.mass) < mass_bin[1]:
-                    t_c = 10 ** core_collapse_timescale_list[bin_index]
-                    break
-            else:
-                raise Exception('halo mass '+str(np.log10(halo.mass))+' not inside the minimum/maximum mass ranges')
-            c_halo = halo.c
-            c_median = halo._concentration_class.nfw_concentration(halo.mass,
-                                                                   halo.z_eval,
-                                                                   force_no_scatter=True)
-            delta_c = c_halo / c_median
-            concentration_factor = delta_c ** (7/2)
-            new_halo = self.toSIDM_single_halo(halo,
-                                               concentration_factor * t_c,
-                                               subhalo_evolution_scaling)
-            new_halo.delta_c = delta_c
-            if set_bound_mass and halo.is_subhalo:
-                new_halo.set_bound_mass(halo.bound_mass)
-            sidm_halos.append(new_halo)
-
-        new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,
-                               self._realization.apply_mass_sheet_correction,
-                               self._realization.rendering_classes,
-                               self._realization._rendering_center_x, self._realization._rendering_center_y,
-                               self._realization.geometry)
         new_realization._has_been_shifted = self._realization._has_been_shifted
         return new_realization
 

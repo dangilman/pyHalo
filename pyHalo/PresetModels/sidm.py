@@ -84,7 +84,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     sidm = extension.add_core_collapsed_halos(index_collapsed, collapsed_halo_profile, **kwargs_collapsed_profile)
     return sidm
 
-def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, subhalo_time_scaling=1.0,
+def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, log10_subhalo_time_scaling=0.0,
         sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
@@ -155,14 +155,14 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
     extension = RealizationExtensions(cdm)
     sidm = extension.toSIDM_from_cross_section(log10_mass_ranges,
                                                log10_effective_cross_section_list,
-                                               subhalo_time_scaling)
+                                               log10_subhalo_time_scaling)
     if add_globular_clusters:
         ext = RealizationExtensions(sidm)
         sidm = ext.add_globular_clusters(**kwargs_globular_clusters)
     return sidm
 
-def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh, subhalo_time_scaling=1.0,
-        sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh,
+        log10_subhalo_time_scaling=1.0, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -184,7 +184,7 @@ def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_si
     log10_mass_ranges = [[log_mlow, 8.0], [8.0, log_mhigh]]
     log10_effective_cross_section_list = [log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh]
     return SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list,
-        subhalo_time_scaling, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
+        log10_subhalo_time_scaling, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
         truncation_model_subhalos, kwargs_truncation_model_subhalos,
