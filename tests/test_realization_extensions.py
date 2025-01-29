@@ -121,6 +121,26 @@ class TestRealizationExtensions(object):
         npt.assert_equal(single_halo_sidm_2.halos[0].halo_effective_age >
                          single_halo_sidm_1.halos[0].halo_effective_age, True)
 
+        single_halo.halo_age = 1.0
+        ext = RealizationExtensions(single_halo)
+        bound_mass_scale = 0.0
+        mass_in_list = [[6, 10]]
+        sigma_eff_array = np.linspace(1000, 5000, 3)
+        m = np.log10(single_halo.masses[0])
+        for sig in sigma_eff_array:
+            single_halo_sidm_1 = ext.toSIDM_from_cross_section_bound_mass_timescale(mass_in_list,
+                                                               [np.log10(sig)],
+                                                               bound_mass_scale)
+            m_new = np.log10(single_halo_sidm_1.halos[0].mass_3d('r200'))
+            npt.assert_almost_equal(m_new / m, 1.0, 2)
+        sigma_eff = [np.log10(5000)]
+        bound_mass_scale = 2.0
+        single_halo_sidm_2 = ext.toSIDM_from_cross_section_bound_mass_timescale(mass_in_list,
+                                                                                sigma_eff,
+                                                                                bound_mass_scale)
+        npt.assert_equal(single_halo_sidm_2.halos[0].halo_effective_age >
+                         single_halo_sidm_1.halos[0].halo_effective_age, True)
+
     def test_add_core_collapsed_halos(self):
 
         halo_mass = 10 ** 8
