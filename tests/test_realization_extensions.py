@@ -110,8 +110,7 @@ class TestRealizationExtensions(object):
         sigma_eff_array = np.linspace(1, 1000, 10)
         m = np.log10(single_halo.masses[0])
         for sig in sigma_eff_array:
-            log10_sigma_eff = [np.log10(sig)]
-            single_halo_sidm_1 = ext.toSIDM_from_cross_section(mass_in_list, log10_sigma_eff, log10_subhalo_time_scaling)
+            single_halo_sidm_1 = ext.toSIDM_from_cross_section(mass_in_list, np.log10(sig), log10_subhalo_time_scaling)
             m_new = np.log10(single_halo_sidm_1.halos[0].mass_3d('r200'))
             npt.assert_almost_equal(m_new/m, 1.0, 2)
         log10_subhalo_time_scaling = 1.0
@@ -525,8 +524,6 @@ class TestRealizationExtensions(object):
 #         npt.assert_array_almost_equal(As, As_fit)
 #         npt.assert_array_almost_equal(n, n_fit)
 
-t=  TestRealizationExtensions()
-t.test_globular_clusters()
 #
-# if __name__ == '__main__':
-#       pytest.main()
+if __name__ == '__main__':
+      pytest.main()
