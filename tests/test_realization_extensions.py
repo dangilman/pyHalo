@@ -110,7 +110,9 @@ class TestRealizationExtensions(object):
         sigma_eff_array = np.linspace(1, 1000, 10)
         m = np.log10(single_halo.masses[0])
         for sig in sigma_eff_array:
-            single_halo_sidm_1 = ext.toSIDM_from_cross_section(mass_in_list, np.log10(sig), log10_subhalo_time_scaling)
+            single_halo_sidm_1 = ext.toSIDM_from_cross_section(mass_in_list,
+                                                               [np.log10(sig)],
+                                                               log10_subhalo_time_scaling)
             m_new = np.log10(single_halo_sidm_1.halos[0].mass_3d('r200'))
             npt.assert_almost_equal(m_new/m, 1.0, 2)
         log10_subhalo_time_scaling = 1.0
