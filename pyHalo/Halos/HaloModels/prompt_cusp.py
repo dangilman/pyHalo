@@ -32,7 +32,7 @@ class PrompCusp(Halo):
         sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
         sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
         rho0_kpc = rho0_arcsec * sigma_crit_arcsec / kpc_per_arcsec ** 3
-        rs_kpc = self._args['rs_kpc']
+        rs_kpc = self._args['cusp_R'] * 1000
         return self._prof.density(r, rs_kpc, rho0_kpc, self._gamma_inner, self._gamma_outer)
 
     @property
@@ -45,7 +45,7 @@ class PrompCusp(Halo):
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             x, y = np.round(self.x, 4), np.round(self.y, 4)
             rho0 = self.density_normalization
-            R = self._args['rs_kpc']
+            R = self._args['cusp_R'] * 0.001
             R = np.round(R / kpc_per_arcsec, 10)
             alpha_Rs = self._prof.rho02alpha(rho0, R, self._gamma_inner, self._gamma_outer)
             alpha_Rs = np.round(alpha_Rs, 10)
@@ -63,7 +63,7 @@ class PrompCusp(Halo):
 
         :return:
         """
-        return (self.density_normalization, self._args['R'])
+        return (self.density_normalization, self._args['cusp_R'], self._args['cusp_A'])
 
     @property
     def lenstronomy_ID(self):
@@ -83,10 +83,12 @@ class PrompCusp(Halo):
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
             sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
-            R = self._args['rs_kpc']
-            mass_fraction = self._args['mass_fraction']
-            self._rho0_norm = self.mass * mass_fraction / self._prof.mass_3d(R/kpc_per_arcsec,
-                                                     R / kpc_per_arcsec,
+            R_mpc = self._args['cusp_R'] # in mpc
+            cuspA = self._args['cusp_A'] # M_sun * mpc^-1.5
+            R_kpc = R_mpc * 1000
+            mass = 8 * np.pi / 3 * cuspA * R_mpc ** 1.5
+            self._rho0_norm = mass / self._prof.mass_3d(R_kpc/kpc_per_arcsec,
+                                                        R_kpc/kpc_per_arcsec,
                                                      sigma_crit_arcsec,
                                                      self._gamma_inner,
                                                      self._gamma_outer)

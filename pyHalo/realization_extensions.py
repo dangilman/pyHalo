@@ -35,25 +35,41 @@ class RealizationExtensions(object):
 
         self._realization = realization
 
-    def add_prompt_cusps(self, mass_fraction):
+    def add_prompt_cusps(self, a=0.04, b=-0.8, c=0.15):
         """
 
-        :param mass_fraction:
-        :return:
+        :param a: normalization of cusp mass / halo mass relation
+        :param b: exponent of cusp mass / halo mass relation
+        :param c: scatter of relation in dex
+        :return: an instance of Realization with prompt cusps added
         """
         from pyHalo.Halos.HaloModels.prompt_cusp import PrompCusp
         halo_list = []
         for halo in self._realization.halos:
             _ = halo.profile_args # need to set this before doing anything else
-            rs = halo.nfw_params[1]
-            args = {'mass_fraction': mass_fraction, 'rs_kpc': rs}
+            cuspM_haloM_median = a * (halo.mass / 10 ** 7.25) ** b
+            log10_cuspM_haloM_median = np.log10(cuspM_haloM_median)
+            if c == 0:
+                scatter = 0.0
+            elif c > 0:
+                scatter = np.random.normal(0, c)
+            else:
+                raise Exception('scatter must be > 0!')
+            log10_cuspM_over_haloM = log10_cuspM_haloM_median + scatter
+            cuspM_over_haloM = 10 ** log10_cuspM_over_haloM
+            cuspM = halo.mass * cuspM_over_haloM
+            rescale_norm = 1 - cuspM_over_haloM
+            log10_cuspA = 1.2 * log10_cuspM_haloM_median/(-3.5) + 10.25 # in Mpc^-1.5
+            cuspA = 10 ** log10_cuspA
+            R = (3 * cuspM / (8 * np.pi * cuspA)) ** (2/3) # in mpc
+            args = {'cusp_A': cuspA, 'cusp_R': R}
             prompt_cusp = PrompCusp(halo.mass, halo.x, halo.y, halo.r3d,
                                     halo.z, halo.is_subhalo, halo.lens_cosmo,
                                     args, halo._truncation_class, halo._concentration_class,
                                     halo.unique_tag)
             if halo.is_subhalo:
                 prompt_cusp.set_bound_mass(halo.bound_mass)
-            halo._rescale_norm *= (1 - mass_fraction)
+            halo._rescale_norm *= rescale_norm
             halo_list.append(halo)
             halo_list.append(prompt_cusp)
 

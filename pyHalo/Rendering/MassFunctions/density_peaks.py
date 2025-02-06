@@ -5,6 +5,23 @@ from colossus.lss.mass_function import massFunction
 
 __all__ = ['ShethTormen', 'ShethTormenMixedWDM', 'ShethTormenTurnover']
 
+def evaluate_mass_function(m, h, z, model):
+    """
+    Use colossus to evaluate the halo mass function; deal with all little h factors
+    (see colossus documentation for the inputs)
+    :param m: halo mass [M_sun]
+    :param h: Hubble constant divided by 100 km/sec/Mpc
+    :param z: redshift at which to evaluate mass function
+    :param model: the halo mass function model used by colossus
+    :return: the halo mass function in units Mpc^-3 M_sun^-1
+    """
+    m_h = m * h
+    q_out = 'dndlnM'
+    dndlogM = massFunction(m_h, z, q_out=q_out, model=model)
+    dndM_comoving_h = dndlogM / m
+    # three factors of h for the (Mpc/h)^-3 to Mpc^-3 conversion
+    dndM_comoving = dndM_comoving_h * h ** 3
+    return dndM_comoving
 
 class ShethTormen(CDMPowerLaw):
     """
@@ -33,11 +50,7 @@ class ShethTormen(CDMPowerLaw):
         h = geometry_class.cosmo.h
         # To M_sun / h units
         m = np.logspace(kwargs_model['log_mlow'], kwargs_model['log_mhigh'], 10)
-        m_h = m * h
-        dndlogM = massFunction(m_h, z, q_out='dndlnM', model='sheth99')
-        dndM_comoving_h = dndlogM / m
-        # three factors of h for the (Mpc/h)^-3 to Mpc^-3 conversion
-        dndM_comoving = dndM_comoving_h * h ** 3
+        dndM_comoving = evaluate_mass_function(m, h, z, 'sheth99')
         coeffs = np.polyfit(np.log10(m / m_pivot), np.log10(dndM_comoving), 1)
         plaw_index = coeffs[0] + kwargs_model['delta_power_law_index']
         norm_dv = 10 ** coeffs[1] / (m_pivot**plaw_index)
@@ -80,11 +93,7 @@ class ShethTormenTurnover(WDMPowerLaw):
         h = geometry_class.cosmo.h
         # To M_sun / h units
         m = np.logspace(kwargs_model['log_mlow'], kwargs_model['log_mhigh'], 10)
-        m_h = m * h
-        dndlogM = massFunction(m_h, z, q_out='dndlnM', model='sheth99')
-        dndM_comoving_h = dndlogM / m
-        # three factors of h for the (Mpc/h)^-3 to Mpc^-3 conversion
-        dndM_comoving = dndM_comoving_h * h ** 3
+        dndM_comoving = evaluate_mass_function(m, h, z, 'sheth99')
         coeffs = np.polyfit(np.log10(m / m_pivot), np.log10(dndM_comoving), 1)
         plaw_index = coeffs[0] + kwargs_model['delta_power_law_index']
         norm_dv = 10 ** coeffs[1] / (m_pivot ** plaw_index)
@@ -128,11 +137,7 @@ class ShethTormenMixedWDM(MixedWDMPowerLaw):
         h = geometry_class.cosmo.h
         # To M_sun / h units
         m = np.logspace(kwargs_model['log_mlow'], kwargs_model['log_mhigh'], 10)
-        m_h = m * h
-        dndlogM = massFunction(m_h, z, q_out='dndlnM', model='sheth99')
-        dndM_comoving_h = dndlogM / m
-        # three factors of h for the (Mpc/h)^-3 to Mpc^-3 conversion
-        dndM_comoving = dndM_comoving_h * h ** 3
+        dndM_comoving = evaluate_mass_function(m, h, z, 'sheth99')
         coeffs = np.polyfit(np.log10(m / m_pivot), np.log10(dndM_comoving), 1)
         plaw_index = coeffs[0] + kwargs_model['delta_power_law_index']
         norm_dv = 10 ** coeffs[1]

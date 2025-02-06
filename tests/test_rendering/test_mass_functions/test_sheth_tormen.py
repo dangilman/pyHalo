@@ -5,7 +5,9 @@ from pyHalo.Cosmology.geometry import Geometry
 import numpy.testing as npt
 from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen, ShethTormenTurnover, ShethTormenMixedWDM
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw, WDMPowerLaw, MixedWDMPowerLaw
+from pyHalo.Rendering.MassFunctions.density_peaks import evaluate_mass_function
 from colossus.lss.mass_function import massFunction
+from colossus.cosmology import cosmology
 
 class TestShethTormen(object):
 
@@ -250,6 +252,29 @@ class TestSampling(object):
         log10m = b[0:-1]
         coefs = np.polyfit(log10m, log10h, 1)
         npt.assert_almost_equal((self._plaw_index_theory+1)/coefs[0], 1, 2)
+
+    def test_galacticus_comparison(self):
+
+        galacticus_dndm = np.array([5.05460310e-06, 3.25319529e-06, 2.09420639e-06, 1.34837633e-06,
+       8.68332355e-07, 5.59300208e-07, 3.60324589e-07, 2.32176844e-07,
+       1.49635804e-07, 9.64583113e-08, 6.21916467e-08, 4.01068273e-08,
+       2.58695766e-08, 1.66897785e-08, 1.07696749e-08, 6.95097691e-09,
+       4.48725449e-09, 2.89739324e-09, 1.87122600e-09, 1.20875189e-09,
+       7.80980403e-10])
+
+        h = 0.675
+        cosmo_kwargs = {'H0': h * 100,
+                        'Om0': 0.26 + 0.049,
+                        'Ob0': 0.049,
+                        'ns': 0.965,
+                        'sigma8': 0.81,
+                        'power_law': False}
+        _ = cosmology.setCosmology('custom', cosmo_kwargs)
+        m = np.logspace(7,9,len(galacticus_dndm))
+        z = 0.0
+        # colossus version 1.3.8 and 1.3.6 give same answer
+        pyHalo_dndm = evaluate_mass_function(m, h, z, 'sheth99')
+        npt.assert_almost_equal(pyHalo_dndm / galacticus_dndm, 1, 2)
 
 if __name__ == '__main__':
    pytest.main()

@@ -3,7 +3,6 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.realization_extensions import RealizationExtensions
 import numpy as np
-from scipy.interpolate import interp1d
 from scipy.integrate import quad
 import numpy.testing as npt
 from copy import deepcopy
@@ -14,7 +13,7 @@ class TestPromptCusp(object):
 
     def setup_method(self):
 
-        halo_mass = 10 ** 8
+        halo_mass = 10 ** 7.7
         self.nfw_mass = halo_mass
         x_arcsec = 0.
         y_arcsec = 0.0
@@ -42,46 +41,46 @@ class TestPromptCusp(object):
         self.single_halo_realization = SingleHalo(halo_mass, x_arcsec, y_arcsec, mass_definition, z_halo, zlens, zsource,
                                  subhalo_flag, kwargs_halo_model=kwargs_halo_model)
 
+    def test_rescaling_normalization(self):
+
+        ext = RealizationExtensions(deepcopy(self.single_halo_realization))
+        a = 0.1
+        b = 0.0
+        c = 0.0
+        realization_with_PS = ext.add_prompt_cusps(a,b,c)
+        nfw_halo = realization_with_PS.halos[0]
+        ps_halo = realization_with_PS.halos[1]
+        _ = nfw_halo.lenstronomy_params
+        _ = ps_halo.lenstronomy_params
+        npt.assert_almost_equal(nfw_halo._rescale_norm, 0.9)
+        npt.assert_almost_equal(ps_halo._rescale_norm, 1.0)
+
     def test_mass_conservation(self):
 
         ext = RealizationExtensions(deepcopy(self.single_halo_realization))
-        mass_fraction = 0.35
-        realization_with_PS = ext.add_prompt_cusps(mass_fraction)
-        rs_kpc = self.single_halo_realization.halos[0].nfw_params[1]
+        a = 0.25
+        b = 0.0
+        c = 0.0
+        realization_with_PS = ext.add_prompt_cusps(a, b, c)
         nfw_halo = realization_with_PS.halos[0]
         ps_halo = realization_with_PS.halos[1]
+        rescale_norm_nfw = nfw_halo._rescale_norm
+        rs = nfw_halo.nfw_params[1]
+        r = np.logspace(-1.5, 0.7, 100) * rs
+        integrand_total = lambda x: 4 * np.pi * x ** 2 * (rescale_norm_nfw * nfw_halo.density_profile_3d(x) +
+                                                          ps_halo.density_profile_3d(x))
+        integrand_ps = lambda x: 4 * np.pi * x ** 2 * ps_halo.density_profile_3d(x)
 
-        r = np.linspace(0.0001, nfw_halo.c, 100000) * rs_kpc
-        rho_nfw = nfw_halo.density_profile_3d(r, scaling=1-mass_fraction)
-        rho_ps = ps_halo.density_profile_3d(r)
-        rho_total = rho_nfw + rho_ps
-        rho_ps_interp = interp1d(r, rho_ps)
-        rho_nfw_interp = interp1d(r, rho_nfw)
-        rho_total_interp = interp1d(r, rho_total)
+        # test that the total mass of the ps_halo is what it should be
+        mass_target = nfw_halo.mass * a
+        _, cusp_R, cusp_A = ps_halo.profile_args
+        ps_halo_mass = 8 * np.pi / 3 * cusp_A * cusp_R ** 1.5
+        npt.assert_almost_equal(np.log10(mass_target), np.log10(ps_halo_mass))
+        npt.assert_almost_equal(np.log10(mass_target) / np.log10(quad(integrand_ps, 0, nfw_halo.c * rs))[0], 1, 2)
 
-        mass_integrand_total = lambda x: 4 * np.pi * x ** 2 * rho_total_interp(x)
-        mass_integrand_ps = lambda x: 4 * np.pi * x ** 2 * rho_ps_interp(x)
-        mass_integrand_nfw = lambda x: 4 * np.pi * x ** 2 * rho_nfw_interp(x)
 
-        rmax = rs_kpc * nfw_halo.c
-        total_mass = quad(mass_integrand_total, 0.001*rs_kpc, rmax)[0]
-        npt.assert_almost_equal(-1 + total_mass / nfw_halo.mass, 0.0, 0.025)
-
-        rmax = rs_kpc
-        ps_mass = quad(mass_integrand_ps, 0.001 * rs_kpc, rmax)[0]
-        npt.assert_almost_equal(-1 + ps_mass / (self.nfw_mass * mass_fraction), 0, 2)
-
-    def test_rescaling_normalization(self):
-
-        nfw_halo = self.single_halo_realization.halos[0]
-        npt.assert_almost_equal(nfw_halo._rescale_norm, 1)
-
-        ext = RealizationExtensions(deepcopy(self.single_halo_realization))
-        mass_fraction = 0.2
-        realization_with_PS = ext.add_prompt_cusps(mass_fraction)
-
-        npt.assert_almost_equal(realization_with_PS.halos[0]._rescale_norm, 0.8, 2)
-
+        total_mass = quad(integrand_total, 0, nfw_halo.c * rs)[0]
+        npt.assert_array_less(abs(100*(total_mass / nfw_halo.mass - 1)), 1.6)
 
 if __name__ == '__main__':
     pytest.main()

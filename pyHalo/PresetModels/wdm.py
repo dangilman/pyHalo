@@ -20,7 +20,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
         host_scaling_factor=0.55, redshift_scaling_factor=0.37, two_halo_Lazar_correction=True,
         draw_poisson=True, c_host=None, add_globular_clusters=False, kwargs_globular_clusters=None,
-        prompt_cusp_mass_fraction=0.0):
+        include_prompt_cusps=False):
 
     """
     This class generates realizations of dark matter structure in Warm Dark Matter
@@ -71,8 +71,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     :param c_host: manually set host halo concentration
     :param add_globular_clusters: bool; include a population of globular clusters around image positions
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
-    :param prompt_cusp_mass_fraction: that fraction of the halo mass contained in a prompt cusp
-    :return: a realization of dark matter halos
+    :param include_prompt_cusps: bool; include prompt cusps inside halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
     pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
@@ -180,10 +179,10 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
-    if prompt_cusp_mass_fraction > 0:
+    if include_prompt_cusps:
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
-        realization = ext.add_prompt_cusps(prompt_cusp_mass_fraction)
+        realization = ext.add_prompt_cusps(a=0.04, b=-0.8, c=0.15)
     return realization
 
 
@@ -196,7 +195,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
-        kwargs_density_profile={}):
+        kwargs_density_profile={},include_prompt_cusps=False):
 
     """
     Implements the mixed dark matter model presented by Keely et al. (2023)
@@ -229,6 +228,7 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
     :param geometry_type:
     :param kwargs_cosmo:
     :param kwargs_density_profile:
+    :param include_prompt_cusps: bool; include prompt cusps inside halos
     :return:
     """
     params = ['a_wdm', 'b_wdm', 'c_wdm']
@@ -257,7 +257,8 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
                   'shmf_log_slope': shmf_log_slope, 'cone_opening_angle_arcsec': cone_opening_angle_arcsec,
                   'log_m_host': log_m_host, 'r_tidal': r_tidal, 'LOS_normalization': LOS_normalization,
                   'geometry_type': geometry_type, 'kwargs_cosmo': kwargs_cosmo,
-                  'kwargs_density_profile': kwargs_density_profile
+                  'kwargs_density_profile': kwargs_density_profile,
+                  'include_prompt_cusps': include_prompt_cusps
                   }
     return WDM(**kwargs_wdm)
 
@@ -270,7 +271,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
         host_scaling_factor=0.55, redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, c_host=None,
-        add_globular_clusters=False, kwargs_globular_clusters=None):
+        add_globular_clusters=False, kwargs_globular_clusters=None, include_prompt_cusps=False):
 
     """
     This preset model implements a generalized treatment of warm dark matter, or any theory that produces a cutoff in
@@ -316,6 +317,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param c_host: manually fix the host halo concentration
     :param add_globular_clusters: bool; include a population of globular clusters around image positions
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
+    :param include_prompt_cusps: bool; include prompt cusps inside halos
     :return:
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -410,4 +412,8 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
+    if include_prompt_cusps:
+        from pyHalo.realization_extensions import RealizationExtensions
+        ext = RealizationExtensions(realization)
+        realization = ext.add_prompt_cusps(a=0.04, b=-0.8, c=0.15)
     return realization
