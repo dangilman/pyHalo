@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.HaloModels.NFW_core_trunc import Hybrid, TNFWCHalo
-from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo
 from pyHalo.truncation_models import ConstantTruncationArcsec
 from pyHalo.concentration_models import ConcentrationDiemerJoyce
 from pyHalo.Halos.lens_cosmo import LensCosmo
@@ -27,80 +27,36 @@ class TestTNFWC(object):
         self.tnfw_halo = TNFWFieldHalo(mass, x, y, r3d, z,
                                        False, lens_cosmo, kwargs_cdm_profile,
                                        truncation_class, concentration_class, unique_tag)
-        kwargs_sidm_profile_field = {'sidm_timescale': 12.0,
-                               'lambda_t': 1.0,
-                               'c': self.tnfw_halo.c,
-                               'rt_kpc': self.tnfw_halo.profile_args[1],
-                               'rescale_alphaRs': 1.0}
+        kwargs_profile = {'sidm_timescale': 20.,
+                          'lambda_t': 1.0,
+                          'mass_conservation': self.tnfw_halo.mass}
         self.tnfwc_halo = TNFWCHalo(mass, x, y, r3d, z,
-                                             False, lens_cosmo, kwargs_sidm_profile_field,
+                                             False, lens_cosmo, kwargs_profile,
                                              truncation_class, concentration_class, unique_tag)
 
-        self.tnfw_subhalo = TNFWSubhalo(mass, x, y, r3d, z,
-                                       True, lens_cosmo, kwargs_cdm_profile,
-                                       truncation_class, concentration_class, unique_tag)
-        self.tnfw_subhalo.rescale_normalization(0.8)
-        kwargs_sidm_profile_sub = {'sidm_timescale': 12.0,
-                                   'lambda_t': 1.0,
-                                   'c': self.tnfw_subhalo.c,
-                                   'rt_kpc': self.tnfw_halo.profile_args[1],
-                                   'rescale_alphaRs': self.tnfw_subhalo.rescale_norm}
-        self.tnfwc_subhalo = TNFWCHalo(mass, x, y, r3d, z,
-                                             True, lens_cosmo, kwargs_sidm_profile_sub,
-                                             truncation_class, concentration_class, unique_tag)
-
-        self.hybrid_fieldhalo = Hybrid(self.tnfw_halo, self.tnfwc_halo, self._rescaling_factor)
-        self.hybrid_subhalo = Hybrid(self.tnfw_subhalo, self.tnfwc_subhalo, self._rescaling_factor)
-
-    def test_joint_parameters(self):
-
-        npt.assert_equal(self.hybrid_fieldhalo.tnfwc_halo.c, self.hybrid_fieldhalo.tnfw_halo.c)
-        npt.assert_equal(self.hybrid_subhalo.tnfwc_halo.c, self.hybrid_subhalo.tnfw_halo.c)
-        npt.assert_equal(self.hybrid_subhalo.tnfwc_halo.z_infall, self.hybrid_subhalo.tnfw_halo.z_infall)
-        rtrunc_tnfw = self.hybrid_fieldhalo.lenstronomy_params[0][0]['r_trunc']
-        rtrunc_tnfwc = self.hybrid_fieldhalo.lenstronomy_params[0][1]['r_trunc']
-        npt.assert_almost_equal(rtrunc_tnfwc / rtrunc_tnfw, 1, 4)
-
-        rtrunc_tnfw = self.hybrid_subhalo.lenstronomy_params[0][0]['r_trunc']
-        rtrunc_tnfwc = self.hybrid_subhalo.lenstronomy_params[0][1]['r_trunc']
-        npt.assert_almost_equal(rtrunc_tnfwc / rtrunc_tnfw, 1, 4)
-
-        npt.assert_almost_equal(self.hybrid_subhalo.tnfwc_halo.halo_effective_age,
-                                self.hybrid_subhalo.tnfw_halo.halo_age)
-        npt.assert_almost_equal(self.hybrid_fieldhalo.tnfwc_halo.halo_effective_age,
-                                self.hybrid_fieldhalo.tnfw_halo.halo_age)
+        self.hybrid = Hybrid(self.tnfw_halo, self.tnfwc_halo, self._rescaling_factor)
 
     def test_lenstronomy_ID(self):
 
-        ID = self.hybrid_fieldhalo.lenstronomy_ID
+        ID = self.hybrid.lenstronomy_ID
         npt.assert_string_equal(ID[0],'TNFW')
         npt.assert_string_equal(ID[1], 'TNFWC')
 
     def test_lenstronomy_args(self):
 
-        kwargs_lenstronomy = self.hybrid_fieldhalo.lenstronomy_params[0]
+        kwargs_lenstronomy = self.hybrid.lenstronomy_params[0]
         npt.assert_equal(len(kwargs_lenstronomy),2)
 
     def test_profile_3d(self):
 
-        rs = self.hybrid_fieldhalo.nfw_params[1][1]
+        rs = self.hybrid.nfw_params[1][1]
         r = np.logspace(-1.5, 1.5, 1000) * rs
-        profile_3d_tnfw = self.hybrid_fieldhalo.tnfw_halo.density_profile_3d(r)
-        profile_3d_tnfwc = self.hybrid_fieldhalo.tnfwc_halo.density_profile_3d(r)
+        profile_3d_tnfw = self.hybrid.tnfw_halo.density_profile_3d_lenstronomy(r)
+        profile_3d_tnfwc = self.hybrid.tnfwc_halo.density_profile_3d_lenstronomy(r)
         plt.loglog(r, profile_3d_tnfw, color='k')
         plt.loglog(r, profile_3d_tnfwc, color='r')
         combined_true = profile_3d_tnfw * (1 - self._rescaling_factor) + profile_3d_tnfwc * self._rescaling_factor
-        combined = self.hybrid_fieldhalo.density_profile_3d(r)
-        npt.assert_equal(combined, combined_true)
-
-        rs = self.hybrid_subhalo.nfw_params[1][1]
-        r = np.logspace(-1.5, 1.5, 1000) * rs
-        profile_3d_tnfw = self.hybrid_subhalo.tnfw_halo.density_profile_3d(r)
-        profile_3d_tnfwc = self.hybrid_subhalo.tnfwc_halo.density_profile_3d(r)
-        plt.loglog(r, profile_3d_tnfw, color='k')
-        plt.loglog(r, profile_3d_tnfwc, color='r')
-        combined_true = profile_3d_tnfw * (1 - self._rescaling_factor) + profile_3d_tnfwc * self._rescaling_factor
-        combined = self.hybrid_subhalo.density_profile_3d(r)
+        combined = self.hybrid.density_profile_3d_lenstronomy(r)
         npt.assert_equal(combined, combined_true)
 
 if __name__ == '__main__':

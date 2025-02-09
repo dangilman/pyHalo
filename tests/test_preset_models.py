@@ -87,8 +87,7 @@ class TestPresetModels(object):
                             1.5,
                             0.1,
                             3.0,
-                            log10_subhalo_time_scaling=None,
-                            bound_mass_timescale=1.0)
+                            log10_subhalo_time_scaling=None)
         _ = realization.lensing_quantities()
 
     def test_ULDM(self):

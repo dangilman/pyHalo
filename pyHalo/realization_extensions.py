@@ -289,11 +289,9 @@ class RealizationExtensions(object):
         if new_halo.t_over_tc < t_over_tc_cut:
             # make a Hybrid profile; when rescale=1 NFW halo goes away
             rescale = new_halo.t_over_tc / t_over_tc_cut
+            sidm_halo = Hybrid(halo, new_halo, rescale)
             if subhalo_flag:
-                sidm_halo = Hybrid(halo, new_halo, rescale)
                 sidm_halo.set_bound_mass(halo.bound_mass)
-            else:
-                sidm_halo = Hybrid(halo, new_halo, rescale)
             return sidm_halo
         else:
             return new_halo
