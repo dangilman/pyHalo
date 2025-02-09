@@ -78,8 +78,9 @@ class TNFWFieldHalo(Halo):
         sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
         sigma_crit_kpc = sigma_crit_mpc * 1e-6
         factor = sigma_crit_kpc / kpc_per_arcsec
-        return factor*prof.density_lens(r / kpc_per_arcsec, kwargs_lenstronomy['Rs'],
-                                                    kwargs_lenstronomy['alpha_Rs'],
+        rhos = prof.alpha2rho0(kwargs_lenstronomy['alpha_Rs'], kwargs_lenstronomy['Rs'])
+        return factor*prof.density(r / kpc_per_arcsec, kwargs_lenstronomy['Rs'],
+                                                    rhos,
                                                     kwargs_lenstronomy['r_trunc'])
 
 

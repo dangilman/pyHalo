@@ -429,15 +429,6 @@ class TestRealizationExtensions(object):
                                                          y_image_interp_list,
                                                          r_array)
 
-        # import matplotlib.pyplot as plt
-        # from pyHalo.single_realization import realization_at_z
-        # for j, zi in enumerate(zlist):
-        #     real = realization_at_z(pbh_realization, zi)[0]
-        #     plt.scatter(real.x, real.y)
-        #     plt.scatter(main_halo_coord_x[j], main_halo_coord_y[j], color='r')
-        #     plt.show()
-        #     a=input('continue')
-
         for i, halo in enumerate(pbh_realization.halos):
 
             condition1 = 'PT_MASS' == halo.mdef
