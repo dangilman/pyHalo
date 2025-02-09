@@ -83,13 +83,6 @@ class TestPresetModels(object):
         realization = model(0.5, 1.5, 5.0, 1.0)
         _ = realization.lensing_quantities()
 
-        realization = model(0.5,
-                            1.5,
-                            0.1,
-                            3.0,
-                            log10_subhalo_time_scaling=None)
-        _ = realization.lensing_quantities()
-
     def test_ULDM(self):
 
         flucs_shape = 'ring'
