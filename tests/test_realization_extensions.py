@@ -6,10 +6,11 @@ from scipy.interpolate import interp1d
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
-from pyHalo.Halos.tidal_truncation import TruncationRoche, TruncationRN
+from pyHalo.Halos.tidal_truncation import TruncationRoche, TruncationRN, TruncationGalacticus
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.PresetModels.cdm import CDM
 from lenstronomy.LensModel.Profiles.splcore import SPLCORE
+from lenstronomy.LensModel.lens_model import LensModel
 
 class TestRealizationExtensions(object):
 
@@ -84,62 +85,38 @@ class TestRealizationExtensions(object):
 
     def test_toSIDM(self):
 
-        halo_mass = 10 ** 8
-        x = 0.5
-        y = 1.0
-        z = 0.5
-        zlens = 0.5
-        zsource = 2.0
-        astropy_instance = Cosmology().astropy
-        lens_cosmo = LensCosmo(zlens, zsource)
-        truncation_class = TruncationRN(lens_cosmo, 100.0)
-        concentration_class = ConcentrationDiemerJoyce(astropy_instance, scatter=False)
-
-        kwargs_halo_model = {'concentration_model': concentration_class,
-                             'truncation_model': truncation_class,
-                             'kwargs_density_profile': {'evaluate_mc_at_zlens': True}}
-
-        mdef = 'TNFW'
-        single_halo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=True,
-                                 kwargs_halo_model=kwargs_halo_model)
-
-        single_halo.halo_age = 1.0
-        ext = RealizationExtensions(single_halo)
+        cdm = CDM(0.3, 1.0, sigma_sub=0.02, LOS_normalization=0.2, log_mlow=7.0)
+        ext = RealizationExtensions(cdm)
+        mass_bin_list = [[6, 10]]
+        log10_effective_sigma = [np.log10(300)]
         log10_subhalo_time_scaling = 0.0
-        mass_in_list = [[6, 10]]
-        sigma_eff_array = np.linspace(1000, 5000, 3)
-        m = np.log10(single_halo.masses[0])
-        for sig in sigma_eff_array:
-            single_halo_sidm_1 = ext.toSIDM_from_cross_section(mass_in_list,
-                                                               [np.log10(sig)],
-                                                               log10_subhalo_time_scaling)
-            m_new = np.log10(single_halo_sidm_1.halos[0].mass_3d('r200'))
-            npt.assert_almost_equal(m_new/m, 1.0, 2)
-        log10_subhalo_time_scaling = 1.0
-        sigma_eff = [3.0]
-        single_halo_sidm_2 = ext.toSIDM_from_cross_section(mass_in_list, sigma_eff, log10_subhalo_time_scaling)
-        npt.assert_equal(single_halo_sidm_2.halos[0].halo_effective_age >
-                         single_halo_sidm_1.halos[0].halo_effective_age, True)
+        sidm = ext.toSIDM_from_cross_section(mass_bin_list,
+                                             log10_effective_sigma,
+                                             log10_subhalo_time_scaling)
+        ratio_list = []
+        for cdm_halo, sidm_halo in zip(cdm.halos, sidm.halos):
 
-        single_halo.halo_age = 1.0
-        ext = RealizationExtensions(single_halo)
-        bound_mass_scale = 0.0
-        mass_in_list = [[6, 10]]
-        sigma_eff_array = np.linspace(1000, 5000, 3)
-        m = np.log10(single_halo.masses[0])
-        for sig in sigma_eff_array:
-            single_halo_sidm_1 = ext.toSIDM_from_cross_section_bound_mass_timescale(mass_in_list,
-                                                               [np.log10(sig)],
-                                                               bound_mass_scale)
-            m_new = np.log10(single_halo_sidm_1.halos[0].mass_3d('r200'))
-            npt.assert_almost_equal(m_new / m, 1.0, 2)
-        sigma_eff = [np.log10(5000)]
-        bound_mass_scale = 2.0
-        single_halo_sidm_2 = ext.toSIDM_from_cross_section_bound_mass_timescale(mass_in_list,
-                                                                                sigma_eff,
-                                                                                bound_mass_scale)
-        npt.assert_equal(single_halo_sidm_2.halos[0].halo_effective_age >
-                         single_halo_sidm_1.halos[0].halo_effective_age, True)
+            rs = cdm_halo.nfw_params[1]
+            kwargs_nfw = cdm_halo.lenstronomy_params[0]
+            kwargs_sidm = sidm_halo.lenstronomy_params[0]
+            npt.assert_equal(cdm_halo.c, sidm_halo.c)
+            for kw in kwargs_nfw:
+                kw['center_x'] = 0.0
+                kw['center_y'] = 0.0
+            for kw in kwargs_sidm:
+                kw['center_x'] = 0.0
+                kw['center_y'] = 0.0
+
+            x = np.linspace(0.001, cdm_halo.c, 30000)
+            r = x * rs
+            rho_nfw = cdm_halo.density_profile_3d_lenstronomy(r)
+            rho_sidm = sidm_halo.density_profile_3d_lenstronomy(r)
+            mass_nfw = np.trapz(4 * np.pi * r ** 2 * rho_nfw, r)
+            mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_sidm, r)
+            ratio = mass_sidm / mass_nfw
+            ratio_list.append(ratio)
+        npt.assert_almost_equal(np.median(ratio_list), 1, 1)
+        npt.assert_equal(np.std(ratio_list) < 0.05, True)
 
     def test_add_core_collapsed_halos(self):
 
@@ -466,6 +443,7 @@ class TestRealizationExtensions(object):
             condition1 = 'PT_MASS' == halo.mdef
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
+
 
 if __name__ == '__main__':
       pytest.main()

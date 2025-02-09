@@ -53,21 +53,29 @@ class Halo(ABC):
         self._rescaled_once = False
         assert z > 0, 'Negative redshifts are unphysical for halos'
 
-    def rescale_normalization(self, factor):
+    @property
+    def rescale_norm(self):
+        return self._rescale_norm
+
+    def rescale_normalization(self, factor, force=False):
         """
         Sets the rescaling factor for the normalization (only can do this once)
         :param factor:
         :return:
         """
-        if self._rescaled_once:
-            pass
-        else:
+        if force:
+            self._rescale_norm = factor
             self._rescaled_once = True
-            self._rescale_norm *= factor
-            if hasattr(self, '_params_physical'):
-                delattr(self, '_params_physical')
-            if hasattr(self, '_kwargs_lenstronomy'):
-                delattr(self, '_kwargs_lenstronomy')
+        else:
+            if self._rescaled_once:
+                pass
+            else:
+                self._rescaled_once = True
+                self._rescale_norm *= factor
+                if hasattr(self, '_params_physical'):
+                    delattr(self, '_params_physical')
+                if hasattr(self, '_kwargs_lenstronomy'):
+                    delattr(self, '_kwargs_lenstronomy')
 
     @property
     @abstractmethod
@@ -217,7 +225,7 @@ class Halo(ABC):
         :return: mass enclosed inside rmax
         """
         if rmax == 'r200':
-            rmax = self.nfw_params[2]
+            rmax = self.c * self.nfw_params[1]
         _integrand = lambda r: 4 * np.pi * r ** 2 * self.density_profile_3d(r, profile_args)
         return quad(_integrand, 0, rmax)[0]
 

@@ -85,7 +85,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     return sidm
 
 def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, log10_subhalo_time_scaling=0.0,
-        bound_mass_timescale=None, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+        sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -105,8 +105,6 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
     :param log10_effective_cross_section_list: a list of effective cross sections log10(sigma) for halos in each bin, e.g. [6.0, 1.0]
     :param log10_subhalo_time_scaling: a log10(number) that makes time pass quicker (>1) or lower (<1) for subhalos relative to
     field halos
-    :param bound_mass_timescale: rescales time for subhalos based on their bound mass; see documentation in RealizationExtensions class;
-    if None, then subhalo collapse time is scaled by log10_subhalo_time_scaling
     :param sigma_sub: normalization of the subhalo mass function
     :param log10_sigma_sub: normalization of the subhalo mass function in log units (overwrites sigma_sub)
     :param log_mlow: log base 10 of the minimum halo mass to render
@@ -155,21 +153,16 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
               LOS_normalization, two_halo_contribution, delta_power_law_index,
               geometry_type, kwargs_cosmo)
     extension = RealizationExtensions(cdm)
-    if bound_mass_timescale is None:
-        sidm = extension.toSIDM_from_cross_section(log10_mass_ranges,
+    sidm = extension.toSIDM_from_cross_section(log10_mass_ranges,
                                                    log10_effective_cross_section_list,
                                                    log10_subhalo_time_scaling)
-    else:
-        sidm = extension.toSIDM_from_cross_section_bound_mass_timescale(log10_mass_ranges,
-                                                                        log10_effective_cross_section_list,
-                                                                        bound_mass_timescale)
     if add_globular_clusters:
         ext = RealizationExtensions(sidm)
         sidm = ext.add_globular_clusters(**kwargs_globular_clusters)
     return sidm
 
 def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh,
-        log10_subhalo_time_scaling=0.0, bound_mass_timescale=None, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+        log10_subhalo_time_scaling=0.0, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -186,15 +179,13 @@ def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_si
     :param log10_sigma_eff_8_mhigh: effective cross section in the mass range 10^8 - 10^log_mhigh
     :param log10_subhalo_time_scaling: a log10(number) that makes time pass quicker (>1) or lower (<1) for subhalos relative to
     field halos
-    :param bound_mass_timescsale: rescales time for subhalos based on their bound mass; see documentation in RealizationExtensions class;
-    if None, then subhalo collapse time is scaled by log10_subhalo_time_scaling
     """
     if log_mlow > 8:
         raise Exception('to use this function log_mlow must be < 8')
     log10_mass_ranges = [[log_mlow, 8.0], [8.0, log_mhigh]]
     log10_effective_cross_section_list = [log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh]
     return SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list,
-        log10_subhalo_time_scaling, bound_mass_timescale, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
+        log10_subhalo_time_scaling, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
         truncation_model_subhalos, kwargs_truncation_model_subhalos,

@@ -11,6 +11,8 @@ from pyHalo.Rendering.MassFunctions.gaussian import Gaussian
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.utilities import generate_lens_plane_redshifts, mask_annular
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform, LensConeUniform
+from pyHalo.Halos.tidal_truncation import Multiple_RS
+from pyHalo.Halos.concentration import ConcentrationConstant
 from copy import deepcopy
 from scipy.interpolate import RectBivariateSpline
 import time
@@ -251,7 +253,7 @@ class RealizationExtensions(object):
         new_realization = self._realization.join(GC_realization)
         return new_realization
 
-    def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling):
+    def toSIDM_single_halo(self, halo, t_c, subhalo_evolution_scaling, t_over_tc_cut=0.15):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class for the CDM profile
@@ -260,38 +262,36 @@ class RealizationExtensions(object):
         :param rescale_normalization: rescales the overall normalization of the sidm profile relative to CDM profile
         :return: the Halo class transformed to an SIDM profile
         """
-        from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM, HybridSubhalo, Hybrid
-        profile_args_nfw = halo.profile_args
-        t_over_tc_cut = 0.2
+        from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHalo, Hybrid
+        _, rt_kpc = halo.profile_args
+        kwargs_profile = {'sidm_timescale': t_c}
+        tau = halo.profile_args[1] / halo.nfw_params[1]
+        truncation_class = Multiple_RS(self._realization.lens_cosmo, tau)
+        concentration_class = ConcentrationConstant(None, halo.c)
         if halo.is_subhalo:
             subhalo_flag = True
-            kwargs_profile = {'lambda_t': subhalo_evolution_scaling,
-                              'sidm_timescale': t_c}
-            new_halo = TNFWCSubhaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
-                                        halo.lens_cosmo, kwargs_profile,
-                                        halo._truncation_class, halo._concentration_class,
-                                        halo.unique_tag)
-            new_halo._z_infall = halo.z_infall
-
-
+            kwargs_profile['lambda_t'] = subhalo_evolution_scaling
         else:
             subhalo_flag = False
-            kwargs_profile = {'lambda_t': 1.0,
-                              'sidm_timescale': t_c}
-            new_halo = TNFWCFieldHaloSIDM(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
-                                          halo.lens_cosmo, kwargs_profile,
-                                          halo._truncation_class, halo._concentration_class,
-                                          halo.unique_tag)
+            kwargs_profile['lambda_t'] = 1.0
+        r = halo.nfw_params[1] * np.linspace(min(0.01 * tau, 0.01), halo.c, 20000)
+        rho = halo.density_profile_3d_lenstronomy(r)
+        kwargs_profile['mass_conservation'] = np.trapz(4 * np.pi * r ** 2 * rho, r)
+        new_halo = TNFWCHalo(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
+                                      halo.lens_cosmo, kwargs_profile,
+                                      truncation_class,
+                                      concentration_class,
+                                      halo.unique_tag)
 
-        new_halo._c = halo.c
-        rt_kpc_nfw = profile_args_nfw[1]
-        rescale_norm = halo._rescale_norm
-        new_halo.set_tidal_evolution(rt_kpc_nfw, rescale_norm)
+        if new_halo.is_subhalo:
+            new_halo.set_bound_mass(halo.bound_mass)
+        _ = new_halo.profile_args
         if new_halo.t_over_tc < t_over_tc_cut:
             # make a Hybrid profile; when rescale=1 NFW halo goes away
             rescale = new_halo.t_over_tc / t_over_tc_cut
             if subhalo_flag:
-                sidm_halo = HybridSubhalo(halo, new_halo, rescale)
+                sidm_halo = Hybrid(halo, new_halo, rescale)
+                sidm_halo.set_bound_mass(halo.bound_mass)
             else:
                 sidm_halo = Hybrid(halo, new_halo, rescale)
             return sidm_halo
@@ -300,8 +300,7 @@ class RealizationExtensions(object):
 
     def toSIDM_from_cross_section(self, mass_bin_list,
                                   log10_effective_cross_section_list,
-                                  log10_subhalo_time_scaling,
-                                  set_bound_mass=True):
+                                  log10_subhalo_time_scaling):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
         https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse.
@@ -326,8 +325,6 @@ class RealizationExtensions(object):
             new_halo = self.toSIDM_single_halo(halo,
                                                t_c,
                                                10**log10_subhalo_time_scaling)
-            if set_bound_mass and halo.is_subhalo:
-                new_halo.set_bound_mass(halo.bound_mass)
             sidm_halos.append(new_halo)
 
         new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo,
@@ -339,51 +336,6 @@ class RealizationExtensions(object):
                                                  self._realization.geometry)
         new_realization._has_been_shifted = self._realization._has_been_shifted
         return new_realization
-
-    def toSIDM_from_cross_section_bound_mass_timescale(self, mass_bin_list,
-                                  log10_effective_cross_section_list,
-                                  bound_mass_timescale=0.0):
-        """
-        This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
-        https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse.
-        Here, t_c is the core collapse timescale (Essig et al. 2019), as calculated in LensCosmo class.
-        :param mass_bin_list: a list of mass ranges in log10 e.g. [[6, 8], [8, 10]]
-        :param log10_effective_cross_section_list: a list of effective cross sections in each mass range given in log10(cm^2 / gram)
-        :param bound_mass_timescale: rescales the collpse timescale for subhalos relative to field halos based on
-        (m_bound / m_finall)**bound_mass_timescale
-        :return: a realization of SIDM halos created from the population of CDM halos
-        """
-        sidm_halos = []
-        for halo in self._realization.halos:
-            for bin_index, mass_bin in enumerate(mass_bin_list):
-                if np.log10(halo.mass) >= mass_bin[0] and np.log10(halo.mass) < mass_bin[1]:
-                    sigma_eff = 10 ** log10_effective_cross_section_list[bin_index]
-                    break
-            else:
-                raise Exception('halo mass ' + str(np.log10(halo.mass)) + ' not inside the minimum/maximum mass ranges')
-            rhos, rs, _ = halo.nfw_params
-            # import to evaluate this using the cosmological rhos, rs
-            t_c = self._realization.lens_cosmo.sidm_collapse_timescale(rhos, rs, sigma_eff)
-            if halo.is_subhalo:
-                subhalo_time_scaling = 1.0+bound_mass_timescale * np.log10(halo.mass / halo.bound_mass)
-            else:
-                subhalo_time_scaling = 1.0
-            new_halo = self.toSIDM_single_halo(halo,
-                                               t_c,
-                                               subhalo_time_scaling)
-            if halo.is_subhalo:
-                new_halo.set_bound_mass(halo.bound_mass)
-            sidm_halos.append(new_halo)
-        new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo,
-                                                 self._realization.kwargs_halo_model,
-                                                 self._realization.apply_mass_sheet_correction,
-                                                 self._realization.rendering_classes,
-                                                 self._realization._rendering_center_x,
-                                                 self._realization._rendering_center_y,
-                                                 self._realization.geometry)
-        new_realization._has_been_shifted = self._realization._has_been_shifted
-        return new_realization
-
 
     def core_collapse_by_mass(self, mass_ranges_subhalos, mass_ranges_field_halos,
                               probabilities_subhalos, probabilities_field_halos,

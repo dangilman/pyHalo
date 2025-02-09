@@ -359,7 +359,7 @@ class TruncationGalacticus(object):
         log10mass_loss_fraction = min(-0.001, log10mass_loss_fraction)
         return (log10c, log10mass_loss_fraction)
 
-    def truncation_radius_halo(self, halo):
+    def truncation_radius_halo(self, halo, psuedo_nfw=False):
         """
         Thiis method computess the truncation radius using the class attributes of an instance of Halo
         :param halo: an instance of halo
@@ -374,13 +374,14 @@ class TruncationGalacticus(object):
         m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                            infall_concentration,
-                                                           halo.z)
+                                                           halo.z,
+                                                           psuedo_nfw)
         r_te, f_t = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
         halo.rescale_normalization(f_t)
         return r_te
 
     def truncation_radius(self, halo_mass, infall_concentration,
-                          time_since_infall, z_eval_angles):
+                          time_since_infall, z_eval_angles, psuedo_nfw=False):
         """
 
         :param halo_mass:
@@ -395,7 +396,7 @@ class TruncationGalacticus(object):
         m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
-                                                        z_eval_angles)
+                                                        z_eval_angles, psuedo_nfw)
         r_te, _ = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
         return r_te
 

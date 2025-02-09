@@ -65,13 +65,31 @@ class TNFWFieldHalo(Halo):
         rho_nfw = rhos / x / (1 + x) ** 2
         return scaling * rho_nfw * tau ** 2 / (tau ** 2 + x ** 2)
 
+    def density_profile_3d_lenstronomy(self, r, profile_args=None):
+        """
+        Computes the 3-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        from lenstronomy.LensModel.Profiles.tnfw import TNFW
+        prof = TNFW()
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        factor = sigma_crit_kpc / kpc_per_arcsec
+        return factor*prof.density_lens(r / kpc_per_arcsec, kwargs_lenstronomy['Rs'],
+                                                    kwargs_lenstronomy['alpha_Rs'],
+                                                    kwargs_lenstronomy['r_trunc'])
+
+
     @property
     def lenstronomy_ID(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
+            """
+            See documentation in base class (Halos/halo_base.py)
+            """
 
-        return ['TNFW']
+            return ['TNFW']
 
     @property
     def c(self):
@@ -130,6 +148,10 @@ class TNFWFieldHalo(Halo):
             self._profile_args = (self.c, truncation_radius_kpc)
         return self._profile_args
 
+    @property
+    def pseudo_nfw(self):
+        return False
+
 class TNFWSubhalo(TNFWFieldHalo):
     """
     Defines a truncated NFW halo that is a subhalo of the host dark matter halo
@@ -148,3 +170,7 @@ class TNFWSubhalo(TNFWFieldHalo):
             tau = params_physical['r_trunc_kpc'] / params_physical['rs']
         f = tnfw_mass_fraction(tau, self.c)
         return f * self.mass
+
+    @property
+    def pseudo_nfw(self):
+        return False

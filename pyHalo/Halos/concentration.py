@@ -11,6 +11,13 @@ __all__ = ['ConcentrationDiemerJoyce',
            'ConcentrationWDMPolynomial',
            'ConcentrationPeakHeight']
 
+class ConcentrationConstant(object):
+    name = 'CONSTANT'
+    def __init__(self, cosmo, c):
+        self._c = c
+    def nfw_concentration(self, *args, **kwargs):
+        return self._c
+
 class _ConcentrationCDM(object):
     _universal_minimum = 1.2 # no concentrations less than this
     def __init__(self, cosmo, scatter=True, scatter_dex=0.2, *args, **kwargs):

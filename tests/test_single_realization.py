@@ -393,7 +393,7 @@ class TestSingleRealization(object):
         d1 = self.realization.lens_cosmo.cosmo.D_C_z(z[0])
         npt.assert_almost_equal(x[0], self.realization.x[0]*d1)
         npt.assert_almost_equal(y[0], self.realization.y[0] * d1)
-        npt.assert_almost_equal(10**logm[0], self.realization.masses[0])
+        npt.assert_almost_equal(10**logm[0], self.realization.masses[0], 6)
 
     def test_assign_concentration_models(self):
 

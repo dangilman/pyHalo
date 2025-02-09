@@ -48,7 +48,6 @@ class ShethTormen(CDMPowerLaw):
         _ = geometry_class.cosmo.colossus
         m_pivot = kwargs_model['m_pivot']
         h = geometry_class.cosmo.h
-        # To M_sun / h units
         m = np.logspace(kwargs_model['log_mlow'], kwargs_model['log_mhigh'], 10)
         dndM_comoving = evaluate_mass_function(m, h, z, 'sheth99')
         coeffs = np.polyfit(np.log10(m / m_pivot), np.log10(dndM_comoving), 1)
@@ -91,7 +90,6 @@ class ShethTormenTurnover(WDMPowerLaw):
         _ = geometry_class.cosmo.colossus
         m_pivot = kwargs_model['m_pivot']
         h = geometry_class.cosmo.h
-        # To M_sun / h units
         m = np.logspace(kwargs_model['log_mlow'], kwargs_model['log_mhigh'], 10)
         dndM_comoving = evaluate_mass_function(m, h, z, 'sheth99')
         coeffs = np.polyfit(np.log10(m / m_pivot), np.log10(dndM_comoving), 1)
@@ -135,7 +133,6 @@ class ShethTormenMixedWDM(MixedWDMPowerLaw):
         colossus_cosmo = geometry_class.cosmo.colossus
         m_pivot = kwargs_model['m_pivot']
         h = geometry_class.cosmo.h
-        # To M_sun / h units
         m = np.logspace(kwargs_model['log_mlow'], kwargs_model['log_mhigh'], 10)
         dndM_comoving = evaluate_mass_function(m, h, z, 'sheth99')
         coeffs = np.polyfit(np.log10(m / m_pivot), np.log10(dndM_comoving), 1)

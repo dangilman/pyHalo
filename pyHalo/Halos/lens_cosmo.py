@@ -159,11 +159,10 @@ class LensCosmo(object):
         :param rho0: central density normalization [M_sun / Mpc^3]
         :param Rs: scale radius [Mpc]
         :param z: redshift at which to evaluate angles from distances
-        :param pseudo_nfw: specifies whether one deals with a regualr NFW profile (False) or a psuedo-NFW profile
+        :param pseudo_nfw: specifies whether one deals with a regular NFW profile (False) or a psuedo-NFW profile
         with (1+x^2) in the denominator rather than (1+x)^2
         :return: scale radius and deflection angle at the scale radius in arcsec
         """
-
         dd = self.cosmo.D_A_z(z)
         Rs_angle = Rs / dd / self._arcsec  # Rs in arcsec
         if pseudo_nfw:

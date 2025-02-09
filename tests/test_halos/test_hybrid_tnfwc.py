@@ -1,7 +1,6 @@
 import numpy.testing as npt
 import numpy as np
-from pyHalo.Halos.HaloModels.NFW_core_trunc import Hybrid, HybridSubhalo, \
-    TNFWCFieldHaloSIDM, TNFWCSubhaloSIDM
+from pyHalo.Halos.HaloModels.NFW_core_trunc import Hybrid, TNFWCHalo
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.truncation_models import ConstantTruncationArcsec
 from pyHalo.concentration_models import ConcentrationDiemerJoyce
@@ -23,25 +22,35 @@ class TestTNFWC(object):
         kwargs_cdm_profile = {}
         truncation_class = ConstantTruncationArcsec(lens_cosmo, 1000.0)
         concentration_class = ConcentrationDiemerJoyce(lens_cosmo.cosmo, scatter=False)
-        kwargs_sidm_profile = {'sidm_timescale': 12.0, 'lambda_t': 1.0}
         self._rescaling_factor = 0.7
 
         self.tnfw_halo = TNFWFieldHalo(mass, x, y, r3d, z,
                                        False, lens_cosmo, kwargs_cdm_profile,
                                        truncation_class, concentration_class, unique_tag)
-        self.tnfwc_halo = TNFWCFieldHaloSIDM(mass, x, y, r3d, z,
-                                             False, lens_cosmo, kwargs_sidm_profile,
+        kwargs_sidm_profile_field = {'sidm_timescale': 12.0,
+                               'lambda_t': 1.0,
+                               'c': self.tnfw_halo.c,
+                               'rt_kpc': self.tnfw_halo.profile_args[1],
+                               'rescale_alphaRs': 1.0}
+        self.tnfwc_halo = TNFWCHalo(mass, x, y, r3d, z,
+                                             False, lens_cosmo, kwargs_sidm_profile_field,
                                              truncation_class, concentration_class, unique_tag)
 
         self.tnfw_subhalo = TNFWSubhalo(mass, x, y, r3d, z,
                                        True, lens_cosmo, kwargs_cdm_profile,
                                        truncation_class, concentration_class, unique_tag)
-        self.tnfwc_subhalo = TNFWCSubhaloSIDM(mass, x, y, r3d, z,
-                                             True, lens_cosmo, kwargs_sidm_profile,
+        self.tnfw_subhalo.rescale_normalization(0.8)
+        kwargs_sidm_profile_sub = {'sidm_timescale': 12.0,
+                                   'lambda_t': 1.0,
+                                   'c': self.tnfw_subhalo.c,
+                                   'rt_kpc': self.tnfw_halo.profile_args[1],
+                                   'rescale_alphaRs': self.tnfw_subhalo.rescale_norm}
+        self.tnfwc_subhalo = TNFWCHalo(mass, x, y, r3d, z,
+                                             True, lens_cosmo, kwargs_sidm_profile_sub,
                                              truncation_class, concentration_class, unique_tag)
 
         self.hybrid_fieldhalo = Hybrid(self.tnfw_halo, self.tnfwc_halo, self._rescaling_factor)
-        self.hybrid_subhalo = HybridSubhalo(self.tnfw_subhalo, self.tnfwc_subhalo, self._rescaling_factor)
+        self.hybrid_subhalo = Hybrid(self.tnfw_subhalo, self.tnfwc_subhalo, self._rescaling_factor)
 
     def test_joint_parameters(self):
 
@@ -93,7 +102,6 @@ class TestTNFWC(object):
         combined_true = profile_3d_tnfw * (1 - self._rescaling_factor) + profile_3d_tnfwc * self._rescaling_factor
         combined = self.hybrid_subhalo.density_profile_3d(r)
         npt.assert_equal(combined, combined_true)
-
 
 if __name__ == '__main__':
     pytest.main()
