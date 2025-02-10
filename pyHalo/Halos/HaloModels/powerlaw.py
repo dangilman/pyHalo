@@ -144,13 +144,38 @@ class GlobularCluster(Halo):
                                               lens_cosmo_instance, args, unique_tag,
                                               fixed_position=True)
 
+    def density_profile_2d_lenstronomy(self, r):
+        """
+
+        :param r:
+        :return:
+        """
+        rho0, gc_size, gamma, r_core = self.profile_args
+        return self._prof.density_2d(r, 0.0, rho0, r_core, gamma)
+
+    def density_profile_3d_lenstronomy(self,r):
+        """
+
+        :param r:
+        :return:
+        """
+        kwargs = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        factor = sigma_crit_kpc / kpc_per_arcsec
+        return factor * self._prof.density_lens(r / kpc_per_arcsec,
+                                       kwargs['sigma0'],
+                                       kwargs['r_core'],
+                                       kwargs['gamma'])
+
     @property
     def lenstronomy_params(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_lenstronomy_args'):
-            kpc_per_lightyear = 0.31 * 1e-3
+            kpc_per_lightyear = 0.000306
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             gamma = self._args['gamma']
             gc_size_lightyear = self._args['gc_size_lightyear']
@@ -171,7 +196,7 @@ class GlobularCluster(Halo):
         """
         if not hasattr(self, '_profile_args'):
 
-            kpc_per_lightyear = 0.31 * 1e-3
+            kpc_per_lightyear = 0.000306
             gamma = self._args['gamma']
             gc_size_lightyear = self._args['gc_size_lightyear']
             c = self._args['gc_concentration']

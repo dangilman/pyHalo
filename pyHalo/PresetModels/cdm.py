@@ -3,7 +3,7 @@ from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Rendering.MassFunctions.density_peaks import ShethTormen
 from pyHalo.Rendering.MassFunctions.mass_function_base import CDMPowerLaw
 from pyHalo.Rendering.SpatialDistributions.nfw import ProjectedNFW
-from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform
+from pyHalo.Rendering.SpatialDistributions.uniform import LensConeUniform, Uniform
 from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.pyhalo import pyHalo
 from pyHalo.truncation_models import truncation_models
@@ -16,6 +16,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
+        subhalo_spatial_distribution='UNIFORM',
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6.,
         log_m_host=13.3,  r_tidal=0.25, LOS_normalization=1.0, two_halo_contribution=True,
         delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
@@ -47,6 +48,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param infall_redshift_model: a string that specifies that infall redshift sampling distribution, see the LensCosmo
     class for details
     :param kwargs_infall_model: keyword arguments for the infall redshift model
+    :param subhalo_spatial_distribution: the spatial distribution model for subhalos
     :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
     :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
     :param log_m_host: log base 10 of the host halo mass [M_sun]
@@ -80,10 +82,6 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     # NOTE: MASS FUNCTION CLASSES SHOULD NOT BE INSTANTIATED HERE
     mass_function_model_subhalos = CDMPowerLaw
     mass_function_model_fieldhalos = ShethTormen
-
-    # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
-    subhalo_spatial_distribution = ProjectedNFW
-    fieldhalo_spatial_distribution = LensConeUniform
 
     # set the density profile definition
     mdef_subhalos = 'TNFW'
@@ -141,10 +139,22 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                        'log_m_host': log_m_host,
                     'draw_poisson': draw_poisson}
     kwargs_mass_function_list = [kwargs_subhalos, kwargs_los]
+
+    # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
+    if subhalo_spatial_distribution == 'UNIFORM':
+        subhalo_spatial_distribution = Uniform
+        kwargs_subhalos_spatial = {'rmax2d_arcsec': cone_opening_angle_arcsec / 2,
+                                   'geometry': geometry
+                                   }
+    elif subhalo_spatial_distribution == 'PROJECTED_NFW':
+        subhalo_spatial_distribution = ProjectedNFW
+        kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens, 'c_host': c_host,
+                                   'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,
+                                   'lens_cosmo': pyhalo.lens_cosmo}
+    else:
+        raise Exception('subhalo spatial distribution must be either UNIFORM OR PROJECTED_NFW')
+    fieldhalo_spatial_distribution = LensConeUniform
     spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution]
-    kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens, 'c_host': c_host,
-                               'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,
-                               'lens_cosmo': pyhalo.lens_cosmo}
     kwargs_los_spatial = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}
     kwargs_spatial_distribution_list = [kwargs_subhalos_spatial, kwargs_los_spatial]
 

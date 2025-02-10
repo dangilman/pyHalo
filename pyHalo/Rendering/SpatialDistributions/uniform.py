@@ -54,9 +54,7 @@ class LensConeUniform(SpatialDistributionBase):
         """
         if N == 0:
             return np.array([]), np.array([])
-
         rescale = self._cosmo_geometry.rendering_scale(z_plane)
-
         x_kpc, y_kpc = self._uni.draw(N, z_plane, rescale=rescale,
                                         center_x=center_x, center_y=center_y)
 

@@ -143,12 +143,13 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
     """
     two_halo_contribution = True
     delta_power_law_index = 0.0
+    subhalo_spatial_distribution = 'UNIFORM'
     cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh, log10_sigma_sub,
               concentration_model_subhalos, kwargs_concentration_model_subhalos,
               concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
               truncation_model_subhalos, kwargs_truncation_model_subhalos,
               truncation_model_fieldhalos, kwargs_truncation_model_fieldhalos,
-              infall_redshift_model, kwargs_infall_model,
+              infall_redshift_model, kwargs_infall_model, subhalo_spatial_distribution,
               shmf_log_slope, cone_opening_angle_arcsec, log_m_host, r_tidal,
               LOS_normalization, two_halo_contribution, delta_power_law_index,
               geometry_type, kwargs_cosmo)
