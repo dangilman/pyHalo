@@ -183,8 +183,8 @@ class RealizationExtensions(object):
         return mbh_realization
 
     def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean=2.5,
-                              gamma_sigma=0.25, gc_concentration_mean=60, gc_concentration_sigma=20,
-                              gc_size_mean=100, gc_size_sigma=10, gc_surface_mass_density=10 ** 5,
+                              gamma_sigma=0.25, gc_concentration_mean=90, gc_concentration_sigma=20,
+                              gc_size_mean=100, gc_size_sigma=10, gc_surface_mass_density=10 ** 5.3,
                               center_x=0, center_y=0):
         """
         Add globular clusters at main deflector redshift following a log-normal mass distribution
