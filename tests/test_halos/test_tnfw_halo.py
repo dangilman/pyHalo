@@ -102,9 +102,17 @@ class TestTNFWHalos(object):
         mtheory = 4 * np.pi * rho_s * rs ** 3 * (np.log(1 + c) - c/(1+c))
         npt.assert_almost_equal(mtheory, tnfw_fieldhalo.mass)
         rmax = c * rs
-
         m_calculated = tnfw_fieldhalo.mass_3d(rmax)
         npt.assert_almost_equal(mtheory/m_calculated, 1.0)
+
+        tau = 2.
+        tnfw_halo = TNFWFieldHalo.simple_setup(m, 0.0, 0.0, 0.6, tau, self.lens_cosmo)
+        rs = tnfw_halo.nfw_params[1]
+        r = np.linspace(0.001, tnfw_halo.c, 50000) * rs
+        rho = tnfw_halo.density_profile_3d_lenstronomy(r)
+        m_exact = np.trapz(4 * np.pi * rho * r ** 2, r)
+        m_class = tnfw_halo.mass_3d('r200')
+        npt.assert_almost_equal(m_class/ m_exact,1,3)
 
 if __name__ == '__main__':
     pytest.main()

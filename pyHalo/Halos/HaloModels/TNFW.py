@@ -65,6 +65,22 @@ class TNFWFieldHalo(Halo):
         rho_nfw = rhos / x / (1 + x) ** 2
         return scaling * rho_nfw * tau ** 2 / (tau ** 2 + x ** 2)
 
+    def mass_3d(self, rmax, profile_args=None):
+        """
+        Calculate the enclosed mass in 3D
+        :param rmax:
+        :param profile_args:
+        :return:
+        """
+        if rmax == 'r200':
+            rmax = self.nfw_params[1] * self.c
+        from lenstronomy.LensModel.Profiles.tnfw import TNFW
+        prof = TNFW()
+        rs = self.nfw_params[1]
+        rho0 = self.nfw_params[0] * self._rescale_norm
+        r_trunc = self.profile_args[1]
+        return prof.mass_3d(rmax, rs, rho0, r_trunc/rs)
+
     def density_profile_3d_lenstronomy(self, r, profile_args=None):
         """
         Computes the 3-D density profile of the halo
@@ -82,7 +98,6 @@ class TNFWFieldHalo(Halo):
         return factor*prof.density(r / kpc_per_arcsec, kwargs_lenstronomy['Rs'],
                                                     rhos,
                                                     kwargs_lenstronomy['r_trunc'])
-
 
     @property
     def lenstronomy_ID(self):
