@@ -108,7 +108,7 @@ class TestTNFWHalos(object):
         tau = 2.
         tnfw_halo = TNFWFieldHalo.simple_setup(m, 0.0, 0.0, 0.6, tau, self.lens_cosmo)
         rs = tnfw_halo.nfw_params[1]
-        r = np.linspace(0.001, tnfw_halo.c, 50000) * rs
+        r = np.linspace(0.001, tnfw_halo.c, 10000) * rs
         rho = tnfw_halo.density_profile_3d_lenstronomy(r)
         m_exact = np.trapz(4 * np.pi * rho * r ** 2, r)
         m_class = tnfw_halo.mass_3d('r200')
