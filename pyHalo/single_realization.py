@@ -87,7 +87,7 @@ class Realization(object):
         The angular coordinate defines the center of the rendering volume, and halos will be distributed symmetrically around it.
         The value defaults to 0, but is overridden when the method shift_background_to_source is called
         :param rendering_center_y: same as rendering_center_x, but for the y angular coordinate
-        :param geometry: (optional, only relevant is subtract_exact_mass_sheets=True is specified in kwargs_realization)
+        :param geometry: (optional, only relevant if subtract_exact_mass_sheets=True is specified in kwargs_realization)
         an instance of Geometry (pyHalo.Cosmology.geometry) that defines the rendering volume
         """
 
