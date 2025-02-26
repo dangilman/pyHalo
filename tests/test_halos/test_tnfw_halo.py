@@ -8,6 +8,9 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import pytest
 import numpy as np
+from pyHalo.PresetModels.cdm import CDM
+from colossus.cosmology import cosmology
+from colossus.halo import mass_so
 
 class TestTNFWHalos(object):
 
@@ -21,6 +24,38 @@ class TestTNFWHalos(object):
         self.truncation_class = TruncationRoche(None, 100000000.0)
         self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo, scatter=False)
         self.lclenstronomy = LensCosmoLenstronomy(self.zhalo, self.zsource, astropy)
+
+    def test_rhos_rs_eval(self):
+        """
+        Test that rhos and rs are evaluated correctly for subhalos (meaning at infall)
+        credit Charles Gannon
+        """
+
+        z_lens = 0.5
+        z_source = 2
+        cone_opening_angle_arcsec = 4
+        sigma_sub = 1
+        log_mlow, log_mhigh = 8, 13
+        realization_pyhalo = CDM(
+            z_lens,
+            z_source,
+            cone_opening_angle_arcsec=cone_opening_angle_arcsec,
+            LOS_normalization=0,
+            log_mlow=log_mlow,
+            log_mhigh=log_mhigh,
+            log_m_host=13,
+            truncation_model_subhalos='TRUNCATION_GALACTICUS',
+            log10_sigma_sub=sigma_sub
+        )
+        # Colossus
+        cosmo = cosmology.setCosmology("planck18")
+        rs_pyh = np.asarray([h.params_physical["rs"] for h in realization_pyhalo.halos])
+        m_pyh = np.asarray([h.mass for h in realization_pyhalo.halos])
+        z_pyh = np.asarray([h._z_infall for h in realization_pyhalo.halos])
+        c_pyh = np.asarray([h.c for h in realization_pyhalo.halos])
+        rv_pyh_col = [mass_so.M_to_R(m * cosmo.h, z, "200c") / cosmo.h for m, z in zip(m_pyh, z_pyh)]
+        c_colossus = rv_pyh_col / rs_pyh
+        npt.assert_almost_equal(c_pyh/c_colossus, np.ones_like(c_pyh),2)
 
     def test_simple_setup(self):
         mass = 10 ** 8

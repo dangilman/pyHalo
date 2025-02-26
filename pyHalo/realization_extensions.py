@@ -271,12 +271,13 @@ class RealizationExtensions(object):
         if halo.is_subhalo:
             subhalo_flag = True
             kwargs_profile['lambda_t'] = subhalo_evolution_scaling
+            r = halo.nfw_params[1] * np.linspace(min(0.01 * tau, 0.01), halo.c, 5000)
+            rho = halo.density_profile_3d_lenstronomy(r)
+            kwargs_profile['mass_conservation'] = np.trapz(4 * np.pi * r ** 2 * rho, r)
         else:
             subhalo_flag = False
             kwargs_profile['lambda_t'] = 1.0
-        r = halo.nfw_params[1] * np.linspace(min(0.01 * tau, 0.01), halo.c, 20000)
-        rho = halo.density_profile_3d_lenstronomy(r)
-        kwargs_profile['mass_conservation'] = np.trapz(4 * np.pi * r ** 2 * rho, r)
+            kwargs_profile['mass_conservation'] = halo.mass_3d('r200')
         new_halo = TNFWCHalo(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
                                       halo.lens_cosmo, kwargs_profile,
                                       truncation_class,
