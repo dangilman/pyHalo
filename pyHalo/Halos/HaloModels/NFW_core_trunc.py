@@ -24,6 +24,15 @@ class TNFWCHalo(Halo):
         super(TNFWCHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
 
+    def density_profile_3d(self, r, profile_args=None):
+        """
+
+        :param r:
+        :param profile_args:
+        :return:
+        """
+        return self.density_profile_3d_lenstronomy(r)
+
     def density_profile_3d_lenstronomy(self, r, kwargs_lenstronomy=None):
         """
         Computes the 3-D density profile of the halo
@@ -269,7 +278,7 @@ def tnfwc_mass(rmax, rho, rs, rc):
 
 def evolve_profile(t, rs_0):
 
-    t = min(1.5, t)
+    t = min(1.6, t)
     rs = rs_0 * rs_evolution(t)
     rc = rs_0 * rc_evolution(t)
     return rs, rc
