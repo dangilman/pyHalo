@@ -93,10 +93,14 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
                                                                  kwargs_concentration_model_subhalos)
+    scatter_dex_subhalos = 0.2
+    kwargs_mc_subs['scatter_dex'] = scatter_dex_subhalos
     concentration_model_subhalos = model_subhalos(**kwargs_mc_subs)
 
     model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
                                                                     kwargs_concentration_model_fieldhalos)
+    scatter_dex_fieldhalos = 0.2
+    kwargs_mc_field['scatter_dex'] = scatter_dex_fieldhalos
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
     if c_host is None:
         c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)

@@ -255,6 +255,7 @@ class TestSampling(object):
 
     def test_galacticus_comparison(self):
 
+        # first z = 0
         galacticus_dndm = np.array([5.05460310e-06, 3.25319529e-06, 2.09420639e-06, 1.34837633e-06,
        8.68332355e-07, 5.59300208e-07, 3.60324589e-07, 2.32176844e-07,
        1.49635804e-07, 9.64583113e-08, 6.21916467e-08, 4.01068273e-08,
@@ -272,6 +273,50 @@ class TestSampling(object):
         _ = cosmology.setCosmology('custom', cosmo_kwargs)
         m = np.logspace(7,9,len(galacticus_dndm))
         z = 0.0
+        # colossus version 1.3.8 and 1.3.6 give same answer
+        pyHalo_dndm = evaluate_mass_function(m, h, z, 'sheth99')
+        npt.assert_almost_equal(pyHalo_dndm / galacticus_dndm, 1, 2)
+
+        # z = 0.5
+        galacticus_dndm = np.array([5.80168983e-06, 3.73347001e-06, 2.40295113e-06, 1.54686275e-06,
+       9.95941001e-07, 6.41343627e-07, 4.13069941e-07, 2.66092273e-07,
+       1.71441890e-07, 1.10478483e-07, 7.12056564e-08, 4.59015330e-08,
+       2.95948083e-08, 1.90844274e-08, 1.23088498e-08, 7.94017102e-09,
+       5.12289474e-09, 3.30577390e-09, 2.13354466e-09, 1.37720854e-09,
+       8.89130082e-10])
+
+        h = 0.675
+        cosmo_kwargs = {'H0': h * 100,
+                        'Om0': 0.26 + 0.049,
+                        'Ob0': 0.049,
+                        'ns': 0.965,
+                        'sigma8': 0.81,
+                        'power_law': False}
+        _ = cosmology.setCosmology('custom', cosmo_kwargs)
+        m = np.logspace(7, 9, len(galacticus_dndm))
+        z = 0.5
+        # colossus version 1.3.8 and 1.3.6 give same answer
+        pyHalo_dndm = evaluate_mass_function(m, h, z, 'sheth99')
+        npt.assert_almost_equal(pyHalo_dndm / galacticus_dndm, 1, 2)
+
+        # z = 2.0
+        galacticus_dndm = np.array([7.74354495e-06, 4.97311423e-06, 3.19404677e-06, 2.05152021e-06,
+       1.31773849e-06, 8.46444536e-07, 5.43726191e-07, 3.49277636e-07,
+       2.24370641e-07, 1.44132382e-07, 9.25875345e-08, 5.94748797e-08,
+       3.82031256e-08, 2.45381672e-08, 1.57600025e-08, 1.01212409e-08,
+       6.49929481e-09, 4.17296374e-09, 2.67891506e-09, 1.71948492e-09,
+       1.10344583e-09])
+
+        h = 0.675
+        cosmo_kwargs = {'H0': h * 100,
+                        'Om0': 0.26 + 0.049,
+                        'Ob0': 0.049,
+                        'ns': 0.965,
+                        'sigma8': 0.81,
+                        'power_law': False}
+        _ = cosmology.setCosmology('custom', cosmo_kwargs)
+        m = np.logspace(7, 9, len(galacticus_dndm))
+        z = 2.0
         # colossus version 1.3.8 and 1.3.6 give same answer
         pyHalo_dndm = evaluate_mass_function(m, h, z, 'sheth99')
         npt.assert_almost_equal(pyHalo_dndm / galacticus_dndm, 1, 2)

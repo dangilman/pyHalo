@@ -8,7 +8,7 @@ from pyHalo.Halos.galacticus_truncation.transfer_function_density_profile import
 
 
 class TruncationSplashBack(object):
-
+    name = "TruncationSplashBack"
     def __init__(self, lens_cosmo):
         """
         This computes the splashback radius of a halo as the truncation radius (appropriate for field halos)
@@ -42,7 +42,7 @@ class TruncationSplashBack(object):
         return rt_kpc
 
 class TruncationRN(object):
-
+    name = "TruncationRN"
     def __init__(self, lens_cosmo, LOS_truncation_factor=50):
         """
         This implements a tidal truncation at r_N, where N is some overdensity with respect to the critical density of
@@ -75,7 +75,7 @@ class TruncationRN(object):
         return rN_physical_mpc*1000
 
 class TruncationRoche(object):
-
+    name = "Roche"
     def __init__(self, lens_cosmo=None, RocheNorm=1.4, m_power=1./3, RocheNu=2./3):
         """
         This implements a tidal truncation for subhalos of the form
@@ -118,7 +118,7 @@ class AdiabaticTidesTruncation(object):
     """
     An example of the type of class we want to create and implement in pyHalo
     """
-
+    name = "AdiabaticTidesTruncation"
     def __init__(self, lens_cosmo, log_m_host, z_host, mass_loss_interp):
         """
 
@@ -201,7 +201,7 @@ class AdiabaticTidesTruncation(object):
         return (log10c, log10mass_loss_fraction)
 
 class TruncateMeanDensity(object):
-
+    name = "MeanDensity"
     def __init__(self, lens_cosmo, median_rt_over_rs=2.0, c_power=3.0, intrinsic_scatter=0.0):
         """
         Implements a truncation model where the truncation radius depends on the infall concentration and orbital pericenter
@@ -252,6 +252,7 @@ class TruncateMeanDensity(object):
         return rs * rt_over_rs
 
 class Multiple_RS(object):
+    name = "Multiple_RS"
     """
     Sets the concentration to a constant multiple of the halo scale radius; note this will only work with a class
     that has defined NFW parameters
@@ -266,6 +267,7 @@ class Multiple_RS(object):
         return self.tau * rs
 
 class ConstantTruncationArcsec(object):
+    name = "Constant"
     """A constant truncation radius in arcsec"""
     def __init__(self, lens_cosmo, rt_arcsec):
         self.rt_arcsec = rt_arcsec
@@ -276,7 +278,7 @@ class ConstantTruncationArcsec(object):
         return self.rt_arcsec
 
 class TruncationGalacticusKeeley24(object):
-
+    name = "TruncationGalacticusKeeley24"
     def __init__(self, lens_cosmo, c_host):
         """
 
@@ -334,7 +336,7 @@ class TruncationGalacticusKeeley24(object):
         return tau * rs
 
 class TruncationGalacticus(object):
-
+    name = "TruncationGalacticus"
     def __init__(self, lens_cosmo, c_host):
         """
 
@@ -359,6 +361,20 @@ class TruncationGalacticus(object):
         log10mass_loss_fraction = min(-0.001, log10mass_loss_fraction)
         return (log10c, log10mass_loss_fraction)
 
+    def calculate_mbound(self, halo):
+        """
+        compute the bound mass
+        :param halo:
+        :return:
+        """
+        halo_mass = halo.mass
+        infall_concentration = halo.c
+        time_since_infall = halo.time_since_infall
+        log10c = np.log10(infall_concentration)
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
+        m_bound = halo_mass * 10 ** log10mbound_over_minfall
+        return m_bound
+
     def truncation_radius_halo(self, halo, psuedo_nfw=False):
         """
         Thiis method computess the truncation radius using the class attributes of an instance of Halo
@@ -372,6 +388,24 @@ class TruncationGalacticus(object):
         log10c = np.log10(infall_concentration)
         log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
         m_bound = halo_mass * 10 ** log10mbound_over_minfall
+        _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
+                                                           infall_concentration,
+                                                           halo.z,
+                                                           psuedo_nfw)
+        r_te, f_t = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
+        halo.rescale_normalization(f_t)
+        return r_te
+
+    def truncation_radius_from_bound_mass(self, halo, m_bound, psuedo_nfw=False):
+        """
+        Thiis method computes the truncation radius given the bound mass of a halo
+        :param halo: an instance of a Halo class
+        :param m_bound: the bound mass in solar masses
+        :param psuedo_nfw: see documentation in LensCosmo / nfw_parameter classes
+        :return: the truncation radius in physical kpc
+        """
+        halo_mass = halo.mass
+        infall_concentration = halo.c
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                            infall_concentration,
                                                            halo.z,

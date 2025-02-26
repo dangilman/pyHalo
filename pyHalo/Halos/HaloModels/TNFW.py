@@ -185,7 +185,36 @@ class TNFWSubhalo(TNFWFieldHalo):
             params_physical = self.params_physical
             tau = params_physical['r_trunc_kpc'] / params_physical['rs']
         f = tnfw_mass_fraction(tau, self.c)
-        return f * self.mass
+        return f * self.mass * self._rescale_norm
+
+    @property
+    def bound_mass_galacticus_definition(self):
+        """
+        Computes the mass inside the virial radius (with truncation effects included)
+        :return: the mass inside r = c * r_s
+        """
+        if self._truncation_class.name == 'TruncationGalacticus':
+            pass
+        else:
+            raise Exception('this method can only be called when using the TruncationGalacticus class')
+
+        if not hasattr(self, '_mbound_galacticus_definition'):
+            self._mbound_galacticus_definition = self._truncation_class.calculate_mbound(self)
+        return self._mbound_galacticus_definition
+
+    @property
+    def profile_args(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_profile_args'):
+            if self._truncation_class.name == 'TruncationGalacticus':
+                mbound = self.bound_mass_galacticus_definition
+                truncation_radius_kpc = self._truncation_class.truncation_radius_from_bound_mass(self, mbound)
+            else:
+                truncation_radius_kpc = self._truncation_class.truncation_radius_halo(self)
+            self._profile_args = (self.c, truncation_radius_kpc)
+        return self._profile_args
 
     @property
     def pseudo_nfw(self):

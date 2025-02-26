@@ -271,7 +271,7 @@ class RealizationExtensions(object):
         if halo.is_subhalo:
             subhalo_flag = True
             kwargs_profile['lambda_t'] = subhalo_evolution_scaling
-            r = halo.nfw_params[1] * np.linspace(min(0.01 * tau, 0.01), halo.c, 10000)
+            r = halo.nfw_params[1] * np.linspace(min(0.01 * tau, 0.01), halo.c, 2500)
             rho = halo.density_profile_3d_lenstronomy(r)
             kwargs_profile['mass_conservation'] = np.trapz(4 * np.pi * r ** 2 * rho, r)
         else:

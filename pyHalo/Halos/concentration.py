@@ -20,14 +20,18 @@ class ConcentrationConstant(object):
 
 class _ConcentrationCDM(object):
     _universal_minimum = 1.2 # no concentrations less than this
-    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, *args, **kwargs):
+    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, scatter_dex_z_dep=0.0, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param lens_cosmo: an instance of LensCosmo
+        :param scatter: include scatter the concentration
+        :param scatter_dex: scatter the concentration
+        :param scatter_dex_z_dep: redshift dependence of the scatter
         """
         self._cosmo = cosmo
         self._scatter = scatter
         self._scatter_dex = scatter_dex
+        self._scatter_dex_z_dep = scatter_dex_z_dep
 
     def nfw_concentration(self, m, z, force_no_scatter=False):
         """
@@ -46,7 +50,8 @@ class _ConcentrationCDM(object):
                 pass
             else:
                 log_c = numpy.log(c)
-                c = numpy.random.lognormal(log_c, self._scatter_dex)
+                sigma = self._scatter_dex + self._scatter_dex_z_dep * z
+                c = numpy.random.lognormal(log_c, sigma)
         if isinstance(c, float):
             c = max(c, self._universal_minimum)
         else:

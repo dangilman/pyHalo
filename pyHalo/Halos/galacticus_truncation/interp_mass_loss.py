@@ -80,11 +80,12 @@ class InterpGalacticus(object):
     def __init__(self):
         from pyHalo.Halos.galacticus_truncation.johnsonSUparams import a_fit, \
             b_fit
-        log10c_values = np.linspace(np.log10(2.0), np.log10(384), 10)
-        t_inf_values = np.linspace(0.0, 8.1, 10)
-        chost_values = np.linspace(4.0, 9.0, 10)
-        a_values = np.array(a_fit).reshape(10, 10, 10)
-        b_values = np.array(b_fit).reshape(10, 10, 10)
+        nstep = 15
+        log10c_values = np.linspace(np.log10(2.0), np.log10(384), nstep)
+        t_inf_values = np.linspace(0.0, 8.1, nstep)
+        chost_values = np.linspace(4.0, 9.0, nstep)
+        a_values = np.array(a_fit).reshape(nstep, nstep, nstep)
+        b_values = np.array(b_fit).reshape(nstep, nstep, nstep)
         _points = (t_inf_values, log10c_values, chost_values)
         self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
                                                fill_value=None)
@@ -99,7 +100,8 @@ class InterpGalacticus(object):
         :param chost: host halo concentration at z=0.5
         :return: the log10(bound mass divided by the infall mass), plus scatter
         """
-
+        scale_b = 1.
+        scale_a = 1.
         log10_concentration_infall = max(np.log10(2), log10_concentration_infall)
         log10_concentration_infall = min(np.log10(384), log10_concentration_infall)
         time_since_infall = max(0.0, time_since_infall)
@@ -108,5 +110,5 @@ class InterpGalacticus(object):
         chost = min(8.0, chost)
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
-        output = float(johnsonsu.rvs(a, b))
+        output = float(johnsonsu.rvs(scale_a * a, scale_b * b))
         return output
