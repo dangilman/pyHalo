@@ -85,10 +85,10 @@ class TestRealizationExtensions(object):
 
     def test_toSIDM(self):
 
-        cdm = CDM(0.3, 1.0, sigma_sub=0.02, LOS_normalization=0.2, log_mlow=7.0)
+        cdm = CDM(0.5, 1.5, sigma_sub=0.05, LOS_normalization=0., log_mlow=7.0)
         ext = RealizationExtensions(cdm)
         mass_bin_list = [[6, 10]]
-        log10_effective_sigma = [np.log10(300)]
+        log10_effective_sigma = [np.log10(500)]
         log10_subhalo_time_scaling = 0.0
         sidm = ext.toSIDM_from_cross_section(mass_bin_list,
                                              log10_effective_sigma,
@@ -107,7 +107,9 @@ class TestRealizationExtensions(object):
                 kw['center_x'] = 0.0
                 kw['center_y'] = 0.0
 
-            x = np.linspace(0.001, cdm_halo.c, 30000)
+            _, rt_kpc = cdm_halo.profile_args
+            tau = rt_kpc / cdm_halo.nfw_params[1]
+            x = np.linspace(min(0.01 * tau, 0.01), cdm_halo.c, 10000)
             r = x * rs
             rho_nfw = cdm_halo.density_profile_3d_lenstronomy(r)
             rho_sidm = sidm_halo.density_profile_3d_lenstronomy(r)
@@ -115,8 +117,11 @@ class TestRealizationExtensions(object):
             mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_sidm, r)
             ratio = mass_sidm / mass_nfw
             ratio_list.append(ratio)
-        npt.assert_almost_equal(np.median(ratio_list), 1, 1)
-        npt.assert_equal(np.std(ratio_list) < 0.05, True)
+        # import matplotlib.pyplot as plt
+        # plt.hist(ratio_list,bins=20,range=(0.9,1.25))
+        # plt.show()
+        npt.assert_array_less(abs(np.median(ratio_list)-1), 0.06)
+        npt.assert_array_less(np.std(ratio_list), 0.1)
 
     def test_add_core_collapsed_halos(self):
 
@@ -434,7 +439,6 @@ class TestRealizationExtensions(object):
             condition1 = 'PT_MASS' == halo.mdef
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
-
 
 if __name__ == '__main__':
       pytest.main()

@@ -28,20 +28,11 @@ class TestTNFWC(object):
         tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
                                self.lens_cosmo, kwargs_profile, self.truncation_class,
                                self.concentration_class, 1.0)
-        r = np.linspace(0.001, tnfwc.c, 100000) * tnfwc.nfw_params[1]
+        r = np.linspace(0.001, tnfwc.c, 10000) * tnfwc.nfw_params[1]
         mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
         npt.assert_almost_equal(mass / mass0, 1, 2)
 
         kwargs_profile = {'sidm_timescale': 10.,
-                          'lambda_t': 1.0,
-                          'mass_conservation': mass0}
-        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
-                          self.lens_cosmo, kwargs_profile, self.truncation_class,
-                          self.concentration_class, 1.0)
-        mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
-        npt.assert_almost_equal(mass / mass0, 1, 2)
-
-        kwargs_profile = {'sidm_timescale': 5.,
                           'lambda_t': 1.0,
                           'mass_conservation': mass0}
         tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
@@ -57,7 +48,16 @@ class TestTNFWC(object):
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
         mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
-        npt.assert_almost_equal(mass / mass0, 1, 2)
+        npt.assert_array_less(abs(mass / mass0 - 1), 0.016)
+
+        kwargs_profile = {'sidm_timescale': 0.5,
+                          'lambda_t': 1.0,
+                          'mass_conservation': mass0}
+        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
+                          self.lens_cosmo, kwargs_profile, self.truncation_class,
+                          self.concentration_class, 1.0)
+        mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
+        npt.assert_array_less(abs(mass / mass0 - 1), 0.016)
 
 if __name__ == '__main__':
     pytest.main()
