@@ -1,5 +1,5 @@
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, \
-    AdiabaticTidesTruncation, TruncationSplashBack, TruncateMeanDensity, \
+    TruncationSplashBack, TruncateMeanDensity, \
     TruncationGalacticus, ConstantTruncationArcsec, TruncationGalacticusKeeley24, Multiple_RS
 
 
@@ -25,8 +25,6 @@ def truncation_models(model_name):
         kwargs_model['m_power'] = 1./3
         kwargs_model['RocheNu'] = 2./3
         return TruncationRoche, kwargs_model
-    elif model_name == 'ADIABATIC_TIDES':
-        return AdiabaticTidesTruncation, kwargs_model
     elif model_name == 'SPLASHBACK':
         return TruncationSplashBack, kwargs_model
     elif model_name == 'TRUNCATION_MEAN_DENSITY':
