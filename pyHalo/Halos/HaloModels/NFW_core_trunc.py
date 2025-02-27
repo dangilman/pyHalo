@@ -19,7 +19,7 @@ class TNFWCHalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._concentration_class = concentration_class
         self._truncation_class = truncation_class
-        self._tnfwc_lenstronomy = TNFWCLenstronomy()
+        self.tnfwc_lenstronomy = TNFWCLenstronomy()
         mdef = 'TNFWC'
         super(TNFWCHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
@@ -45,11 +45,11 @@ class TNFWCHalo(Halo):
         sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
         sigma_crit_kpc = sigma_crit_mpc * 1e-6
         factor = sigma_crit_kpc / kpc_per_arcsec
-        return factor * self._tnfwc_lenstronomy.density_lens(r / kpc_per_arcsec,
-                                                    kwargs_lenstronomy['Rs'],
-                                                    kwargs_lenstronomy['alpha_Rs'],
-                                                    kwargs_lenstronomy['r_core'],
-                                                    kwargs_lenstronomy['r_trunc'])
+        return factor * self.tnfwc_lenstronomy.density_lens(r / kpc_per_arcsec,
+                                                            kwargs_lenstronomy['Rs'],
+                                                            kwargs_lenstronomy['alpha_Rs'],
+                                                            kwargs_lenstronomy['r_core'],
+                                                            kwargs_lenstronomy['r_trunc'])
 
     @property
     def lenstronomy_ID(self):
@@ -125,7 +125,7 @@ class TNFWCHalo(Halo):
         if not hasattr(self, '_profile_args'):
             rt_kpc = self._truncation_class.truncation_radius_halo(self)
             _, rs_0, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval,
-                                                                  pseudo_nfw=self._pseudo_nfw)
+                                                             pseudo_nfw=self._pseudo_nfw)
             rs_kpc, rc_kpc = evolve_profile(self.t_over_tc, rs_0)
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             r200_kpc = self.c * rs_0
@@ -133,15 +133,16 @@ class TNFWCHalo(Halo):
             Rs_angle = rs_kpc / kpc_per_arcsec  # Rs in arcsec
             r_core_angle = rc_kpc / kpc_per_arcsec
             r_trunc_angle = rt_kpc / kpc_per_arcsec
-            tau = r_trunc_angle / Rs_angle
-            x = np.linspace(min(0.01 * tau, 0.01), self.c, 30000)
+            x = np.logspace(-4,
+                            np.log10(self.c),
+                            2000)
             r = x * rs_0
             kwargs_temp = {'alpha_Rs': 1.0,
-                            'Rs': Rs_angle,
-                            'r_core': r_core_angle,
-                            'r_trunc': r_trunc_angle}
+                           'Rs': Rs_angle,
+                           'r_core': r_core_angle,
+                           'r_trunc': r_trunc_angle}
             rho = self.density_profile_3d_lenstronomy(r, kwargs_temp)
-            mass_3d = np.trapz(4*np.pi*r**2*rho, r)
+            mass_3d = np.trapz(4 * np.pi * r ** 2 * rho, r)
             alpha_Rs = self._args['mass_conservation'] / mass_3d
             self._profile_args = (alpha_Rs, rs_kpc, rc_kpc, rt_kpc, r200_kpc)
         return self._profile_args

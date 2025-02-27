@@ -23,7 +23,6 @@ class TestConeGeometry(object):
         cosmo_params = {'H0': H0, 'Om0': omega_baryon + omega_DM, 'Ob0': omega_baryon,
                       'sigma8': sigma8, 'ns': ns, 'curvature': curvature}
         self.cosmo = Cosmology(cosmo_kwargs=cosmo_params)
-
         self._angle_pad = 0.75
         self.geometry_double_cone = Geometry(self.cosmo, self.zlens, self.zsource, self.angle_diameter,
                                              'DOUBLE_CONE', self._angle_pad)
@@ -92,14 +91,14 @@ class TestConeGeometry(object):
         dV = astropy.differential_comoving_volume(0.6).value
 
         dV_astropy = dV * delta_z
-        steradian = np.pi * (radius * self.arcsec) ** 2
+        steradian = 4*np.pi*np.sin(self.arcsec*radius/2)**2
         npt.assert_almost_equal(dV_astropy * steradian, dV_pyhalo, 5)
 
         angle_scale = geo.rendering_scale(1.3)
         dV_pyhalo = geo.volume_element_comoving(1.3, delta_z)
         dV = astropy.differential_comoving_volume(1.3).value
         dV_astropy = dV * delta_z
-        steradian = np.pi * (radius * angle_scale * self.arcsec) ** 2
+        steradian = 4 * np.pi * np.sin(self.arcsec*angle_scale*radius / 2) ** 2
         npt.assert_almost_equal(dV_astropy * steradian, dV_pyhalo, 5)
 
     def test_total_volume(self):

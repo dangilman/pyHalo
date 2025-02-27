@@ -30,6 +30,7 @@ class TestTNFWC(object):
                                self.concentration_class, 1.0)
         r = np.linspace(0.001, tnfwc.c, 10000) * tnfwc.nfw_params[1]
         mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
+
         npt.assert_almost_equal(mass / mass0, 1, 2)
 
         kwargs_profile = {'sidm_timescale': 10.,

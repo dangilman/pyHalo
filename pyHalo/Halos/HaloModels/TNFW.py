@@ -1,7 +1,7 @@
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
-from scipy.integrate import quad
+from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 class TNFWFieldHalo(Halo):
     # we use the pseudo nfw methods to normalize profile
@@ -18,6 +18,7 @@ class TNFWFieldHalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._concentration_class = concentration_class
         self._truncation_class = truncation_class
+        self.tnfw_lenstronomy = TNFW()
         mdef = 'TNFW'
         super(TNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
@@ -74,12 +75,10 @@ class TNFWFieldHalo(Halo):
         """
         if rmax == 'r200':
             rmax = self.nfw_params[1] * self.c
-        from lenstronomy.LensModel.Profiles.tnfw import TNFW
-        prof = TNFW()
         rs = self.nfw_params[1]
         rho0 = self.nfw_params[0] * self._rescale_norm
         r_trunc = self.profile_args[1]
-        return prof.mass_3d(rmax, rs, rho0, r_trunc/rs)
+        return self.tnfw_lenstronomy.mass_3d(rmax, rs, rho0, r_trunc/rs)
 
     def density_profile_3d_lenstronomy(self, r, profile_args=None):
         """
@@ -87,8 +86,7 @@ class TNFWFieldHalo(Halo):
         :param r: distance from center of halo [kpc]
         :return: the density profile in units M_sun / kpc^3
         """
-        from lenstronomy.LensModel.Profiles.tnfw import TNFW
-        prof = TNFW()
+        prof = self.tnfw_lenstronomy
         kwargs_lenstronomy = self.lenstronomy_params[0][0]
         kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
         sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)

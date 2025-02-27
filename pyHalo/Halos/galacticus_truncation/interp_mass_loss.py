@@ -109,8 +109,5 @@ class InterpGalacticus(object):
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
         output = float(johnsonsu.rvs(a, b))
-        if time_since_infall < 2:
-            # this empirical correction is for the calibration not having a bin with t_since_infall < 2 Gyr
-            output -= 0.25
-        #intrinsic_scatter = np.random.lognormal(0.0, (0.3 * abs(output))**2)-1.0
+        output -= 0.25
         return min(output, 0.0)
