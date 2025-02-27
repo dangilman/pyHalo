@@ -11,8 +11,8 @@ from pyHalo.realization_extensions import RealizationExtensions
 
 
 def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
-        concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
-        concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
+        concentration_model_subhalos='LUDLOW2016', kwargs_concentration_model_subhalos={},
+        concentration_model_fieldhalos='LUDLOW2016', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
@@ -186,7 +186,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     return realization
 
 def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
-        concentration_model='DIEMERJOYCE19', kwargs_concentration_model={},
+        concentration_model='LUDLOW2016', kwargs_concentration_model={},
         truncation_model='TRUNCATION_RN', kwargs_truncation_model={},
         cone_opening_angle_arcsec=6., log_m_host=13.3, LOS_normalization=1.0,
         delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
