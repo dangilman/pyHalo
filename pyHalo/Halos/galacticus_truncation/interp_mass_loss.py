@@ -100,8 +100,6 @@ class InterpGalacticus(object):
         :param chost: host halo concentration at z=0.5
         :return: the log10(bound mass divided by the infall mass), plus scatter
         """
-        scale_b = 1.
-        scale_a = 1.
         log10_concentration_infall = max(np.log10(2), log10_concentration_infall)
         log10_concentration_infall = min(np.log10(384), log10_concentration_infall)
         time_since_infall = max(0.0, time_since_infall)
@@ -110,5 +108,9 @@ class InterpGalacticus(object):
         chost = min(8.0, chost)
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
-        output = float(johnsonsu.rvs(scale_a * a, scale_b * b))
-        return output
+        output = float(johnsonsu.rvs(a, b))
+        if time_since_infall < 2:
+            # this empirical correction is for the calibration not having a bin with t_since_infall < 2 Gyr
+            output -= 0.25
+        #intrinsic_scatter = np.random.lognormal(0.0, (0.3 * abs(output))**2)-1.0
+        return min(output, 0.0)
