@@ -109,5 +109,5 @@ class InterpGalacticus(object):
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
         output = float(johnsonsu.rvs(a, b))
-        output -= 0.25
+        #output -= 0.25
         return min(output, 0.0)

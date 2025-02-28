@@ -273,10 +273,6 @@ class Hybrid(Halo):
         rho_tnfwc = self.tnfwc_halo.density_profile_3d(r)
         return rho_tnfw * (1-self._rescaling_factor) + rho_tnfwc * self._rescaling_factor
 
-def tnfwc_mass(rmax, rho, rs, rc):
-
-    return _tnfwc_lenstronomy.mass_3d(rmax, rs, rho, rc, 1000*rs)
-
 def evolve_profile(t, rs_0):
 
     t = min(1.6, t)
