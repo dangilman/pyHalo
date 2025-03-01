@@ -60,11 +60,20 @@ class Cosmology(object):
 
     def halo_age(self, z, zform=10):
 
-        halo_form = self.astropy.age(zform).value
+        halo_form = self._halo_age_interp(zform)
         if z > zform:
             return 0
         else:
-            return self.astropy.age(z).value - halo_form
+            return self._halo_age_interp(z) - halo_form
+
+    @property
+    def _halo_age_interp(self):
+
+        if not hasattr(self, '_age_interp'):
+            z = np.linspace(0, 20, 250)
+            t = self.astropy.age(z).value
+            self._age_interp = interp1d(z, t)
+        return self._age_interp
 
     def scale_factor(self, z):
 

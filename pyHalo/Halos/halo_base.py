@@ -1,15 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from pyHalo.utilities import ITSampling
 from scipy.integrate import quad
 
-_log10_rperi_bins = np.array([-2.   , -1.885, -1.77 , -1.655, -1.54 , -1.425, -1.31 , -1.195,
-       -1.08 , -0.965, -0.85 , -0.735, -0.62 , -0.505, -0.39 , -0.275,
-       -0.16 , -0.045,  0.07 ,  0.185])
-_log10_prob = np.array([  18,   23,   37,   33,   42,   78,  139,  181,  321,  538,  749,
-       1018, 1268, 1501, 1577, 1232,  569,  207,   23,    7])
-_cdf = np.cumsum(_log10_prob)
-_log10_rpericenter_sampling = ITSampling(_log10_rperi_bins, _cdf)
 
 class Halo(ABC):
 
@@ -140,21 +132,6 @@ class Halo(ABC):
             self._time_since_infall = astropy.age(self.z).value - astropy.age(self.z_infall).value
             assert self._time_since_infall > 0
         return self._time_since_infall
-
-    @property
-    def rperi_units_r200(self):
-        """
-        Returns the orbital pericenter of a subhalo in units of the host halo virial radius. This method
-        uses output from the semi-analytic model Galacticus
-        :return:
-        """
-        if not self.is_subhalo:
-            print("Orbital pericenter is a meaningless concept for field halos. It is possible you assigned a tidal "
-                  "truncation model that requires this information to field halos.")
-            return None
-        if not hasattr(self, '_rperi_units_r200'):
-            self._rperi_units_r200 = 10**float(_log10_rpericenter_sampling(n_samples=1.0))
-        return self._rperi_units_r200
 
     def set_bound_mass(self, bound_mass):
         """

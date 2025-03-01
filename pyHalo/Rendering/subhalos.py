@@ -152,7 +152,6 @@ def normalization_sigmasub(sigma_sub, host_m200, zlens, kpc_per_asec_zlens, cone
     :param redshift_scaling_factor:
     :return:
     """
-
     host_scaling = host_scaling_function(host_m200, zlens,
                                          host_scaling_factor, redshift_scaling_factor)
     a0_per_kpc2 = sigma_sub * host_scaling

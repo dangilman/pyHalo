@@ -695,7 +695,6 @@ def _Truncation_Radius(M, f_t, alpha=1.0, beta=3.0, gamma=1.0, delta=2.0):
     if (Mass_table_Initialized and alpha_used == alpha and beta_used == beta and gamma_used == gamma \
         and delta_used == delta and np.min(M_unnormalized) >= M_min and np.max(M_unnormalized) <= M_max):
         retabulate = False
-
     if (retabulate):
         M_min = _M_total_generalized_NFW_Truncated_dimensionless(x_min, alpha, beta, gamma, delta)
         M_max = _M_total_generalized_NFW_Truncated_dimensionless(x_max, alpha, beta, gamma, delta)

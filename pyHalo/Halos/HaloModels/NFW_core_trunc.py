@@ -135,7 +135,7 @@ class TNFWCHalo(Halo):
             r_trunc_angle = rt_kpc / kpc_per_arcsec
             x = np.logspace(-4,
                             np.log10(self.c),
-                            2000)
+                            1000)
             r = x * rs_0
             kwargs_temp = {'alpha_Rs': 1.0,
                            'Rs': Rs_angle,

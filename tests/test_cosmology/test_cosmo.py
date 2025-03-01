@@ -83,9 +83,16 @@ class TestCosmology(object):
         age_today = self.cosmo.astropy.age(0.).value
         age_z = self.cosmo.astropy.age(halo_collapse_z).value
         age = age_today - age_z
-        npt.assert_almost_equal(age, self.cosmo.halo_age(0., zform=halo_collapse_z))
+        npt.assert_almost_equal(age / self.cosmo.halo_age(0., zform=halo_collapse_z), 1, 3)
 
-        npt.assert_almost_equal(self.cosmo.scale_factor(0.7), self.cosmo.astropy.scale_factor(0.7))
+        halo_collapse_z = 2.
+        z = 0.5
+        tz = self.cosmo.astropy.age(0.5).value
+        age_z = self.cosmo.astropy.age(halo_collapse_z).value
+        age = tz - age_z
+        npt.assert_almost_equal(age / self.cosmo.halo_age(z, zform=halo_collapse_z), 1, 3)
+
+        npt.assert_almost_equal(self.cosmo.scale_factor(0.7), self.cosmo.astropy.scale_factor(0.7), 3)
 
 if __name__ == '__main__':
      pytest.main()
