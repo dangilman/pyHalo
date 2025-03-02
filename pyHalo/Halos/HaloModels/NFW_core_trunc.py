@@ -278,6 +278,7 @@ def evolve_profile(t, rs_0):
     t = min(1.6, t)
     rs = rs_0 * rs_evolution(t)
     rc = rs_0 * rc_evolution(t)
+    rc = max(1e-7 * rs, rc)
     return rs, rc
 
 def rs_evolution(tr):
