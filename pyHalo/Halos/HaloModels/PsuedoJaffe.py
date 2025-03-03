@@ -33,15 +33,22 @@ class PJaffeSubhalo(Halo):
         if not hasattr(self, '_params_physical'):
 
             concentration = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            _, rs_kpc, r200_kpc = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
-            ra_kpc = 0.01 * rs_kpc
-
-            rho = self._rho(self.mass, rs_kpc, ra_kpc, r200)
-
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
+            ra_kpc = 0.01 * rs
+            rho = self._rho(self.mass, ra_kpc, ra_kpc, self.c * rs)
             self._params_physical = {'rhos': rhos, 'rs': rs, 'r200': r200, 'rho': rho}
 
         return self._params_physical
+
+    @property
+    def c(self):
+        """
+        Computes the halo concentration (once)
+        """
+
+        if not hasattr(self, '_c'):
+            self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
+        return self._c
 
     @property
     def lenstronomy_params(self):
@@ -52,7 +59,7 @@ class PJaffeSubhalo(Halo):
 
             kpc_to_arcsec = 1 / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             (concentration) = self.profile_args
-            rhos_kpc, rs_kpc, r200_kpc = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            rhos_kpc, rs_kpc, r200_kpc = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
             ra_kpc = 0.01 * rs_kpc
             ra_arcsec = ra_kpc * kpc_to_arcsec
             rs_arcsec = rs_kpc * kpc_to_arcsec
@@ -76,20 +83,6 @@ class PJaffeSubhalo(Halo):
                                       'sigma0': sigma0}]
 
         return self._lenstronomy_args, None
-
-    @property
-    def z_eval(self):
-        """
-        Returns the redshift at which to evalate the concentration-mass relation
-        """
-        if not hasattr(self, '_zeval'):
-
-            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
-                self._zeval = self.z
-            else:
-                self._zeval = self.z_infall
-
-        return self._zeval
 
     def _rho(self, m, rs, ra, r_match):
 

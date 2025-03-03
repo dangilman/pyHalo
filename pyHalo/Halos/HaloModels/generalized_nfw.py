@@ -80,9 +80,8 @@ class GeneralNFWSubhalo(Halo):
         """
         if not hasattr(self, '_rho0_norm'):
             (concentration, gamma_inner, gamma_outer) = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-
             if 'x_match' in self._args.keys():
                 if self._args['x_match'] == 'c':
                     x_match = concentration
@@ -91,7 +90,6 @@ class GeneralNFWSubhalo(Halo):
             else:
                 # r_vmax = 2.16 * rs
                 x_match = 2.16
-
             rs_arcsec = rs / kpc_per_arcsec
             r_match_arcsec = x_match * rs / kpc_per_arcsec
             fx = np.log(1 + x_match) - x_match / (1 + x_match)

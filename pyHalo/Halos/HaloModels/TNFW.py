@@ -174,7 +174,7 @@ class TNFWSubhalo(TNFWFieldHalo):
     @property
     def bound_mass(self):
         """
-        Computes the mass inside the virial radius (with truncation effects included)
+        Computes the mass inside the infall virial radius (with truncation effects included)
         :return: the mass inside r = c * r_s
         """
         if hasattr(self, '_kwargs_lenstronomy'):

@@ -50,6 +50,8 @@ class TestULDMHalo(object):
 
         z_subhalo = self.subhalo.z_eval
         z_field = self.fieldhalo.z_eval
+        npt.assert_equal(True, self.subhalo.is_subhalo)
+        npt.assert_equal(False, self.fieldhalo.is_subhalo)
         npt.assert_equal(z_field, self.zhalo)
         # because the concentration is evaluated at infall, and z_infall > z
         npt.assert_equal(True, z_subhalo > z_field)
@@ -61,7 +63,12 @@ class TestULDMHalo(object):
         """
 
         [cnfw_kwargs, uldm_kwargs] = self.subhalo.lenstronomy_params[0]
-        Rs_angle, _ = self.lens_cosmo.nfw_physical2angle(10**8, self.subhalo.c, self.subhalo.z)
+        rhos_kpc, rs_kpc, _ = self.subhalo.nfw_params
+        rhos_mpc = rhos_kpc * 1e9
+        rs_mpc = rs_kpc * 1e-3
+        Rs_angle, _ = self.subhalo._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc,
+                                                                               rs_mpc,
+                                                                               self.subhalo.z)
         sigma_crit = self.lens_cosmo.sigmacrit
         r200 = self.subhalo.c * Rs_angle
 

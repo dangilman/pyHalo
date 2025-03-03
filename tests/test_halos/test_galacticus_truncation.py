@@ -69,6 +69,7 @@ class TestTruncationGalacticus(object):
                 self.c = 16.0
                 self.time_since_infall = 5.0
                 self.z = 0.5
+                self.z_eval = 0.5
 
         halo = DummyHalo()
         rt_kpc = self.tgk24.truncation_radius_halo(halo)

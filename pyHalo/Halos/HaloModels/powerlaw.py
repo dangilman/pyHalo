@@ -29,7 +29,7 @@ class PowerLawSubhalo(Halo):
         if not hasattr(self, '_lenstronomy_args'):
 
             (concentration, gamma, x_core_halo) = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z)
+            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
 
             if 'x_match' in self._args.keys():
@@ -40,18 +40,14 @@ class PowerLawSubhalo(Halo):
             else:
                 # r_vmax = 2.16 * rs
                 x_match = 2.16 # r_vmax
-
             r_match_arcsec = x_match * rs / kpc_per_arcsec
             fx = np.log(1+x_match) - x_match/(1 + x_match)
             m = 4 * np.pi * rs ** 3 * rhos * fx
             r_core_arcsec = x_core_halo * r_match_arcsec / x_match
-
             sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
             sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
-
             rho0 = m/self._prof.mass_3d(r_match_arcsec, sigma_crit_arcsec, r_core_arcsec, gamma)
             sigma0 = rho0 * r_core_arcsec
-
             self._lenstronomy_args = [{'sigma0': sigma0, 'gamma': gamma, 'center_x': self.x, 'center_y': self.y,
                                       'r_core': r_core_arcsec}]
 

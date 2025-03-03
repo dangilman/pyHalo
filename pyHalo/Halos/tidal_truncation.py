@@ -60,7 +60,7 @@ class TruncationRN(object):
         :param halo: an instance of halo
         :return: the truncation radius in physical kpc
         """
-        return self.truncation_radius(halo.mass, halo.z)
+        return self.truncation_radius(halo.mass, halo.z_eval)
 
     def truncation_radius(self, halo_mass, z):
         """
@@ -144,14 +144,14 @@ class TruncateMeanDensity(object):
         """
         c_median = self._concentration_cdm.nfw_concentration(halo.mass, halo.z_eval)
         c_actual = halo.c
-        return self.truncation_radius(halo.mass, halo.z, c_median, c_actual, self._scatter)
+        return self.truncation_radius(halo.mass, halo.z_eval, c_median, c_actual, self._scatter)
 
-    def truncation_radius(self, halo_mass, halo_redshift, c_median, c_actual, intrinsic_scatter):
+    def truncation_radius(self, halo_mass, z_eval, c_median, c_actual, intrinsic_scatter):
         """
         Computes the truncation radius from halo mass, halo redshift, median concentration at infall for halos of the
         given mass, and the actual concentration of the halo at infall, plus Gaussian scatter
         :param halo_mass: halo mass at infall
-        :param halo_redshift: redshift of infall
+        :param z_eval: redshift of infall for subhalos, or redshift of field halo
         :param c_median: median concentration of halos of mass halo_mass at z = z_infall in CDM
         :param c_actual: actual concentration of the halo at infall
         :param intrinsic_scatter: Gaussian scatter
@@ -162,7 +162,7 @@ class TruncateMeanDensity(object):
             rt_over_rs = abs(np.random.normal(_rt_over_rs, intrinsic_scatter * _rt_over_rs))
         else:
             rt_over_rs = _rt_over_rs
-        _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, halo_redshift)
+        _, rs, _ = self.lens_cosmo.NFW_params_physical(halo_mass, c_actual, z_eval)
         return rs * rt_over_rs
 
 class Multiple_RS(object):
@@ -226,17 +226,17 @@ class TruncationGalacticusKeeley24(object):
         """
 
         return self.truncation_radius(halo.mass, halo.c,
-                                      halo.time_since_infall, self._chost, halo.z)
+                                      halo.time_since_infall, self._chost, halo.z_eval)
 
     def truncation_radius(self, halo_mass, infall_concentration,
-                          time_since_infall, chost, z_eval_angles):
+                          time_since_infall, chost, z_eval):
         """
 
         :param halo_mass:
         :param infall_concentration:
         :param time_since_infall:
         :param chost:
-        :param z_eval_angles:
+        :param z_eval:
         :return:
         """
         log10c = np.log10(infall_concentration)
@@ -246,7 +246,7 @@ class TruncationGalacticusKeeley24(object):
         tau = 10 ** log10tau
         _, rs, _ = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
-                                                        z_eval_angles)
+                                                        z_eval)
         return tau * rs
 
 class TruncationGalacticus(object):
@@ -322,21 +322,21 @@ class TruncationGalacticus(object):
         infall_concentration = halo.c
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                            infall_concentration,
-                                                           halo.z,
+                                                           halo.z_eval,
                                                            psuedo_nfw)
         r_te, f_t = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
         halo.rescale_normalization(f_t)
         return r_te
 
     def truncation_radius(self, halo_mass, infall_concentration,
-                          time_since_infall, z_eval_angles, psuedo_nfw=False):
+                          time_since_infall, z_eval, psuedo_nfw=False):
         """
 
         :param halo_mass:
         :param infall_concentration:
         :param time_since_infall:
         :param chost:
-        :param z_eval_angles:
+        :param z_eval:
         :return:
         """
         log10c = np.log10(infall_concentration)
@@ -344,7 +344,8 @@ class TruncationGalacticus(object):
         m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
-                                                        z_eval_angles, psuedo_nfw)
+                                                        z_eval,
+                                                        psuedo_nfw)
         r_te, _ = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
         return r_te
 

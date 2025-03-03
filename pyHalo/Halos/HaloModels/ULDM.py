@@ -10,6 +10,7 @@ class ULDMFieldHalo(Halo):
     """
     The base class for a truncated NFW halo
     """
+    _pseudo_nfw = False
     def __init__(self, mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
         """
@@ -44,24 +45,21 @@ class ULDMFieldHalo(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
 
-        [concentration, theta_c, kappa_0] = self.profile_args
-
+        [_, theta_c, kappa_0] = self.profile_args
         x, y = np.round(self.x, 4), np.round(self.y, 4)
-        Rs_angle, alpha_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
-        kwargs_cnfw_temporary = {'alpha_Rs': alpha_Rs, 'Rs': Rs_angle,
+        rhos_kpc, rs_kpc, _ = self.nfw_params
+        rhos_mpc = rhos_kpc * 1e9
+        rs_mpc = rs_kpc * 1e-3
+        Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc,
+                                                                               rs_mpc,
+                                                                               self.z)
+        kwargs_cnfw_temporary = {'alpha_Rs': theta_Rs, 'Rs': Rs_angle,
             'center_x': x, 'center_y': y, 'r_core': 3*theta_c}
         kwargs_uldm_temporary = {'theta_c': theta_c, 'kappa_0': kappa_0,
             'center_x': x, 'center_y': y}
         kwargs = self._rescaled_cnfw_params(kwargs_cnfw_temporary,
                                                 kwargs_uldm_temporary)
         return kwargs, None
-
-    @property
-    def z_eval(self):
-        """
-        Returns the halo redshift
-        """
-        return self.z
 
     @property
     def profile_args(self):
@@ -244,16 +242,4 @@ class ULDMSubhalo(ULDMFieldHalo):
     Defines a composite ULDM+NFW halo that is a subhalo of the host dark matter halo. The only difference
     between the profile classes is that the subhalo will have it's concentration evaluated at infall redshift.
     """
-    @property
-    def z_eval(self):
-        """
-        Returns the redshift at which to evalate the concentration-mass relation
-        """
-        if not hasattr(self, '_zeval'):
 
-            if 'evaluate_mc_at_zlens' in self._args.keys() and self._args['evaluate_mc_at_zlens']:
-                self._zeval = self.z
-            else:
-                self._zeval = self.z_infall
-
-        return self._zeval

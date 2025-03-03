@@ -29,11 +29,7 @@ class NFWFieldHalo(Halo):
         :param r: distance from center of halo [kpc]
         :return: the density profile in units M_sun / kpc^3
         """
-        if profile_args is None:
-            c = self.profile_args
-        else:
-            c = profile_args
-        rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, c, self.z_eval)
+        rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval)
         x = r/rs
         return scaling * rhos / x / (1 + x) ** 2
 
@@ -51,8 +47,12 @@ class NFWFieldHalo(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
 
-        (concentration) = self.profile_args
-        Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle(self.mass, concentration, self.z)
+        rhos_kpc, rs_kpc, _ = self.nfw_params
+        rhos_mpc = rhos_kpc * 1e9
+        rs_mpc = rs_kpc * 1e-3
+        Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc,
+                                                                               rs_mpc,
+                                                                               self.z)
         x, y = np.round(self.x, 4), np.round(self.y, 4)
         Rs_angle = np.round(Rs_angle, 10)
         theta_Rs = np.round(theta_Rs, 10)
@@ -78,7 +78,6 @@ class NFWFieldHalo(Halo):
         if not hasattr(self, '_profile_args'):
             concentration = self.c
             self._profile_args = (concentration)
-
         return self._profile_args
 
 class NFWSubhhalo(NFWFieldHalo):
