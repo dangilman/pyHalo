@@ -217,6 +217,20 @@ class TruncationGalacticusKeeley24(object):
         log10mass_loss_fraction = min(-0.001, log10mass_loss_fraction)
         return (log10c, log10mass_loss_fraction)
 
+    def calculate_mbound(self, halo):
+        """
+        compute the bound mass
+        :param halo:
+        :return:
+        """
+        halo_mass = halo.mass
+        infall_concentration = halo.c
+        time_since_infall = halo.time_since_infall
+        log10c = np.log10(infall_concentration)
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
+        m_bound = halo_mass * 10 ** log10mbound_over_minfall
+        return m_bound
+
     def truncation_radius_halo(self, halo):
 
         """
