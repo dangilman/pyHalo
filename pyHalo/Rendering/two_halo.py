@@ -17,18 +17,22 @@ class TwoHaloContribution(LineOfSightNoSheet):
     """
 
     def __init__(self, mass_function_model, kwargs_mass_function, spatial_distribution_model,
-                 geometry, lens_cosmo, lens_plane_redshifts, delta_z_list, use_Lazar_correction=True):
+                 geometry, lens_cosmo, lens_plane_redshifts, delta_z_list, use_Lazar_correction=True,
+                 scale_2halo_boost_factor=1.0):
 
         """
+        Adds additional halos from correlated structure around the main deflector
 
-        :param mass_function_model:
-        :param kwargs_mass_function:
-        :param spatial_distribution_model:
-        :param geometry:
-        :param lens_cosmo:
-        :param lens_plane_redshifts:
-        :param use_Lazar_correction:
-        :param delta_z_list:
+        :param mass_function_model: a mass fucntion class to generate halos (see Rendering/MassFunctions)
+        :param kwargs_mass_function: keyword arguments to pass to the mass function
+        :param spatial_distribution_model: keyword arguments to pass to the spatial distribution class
+        :param geometry: an instance of Geometry class
+        :param lens_cosmo: an instance of LensCosmo class
+        :param lens_plane_redshifts: a list of redshifts corresponding to lens planes along the LOS
+        :param use_Lazar_correction: bool; apply the correction by Lazar et al. to increase the number of halos
+        :param delta_z_list: spacing between LOS lens planes
+        :param use_Lazar_correction: bool; apply the correction by Lazar et al.
+        :param scale_2halo_boost_factor: float; scale factor for 2halo boost
         """
         if 'host_m200' in kwargs_mass_function.keys():
             host_m200 = kwargs_mass_function['host_m200']
@@ -44,7 +48,8 @@ class TwoHaloContribution(LineOfSightNoSheet):
         z_eval = lens_cosmo.z_lens
         idx = np.argmin(abs(np.array(lens_plane_redshifts) - z_eval))
         delta_z = delta_z_list[idx]
-        boost = two_halo_enhancement_factor(z_eval, delta_z, lens_cosmo, host_m200, r200_host_mpc, use_Lazar_correction)
+        boost = two_halo_enhancement_factor(z_eval, delta_z, lens_cosmo, host_m200, r200_host_mpc, use_Lazar_correction,
+                                            scale_2halo_boost_factor)
         kwargs_mass_function_scaled = deepcopy(kwargs_mass_function)
         kwargs_mass_function_scaled['LOS_normalization'] *= boost
         self._delta_z = delta_z
@@ -94,7 +99,8 @@ def _boost_integrand(r, m200_host, z, r200_host, lens_cosmo, use_Lazar_correctio
     else:
         return lens_cosmo.twohaloterm(r, m200_host, z)
 
-def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200, r200_host, use_Lazar_correction):
+def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200, r200_host, use_Lazar_correction,
+                                scale_2halo_boost_factor=1.0):
     """
     Calculates the enhancement of the background density due to correlated structure around the main deflector. Includes
     a contribution from the two-halo term and a correction factor calibrated by Lazar et al. (2021)
@@ -103,10 +109,11 @@ def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200, r2
     :param lens_cosmo: instance of LensCosmo
     :param overdensity_m200: host halo mass
     :param use_Lazar_correction: bool; adds the correction derived by Lazar et al. (2021)
+    :param scale_2halo_boost_factor: factor by which to rescale the two-halo enhancement factor
     :return: the enhancement of the background density per unit length
     """
     rmax = lens_cosmo.cosmo.D_C_transverse(z_lens + z_step) - lens_cosmo.cosmo.D_C_transverse(z_lens)
     rmin = min(rmax, 0.5)
     args = (overdensity_m200, z_lens, r200_host, lens_cosmo, use_Lazar_correction)
     two_halo_boost = 2 * quad(_boost_integrand, rmin, rmax, args=args)[0] / (rmax - rmin)
-    return two_halo_boost
+    return scale_2halo_boost_factor * two_halo_boost

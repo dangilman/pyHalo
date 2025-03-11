@@ -10,7 +10,6 @@ class LineOfSightNoSheet(RenderingClassBase):
     """
     name = 'LINE_OF_SIGHT_NO_SHEET'
     def render(self):
-
         """
         Generates halo masses and positions for objects along the line of sight
         (except for halos from the two-halo contribution)

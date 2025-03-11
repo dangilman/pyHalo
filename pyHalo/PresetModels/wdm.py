@@ -183,7 +183,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     realization = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
-                                     two_halo_Lazar_correction,
+                                     two_halo_Lazar_correction, scale_2halo_boost_factor=1.0,
                                      nrealizations=1)[0]
     if add_globular_clusters:
         from pyHalo.realization_extensions import RealizationExtensions
@@ -425,7 +425,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
-                                     two_halo_Lazar_correction,
+                                     two_halo_Lazar_correction, scale_2halo_boost_factor=1.0,
                                      nrealizations=1)
     realization = realization_list[0]
     if add_globular_clusters:

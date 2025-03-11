@@ -178,7 +178,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     realization = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
-                                     two_halo_Lazar_correction,
+                                     two_halo_Lazar_correction, scale_2halo_boost_factor=1.0,
                                      nrealizations=1)[0]
     if add_globular_clusters:
         ext = RealizationExtensions(realization)
@@ -189,7 +189,8 @@ def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
         concentration_model='LUDLOW2016', kwargs_concentration_model={},
         truncation_model='TRUNCATION_RN', kwargs_truncation_model={},
         cone_opening_angle_arcsec=6., log_m_host=13.3, LOS_normalization=1.0,
-        delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None):
+        delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
+        scale_2halo_boost_factor=1.0):
     """
 
     :param z_lens:
@@ -254,9 +255,10 @@ def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
     spatial_distribution_class_list = [fieldhalo_spatial_distribution]
     kwargs_spatial_distribution_list = [kwargs_spatial_distribution]
     kwargs_mass_function_list = [kwargs_mass_function]
-
+    two_halo_Lazar_correction = True
     realization_list = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
-                                     geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=1)
+                                     geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
+                                     two_halo_Lazar_correction, scale_2halo_boost_factor, nrealizations=1)
     return realization_list[0]
 

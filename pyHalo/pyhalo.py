@@ -41,7 +41,7 @@ class pyHalo(object):
     def render(self, population_model_list, mass_function_class_list, kwargs_mass_function_list,
                    spatial_distribution_class_list, kwargs_spatial_distribution_list,
                geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model, two_halo_Lazar_correction=True,
-               nrealizations=1):
+               scale_2halo_boost_factor=1.0, nrealizations=1):
 
         """
 
@@ -55,6 +55,7 @@ class pyHalo(object):
         :param mdef_field_halos:
         :param kwargs_halo_model:
         :param two_halo_Lazar_correction:
+        :param scale_2halo_boost_factor:
         :param nrealizations:
         :return:
         """
@@ -65,7 +66,7 @@ class pyHalo(object):
                                 kwargs_mass_function_list,
                                 spatial_distribution_class_list,
                                 kwargs_spatial_distribution_list,
-                                geometry_class, two_halo_Lazar_correction)
+                                geometry_class, two_halo_Lazar_correction, scale_2halo_boost_factor)
             realization_list.append(self.create_realization(masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, rendering_classes,
                                                             geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model))
         return realization_list
@@ -76,7 +77,8 @@ class pyHalo(object):
                                 spatial_distribution_class_list,
                                 kwargs_spatial_distribution,
                                 geometry_class,
-                                two_halo_Lazar_correction=True):
+                                two_halo_Lazar_correction=True,
+                                scale_2halo_boost_factor=1.0):
 
         """
 
@@ -100,7 +102,8 @@ class pyHalo(object):
                                               geometry_class,
                                               plane_redshifts,
                                               redshift_spacing,
-                                              two_halo_Lazar_correction)
+                                              two_halo_Lazar_correction,
+                                              scale_2halo_boost_factor)
         masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag = population_model.render()
         return masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, population_model.rendering_classes
 

@@ -14,7 +14,7 @@ class HaloPopulation(object):
     def __init__(self, model_list, mass_function_class_list, kwargs_mass_function_list,
                  spatial_distribution_class_list, kwargs_spatial_distribution,
                  lens_cosmo, geometry, lens_plane_redshift_list=None, redshift_spacings=None,
-                 two_halo_Lazar_correction=True):
+                 two_halo_Lazar_correction=True, scale_2halo_boost_factor=1.0):
 
         """
 
@@ -58,7 +58,8 @@ class HaloPopulation(object):
                  geometry, lens_cosmo)
             elif model_name == 'TWO_HALO':
                 model = TwoHaloContribution(mass_function_model_class, kwargs_model, spatial_distribution_model,
-                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings, two_halo_Lazar_correction)
+                 geometry, lens_cosmo, lens_plane_redshift_list, redshift_spacings, two_halo_Lazar_correction,
+                                            scale_2halo_boost_factor)
             else:
                 raise Exception('model '+str(model_name)+' not recognized. ')
 
