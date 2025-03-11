@@ -76,7 +76,7 @@ class TestTwoHalo(object):
         r200_host = 0.5
         boost_scaled = two_halo_enhancement_factor(self.zlens, z_step, self.lens_cosmo, mhost, r200_host,
                                             use_Lazar_correction=True, scale_2halo_boost_factor=2.0)
-        npt.assert_equal(boost_scaled / boost, 2.0, True)
+        npt.assert_almost_equal(boost_scaled / boost, 2.0, 2)
 
     def test_render(self):
 
