@@ -792,9 +792,27 @@ class Realization(object):
             return True
 
     def plot(self, ax, annotation='', color_normalization=6, marker_size_normalization=7.5,
-             view_init_1=30.0, view_init_2=70.0, r_max=None, ray_interp_x_list=None, ray_interp_y_list=None,
-             scale_rays=1.0):
+             view_init_1=30.0, view_init_2=70.0, r_max=None, ray_interp_x_list=None, ray_interp_y_list=None):
+        """
+        Plot a realization (like the README figure in github)
 
+        :param ax: a 3D axes instance
+        fig = plt.figure(1)
+        fig.set_size_inches(12, 12)
+        ax = plt.axes(projection='3d')
+        realizationCDM.plot(ax)
+        :param annotation: write some text in the upper right
+        :param color_normalization: sets the color of halos
+        :param marker_size_normalization: sets the overall size of halo blobs; the size scales with halo mass
+        :param view_init_1: viewing angle
+        :param view_init_2: viewing angle
+        :param r_max: axes limits along x/y
+        :param ray_interp_x_list: an optional list of interp1d functions that return angular coordiantes given a comoving
+        distance; used to plot the path of light rays
+        :param ray_interp_y_list:an optional list of interp1d functions that return angular coordiantes given a comoving
+        distance; used to plot the path of light rays (see interpolate_ray_paths function in utilities.py)
+        :return:
+        """
         from matplotlib import cm
         import matplotlib.pyplot as plt
 
