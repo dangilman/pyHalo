@@ -157,7 +157,7 @@ class TNFWCHalo(Halo):
             self._params_physical = {'rhos': rho_s * self._rescale_norm,
                                      'rs': rs_kpc, 'r200': r200_kpc,
                                      'r_trunc_kpc': rt_kpc,
-                                     'r_core_kcp': rc_kpc}
+                                     'r_core_kpc': rc_kpc}
         return self._params_physical
 
 class Hybrid(Halo):

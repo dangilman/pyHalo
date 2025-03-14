@@ -833,7 +833,7 @@ class Realization(object):
             colors.append(cmap(rescaled_mass))
 
         distances_from_halo_redshifts = np.array([distance_calc(zi) for zi in redshifts])
-        sizes = 24 * (masses / 10**marker_size_normalization) ** 1.
+        sizes = 24 * (masses / 10**marker_size_normalization) ** 1
         ax.scatter(distances_from_halo_redshifts, np.array(x_comoving) / 206265,
                    np.array(y_comoving) / 206265,
                    s=sizes,
