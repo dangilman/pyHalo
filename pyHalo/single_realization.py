@@ -791,7 +791,7 @@ class Realization(object):
         else:
             return True
 
-    def plot(self, ax, annotation='', color_normalization=6, marker_size_normalization=7.5,
+    def plot(self, ax, annotation='', color_normalization=6, marker_size_normalization=7.5, marker_size_scaling=1.0,
              view_init_1=30.0, view_init_2=70.0, r_max=None, ray_interp_x_list=None, ray_interp_y_list=None):
         """
         Plot a realization (like the README figure in github)
@@ -804,8 +804,9 @@ class Realization(object):
         :param annotation: write some text in the upper right
         :param color_normalization: sets the color of halos
         :param marker_size_normalization: sets the overall size of halo blobs; the size scales with halo mass
-        :param view_init_1: viewing angle
-        :param view_init_2: viewing angle
+        :param marker_size_scaling: sets the scaling of the marker size with halo mass, 0.333 makes size ~ mass ^ 1/3
+        :param view_init_1: viewing angle along the x-axis
+        :param view_init_2: viewing angle along the y-axis
         :param r_max: axes limits along x/y
         :param ray_interp_x_list: an optional list of interp1d functions that return angular coordiantes given a comoving
         distance; used to plot the path of light rays
@@ -851,7 +852,7 @@ class Realization(object):
             colors.append(cmap(rescaled_mass))
 
         distances_from_halo_redshifts = np.array([distance_calc(zi) for zi in redshifts])
-        sizes = 24 * (masses / 10**marker_size_normalization) ** 1
+        sizes = 24 * (masses / 10**marker_size_normalization) ** marker_size_scaling
         ax.scatter(distances_from_halo_redshifts, np.array(x_comoving) / 206265,
                    np.array(y_comoving) / 206265,
                    s=sizes,
@@ -862,8 +863,8 @@ class Realization(object):
             z_array_lines = np.linspace(0.01, zsource, 100)
             d = np.array([distance_calc(zi) for zi in z_array_lines])
             for x_interp,y_interp in zip(ray_interp_x_list, ray_interp_y_list):
-                x_rays = scale_rays * d*x_interp(d)/206265
-                y_rays = scale_rays * d*y_interp(d)/206265
+                x_rays = d*x_interp(d)/206265
+                y_rays = d*y_interp(d)/206265
                 ax.plot(d, x_rays, y_rays, color='r',lw=3)
 
         ax.annotate(annotation, xy=(0.02, 0.045), fontsize=20)
