@@ -847,8 +847,8 @@ class Realization(object):
         masses = np.array(masses)
         colors = []
         for mi in masses:
-            rescaled_mass = max(0.2, (np.log10(mi) - color_normalization) / 4)
-            rescaled_mass = min(rescaled_mass, 0.75)
+            rescaled_mass = max(0.1, (np.log10(mi) - color_normalization) / 4)
+            rescaled_mass = min(rescaled_mass, 0.9)
             colors.append(cmap(rescaled_mass))
 
         distances_from_halo_redshifts = np.array([distance_calc(zi) for zi in redshifts])

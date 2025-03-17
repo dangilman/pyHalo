@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 
 
-class TestSPLCORE(object):
+class TestGlobularClusters(object):
 
     def setup_method(self):
 
@@ -41,7 +41,7 @@ class TestSPLCORE(object):
 
         logM = 6.0
         mass = 10 ** logM
-        args = {'gamma': 2.7,
+        args = {'gamma': 3.2,
                 'gc_size_lightyear': 100,
                 'gc_concentration': 15.0}
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
@@ -71,13 +71,21 @@ class TestSPLCORE(object):
         rho = profile.density_profile_3d_lenstronomy(r)
         m = np.trapz(4 * np.pi * r ** 2 * rho, r)
         npt.assert_almost_equal(m / 10**logM, 1, 4)
-        #
-        # central_density_per_cubic_kpc = rho[0] # solar masses per kpc^3
-        # pc_per_lightyear = 1e3 * kpc_per_lightyear
-        # central_density_solar_mass_per_cubic_lyr = central_density_per_cubic_kpc * kpc_per_lightyear ** 3
-        # central_density_solar_mass_per_cubic_pc = central_density_per_cubic_kpc * 1e-9
-        # print(central_density_solar_mass_per_cubic_lyr)
-        # print(central_density_solar_mass_per_cubic_pc)
+
+        # the total mass will be slightly larger
+        r = np.linspace(0.00001, 10.0, 2000000) * args['gc_size_lightyear'] * kpc_per_lightyear
+        rho = profile.density_profile_3d_lenstronomy(r)
+        m_total = np.trapz(4 * np.pi * r ** 2 * rho, r)
+        npt.assert_almost_equal(m_total / 10**logM, 1.5918, 4)
+
+        # test the average mass, rather than central density
+        r = np.linspace(0.00001, 1.0, 100000) * args['gc_size_lightyear'] * kpc_per_lightyear
+        rho = profile.density_profile_3d_lenstronomy(r)
+        m_total = np.trapz(4 * np.pi * r ** 2 * rho, r)
+        volume = 4*np.pi/3 * (args['gc_size_lightyear'])**3
+        average_density = m_total / volume
+        npt.assert_almost_equal(average_density, 0.2387, 4)
+
 
 if __name__ == '__main__':
     pytest.main()
