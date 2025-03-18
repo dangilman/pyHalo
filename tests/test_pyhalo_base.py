@@ -153,7 +153,6 @@ class TestpyHalo(object):
         nhalos_2 = len(realization_list_2[0].halos)
         npt.assert_array_less(nhalos_1, nhalos_2)
 
-
 if __name__ == '__main__':
 
     pytest.main()
