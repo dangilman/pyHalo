@@ -52,7 +52,7 @@ class SIS(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        return ['TNFW']
+        return ['SIS']
 
     @property
     def lenstronomy_params(self):
