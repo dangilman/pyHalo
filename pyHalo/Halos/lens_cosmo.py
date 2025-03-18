@@ -294,6 +294,18 @@ class LensCosmo(object):
         epsilon_crit = (self.cosmo.c**2*(4*numpy.pi*self.cosmo.G)**-1)*d_inv
         return epsilon_crit
 
+    def thetaE_from_sigma(self, z, sigma):
+        """
+        Calculate the Einstein radius of an SIS profile from velocity dispersion
+        :param sigma: velocity dispersion in km/sec
+        :return: Einstein radius in arcsec
+        """
+        arcsec = 206265
+        c = 299792.5 # in km/sec
+        D_s = self.cosmo.D_A(0.0, self.z_source)
+        D_ds = self.cosmo.D_A(z, self.z_source)
+        return 4 * numpy.pi * (sigma / c) ** 2 * D_ds / D_s * arcsec
+
     def point_mass_factor_z(self, z):
 
         """

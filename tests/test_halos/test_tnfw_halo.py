@@ -45,7 +45,8 @@ class TestTNFWHalos(object):
             log_mhigh=log_mhigh,
             log_m_host=13,
             truncation_model_subhalos='TRUNCATION_GALACTICUS',
-            log10_sigma_sub=sigma_sub
+            log10_sigma_sub=sigma_sub,
+            mass_threshold_sis=10**13
         )
         # Colossus
         cosmo = cosmology.setCosmology("planck18")
@@ -108,6 +109,7 @@ class TestTNFWHalos(object):
         npt.assert_equal(True, self.zhalo <= z_infall)
 
     def test_bound_mass(self):
+
         m = 10 ** 8
         x = 0.5
         y = 1.0
@@ -157,6 +159,38 @@ class TestTNFWHalos(object):
         m_exact = np.trapz(4 * np.pi * rho * r ** 2, r)
         m_class = tnfw_halo.mass_3d('r200')
         npt.assert_almost_equal(m_class / m_exact, 1, 3)
+
+    def test_vmax(self):
+
+        m = 10 ** 8
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        unique_tag = 1.0
+        kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
+        is_subhalo = False
+        tnfw_fieldhalo = TNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                       self.truncation_class, self.concentration_class, unique_tag)
+        _, rs, _ = tnfw_fieldhalo.nfw_params
+        r = np.linspace(0.01, 20, 5000) * rs
+        m_enclosed = tnfw_fieldhalo.mass_3d(r)
+        G = 4.3e-6
+        v_circ = np.sqrt(G * m_enclosed / r)
+        vmax_calc = max(v_circ)
+        vmax = tnfw_fieldhalo.vmax_nfw
+        npt.assert_almost_equal(vmax / vmax_calc, 1, 2)
+
+        tnfw_subhalo = TNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                       self.truncation_class, self.concentration_class, unique_tag)
+        tnfw_subhalo._rescale_norm = 0.1
+        _, rs, _ = tnfw_subhalo.nfw_params
+        r = np.linspace(0.01, 20, 5000) * rs
+        m_enclosed = tnfw_subhalo.mass_3d(r)
+        G = 4.3e-6
+        v_circ = np.sqrt(G * m_enclosed / r)
+        vmax_calc = max(v_circ)
+        vmax = tnfw_fieldhalo.vmax_nfw
+        npt.assert_almost_equal(vmax / vmax_calc, np.sqrt(10), 1)
 
 if __name__ == '__main__':
     pytest.main()

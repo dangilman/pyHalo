@@ -60,5 +60,20 @@ class TestTNFWC(object):
         mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
         npt.assert_array_less(abs(mass / mass0 - 1), 0.016)
 
+    def test_vmax(self):
+        """Here we test that these objects have the vmax of the reference TNFW/NFW halo profile"""
+
+        mass0 = 10 ** 8
+        kwargs_profile = {'sidm_timescale': 0.5,
+                          'lambda_t': 1.0,
+                          'mass_conservation': mass0}
+        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
+                          self.lens_cosmo, kwargs_profile, self.truncation_class,
+                          self.concentration_class, 1.0)
+        vmax = tnfwc.vmax_nfw
+        rhos, rs, _ = tnfwc.nfw_params
+        vmax_calc = self.lens_cosmo.nfw_vmax(rhos, rs)
+        npt.assert_almost_equal(vmax / vmax_calc, 1, 2)
+
 if __name__ == '__main__':
     pytest.main()

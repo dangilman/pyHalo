@@ -163,6 +163,18 @@ class TNFWFieldHalo(Halo):
         return self._profile_args
 
     @property
+    def vmax_nfw(self):
+        """
+        Returns the maximum circular velocity in km/sec
+        :return:
+        """
+        if not hasattr(self, '_vmax'):
+            rhos, rs, _ = self.nfw_params
+            _ = self.profile_args
+            self._vmax = self._lens_cosmo.nfw_vmax(self._rescale_norm * rhos, rs)
+        return self._vmax
+
+    @property
     def pseudo_nfw(self):
         return False
 

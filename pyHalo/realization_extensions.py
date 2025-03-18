@@ -1,4 +1,5 @@
 import numpy as np
+from pyHalo.Halos.HaloModels.sis import SIS
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.single_realization import Realization
@@ -36,6 +37,30 @@ class RealizationExtensions(object):
         """
 
         self._realization = realization
+
+    def SIS_injection(self, mass_threshold):
+        """
+        This method transforms objects with M > mass_threshold into SIS profiles; this method currently only works
+        for TNFW profiles and cored TNFW profiles (NFW_core_trunc, or TNFWC in lenstronomy)
+        :param mass_threshold: mass threshold in solar masses; this refers to the virial mass, not bound mass in the case
+        of subhalos
+        :return: a realization with objects more massive than mass_threshold transformed into SIS profiles
+        """
+        halo_list = []
+        for halo in self._realization.halos:
+            if halo.mass >= mass_threshold:
+                sis = SIS(halo)
+                halo_list.append(sis)
+            else:
+                halo_list.append(halo)
+        realization = Realization.from_halos(halo_list, self._realization.lens_cosmo,
+                                             self._realization.kwargs_halo_model,
+                                             self._realization.apply_mass_sheet_correction,
+                                             self._realization.rendering_classes,
+                                             self._realization._rendering_center_x,
+                                             self._realization._rendering_center_y,
+                                             self._realization.geometry)
+        return realization
 
     def add_prompt_cusps(self, a=0.04, b=-0.8, c=0.15):
         """
@@ -318,11 +343,13 @@ class RealizationExtensions(object):
                 raise Exception('halo mass ' + str(np.log10(halo.mass)) + ' not inside the minimum/maximum mass ranges')
             rhos, rs, _ = halo.nfw_params
             t_c = self._realization.lens_cosmo.sidm_collapse_timescale(rhos, rs, sigma_eff)
-            new_halo = self.toSIDM_single_halo(halo,
+            if halo.mdef in ['TNFW', 'NFW']:
+                new_halo = self.toSIDM_single_halo(halo,
                                                t_c,
                                                10**log10_subhalo_time_scaling)
-            sidm_halos.append(new_halo)
-
+                sidm_halos.append(new_halo)
+            else:
+                sidm_halos.append(halo)
         new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo,
                                                  self._realization.kwargs_halo_model,
                                                  self._realization.apply_mass_sheet_correction,

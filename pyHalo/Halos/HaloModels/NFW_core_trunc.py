@@ -160,6 +160,18 @@ class TNFWCHalo(Halo):
                                      'r_core_kpc': rc_kpc}
         return self._params_physical
 
+    @property
+    def vmax_nfw(self):
+        """
+        Returns the maximum circular velocity in km/sec of an NFW profile with given rhos, rs
+        :return:
+        """
+        if not hasattr(self, '_vmax'):
+            rhos, rs, _ = self.nfw_params
+            _ = self.profile_args
+            self._vmax = self._lens_cosmo.nfw_vmax(self._rescale_norm * rhos, rs)
+        return self._vmax
+
 class Hybrid(Halo):
 
     """
@@ -186,6 +198,14 @@ class Hybrid(Halo):
                                      self.tnfw_halo.r3d, mdef, self.tnfw_halo.z,
                                      self.tnfw_halo.is_subhalo, self.tnfw_halo.lens_cosmo,
                                      self.tnfw_halo._args, self.tnfw_halo.unique_tag)
+
+    @property
+    def vmax_nfw(self):
+        """
+        Returns the maximum circular velocity in km/sec of an NFW profile with given rhos, rs
+        :return:
+        """
+        return self.tnfw_halo.vmax_nfw
 
     @property
     def halo_effective_age(self):

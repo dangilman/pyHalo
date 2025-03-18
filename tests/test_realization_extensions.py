@@ -10,9 +10,28 @@ from pyHalo.Halos.tidal_truncation import TruncationRoche, TruncationRN, Truncat
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.PresetModels.cdm import CDM
 from lenstronomy.LensModel.Profiles.splcore import SPLCORE
-from lenstronomy.LensModel.lens_model import LensModel
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo
+from pyHalo.single_realization import Realization
 
 class TestRealizationExtensions(object):
+
+    def test_SIS_injection(self):
+
+        mass = 10 ** 10
+        x = 0.0
+        y = 0.0
+        z = 0.5
+        tau = 100
+        lens_cosmo = LensCosmo(z, 2.0)
+        halo = TNFWFieldHalo.simple_setup(mass, x, y, z, tau, lens_cosmo)
+        realization = Realization.from_halos([halo], lens_cosmo, None,
+                                             None, None, None,
+                                             None, None)
+        ext = RealizationExtensions(realization)
+        new_realization = ext.SIS_injection(10**11)
+        npt.assert_equal(new_realization.halos[0].mdef=='TNFW', True)
+        new_realization = ext.SIS_injection(10 ** 9)
+        npt.assert_equal(new_realization.halos[0].mdef == 'SIS', True)
 
     def test_black_holes(self):
 

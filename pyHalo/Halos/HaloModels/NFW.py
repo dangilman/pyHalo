@@ -1,4 +1,5 @@
 from pyHalo.Halos.halo_base import Halo
+from lenstronomy.LensModel.Profiles.nfw import NFW as NFWLenstronomy
 import numpy as np
 
 class NFWFieldHalo(Halo):
@@ -19,6 +20,7 @@ class NFWFieldHalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._truncation_class = truncation_class
         self._concentration_class = concentration_class
+        self._nfw_lenstronomy = NFWLenstronomy()
         mdef = 'NFW'
         super(NFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
@@ -79,6 +81,31 @@ class NFWFieldHalo(Halo):
             concentration = self.c
             self._profile_args = (concentration)
         return self._profile_args
+
+    @property
+    def vmax_nfw(self):
+        """
+        Returns the maximum circular velocity in km/sec
+        :return:
+        """
+        if not hasattr(self, '_vmax'):
+            rhos, rs, _ = self.nfw_params
+            _ = self.profile_args
+            self._vmax = self._lens_cosmo.nfw_vmax(self._rescale_norm * rhos, rs)
+        return self._vmax
+
+    def mass_3d(self, rmax, profile_args=None):
+        """
+        Calculate the enclosed mass in 3D
+        :param rmax:
+        :param profile_args:
+        :return:
+        """
+        if rmax == 'r200':
+            rmax = self.nfw_params[1] * self.c
+        rs = self.nfw_params[1]
+        rho0 = self.nfw_params[0] * self._rescale_norm
+        return self._nfw_lenstronomy.mass_3d(rmax, rs, rho0)
 
 class NFWSubhhalo(NFWFieldHalo):
 
