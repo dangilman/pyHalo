@@ -1,5 +1,5 @@
 import numpy as np
-from pyHalo.Halos.HaloModels.sis import SIS
+from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.single_realization import Realization
@@ -38,7 +38,7 @@ class RealizationExtensions(object):
 
         self._realization = realization
 
-    def SIS_injection(self, mass_threshold):
+    def SIS_injection(self, mass_threshold, galaxy_model='GNFW'):
         """
         This method transforms objects with M > mass_threshold into SIS profiles; this method currently only works
         for TNFW profiles and cored TNFW profiles (NFW_core_trunc, or TNFWC in lenstronomy)
@@ -49,8 +49,12 @@ class RealizationExtensions(object):
         halo_list = []
         for halo in self._realization.halos:
             if halo.mass >= mass_threshold:
-                sis = SIS(halo)
-                halo_list.append(sis)
+                if galaxy_model == 'GNFW':
+                    gal = MassiveGalaxy(halo)
+                    halo_list.append(gal)
+                else:
+                    sis = SIS(halo)
+                    halo_list.append(sis)
             else:
                 halo_list.append(halo)
         realization = Realization.from_halos(halo_list, self._realization.lens_cosmo,

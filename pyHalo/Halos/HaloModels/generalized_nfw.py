@@ -99,7 +99,6 @@ class GeneralNFWSubhalo(Halo):
             self._rho0_norm = m_nfw / self._prof.mass_3d(r_match_arcsec, rs_arcsec, sigma_crit_arcsec, gamma_inner, gamma_outer)
         return self._rho0_norm
 
-
 class GeneralNFWFieldHalo(GeneralNFWSubhalo):
     """
     Class that defines a power law halo in the field
