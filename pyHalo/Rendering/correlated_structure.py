@@ -148,13 +148,13 @@ class CorrelatedStructure(RenderingClassBase):
                                                    2*rendering_radius,
                                                    mass_sheet_correction=False)
 
-        lens_model_list, _, kwargs_lens, numerical_interp = realization_at_plane.lensing_quantities(
+        lens_model_list, _, kwargs_lens, _ = realization_at_plane.lensing_quantities(
             add_mass_sheet_correction=False)
 
         if len(lens_model_list) == 0:
             return np.array([]), np.array([]), []
 
-        lens_model = LensModel(lens_model_list, numerical_alpha_class=numerical_interp)
+        lens_model = LensModel(lens_model_list)
         npix = int(2 * rendering_radius / arcsec_per_pixel)
         _r = np.linspace(-rendering_radius, rendering_radius, npix)
         xx, yy = np.meshgrid(_r, _r)

@@ -38,7 +38,7 @@ class RealizationExtensions(object):
 
         self._realization = realization
 
-    def SIS_injection(self, mass_threshold, galaxy_model='GNFW'):
+    def SIS_injection(self, mass_threshold, galaxy_model):
         """
         This method transforms objects with M > mass_threshold into SIS profiles; this method currently only works
         for TNFW profiles and cored TNFW profiles (NFW_core_trunc, or TNFWC in lenstronomy)
@@ -52,9 +52,11 @@ class RealizationExtensions(object):
                 if galaxy_model == 'GNFW':
                     gal = MassiveGalaxy(halo)
                     halo_list.append(gal)
-                else:
+                elif galaxy_model == 'SIS':
                     sis = SIS(halo)
                     halo_list.append(sis)
+                else:
+                    raise Exception('Unknown galaxy model '+str(galaxy_model))
             else:
                 halo_list.append(halo)
         realization = Realization.from_halos(halo_list, self._realization.lens_cosmo,

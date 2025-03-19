@@ -28,15 +28,24 @@ class TestRealizationExtensions(object):
                                              None, None, None,
                                              None, None)
         ext = RealizationExtensions(realization)
-        new_realization = ext.SIS_injection(10**11, 'SIS')
+        new_realization = ext.SIS_injection(10**11, galaxy_model='SIS')
         npt.assert_equal(new_realization.halos[0].mdef=='TNFW', True)
-        new_realization = ext.SIS_injection(10 ** 9)
+        new_realization = ext.SIS_injection(10 ** 9, galaxy_model='SIS')
         npt.assert_equal(new_realization.halos[0].mdef == 'SIS', True)
 
-        new_realization = ext.SIS_injection(10 ** 11, 'GNFW')
+        new_realization = ext.SIS_injection(10 ** 11, galaxy_model='GNFW')
         npt.assert_equal(new_realization.halos[0].mdef == 'TNFW', True)
-        new_realization = ext.SIS_injection(10 ** 9)
+        new_realization = ext.SIS_injection(10 ** 9, galaxy_model='GNFW')
         npt.assert_equal(new_realization.halos[0].mdef == 'GNFW', True)
+
+        cdm = CDM(0.5, 2.0, mass_threshold_sis=10**9, log_mlow=9, log_mhigh=11,
+                  galaxy_model='SIS')
+        for halo in cdm.halos:
+            npt.assert_string_equal(halo.mdef, 'SIS')
+        cdm = CDM(0.5, 2.0, mass_threshold_sis=10 ** 9, log_mlow=9, log_mhigh=11,
+                  galaxy_model='GNFW')
+        for halo in cdm.halos:
+            npt.assert_string_equal(halo.mdef, 'GNFW')
 
     def test_black_holes(self):
 
