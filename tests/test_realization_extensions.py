@@ -28,10 +28,15 @@ class TestRealizationExtensions(object):
                                              None, None, None,
                                              None, None)
         ext = RealizationExtensions(realization)
-        new_realization = ext.SIS_injection(10**11)
+        new_realization = ext.SIS_injection(10**11, 'SIS')
         npt.assert_equal(new_realization.halos[0].mdef=='TNFW', True)
         new_realization = ext.SIS_injection(10 ** 9)
         npt.assert_equal(new_realization.halos[0].mdef == 'SIS', True)
+
+        new_realization = ext.SIS_injection(10 ** 11, 'GNFW')
+        npt.assert_equal(new_realization.halos[0].mdef == 'TNFW', True)
+        new_realization = ext.SIS_injection(10 ** 9)
+        npt.assert_equal(new_realization.halos[0].mdef == 'GNFW', True)
 
     def test_black_holes(self):
 
