@@ -143,7 +143,7 @@ class Halo(ABC):
     @property
     def bound_mass(self):
         if not hasattr(self, '_bound_mass'):
-            raise Exception('this halo class does not have a bound mass attribute because the profile does not have '
+            raise Exception('this halo class, with mass definition does not have a bound mass attribute because the profile does not have '
                         'a tidal truncation radius')
         else:
             return self._bound_mass

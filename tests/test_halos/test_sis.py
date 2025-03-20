@@ -102,6 +102,7 @@ class TestMassiveGalaxy(object):
                            kwargs_lenstronomy['gamma_outer'])
         npt.assert_almost_equal(mass3d/nfw_field_halo.mass, 1.0, 2)
 
+
 if __name__ == '__main__':
     pytest.main()
 

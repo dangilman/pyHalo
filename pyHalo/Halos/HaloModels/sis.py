@@ -94,6 +94,17 @@ class MassiveGalaxy(Halo):
                                   fixed_position=nfw_halo.fixed_position)
 
     @property
+    def bound_mass(self):
+        """
+        Return the bound mass (if is a subhalo)
+        :return:
+        """
+        if self.is_subhalo:
+            return self._nfw_halo.bound_mass
+        else:
+            raise Exception('field halos do not have bound mass attribute')
+
+    @property
     def c(self):
         """
         Computes the halo concentration (once)
