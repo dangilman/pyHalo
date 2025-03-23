@@ -37,7 +37,7 @@ class SIS(Halo):
         """
         if not hasattr(self, '_profile_args'):
             vmax = self._nfw_halo.vmax_nfw
-            velocity_dispersion = 1.0 * vmax
+            velocity_dispersion = 0.646 * vmax
             self._profile_args = (velocity_dispersion)
         return self._profile_args
 
@@ -80,7 +80,7 @@ class MassiveGalaxy(Halo):
         mdef = 'GNFW'
         self._nfw_halo = nfw_halo
         self._prof = PseudoDoublePowerlaw()
-        halo_args = {'gamma_inner': 2.0, 'gamma_outer': 3.1, 'x_match': 'c'}
+        halo_args = {'gamma_inner': 2.0, 'gamma_outer': 5.0, 'x_match': 'c'}
         super(MassiveGalaxy, self).__init__(mass=nfw_halo.mass,
                                   x=nfw_halo.x,
                                   y=nfw_halo.y,
@@ -92,6 +92,25 @@ class MassiveGalaxy(Halo):
                                   args=halo_args,
                                   unique_tag=nfw_halo.unique_tag,
                                   fixed_position=nfw_halo.fixed_position)
+
+    def density_profile_3d_lenstronomy(self, r, profile_args=None):
+        """
+        Computes the 3-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        prof = self._prof
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        factor = sigma_crit_kpc / kpc_per_arcsec
+        return factor*prof.density_lens(r / kpc_per_arcsec,
+                                        kwargs_lenstronomy['Rs'],
+                                        kwargs_lenstronomy['alpha_Rs'],
+                                        kwargs_lenstronomy['gamma_inner'],
+                                        kwargs_lenstronomy['gamma_outer'])
+
 
     @property
     def bound_mass(self):
@@ -120,8 +139,12 @@ class MassiveGalaxy(Halo):
         """
         if not hasattr(self, '_lenstronomy_args'):
             (concentration, gamma_inner, gamma_outer) = self.profile_args
-            _, rs, r200 = self.nfw_params
+            _, _, r200 = self.nfw_params
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            if self._nfw_halo.is_subhalo:
+                rs = self._nfw_halo.profile_args[1]
+            else:
+                rs = self._nfw_halo.nfw_params[1]
             rs_arcsec = rs / kpc_per_arcsec
             alpha_Rs = self._alphaRs()
             x, y = np.round(self.x, 4), np.round(self.y, 4)
@@ -163,7 +186,11 @@ class MassiveGalaxy(Halo):
         if not hasattr(self, '_rho0_norm'):
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             m_nfw = self._nfw_halo.mass_3d('r200')
-            _, rs_kpc, r200_kpc = self._nfw_halo.nfw_params
+            if self._nfw_halo.is_subhalo:
+                rs_kpc = self._nfw_halo.profile_args[1]
+            else:
+                rs_kpc = self._nfw_halo.nfw_params[1]
+            _, _, r200_kpc = self._nfw_halo.nfw_params
             rs_arcsec = rs_kpc / kpc_per_arcsec
             r_match_arcsec = r200_kpc / kpc_per_arcsec
             gamma_inner = self._args['gamma_inner']

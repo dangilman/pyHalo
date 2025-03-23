@@ -1,8 +1,8 @@
 import numpy.testing as npt
 from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
-from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo
+from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
-from pyHalo.Halos.tidal_truncation import TruncationRoche
+from pyHalo.Halos.tidal_truncation import TruncationRoche, Multiple_RS
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -74,7 +74,7 @@ class TestMassiveGalaxy(object):
 
         sis_lenstronomy = SISLenstronomy()
         mass3d = sis_lenstronomy.mass_3d_lens(rs, thetaE) * nfw_field_halo.lens_cosmo.sigmacrit
-        npt.assert_almost_equal(mass3d/nfw_field_halo.mass, 2.05, 2)
+        npt.assert_almost_equal(mass3d/nfw_field_halo.mass, 0.857, 2)
 
     def test_gnfw_mass(self):
 
@@ -86,13 +86,11 @@ class TestMassiveGalaxy(object):
         is_subhalo = False
         nfw_field_halo = TNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, {},
                                        self.truncation_class, self.concentration_class, unique_tag)
-
         gal = MassiveGalaxy(nfw_field_halo)
         kwargs_lenstronomy = gal.lenstronomy_params[0][0]
         prof = PseudoDoublePowerlaw()
         kpc_per_arcsec = nfw_field_halo.lens_cosmo.cosmo.kpc_proper_per_asec(gal.z)
         r = nfw_field_halo.nfw_params[-1]/kpc_per_arcsec
-
         sigma_crit_mpc = nfw_field_halo.lens_cosmo.get_sigma_crit_lensing(gal.z, nfw_field_halo.lens_cosmo.z_source)
         sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
         mass3d = sigma_crit_arcsec*prof.mass_3d_lens(r,
@@ -102,6 +100,41 @@ class TestMassiveGalaxy(object):
                            kwargs_lenstronomy['gamma_outer'])
         npt.assert_almost_equal(mass3d/nfw_field_halo.mass, 1.0, 2)
 
+        m = 10 ** 11.7
+        x = 0.
+        y = 0.0
+        r3d = 100
+        unique_tag = 1.0
+        is_subhalo = True
+        tau = 2
+        truncation_class = Multiple_RS(self.lens_cosmo, tau)
+        nfw_sub_halo = TNFWSubhalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, {},
+                                       truncation_class, self.concentration_class, unique_tag)
+        gal = MassiveGalaxy(nfw_sub_halo)
+        kwargs_lenstronomy = gal.lenstronomy_params[0][0]
+        prof = PseudoDoublePowerlaw()
+        kpc_per_arcsec = nfw_field_halo.lens_cosmo.cosmo.kpc_proper_per_asec(gal.z)
+        r = nfw_sub_halo.nfw_params[-1] / kpc_per_arcsec
+        sigma_crit_mpc = nfw_field_halo.lens_cosmo.get_sigma_crit_lensing(gal.z, nfw_field_halo.lens_cosmo.z_source)
+        sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
+        npt.assert_almost_equal(kwargs_lenstronomy['Rs'], nfw_sub_halo.profile_args[1]/kpc_per_arcsec, 3)
+
+        mass3d = sigma_crit_arcsec * prof.mass_3d_lens(r,
+                                                       kwargs_lenstronomy['Rs'],
+                                                       kwargs_lenstronomy['alpha_Rs'],
+                                                       kwargs_lenstronomy['gamma_inner'],
+                                                       kwargs_lenstronomy['gamma_outer'])
+        npt.assert_almost_equal(mass3d / nfw_sub_halo.bound_mass, 1.0, 5)
+        #
+        # import matplotlib.pyplot as plt
+        # rs = nfw_sub_halo.nfw_params[1]
+        # r_plot = np.logspace(-2, 1., 1000) * rs
+        # rho_nfw = nfw_sub_halo.density_profile_3d(r_plot)
+        # rho_gal = gal.density_profile_3d_lenstronomy(r_plot)
+        # plt.loglog(r_plot, rho_nfw)
+        # plt.loglog(r_plot, rho_gal)
+        # #print(rho_nfw)
+        # plt.show()
 
 if __name__ == '__main__':
     pytest.main()
