@@ -186,7 +186,7 @@ class Halo(ABC):
         :return: rs, r200 and rho_s in units kpc, kpc, and M_sun / kpc^3
         """
         if not hasattr(self, '_nfw_params'):
-            rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval, self._pseudo_nfw)
+            rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z, self._pseudo_nfw)
             self._nfw_params = [rhos, rs, r200]
         return self._nfw_params[0], self._nfw_params[1], self._nfw_params[2]
 
