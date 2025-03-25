@@ -23,7 +23,6 @@ class TestpyHalo(object):
         npt.assert_string_equal(pyhalo.CODE_VERSION, 'DO_NOT_CLONE')
         check_code_version('DO_NOT_CLONE')
 
-
     def test_create_realizations(self):
         pyhalo = pyHalo(0.5, 2.)
         cone_opening_angle = 6.0
