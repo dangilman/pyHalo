@@ -240,7 +240,7 @@ class TruncationGalacticusKeeley24(object):
         """
 
         return self.truncation_radius(halo.mass, halo.c,
-                                      halo.time_since_infall, self._chost, halo.z_eval)
+                                      halo.time_since_infall, self._chost, halo.z)
 
     def truncation_radius(self, halo_mass, infall_concentration,
                           time_since_infall, chost, z_eval):
