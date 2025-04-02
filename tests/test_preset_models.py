@@ -21,6 +21,12 @@ class TestPresetModels(object):
         infall_redshift_model = lens_cosmo._z_infall_model
         npt.assert_string_equal(default, infall_redshift_model.name)
 
+    def test_custom(self):
+
+        model = 'CUSTOM'
+        preset_model = preset_model_from_name(model, custom_function=CDM)
+        _ = preset_model(0.5, 2.0)
+
     def test_CDM(self):
 
         cdm = CDM(0.5, 1.5)
