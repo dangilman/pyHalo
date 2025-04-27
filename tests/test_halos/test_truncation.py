@@ -3,7 +3,7 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity, \
-    ConstantTruncationArcsec, Multiple_RS, TrunctionBoundMassPDF
+    ConstantTruncationArcsec, Multiple_RS, TruncationBoundMassPDF
 from pyHalo.truncation_models import truncation_models
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
@@ -135,13 +135,18 @@ class TestTruncation(object):
         halo = DummyHalo(10**8, 0.7)
         log10_fbound_mean = -3.0
         log10_fbound_sigma = 0.000001
-        trunc = TrunctionBoundMassPDF(self.lenscosmo,
+        trunc = TruncationBoundMassPDF(self.lenscosmo,
                                       log10_fbound_mean,
                                       log10_fbound_sigma)
         rt = trunc.truncation_radius_halo(halo)
         npt.assert_equal(rt > 0, True)
         npt.assert_equal(halo.f > 0, True)
 
+    def test_custom_class_truncation(self):
+
+        mod, kw = truncation_models(TruncationBoundMassPDF)
+        npt.assert_string_equal(mod.name,
+                                "TruncationBoundMassPDF")
 
 if __name__ == '__main__':
     pytest.main()

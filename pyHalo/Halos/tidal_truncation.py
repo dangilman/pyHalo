@@ -363,7 +363,7 @@ class TruncationGalacticus(object):
         r_te, _ = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
         return r_te
 
-class TrunctionBoundMassPDF(object):
+class TruncationBoundMassPDF(object):
     name = 'TruncationBoundMassPDF'
     def __init__(self, lens_cosmo, log10_fbound_mean=-1.5, log10_fbound_standard_dev=0.5):
         """
