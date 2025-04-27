@@ -23,7 +23,7 @@ class TruncationSplashBack(object):
         :param halo: an instance of halo
         :return: the truncation radius in physical kpc
         """
-        return self.truncation_radius(halo.mass, halo.z)
+        return self.truncation_radius(halo.mass, halo.z_eval)
 
     def truncation_radius(self, halo_mass, z):
         """
@@ -305,7 +305,7 @@ class TruncationGalacticus(object):
 
     def truncation_radius_halo(self, halo, psuedo_nfw=False):
         """
-        Thiis method computess the truncation radius using the class attributes of an instance of Halo
+        Compute the truncation radius using the class attributes of an instance of Halo
         :param halo: an instance of halo
         :return: the truncation radius in physical kpc
         """
@@ -318,7 +318,7 @@ class TruncationGalacticus(object):
         m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                            infall_concentration,
-                                                           halo.z,
+                                                           halo.z_eval,
                                                            psuedo_nfw)
         r_te, f_t = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
         halo.rescale_normalization(f_t)
@@ -326,7 +326,7 @@ class TruncationGalacticus(object):
 
     def truncation_radius_from_bound_mass(self, halo, m_bound, psuedo_nfw=False):
         """
-        Thiis method computes the truncation radius given the bound mass of a halo
+        This method computes the truncation radius given the bound mass of a halo
         :param halo: an instance of a Halo class
         :param m_bound: the bound mass in solar masses
         :param psuedo_nfw: see documentation in LensCosmo / nfw_parameter classes
@@ -363,5 +363,38 @@ class TruncationGalacticus(object):
         r_te, _ = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
         return r_te
 
+class TrunctionBoundMassPDF(object):
+    name = 'TruncationBoundMassPDF'
+    def __init__(self, lens_cosmo, log10_fbound_mean=-1.5, log10_fbound_standard_dev=0.5):
+        """
+        Sets halo truncation radii for NFW profiles based on bound masses sampled from a normal distribution
+        :param lens_cosmo: an instance of LensCosmo
+        :param log10_fbound_mean: the mean of a Gaussian distribution of log10_bound_mass_mean
+        :param log10_fbound_standard_dev: the standard deviation of the Gaussian distribution
+        """
+        self._lens_cosmo = lens_cosmo
+        self._log10_fbound_mean = log10_fbound_mean
+        self._log10_fbound_standard_dev = log10_fbound_standard_dev
 
+    def truncation_radius_halo(self, halo, psuedo_nfw=False):
+        """
+        Compute the truncation radius using the class attributes of an instance of Halo
+        :param halo: an instance of halo
+        :return: the truncation radius in physical kpc
+        """
 
+        log10_fbound = np.random.normal(self._log10_fbound_mean, self._log10_fbound_standard_dev)
+        f_bound = 10 ** log10_fbound
+        if f_bound >= 1.0:
+            f_bound = 0.999
+        _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo.mass,
+                                                           halo.c,
+                                                           halo.z_eval,
+                                                           psuedo_nfw)
+        m_bound = f_bound * halo.mass
+        r_te, f_t = compute_r_te_and_f_t(m_bound,
+                                         halo.mass,
+                                         r200,
+                                         halo.c)
+        halo.rescale_normalization(f_t)
+        return r_te

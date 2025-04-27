@@ -207,7 +207,6 @@ class TNFWSubhalo(TNFWFieldHalo):
             pass
         else:
             raise Exception('this method can only be called when using the TruncationGalacticus class')
-
         if not hasattr(self, '_mbound_galacticus_definition'):
             self._mbound_galacticus_definition = self._truncation_class.calculate_mbound(self)
         return self._mbound_galacticus_definition

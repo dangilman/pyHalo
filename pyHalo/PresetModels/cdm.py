@@ -270,4 +270,3 @@ def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
         ext = RealizationExtensions(realization)
         realization = ext.SIS_injection(mass_threshold_sis)
     return realization
-

@@ -3,11 +3,10 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
 from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity, \
-    ConstantTruncationArcsec, Multiple_RS
+    ConstantTruncationArcsec, Multiple_RS, TrunctionBoundMassPDF
 from pyHalo.truncation_models import truncation_models
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
-import os
 
 
 class TestTruncation(object):
@@ -24,9 +23,10 @@ class TestTruncation(object):
                            'SPLASHBACK', 'TRUNCATION_MEAN_DENSITY', 'CONSTANT',
                            'TRUNCATION_GALACTICUS',
                            'TRUNCATION_GALACTICUS_KEELEY24',
-                           'MULTIPLE_RS']
+                           'MULTIPLE_RS',
+                           'BOUND_MASS_PDF']
         kwargs_model_list = [{}, {'LOS_truncation_factor': 50.}, {'RocheNorm': 1.0, 'm_power': 1./3, 'RocheNu': 2.0/3.0}, {},
-                             {}, {}, {'rt_arcsec': 1.0}, {'c_host': 5.0}, {'c_host': 9.0}, {'tau': 1.0}]
+                             {}, {}, {'rt_arcsec': 1.0}, {'c_host': 5.0}, {'c_host': 9.0}, {'tau': 1.0}, {}]
         for model,kwargs in zip(model_name_list, kwargs_model_list):
             mod, kw = truncation_models(model)
             kwargs.update(kw)
@@ -77,6 +77,7 @@ class TestTruncation(object):
             def __init__(self, m, z):
                 self.mass = m
                 self.z = z
+                self.z_eval = z
         truncation_splashback = TruncationSplashBack(self.lenscosmo)
         rt = truncation_splashback.truncation_radius(10**8, 0.4)
         halo = DummyHalo(10**8, 0.4)
@@ -117,6 +118,30 @@ class TestTruncation(object):
         npt.assert_almost_equal(rt, 2.5)
         rt= trunc.truncation_radius()
         npt.assert_almost_equal(rt, 2.5)
+
+    def test_bound_mass_pdf(self):
+
+        class DummyHalo(object):
+
+            def __init__(self, m, z):
+                self.mass = m
+                self.z = z
+                self.z_eval = z
+                self.f = None
+                self.c = 16
+            def rescale_normalization(self, factor):
+                self.f = factor
+
+        halo = DummyHalo(10**8, 0.7)
+        log10_fbound_mean = -3.0
+        log10_fbound_sigma = 0.000001
+        trunc = TrunctionBoundMassPDF(self.lenscosmo,
+                                      log10_fbound_mean,
+                                      log10_fbound_sigma)
+        rt = trunc.truncation_radius_halo(halo)
+        npt.assert_equal(rt > 0, True)
+        npt.assert_equal(halo.f > 0, True)
+
 
 if __name__ == '__main__':
     pytest.main()

@@ -46,6 +46,18 @@ class Halo(ABC):
         assert z > 0, 'Negative redshifts are unphysical for halos'
 
     @property
+    def args_profile(self):
+        return self._args
+
+    def update_args(self, kwargs_halo):
+        """
+        Update the interal _args argument of the profile
+        :param kwargs_halo: additional keyword arguments that include default settings for the halo
+        :return:
+        """
+        self._args.update(kwargs_halo)
+
+    @property
     def rescale_norm(self):
         return self._rescale_norm
 

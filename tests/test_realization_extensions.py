@@ -5,8 +5,8 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.interpolate import interp1d
 import numpy.testing as npt
 import numpy as np
-from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
-from pyHalo.Halos.tidal_truncation import TruncationRoche, TruncationRN, TruncationGalacticus
+from pyHalo.Halos.concentration import ConcentrationDiemerJoyce, ConcentrationConstant
+from pyHalo.Halos.tidal_truncation import TruncationRoche, TruncationRN, Multiple_RS
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.PresetModels.cdm import CDM
 from lenstronomy.LensModel.Profiles.splcore import SPLCORE
@@ -216,6 +216,92 @@ class TestRealizationExtensions(object):
         lens_model_list, zlist, kwargs_halo, _ = new.lensing_quantities()
         npt.assert_string_equal(lens_model_list[0], 'SPL_CORE')
         npt.assert_equal(kwargs_halo[0]['gamma'], 3.1)
+
+    def test_add_core_collapsed_halos_TNFWC(self):
+
+        halo_mass = 10 ** 8
+        x = 0.5
+        y = 1.0
+        mdef = 'TNFW'
+        z = 0.5
+        zlens = 0.5
+        zsource = 2.0
+        astropy_instance = Cosmology().astropy
+
+        # first test with rt > rs
+        truncation_class = Multiple_RS(None, 2.0)
+        concentration_class = ConcentrationConstant(astropy_instance, 10)
+        kwargs_halo_model = {'concentration_model_field_halos': concentration_class,
+                                    'truncation_model_field_halos': truncation_class,
+                                    'kwargs_density_profile': {}}
+        single_halo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=False,
+                 kwargs_halo_model=kwargs_halo_model)
+        _, _, kwargs_cdm_halo, _ = single_halo.lensing_quantities()
+        ext = RealizationExtensions(single_halo)
+        indexes = [0]
+        x_core_halo = 0.08
+        new = ext.add_core_collapsed_halos(indexes,
+                                           halo_profile='TNFWC',
+                                           x_core_halo=x_core_halo,
+                                           )
+        lens_model_list, zlist, kwargs_halo, _ = new.lensing_quantities()
+        npt.assert_string_equal(lens_model_list[0], 'TNFWC')
+
+        rs_cdm = kwargs_cdm_halo[0]['Rs']
+        rs_sidm = kwargs_halo[0]['Rs']
+        rc_sidm = kwargs_halo[0]['r_core']
+        npt.assert_almost_equal(rs_sidm/rs_cdm, x_core_halo, 3)
+        npt.assert_almost_equal(rc_sidm / rs_cdm, x_core_halo, 3)
+
+        r = np.logspace(-1., 1.7, 1000) * rs_cdm
+        rho_profile_sidm = new.halos[0].density_profile_3d_lenstronomy(r)
+        rho_profile_nfw = single_halo.halos[0].density_profile_3d_lenstronomy(r)
+        mass_cdm = np.trapz(4 * np.pi * r ** 2 * rho_profile_nfw, r)
+        mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_profile_sidm, r)
+        npt.assert_almost_equal(mass_sidm / mass_cdm, 1, 2)
+        # import matplotlib.pyplot as plt
+        # plt.loglog(r/rs_cdm, rho_profile_nfw, color='k')
+        # plt.loglog(r/rs_cdm, rho_profile_sidm)
+        # plt.show()
+        # print(kwargs_halo)
+
+        # first test with rt < rs
+        truncation_class = Multiple_RS(None, 0.1)
+        concentration_class = ConcentrationConstant(astropy_instance, 10)
+        kwargs_halo_model = {'concentration_model_field_halos': concentration_class,
+                             'truncation_model_field_halos': truncation_class,
+                             'kwargs_density_profile': {}}
+        single_halo = SingleHalo(halo_mass, x, y, mdef, z, zlens, zsource, subhalo_flag=False,
+                                 kwargs_halo_model=kwargs_halo_model)
+        _, _, kwargs_cdm_halo, _ = single_halo.lensing_quantities()
+        ext = RealizationExtensions(single_halo)
+        indexes = [0]
+        x_core_halo = 0.15
+        new = ext.add_core_collapsed_halos(indexes,
+                                           halo_profile='TNFWC',
+                                           x_core_halo=x_core_halo,
+                                           )
+        lens_model_list, zlist, kwargs_halo, _ = new.lensing_quantities()
+        npt.assert_string_equal(lens_model_list[0], 'TNFWC')
+
+        rt_cdm = kwargs_cdm_halo[0]['r_trunc']
+        rs_sidm = kwargs_halo[0]['Rs']
+        rc_sidm = kwargs_halo[0]['r_core']
+        npt.assert_almost_equal(rs_sidm / rt_cdm, 0.99, 3)
+        npt.assert_almost_equal(rc_sidm / rt_cdm, 0.99 ** 2, 3)
+
+        r = np.logspace(-2., 1.7, 5000) * rs_cdm
+        rho_profile_sidm = new.halos[0].density_profile_3d_lenstronomy(r)
+        rho_profile_nfw = single_halo.halos[0].density_profile_3d_lenstronomy(r)
+        mass_cdm = np.trapz(4 * np.pi * r ** 2 * rho_profile_nfw, r)
+        mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_profile_sidm, r)
+        npt.assert_almost_equal(mass_sidm / mass_cdm, 1, 2)
+        #
+        # import matplotlib.pyplot as plt
+        # plt.loglog(r/rs_cdm, rho_profile_nfw, color='k')
+        # plt.loglog(r/rs_cdm, rho_profile_sidm)
+        # plt.show()
+        # print(kwargs_halo)
 
     def test_collapse_profile(self):
 
@@ -510,6 +596,7 @@ class TestRealizationExtensions(object):
             condition1 = 'PT_MASS' == halo.mdef
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
+
 
 if __name__ == '__main__':
       pytest.main()

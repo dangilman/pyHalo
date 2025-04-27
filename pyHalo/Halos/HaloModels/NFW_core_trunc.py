@@ -5,11 +5,18 @@ from copy import deepcopy
 
 _tnfwc_lenstronomy = TNFWCLenstronomy()
 
-class TNFWCHalo(Halo):
+
+class TNFWCHaloParametric(Halo):
+    """
+    The same profile as TNFWCHalo, but gets initialized with the core radius, truncation radius, and scale radius as
+    profile parameters, rather than an SIDM timescale as a parameter
+    """
+
     """
     The base class for a cored and truncated NFW halo
     """
-    _pseudo_nfw = True
+    _pseudo_nfw = False # for the parametric profile class this should be False
+
     def __init__(self, mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args,
                  truncation_class, concentration_class, unique_tag):
@@ -21,13 +28,13 @@ class TNFWCHalo(Halo):
         self._truncation_class = truncation_class
         self.tnfwc_lenstronomy = TNFWCLenstronomy()
         mdef = 'TNFWC'
-        super(TNFWCHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
-                                           lens_cosmo_instance, args, unique_tag)
+        super(TNFWCHaloParametric, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
+                                        lens_cosmo_instance, args, unique_tag)
 
     def density_profile_3d(self, r, profile_args=None):
         """
 
-        :param r:
+        :param r: distance from center of halo [kpc]
         :param profile_args:
         :return:
         """
@@ -52,6 +59,15 @@ class TNFWCHalo(Halo):
                                                             kwargs_lenstronomy['r_trunc'])
 
     @property
+    def c(self):
+        """
+        Computes the halo concentration (once)
+        """
+        if not hasattr(self, '_c'):
+            self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
+        return self._c
+
+    @property
     def lenstronomy_ID(self):
         """
         See documentation in base class (Halos/halo_base.py)
@@ -60,13 +76,93 @@ class TNFWCHalo(Halo):
         return ['TNFWC']
 
     @property
-    def c(self):
+    def lenstronomy_params(self):
         """
-        Computes the halo concentration (once)
+        See documentation in base class (Halos/halo_base.py)
         """
-        if not hasattr(self, '_c'):
-            self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
-        return self._c
+        if not hasattr(self, '_kwargs_lenstronomy'):
+            [alpha_Rs, rs_kpc, rc_kpc, rt_kpc, _] = self.profile_args
+            kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            Rs_angle = rs_kpc / kpc_per_arcsec
+            r_core_angle = rc_kpc / kpc_per_arcsec
+            r_trunc_angle = rt_kpc / kpc_per_arcsec
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
+            kwargs = [{'alpha_Rs': alpha_Rs,
+                       'Rs': Rs_angle,
+                       'center_x': x, 'center_y': y,
+                       'r_trunc': r_trunc_angle,
+                       'r_core': r_core_angle}]
+            self._kwargs_lenstronomy = kwargs
+        return self._kwargs_lenstronomy, None
+
+    @property
+    def profile_args(self):
+        """
+        Computes the time-evolving profile parameters
+        :return: the density normalization, scale radius, and core radius for thee SIDM halo
+        """
+        if not hasattr(self, '_profile_args'):
+            rt_kpc = self._truncation_class.truncation_radius_halo(self)
+            _, rs_kpc0, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval,
+                                                               pseudo_nfw=False)
+            r200_kpc = rs_kpc0 * self.c
+            r_match_kpc = self.c * rs_kpc0
+            kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            r_trunc_angle = rt_kpc / kpc_per_arcsec
+            rs_kpc = self._args['x_core_halo'] * rs_kpc0
+            if rt_kpc < rs_kpc:
+                rs_kpc = rt_kpc * 0.99
+            r_core_kpc = rs_kpc * 0.99
+            x = np.logspace(-4,
+                            np.log10(r_match_kpc / rs_kpc0),
+                            1000)
+            r = x * rs_kpc0
+            rs_angle = rs_kpc / kpc_per_arcsec
+            r_core_angle = r_core_kpc / kpc_per_arcsec
+            kwargs_temp = {'alpha_Rs': 1.0,
+                           'Rs': rs_angle,
+                           'r_core': r_core_angle,
+                           'r_trunc': r_trunc_angle}
+            rho = self.density_profile_3d_lenstronomy(r, kwargs_temp)
+            mass_3d = np.trapz(4 * np.pi * r ** 2 * rho, r)
+            alpha_Rs = self._args['mass_conservation'] / mass_3d
+            self._profile_args = (alpha_Rs,
+                                  rs_kpc,
+                                  r_core_kpc,
+                                  rt_kpc,
+                                  r200_kpc)
+        return self._profile_args
+
+    @property
+    def params_physical(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_params_physical'):
+            [rho_s, rs_kpc, rc_kpc, rt_kpc, r200_kpc] = self.profile_args
+            self._params_physical = {'rhos': rho_s * self._rescale_norm,
+                                     'rs': rs_kpc, 'r200': r200_kpc,
+                                     'r_trunc_kpc': rt_kpc,
+                                     'r_core_kpc': rc_kpc}
+        return self._params_physical
+
+    @property
+    def vmax_nfw(self):
+        """
+        Returns the maximum circular velocity in km/sec of an NFW profile with given rhos, rs
+        :return:
+        """
+        if not hasattr(self, '_vmax'):
+            rhos, rs, _ = self.nfw_params
+            _ = self.profile_args
+            self._vmax = self._lens_cosmo.nfw_vmax(self._rescale_norm * rhos, rs)
+        return self._vmax
+
+class TNFWCHalo(TNFWCHaloParametric):
+    """
+    The base class for a cored and truncated NFW halo
+    """
+    _pseudo_nfw = True
 
     @property
     def halo_effective_age(self):
@@ -94,27 +190,6 @@ class TNFWCHalo(Halo):
         :return:
         """
         return self.halo_effective_age / self.sidm_timescale
-
-    @property
-    def lenstronomy_params(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
-        if not hasattr(self, '_kwargs_lenstronomy'):
-
-            [alpha_Rs, rs_kpc, rc_kpc, rt_kpc, _] = self.profile_args
-            dd = self.lens_cosmo.cosmo.D_A_z(self.z)
-            Rs_angle = rs_kpc * 1e-3 / dd / self.lens_cosmo._arcsec  # Rs in arcsec
-            r_core_angle = rc_kpc * 1e-3 / dd / self.lens_cosmo._arcsec
-            r_trunc_angle = rt_kpc * 1e-3 / dd / self.lens_cosmo._arcsec
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
-            kwargs = [{'alpha_Rs': alpha_Rs,
-                       'Rs': Rs_angle,
-                       'center_x': x, 'center_y': y,
-                       'r_trunc': r_trunc_angle,
-                       'r_core': r_core_angle}]
-            self._kwargs_lenstronomy = kwargs
-        return self._kwargs_lenstronomy, None
 
     @property
     def profile_args(self):
@@ -147,30 +222,6 @@ class TNFWCHalo(Halo):
             self._profile_args = (alpha_Rs, rs_kpc, rc_kpc, rt_kpc, r200_kpc)
         return self._profile_args
 
-    @property
-    def params_physical(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
-        """
-        if not hasattr(self, '_params_physical'):
-            [rho_s, rs_kpc, rc_kpc, rt_kpc, r200_kpc] = self.profile_args
-            self._params_physical = {'rhos': rho_s * self._rescale_norm,
-                                     'rs': rs_kpc, 'r200': r200_kpc,
-                                     'r_trunc_kpc': rt_kpc,
-                                     'r_core_kpc': rc_kpc}
-        return self._params_physical
-
-    @property
-    def vmax_nfw(self):
-        """
-        Returns the maximum circular velocity in km/sec of an NFW profile with given rhos, rs
-        :return:
-        """
-        if not hasattr(self, '_vmax'):
-            rhos, rs, _ = self.nfw_params
-            _ = self.profile_args
-            self._vmax = self._lens_cosmo.nfw_vmax(self._rescale_norm * rhos, rs)
-        return self._vmax
 
 class Hybrid(Halo):
 

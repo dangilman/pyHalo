@@ -1,4 +1,5 @@
 import numpy as np
+from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloParametric
 from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
@@ -426,54 +427,85 @@ class RealizationExtensions(object):
                         break
         return indexes
 
-    def add_core_collapsed_halos(self, indexes, halo_profile='SPL_CORE',**kwargs_halo):
+    def add_core_collapsed_halos(self, indexes, halo_profile='SPL_CORE', **kwargs_halo):
 
         """
         This function turns NFW halos into profiles that are meant to represent core-collapsed SIDM halos. The halo
-        profile can be specified through either SPL_CORE or GNFW, see the SIDM example notebooks for detials
+        profile can be specified through either SPL_CORE, GNFW, or TNFWC. see the SIDM example notebooks for details
 
-        :param indexes: the indexes of halos in the realization to transform into powerlaw or generalized nfw profiles
-        :param halo_profile: specifies whether to transform to powerlaw (SPL_CORE) or generalized_nfw profile (GNFW)
+        :param indexes: a list of integers corresponding to halos in the realization that will be transformed into
+        collapsed profiles
+        :param halo_profile: specifies whether to transform to, ether SPL_CORE, GNFW, TNFWC
         :param kwargs_halo: the keyword arguments for the collapsed halo profile
-        For SPL_CORE: should include 'log_slope_halo' and 'x_core_halo', the log profile slope and core size in units of
+        - For SPL_CORE: should include 'log_slope_halo' and 'x_core_halo', the log profile slope and core size in units of
         NFW r_s
-        For GNFW: should include 'gamma_inner' and 'gamma_outer', the logarithmic profile slopes interior to and exterior
+        - For GNFW: should include 'gamma_inner' and 'gamma_outer', the logarithmic profile slopes interior to and exterior
         to NFW r_s
-        :return: A new instance of Realization where the halos indexed by indexes
-        in the original realization have their mass definitions changed to PsuedoJaffe
+        - For TNFWC: should include x_core_halo, the same parameter as in SPL_CORE (core size in units of rs)
+        Note: if the truncation radius is smaller than rs, then rs will equal rt; if rt is smaller than rc, then rc
+        will also equal rt (in this case, all three scales are equal in the profile drops like 1/r^5 outside the core)
+        :return: a new instance of Realization containing the collapsed halo profiles
         """
 
         halos = self._realization.halos
         new_halos = []
-
         if halo_profile == 'GNFW':
             subhalo_model = GeneralNFWSubhalo
             fieldhalo_model = GeneralNFWFieldHalo
         elif halo_profile == 'SPL_CORE':
             subhalo_model = PowerLawSubhalo
             fieldhalo_model = PowerLawFieldHalo
+        elif halo_profile == 'TNFWC':
+            subhalo_model = TNFWCHaloParametric
+            fieldhalo_model = TNFWCHaloParametric
+
         else:
-            raise Exception('only halo profile models GNFW and SPL_CORE '
-                            'implemented for collapsed objects')
+            raise Exception('only halo profile models GNFW, SPL_CORE, and TNFWC are supported')
 
         for i, halo in enumerate(halos):
             if i in indexes:
-                halo._args.update(kwargs_halo)
                 if halo.is_subhalo:
-                    new_halo = subhalo_model(halo.mass, halo.x, halo.y, halo.r3d,
-                                                 halo.z, True, halo.lens_cosmo, halo._args,
-                                             halo._truncation_class,
-                                             halo._concentration_class,
-                                             halo.unique_tag)
+                    is_subhalo = True
                 else:
-                    new_halo = fieldhalo_model(halo.mass, halo.x, halo.y, halo.r3d,
-                                                 halo.z, False, halo.lens_cosmo, halo._args,
-                                               halo._truncation_class,
-                                               halo._concentration_class,
-                                               halo.unique_tag)
+                    is_subhalo = False
+                if halo_profile == 'TNFWC':
+                    _, rt_kpc = halo.profile_args
+                    tau = rt_kpc / halo.nfw_params[1]
+                    truncation_class = Multiple_RS(self._realization.lens_cosmo, tau)
+                    concentration_class = ConcentrationConstant(None, halo.c)
+                    kwargs_halo['mass_conservation'] = halo.mass_3d('r200')
+                else:
+                    truncation_class = halo._truncation_class
+                    concentration_class = halo._concentration_class
+                halo.update_args(kwargs_halo)
+                if is_subhalo:
+                    new_halo = subhalo_model(halo.mass,
+                                           halo.x,
+                                           halo.y,
+                                           halo.r3d,
+                                           halo.z,
+                                           is_subhalo,
+                                           halo.lens_cosmo,
+                                           halo.args_profile,
+                                           truncation_class,
+                                           concentration_class,
+                                           halo.unique_tag)
+                else:
+                    new_halo = fieldhalo_model(halo.mass,
+                                             halo.x,
+                                             halo.y,
+                                             halo.r3d,
+                                             halo.z,
+                                             is_subhalo,
+                                             halo.lens_cosmo,
+                                             halo.args_profile,
+                                             truncation_class,
+                                             concentration_class,
+                                             halo.unique_tag)
                 new_halos.append(new_halo)
             else:
                 new_halos.append(halo)
+
         new_realization = Realization.from_halos(new_halos, self._realization.lens_cosmo, self._realization.kwargs_halo_model,
                                       self._realization.apply_mass_sheet_correction,
                                       self._realization.rendering_classes,
