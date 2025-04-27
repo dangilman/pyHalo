@@ -17,10 +17,13 @@ If you would like to use this package and have questions, please get in touch wi
 
 Installation
 ------------
-Install via pypi: "python3 -m pip install pyhalo".
-The installation via pip of versions after 1.2.0 includes some changes that may not be backwards compatible with the previous stable version. To use the previous stable version clone the repository from commit 4dc87c8.
+This code is under active developement. To get the latest version, it is recommended to install directly from github: 
 
-Install from github: "git clone https://github.com/dangilman/pyHalo.git; cd pyhalo; python -m setup.py install". Make sure to check the requirements listed in requirements.txt
+"git clone https://github.com/dangilman/pyHalo.git; cd pyhalo; python -m setup.py install". 
+
+Make sure to check the requirements listed in requirements.txt
+
+One can choose to install via pypi: "python3 -m pip install pyhalo".
 
 Features
 --------
