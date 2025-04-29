@@ -2,7 +2,7 @@ import numpy.testing as npt
 import numpy as np
 from lenstronomy.LensModel.Profiles.nfw_core_truncated import TNFWC as TNFWCLenstronomy
 from lenstronomy.LensModel.Profiles.nfw import NFW as NFWLenstronomy
-from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHalo
+from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving
 from pyHalo.truncation_models import ConstantTruncationArcsec
 from pyHalo.concentration_models import ConcentrationConstant
 from pyHalo.Halos.lens_cosmo import LensCosmo
@@ -25,7 +25,7 @@ class TestTNFWC(object):
         kwargs_profile = {'sidm_timescale': 20.,
                           'lambda_t': 1.0,
                           'mass_conservation': mass0}
-        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
+        tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                                self.lens_cosmo, kwargs_profile, self.truncation_class,
                                self.concentration_class, 1.0)
         r = np.linspace(0.001, tnfwc.c, 10000) * tnfwc.nfw_params[1]
@@ -36,7 +36,7 @@ class TestTNFWC(object):
         kwargs_profile = {'sidm_timescale': 10.,
                           'lambda_t': 1.0,
                           'mass_conservation': mass0}
-        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
+        tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
         mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
@@ -45,7 +45,7 @@ class TestTNFWC(object):
         kwargs_profile = {'sidm_timescale': 2.5,
                           'lambda_t': 1.0,
                           'mass_conservation': mass0}
-        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
+        tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
         mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
@@ -54,7 +54,7 @@ class TestTNFWC(object):
         kwargs_profile = {'sidm_timescale': 0.5,
                           'lambda_t': 1.0,
                           'mass_conservation': mass0}
-        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
+        tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
         mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
@@ -67,7 +67,7 @@ class TestTNFWC(object):
         kwargs_profile = {'sidm_timescale': 0.5,
                           'lambda_t': 1.0,
                           'mass_conservation': mass0}
-        tnfwc = TNFWCHalo(mass0, 0.0, 0.0, None, 0.5, False,
+        tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
         vmax = tnfwc.vmax_nfw

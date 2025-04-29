@@ -8,7 +8,6 @@ from pyHalo.Halos.HaloModels.powerlaw import PowerLawFieldHalo, PowerLawSubhalo
 from pyHalo.Halos.HaloModels.PsuedoJaffe import PJaffeSubhalo
 from pyHalo.Halos.HaloModels.blackhole import BlackHole
 from pyHalo.Halos.HaloModels.ULDM import ULDMFieldHalo, ULDMSubhalo
-from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHalo
 from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
 import numpy as np
 from copy import deepcopy
@@ -696,9 +695,9 @@ class Realization(object):
                 model = TNFWFieldHalo
         elif mdef == 'TNFWC_SIDM':
             if is_subhalo:
-                model = TNFWCHalo
+                model = TNFWCHaloEvolving
             else:
-                model = TNFWCHalo
+                model = TNFWCHaloEvolving
         elif mdef == 'PT_MASS':
             model = BlackHole
         elif mdef == 'PJAFFE':

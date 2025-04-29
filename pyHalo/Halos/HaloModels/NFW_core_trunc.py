@@ -102,16 +102,17 @@ class TNFWCHaloParametric(Halo):
         :return: the density normalization, scale radius, and core radius for thee SIDM halo
         """
         if not hasattr(self, '_profile_args'):
-            rt_kpc = self._truncation_class.truncation_radius_halo(self)
             _, rs_kpc0, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval,
                                                                pseudo_nfw=False)
             r200_kpc = rs_kpc0 * self.c
             r_match_kpc = self.c * rs_kpc0
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            rt_kpc = self._args['rt_kpc']
             r_trunc_angle = rt_kpc / kpc_per_arcsec
-            rs_kpc = self._args['x_core_halo'] * rs_kpc0
-            if rt_kpc < rs_kpc:
+            if rt_kpc < self._args['x_core_halo'] * rs_kpc0:
                 rs_kpc = rt_kpc * 0.99
+            else:
+                rs_kpc = self._args['x_core_halo'] * rs_kpc0
             r_core_kpc = rs_kpc * 0.99
             x = np.logspace(-4,
                             np.log10(r_match_kpc / rs_kpc0),
@@ -158,7 +159,8 @@ class TNFWCHaloParametric(Halo):
             self._vmax = self._lens_cosmo.nfw_vmax(self._rescale_norm * rhos, rs)
         return self._vmax
 
-class TNFWCHalo(TNFWCHaloParametric):
+
+class TNFWCHaloEvolving(TNFWCHaloParametric):
     """
     The base class for a cored and truncated NFW halo
     """
@@ -198,7 +200,7 @@ class TNFWCHalo(TNFWCHaloParametric):
         :return: the density normalization, scale radius, and core radius for thee SIDM halo
         """
         if not hasattr(self, '_profile_args'):
-            rt_kpc = self._truncation_class.truncation_radius_halo(self)
+            rt_kpc = self._args['rt_kpc']
             _, rs_0, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval,
                                                              pseudo_nfw=self._pseudo_nfw)
             rs_kpc, rc_kpc = evolve_profile(self.t_over_tc, rs_0)
