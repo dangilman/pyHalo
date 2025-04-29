@@ -3,7 +3,7 @@ from pyHalo.realization_extensions import RealizationExtensions
 
 
 def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field_halos,
-        probabilities_subhalos, probabilities_field_halos, sigma_sub=0.025, log10_sigma_sub=None,
+        probabilities_subhalos, probabilities_field_halos, sigma_sub=0.025, log10_sigma_sub=None, log10_dNdA=None,
         log_mlow=6., log_mhigh=10., concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -26,8 +26,10 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param probabilities_field_halos: a list of functions, or a list of the fraction of collapsed field halos in each
     mass bin
     :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
-    :param log10_sigma_sub: optional setting of sigma_sub in log10-scale (useful for log-uniform priors); if this is specified
-    it overwrites the value of sigma_sub
+    :param log10_sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2];
+    this setting, as well as sigma_sub, will trigger the automatic scaling with host halo mass and redshift found by Gannon et al. (2025)
+    - Note: this overrides sigma_sub, if provided
+    :param log10_dNdA: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2], overrides sigma_sub
     :param log_mlow: log base 10 of the minimum halo mass to render
     :param log_mhigh: log base 10 of the maximum halo mass to render
     :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
@@ -64,7 +66,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     two_halo_contribution = True
     delta_power_law_index = 0.0
     subhalo_spatial_distribution = 'UNIFORM'
-    cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh, log10_sigma_sub,
+    cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh, log10_sigma_sub, log10_dNdA,
               concentration_model_subhalos, kwargs_concentration_model_subhalos,
               concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
               truncation_model_subhalos, kwargs_truncation_model_subhalos,
@@ -80,7 +82,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     return sidm
 
 def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, log10_subhalo_time_scaling=0.0,
-        sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+        sigma_sub=0.025, log10_sigma_sub=None, log10_dNdA=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -100,8 +102,11 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
     :param log10_effective_cross_section_list: a list of effective cross sections log10(sigma) for halos in each bin, e.g. [6.0, 1.0]
     :param log10_subhalo_time_scaling: a log10(number) that makes time pass quicker (>1) or lower (<1) for subhalos relative to
     field halos
-    :param sigma_sub: normalization of the subhalo mass function
-    :param log10_sigma_sub: normalization of the subhalo mass function in log units (overwrites sigma_sub)
+    :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
+    :param log10_sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2];
+    this setting, as well as sigma_sub, will trigger the automatic scaling with host halo mass and redshift found by Gannon et al. (2025)
+    - Note: this overrides sigma_sub, if provided
+    :param log10_dNdA: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2], overrides sigma_sub
     :param log_mlow: log base 10 of the minimum halo mass to render
     :param log_mhigh: log base 10 of the maximum halo mass to render
     :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
@@ -139,7 +144,7 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
     two_halo_contribution = True
     delta_power_law_index = 0.0
     subhalo_spatial_distribution = 'UNIFORM'
-    cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh, log10_sigma_sub,
+    cdm = CDM(z_lens, z_source, sigma_sub, log_mlow, log_mhigh, log10_sigma_sub, log10_dNdA,
               concentration_model_subhalos, kwargs_concentration_model_subhalos,
               concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
               truncation_model_subhalos, kwargs_truncation_model_subhalos,
@@ -158,7 +163,7 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
     return sidm
 
 def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh,
-        log10_subhalo_time_scaling=0.0, sigma_sub=0.025, log10_sigma_sub=None, log_mlow=6., log_mhigh=10.,
+        log10_subhalo_time_scaling=0.0, sigma_sub=0.025, log10_sigma_sub=None, log10_dNdA=None, log_mlow=6., log_mhigh=10.,
         concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -181,7 +186,7 @@ def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_si
     log10_mass_ranges = [[log_mlow, 8.0], [8.0, log_mhigh]]
     log10_effective_cross_section_list = [log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh]
     return SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list,
-        log10_subhalo_time_scaling, sigma_sub, log10_sigma_sub, log_mlow, log_mhigh,
+        log10_subhalo_time_scaling, sigma_sub, log10_sigma_sub, log10_dNdA, log_mlow, log_mhigh,
         concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
         truncation_model_subhalos, kwargs_truncation_model_subhalos,

@@ -55,6 +55,13 @@ class TestPresetModels(object):
                   kwargs_globular_clusters=kwargs_globular_clusters)
         _ = cdm.lensing_quantities()
 
+        cdm = CDM(0.5, 1.5,
+                  sigma_sub=None, log10_sigma_sub=None,
+                  log10_dNdA=-1,
+                  add_globular_clusters=True,
+                  kwargs_globular_clusters=kwargs_globular_clusters)
+        _ = cdm.lensing_quantities()
+
     def test_CDM_correlated_structure_only(self):
 
         cdm = CDMCorrelatedStructure(0.5, 1.5)
@@ -72,6 +79,14 @@ class TestPresetModels(object):
                                     }
         wdm = WDM(0.5, 1.5,
                   7.7,
+                  add_globular_clusters=True,
+                  kwargs_globular_clusters=kwargs_globular_clusters)
+        _ = wdm.lensing_quantities()
+
+        wdm = WDM(0.5, 1.5,
+                  7.7,
+                  sigma_sub=None, log10_sigma_sub=None,
+                  log10_dNdA=-1,
                   add_globular_clusters=True,
                   kwargs_globular_clusters=kwargs_globular_clusters)
         _ = wdm.lensing_quantities()
@@ -139,6 +154,13 @@ class TestPresetModels(object):
         wdm = func(0.5, 1.5, 7.7, -2.5,
                   add_globular_clusters=True,
                   kwargs_globular_clusters=kwargs_globular_clusters)
+        _ = wdm.lensing_quantities()
+
+        wdm = func(0.5, 1.5, 7.7, -2.5,
+                   sigma_sub=None, log10_sigma_sub=None,
+                   log10_dNdA=-1,
+                   add_globular_clusters=True,
+                   kwargs_globular_clusters=kwargs_globular_clusters)
         _ = wdm.lensing_quantities()
 
     def test_CDM_emulator(self):

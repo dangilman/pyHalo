@@ -7,7 +7,8 @@ from pyHalo.pyhalo import pyHalo
 from pyHalo.truncation_models import truncation_models
 
 
-def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
+def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+        log10_sigma_sub=None, log10_dNdA=None,
         mass_function_model_subhalos='LOVELL2020', kwargs_mass_function_subhalos={},
         mass_function_model_fieldhalos='LOVELL2020', kwargs_mass_function_fieldhalos={},
         concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos={},
@@ -30,10 +31,15 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
     :param z_source: source redshift
     :param log_mc: the log base 10 of the half-mode mass
     :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
-    :param log10_sigma_sub: optional setting of sigma_sub in log10-scale (useful for log-uniform priors); if this is specified
-    it overwrites the value of sigma_sub
+    :param log10_sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2];
+    this setting, as well as sigma_sub, will trigger the automatic scaling with host halo mass and redshift found by Gannon et al. (2025)
+    - Note: this overrides sigma_sub, if provided
+    :param log10_dNdA: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
     :param log_mlow: log base 10 of the minimum halo mass to render
     :param log_mhigh: log base 10 of the maximum halo mass to render
+    :param log10_sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2];
+    this setting will trigger the automatic scaling with host halo mass and redshift found by Gannon et al. (2025)
+    :param log10_dNdA: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
     :param mass_function_model_subhalos: mass function model for subhalos, see mass_function_models.py for a list
     :param kwargs_mass_function_subhalos: keyword arguments for the mass function model
     :param mass_function_model_fieldhalos: mass function model for field halos, see mass_function_models.py for a list
@@ -133,22 +139,26 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
 
     # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
     population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT', 'TWO_HALO']
-    # check for log10 value of sigma_sub
-    if log10_sigma_sub is not None:
-        sigma_sub = 10 ** log10_sigma_sub
     mass_function_class_list = [mass_function_model_subhalos,
                                 mass_function_model_fieldhalos,
                                 mass_function_model_fieldhalos]
-    kwargs_mass_function_subhalos.update({'log_mlow': log_mlow,
+    kwargs_subhalo_mfunc = {'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                        'm_pivot': 10 ** 8,
                        'power_law_index': shmf_log_slope,
                        'log_m_host': log_m_host,
-                       'sigma_sub': sigma_sub,
                        'delta_power_law_index': 0.0,
                        'host_scaling_factor': host_scaling_factor,
                        'redshift_scaling_factor': redshift_scaling_factor,
-                                          'draw_poisson': draw_poisson})
+                                          'draw_poisson': draw_poisson}
+    if log10_dNdA is not None:
+        kwargs_subhalo_mfunc['dndA'] = 10**log10_dNdA
+    else:
+        if log10_sigma_sub is not None:
+            kwargs_subhalo_mfunc['sigma_sub'] = 10 ** log10_sigma_sub
+        else:
+            kwargs_subhalo_mfunc['sigma_sub'] = sigma_sub
+    kwargs_mass_function_subhalos.update(kwargs_subhalo_mfunc)
     kwargs_mass_function_fieldhalos.update({'log_mlow': log_mlow,
                   'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,
@@ -197,7 +207,6 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10., l
         ext = RealizationExtensions(realization)
         realization = ext.add_prompt_cusps(a=0.04, b=-0.8, c=0.15)
     return realization
-
 
 def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         mass_function_model_subhalos='SHMF_MIXED_WDM_TURNOVER', kwargs_mass_function_subhalos={},
@@ -276,7 +285,8 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
     return WDM(**kwargs_wdm)
 
 
-def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
+def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
+            log10_sigma_sub=None, log10_dNdA=None,
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
@@ -307,7 +317,9 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param sigma_sub: amplitude of the subhalo mass function
     :param log_mlow: minimum halo mass to render
     :param log_mhigh: maximum halo mass to render
-    :param log10_sigma_sub: optional keyword argument that overrides sigma_sub; specified in a log10-scale
+    :param log10_sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2];
+    this setting will trigger the automatic scaling with host halo mass and redshift found by Gannon et al. (2025)
+    :param log10_dNdA: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2]
     :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
     :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
     :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
@@ -382,19 +394,24 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     mass_function_class_list = [mass_function_model_subhalos,
                                 mass_function_model_fieldhalos,
                                 mass_function_model_fieldhalos]
+    kwargs_subhalo_mfunc = {'log_mlow': log_mlow,
+                     'log_mhigh': log_mhigh,
+                     'm_pivot': 10 ** 8,
+                     'power_law_index': shmf_log_slope,
+                     'delta_power_law_index': 0.0,
+                     'log_mc': log_mc,
+                     'host_scaling_factor': host_scaling_factor,
+                     'redshift_scaling_factor': redshift_scaling_factor}
     # check for log10 value of sigma_sub
-    if log10_sigma_sub is not None:
-        sigma_sub = 10 ** log10_sigma_sub
-    kwargs_mfunc_subs.update({'log_mlow': log_mlow,
-                       'log_mhigh': log_mhigh,
-                       'm_pivot': 10 ** 8,
-                       'power_law_index': shmf_log_slope,
-                       'log_m_host': log_m_host,
-                       'sigma_sub': sigma_sub,
-                       'delta_power_law_index': 0.0,
-                        'log_mc': log_mc,
-                        'host_scaling_factor': host_scaling_factor,
-                        'redshift_scaling_factor': redshift_scaling_factor})
+    if log10_dNdA is not None:
+        kwargs_subhalo_mfunc['dndA'] = 10**log10_dNdA
+    else:
+        kwargs_subhalo_mfunc['log_m_host'] = log_m_host
+        if log10_sigma_sub is not None:
+            kwargs_subhalo_mfunc['sigma_sub'] = 10 ** log10_sigma_sub
+        else:
+            kwargs_subhalo_mfunc['sigma_sub'] = sigma_sub
+    kwargs_mfunc_subs.update(kwargs_subhalo_mfunc)
     kwargs_mfunc_field.update({'log_mlow': log_mlow,
                   'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,
