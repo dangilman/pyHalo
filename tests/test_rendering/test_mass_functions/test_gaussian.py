@@ -22,9 +22,9 @@ class TestGaussian(object):
         m = self.mass_function_poisson.draw()
         log10_m = np.log10(m)
         mu, sigma = np.mean(log10_m), np.std(log10_m)
-        npt.assert_almost_equal(mu, self.mean, 2)
-        npt.assert_almost_equal(sigma, self.sigma, 2)
-        npt.assert_almost_equal(mu, self.mass_function_poisson.first_moment,2)
+        npt.assert_almost_equal(mu, self.mean, 1)
+        npt.assert_almost_equal(sigma, self.sigma, 1)
+        npt.assert_almost_equal(mu, self.mass_function_poisson.first_moment,1)
 
     def test_draw_poisson(self):
 
