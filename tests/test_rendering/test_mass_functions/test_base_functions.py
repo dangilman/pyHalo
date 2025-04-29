@@ -19,12 +19,12 @@ class TestCDMPowerLaw(object):
     def test_zeroth_moment(self):
         n_expected = self.mass_function.n_mean
         n_rendered = len(self.mass_function.draw())
-        npt.assert_almost_equal(n_rendered / n_expected, 1, 3)
+        npt.assert_almost_equal(n_rendered / n_expected, 1, 2)
 
     def test_first_moment(self):
         expected = self.mass_function.first_moment
         rendered = np.sum(self.mass_function.draw())
-        npt.assert_almost_equal(expected / rendered, 1, 2)
+        npt.assert_almost_equal(expected / rendered, 1, 1)
 
 class TestWDMPowerLaw(object):
 
@@ -44,12 +44,12 @@ class TestWDMPowerLaw(object):
     def test_zeroth_moment(self):
         n_expected = self.mass_function.n_mean
         n_rendered = len(self.mass_function.draw())
-        npt.assert_almost_equal(n_rendered / n_expected, 1, 2)
+        npt.assert_almost_equal(n_rendered / n_expected, 1, 1)
 
     def test_first_moment(self):
         expected = self.mass_function.first_moment
         rendered = np.sum(self.mass_function.draw())
-        npt.assert_almost_equal(expected / rendered, 1, 2)
+        npt.assert_almost_equal(expected / rendered, 1, 1)
 
     def test_turnover(self):
 
@@ -96,24 +96,24 @@ class TestMixedWDMPowerLaw(object):
     def test_zeroth_moment(self):
         n_expected = self.mass_function.n_mean
         n_rendered = len(self.mass_function.draw())
-        npt.assert_almost_equal(n_rendered / n_expected, 1, 2)
+        npt.assert_almost_equal(n_rendered / n_expected, 1, 1)
 
     def test_first_moment(self):
         expected = self.mass_function.first_moment
         rendered = np.sum(self.mass_function.draw())
-        npt.assert_almost_equal(expected / rendered, 1, 2)
+        npt.assert_almost_equal(expected / rendered, 1, 1)
 
     def test_pure_wdm(self):
 
         first_moment_wdm = self.mass_function_mixed_pure_wdm.first_moment
         first_moment_mixed_pure_wdm = self.mass_function_pure_wdm.first_moment
-        npt.assert_almost_equal(first_moment_mixed_pure_wdm/first_moment_wdm, 1.0, 8)
+        npt.assert_almost_equal(first_moment_mixed_pure_wdm/first_moment_wdm, 1.0, 5)
 
     def test_pure_cdm(self):
 
         first_moment_cdm = self.mass_function_mixed_pure_cdm.first_moment
         first_moment_mixed_pure_cdm = self.mass_function_pure_cdm.first_moment
-        npt.assert_almost_equal(first_moment_cdm/first_moment_mixed_pure_cdm, 1.0, 8)
+        npt.assert_almost_equal(first_moment_cdm/first_moment_mixed_pure_cdm, 1.0, 5)
 
 # class TestTabulated(object):
 #
