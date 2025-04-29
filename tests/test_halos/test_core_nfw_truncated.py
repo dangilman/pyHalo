@@ -24,7 +24,8 @@ class TestTNFWC(object):
         mass0 = 10 ** 8
         kwargs_profile = {'sidm_timescale': 20.,
                           'lambda_t': 1.0,
-                          'mass_conservation': mass0}
+                          'mass_conservation': mass0,
+                          'rt_kpc': 1000}
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                                self.lens_cosmo, kwargs_profile, self.truncation_class,
                                self.concentration_class, 1.0)
@@ -35,7 +36,8 @@ class TestTNFWC(object):
 
         kwargs_profile = {'sidm_timescale': 10.,
                           'lambda_t': 1.0,
-                          'mass_conservation': mass0}
+                          'mass_conservation': mass0,
+                          'rt_kpc': 1000}
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
@@ -44,7 +46,8 @@ class TestTNFWC(object):
 
         kwargs_profile = {'sidm_timescale': 2.5,
                           'lambda_t': 1.0,
-                          'mass_conservation': mass0}
+                          'mass_conservation': mass0,
+                          'rt_kpc': 1000}
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
@@ -53,7 +56,8 @@ class TestTNFWC(object):
 
         kwargs_profile = {'sidm_timescale': 0.5,
                           'lambda_t': 1.0,
-                          'mass_conservation': mass0}
+                          'mass_conservation': mass0,
+                          'rt_kpc': 1000}
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
@@ -66,7 +70,8 @@ class TestTNFWC(object):
         mass0 = 10 ** 8
         kwargs_profile = {'sidm_timescale': 0.5,
                           'lambda_t': 1.0,
-                          'mass_conservation': mass0}
+                          'mass_conservation': mass0,
+                          'rt_kpc': 1000}
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
