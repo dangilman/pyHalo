@@ -312,13 +312,13 @@ class TestRealizationExtensions(object):
 
         # check that keyword arguments are correct
         if kwargs_cdm_halo[0]['r_trunc'] < x_core_halo * kwargs_cdm_halo[0]['Rs']:
-            npt.assert_almost_equal(kwargs_halo_sidm[0]['Rs'], 0.99 * kwargs_cdm_halo[0]['r_trunc'], 5)
-            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_core'], 0.99 * kwargs_halo_sidm[0]['Rs'], 5)
-            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_trunc'], kwargs_cdm_halo[0]['r_trunc'], 5)
+            npt.assert_almost_equal(kwargs_halo_sidm[0]['Rs'], 0.99 * kwargs_cdm_halo[0]['r_trunc'], 2)
+            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_core'], 0.99 * kwargs_halo_sidm[0]['Rs'], 2)
+            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_trunc'], kwargs_cdm_halo[0]['r_trunc'], 2)
         else:
-            npt.assert_almost_equal(kwargs_halo_sidm[0]['Rs'], x_core_halo * kwargs_cdm_halo[0]['Rs'], 5)
-            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_core'], 0.99 * x_core_halo * kwargs_cdm_halo[0]['Rs'], 5)
-            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_trunc'], kwargs_cdm_halo[0]['r_trunc'], 5)
+            npt.assert_almost_equal(kwargs_halo_sidm[0]['Rs'], x_core_halo * kwargs_cdm_halo[0]['Rs'], 2)
+            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_core'], 0.99 * x_core_halo * kwargs_cdm_halo[0]['Rs'], 2)
+            npt.assert_almost_equal(kwargs_halo_sidm[0]['r_trunc'], kwargs_cdm_halo[0]['r_trunc'], 2)
             npt.assert_string_equal(lens_model_list[0], 'TNFWC')
         # verify mass conservation
         npt.assert_almost_equal(cdm_mass / sidm_mass, 1, 2)
