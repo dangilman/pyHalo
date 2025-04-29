@@ -684,4 +684,3 @@ if __name__ == '__main__':
 #         npt.assert_array_almost_equal(n, n_fit)
 
 #
-
