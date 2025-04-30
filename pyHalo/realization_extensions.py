@@ -574,16 +574,13 @@ class RealizationExtensions(object):
         # get number of fluctuations
         n_flucs = _get_number_flucs(self._realization, de_Broglie_wavelength,
                                     fluctuation_size/de_Broglie_wavelength, n_fluc_scale, shape, args)
-
         # if zero fluctuations, return original realization
-
         if shape == 'aperture':
             for i in range(0, len(n_flucs)):
                 if n_flucs[i] != 0:
                     break
             else:
                 return self._realization
-
         else:
             if n_flucs == 0:
                 return self._realization
@@ -591,7 +588,7 @@ class RealizationExtensions(object):
         if rescale_fluc_amp:
             if shape == 'aperture' and np.mean(n_flucs) > n_cut:
                 fluctuation_amplitude /= np.sqrt(np.mean(n_flucs) / n_cut)
-                n_flucs = np.array([int(n_cut)] * 4)
+                n_flucs = np.array([int(n_cut)] * len(n_flucs))
             elif shape != 'aperture' and n_flucs > n_cut:
                 fluctuation_amplitude /= np.sqrt(n_flucs / n_cut)
                 n_flucs = int(n_cut)
@@ -812,7 +809,6 @@ def _get_fluctuation_halos(realization, fluctuation_amplitude, fluctuation_size,
     :param n_flucs: Number of fluctuations to make
     :param args: properties of the given shape, see 'add_ULDM_fluctuations'
     """
-
     kpc_per_arcsec = realization.lens_cosmo.cosmo.kpc_proper_per_asec(realization._zlens)
     fluc_var_angle = fluctuation_size / kpc_per_arcsec # gaussian variance in arcsec
     fluctuation_size_variance_angle = fluctuation_size_variance / kpc_per_arcsec

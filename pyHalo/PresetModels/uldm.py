@@ -18,7 +18,9 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
-         uldm_plaw=1 / 3, flucs=True, flucs_shape='aperture', flucs_args={}, n_cut=50000, r_ein=1.0):
+         uldm_plaw=1 / 3, flucs=True, flucs_shape='aperture', flucs_args={}, n_cut=50000, r_ein=1.0,
+         mdef_halos='ULDM'
+         ):
 
     """
     This generates realizations of ultra-light dark matter (ULDM), including the ULDM halo mass function and halo density profiles,
@@ -126,6 +128,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     sqrt(n_cut / n_total) if n_total > n_cut, where n_total is the number of expected fluctuations given the de-Broglie
     wavelength and the area in which the fluctuations area rendered
     :param r_ein: The characteristic angular used to convert fluctuations in convergence to fluctuations in mass
+    :param mdef_halos: The mass definition for ULDM halos, should be either ULDM or TNFW
     :return: a realization of halos and fluctuations modeled as Gaussians in ULDM
     """
 
@@ -160,7 +163,7 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
                   'shmf_log_slope': shmf_log_slope, 'cone_opening_angle_arcsec': cone_opening_angle_arcsec,
                   'log_m_host': log_m_host, 'r_tidal': r_tidal, 'LOS_normalization': LOS_normalization,
                   'geometry_type': geometry_type, 'kwargs_cosmo': kwargs_cosmo,
-                  'mdef_subhalos': 'ULDM', 'mdef_field_halos': 'ULDM',
+                  'mdef_subhalos': mdef_halos, 'mdef_field_halos': mdef_halos,
                   'kwargs_density_profile': kwargs_density_profile
                   }
     uldm_no_fluctuations = WDM(**kwargs_wdm)
