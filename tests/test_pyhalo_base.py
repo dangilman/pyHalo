@@ -20,9 +20,8 @@ class TestpyHalo(object):
     def test_version(self):
 
         pyhalo = pyHalo(0.5, 2.)
-        npt.assert_string_equal(pyhalo.CODE_VERSION, '1.4.0')
-        check_code_version('1.4.0')
-
+        npt.assert_string_equal(pyhalo.CODE_VERSION, '1.4.1')
+        check_code_version('1.4.1')
 
     def test_create_realizations(self):
         pyhalo = pyHalo(0.5, 2.)
