@@ -163,7 +163,7 @@ class TestPresetModels(object):
                    kwargs_globular_clusters=kwargs_globular_clusters)
         _ = wdm.lensing_quantities()
 
-    def test_CDM_emulator(self):
+    def test_DM_emulator(self):
 
         def emulator_input_callable(*args, **kwargs):
             subhalo_infall_masses = np.array([10**7,10**8])
@@ -176,9 +176,9 @@ class TestPresetModels(object):
         concentrations = np.array([16.0, 20.0])
         mass_array = np.array([10 ** 7, 10 ** 8])
         kwargs_cdm = {'LOS_normalization': 0.0}
-        cdm_subhalo_emulator = CDMFromEmulator(0.5, 1.5, emulator_input_callable, kwargs_cdm)
-        _ = cdm_subhalo_emulator.lensing_quantities()
-        for i, halo in enumerate(cdm_subhalo_emulator.halos):
+        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, emulator_input_callable, kwargs_cdm)
+        _ = dm_subhalo_emulator.lensing_quantities()
+        for i, halo in enumerate(dm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
             npt.assert_almost_equal(halo.x, 0.1584666, 4)
             npt.assert_almost_equal(halo.y, 0.1584666, 4)
@@ -190,9 +190,9 @@ class TestPresetModels(object):
         emulator_input_array[:, 2] = np.array([1.0, 1.0])
         emulator_input_array[:, 3] = mass_array / 2
         emulator_input_array[:, 4] = concentrations
-        cdm_subhalo_emulator = CDMFromEmulator(0.5, 1.5, emulator_input_array, kwargs_cdm)
-        _ = cdm_subhalo_emulator.lensing_quantities()
-        for i, halo in enumerate(cdm_subhalo_emulator.halos):
+        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, emulator_input_array, kwargs_cdm)
+        _ = dm_subhalo_emulator.lensing_quantities()
+        for i, halo in enumerate(dm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
             npt.assert_almost_equal(halo.x, 0.1584666, 4)
             npt.assert_almost_equal(halo.y, 0.1584666, 4)
