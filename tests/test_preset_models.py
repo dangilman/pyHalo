@@ -175,8 +175,14 @@ class TestPresetModels(object):
 
         concentrations = np.array([16.0, 20.0])
         mass_array = np.array([10 ** 7, 10 ** 8])
-        kwargs_cdm = {'LOS_normalization': 0.0}
-        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, emulator_input_callable, kwargs_cdm)
+        kwargs_cdm = {'LOS_normalization': 0.0,
+                             'log_m_host': 13.3,
+              'cone_opening_angle_arcsec': 8.0,
+                              'sigma_sub': 0.12,
+                                 'log_mc': 4.0,
+                         'emulator_input': emulator_input_callable}
+
+        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, kwargs_cdm)
         _ = dm_subhalo_emulator.lensing_quantities()
         for i, halo in enumerate(dm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
@@ -190,7 +196,7 @@ class TestPresetModels(object):
         emulator_input_array[:, 2] = np.array([1.0, 1.0])
         emulator_input_array[:, 3] = mass_array / 2
         emulator_input_array[:, 4] = concentrations
-        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, emulator_input_array, kwargs_cdm)
+        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, kwargs_cdm)
         _ = dm_subhalo_emulator.lensing_quantities()
         for i, halo in enumerate(dm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
