@@ -3,7 +3,7 @@ from pyHalo.PresetModels.wdm import WDM, WDM_mixed
 from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.preset_models import preset_model_from_name
-from pyHalo.PresetModels.external import CDMFromEmulator, DMFromGalacticus
+from pyHalo.PresetModels.external import DMFromEmulator, DMFromGalacticus
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 import pytest
