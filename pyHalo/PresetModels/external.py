@@ -3,11 +3,17 @@ from scipy.spatial.transform import Rotation
 from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 from pyHalo.PresetModels.cdm import CDM
+from pyHalo.pyhalo import pyHalo
+from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.galacticus_util.galacticus_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_range,nodedata_apply_filter
+from pyHalo.concentration_models import preset_concentration_models
+from pyHalo.truncation_models import truncation_models
+from lenstronomy.LensModel.Profiles.tnfw import TNFW
 import h5py
-
+import random
+import sys
 
 def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_index,log_mlow_galacticus,log_mhigh_galacticus,
                      mass_range_is_bound=True, proj_angle_theta=0, proj_angle_phi=0,
@@ -82,7 +88,8 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     else:
         nodedata = galacticus_hdf5
 
-    z_lens = np.mean(nodedata[gutil.PARAM_Z_LAST_ISOLATED][np.logical_not(nodedata_filter_subhalos(nodedata,gutil))])
+    #z_lens = np.mean(nodedata[gutil.PARAM_Z_LAST_ISOLATED][np.logical_not(nodedata_filter_subhalos(nodedata,gutil))])
+    z_lens = 0.5
 
     tree_index = int(np.round(tree_index))
 
@@ -166,74 +173,128 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
 
     return halos_LOS.join(subhalos_from_params)
 
-def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
-    """
-    This generates a realization of subhalos using an emulator of the semi-analytic modeling code Galacticus, and
-     generates line-of-sight halos from a mass function parameterized as Sheth-Tormen.
+def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos = {}, concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos = {}, truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos = {}, truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos = {}, mass_range_is_bound = True, proj_angle_theta = 0, proj_angle_phi = 0, preset_model_los = 'WDM', geometry_type = 'DOUBLE_CONE', kwargs_cosmo = None, **kwargs_los):
 
-    :param z_lens: main deflector redshift
-    :param z_source: sourcee redshift
-    :param emulator_input: either an array or a callable function
+    log_mlow = kwargs_los['log_mlow']
+    log_mhigh = kwargs_los['log_mhigh']
+    log_m_host = kwargs_los['log_m_host']
+    log_mc = kwargs_los['log_mc']
+    cone_opening_angle_arcsec = kwargs_los['cone_opening_angle_arcsec']
+    kwargs_los["z_lens"] = z_lens
+    kwargs_los["z_source"] = z_source
+    emulator_data = kwargs_los.pop('emulator_input') # the pop command returns the value of the key in parentheses, then "pops" that entry from the dictionary
+    data = emulator_data()
 
-    if callable: a function that returns an array of
-    1) subhalo masses at infall [M_sun]
-    2) subhalo projected x position [kpc]
-    3) subhalo projected y position [kpc]
-    4) subhalo final_bound_mass [M_sun]
-    5) subhalo concentrations at infall
+    # import here to avoid circular import
+    from pyHalo.preset_models import preset_model_from_name
 
-    if not callable: an array with shape (N_subhalos 5) that contains masses, positions x, positions y, etc.
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
 
-    Mass convention is m200 with respect to the critical density of the Universe at redshift Z_infall, where Z_infall is
-    the infall redshift (not necessarily the redshift at the time of lensing).
+    # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
+    kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
+    kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
 
-    :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
-    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
-    :param log_m_host: log10 host halo mass in M_sun
-    :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
+    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
+                                                                 kwargs_concentration_model_subhalos)
 
-    The following optional keywords specify a concentration-mass relation for field halos parameterized as a power law
-    in peak height. If they are not set in the function call, pyHalo assumes a default concentration-mass relation from Diemer&Joyce
-    :param c0: amplitude of the mass-concentration relation at 10^8
-    :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
-    :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
-    :param zeta: modifies the redshift evolution of the mass-concentration-relation
-    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
-    :param kwargs_halo_mass_function: keyword arguments passed to the LensingMassFunction class
-    (see Cosmology.lensing_mass_function)
-    :return: a realization of CDM halos
-    """
 
-    # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
-    kwargs_cdm['sigma_sub'] = 0.0
-    cdm_halos_LOS = CDM(z_lens, z_source, **kwargs_cdm)
+    concentration_model_subhalos = model_subhalos(log_mc = log_mc, **kwargs_mc_subs)
+
+    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
+                                                                    kwargs_concentration_model_fieldhalos)
+    concentration_model_fieldhalos = model_fieldhalos(log_mc = log_mc, **kwargs_mc_field)
+    c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
+
+    # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
+    kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    kwargs_truncation_model_subhalos['c_host'] = c_host
+    kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
+
+    model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
+    kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
+    truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
+
+    model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
+    kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
+    truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
+
+    kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
+                         'concentration_model_subhalos': concentration_model_subhalos,
+                         'truncation_model_field_halos': truncation_model_fieldhalos,
+                         'concentration_model_field_halos': concentration_model_fieldhalos,
+                         'kwargs_density_profile': {}}
+
+    halos_LOS = preset_model_from_name(preset_model_los)(**kwargs_los)
+    rendering_classes = halos_LOS.rendering_classes
+
     # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
-    lens_cosmo = cdm_halos_LOS.lens_cosmo
+    lens_cosmo = halos_LOS.lens_cosmo
 
-    # now create subhalos from the specified properties using the TNFWSubhaloEmulator class
+    kpc_per_arcsec_at_z = lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
+
+    h = lens_cosmo.h
+    rhoc_zlens = lens_cosmo._nfw_param.rhoc_z(z_lens)
+    MPC_TO_KPC = 1e3
+
+    # Here, data = emulator_data from normalizing_flows.py
+    massInfall = data[0]
+    concentration = data[1]
+    massBound = data[2]
+    redshiftLastIsolated = data[3]
+    lens_redshifts = np.array([0.5] * len(massInfall))
+    #lens_redshifts = 0.34
+    rt = data[4]
+    x_kpc = MPC_TO_KPC * data[5]
+    y_kpc = MPC_TO_KPC * data[6]
+
+    #r_vir = ((3 * h * massInfall)/(4 * 200 * np.pi * lens_cosmo._nfw_param.rhoc_z(redshiftLastIsolated)))**(1/3)
+
+    r_vir = ((3 * h * massInfall)/(4 * 200 * np.pi * lens_cosmo._nfw_param.rhoc_z(lens_redshifts)))**(1/3)
+    r_vir = r_vir/h
+
+    rs = r_vir/concentration
+    ones = np.ones(len(concentration))
+    #ones = 1
+    #rhos = h**2 * 200.0 / 3 * lens_cosmo._nfw_param.rhoc_z(redshiftLastIsolated) * concentration**3 / (np.log(ones + concentration) - concentration / (ones + concentration))
+    rhos = h**2 * 200.0 / 3 * lens_cosmo._nfw_param.rhoc_z(lens_redshifts) * concentration**3 / (np.log(ones + concentration) - concentration / (ones + concentration))
+
+    def tabulate_params():
+
+        key_id = []
+        for i in range(len(rhos)):
+            key_id.append('TNFW')
+        #key_id = 'TNFW'
+
+        return {
+            # The rhos_s factor of 4 comes from the this galacticus output is
+            # The density normalization of the underlying NFW halo at r = rs
+            # Multiply by 4 to get the normalization for the halo profile
+            TNFWFromParams.KEY_RHO_S:       rhos / (MPC_TO_KPC)**3,
+            TNFWFromParams.KEY_RS :         rs * MPC_TO_KPC,
+            TNFWFromParams.KEY_RT :         rt * MPC_TO_KPC,
+            TNFWFromParams.KEY_RV :         r_vir  * MPC_TO_KPC,
+            TNFWFromParams.KEY_Z_INFALL:    redshiftLastIsolated,
+            TNFWFromParams.KEY_ID :         key_id
+        }
+
+    tnfw_args_all = tabulate_params()
+
     halo_list = []
-    if callable(emulator_input):
-        subhalo_infall_masses, subhalo_x_kpc, subhalo_y_kpc, subhalo_final_bound_masses, \
-        subhalo_infall_concentrations = emulator_input()
-    else:
-        subhalo_infall_masses = emulator_input[:, 0]
-        subhalo_x_kpc = emulator_input[:, 1]
-        subhalo_y_kpc = emulator_input[:, 2]
-        subhalo_final_bound_masses = emulator_input[:, 3]
-        subhalo_infall_concentrations = emulator_input[:, 4]
 
-    for i in range(0, len(subhalo_infall_masses)):
-        halo = TNFWSubhaloEmulator(subhalo_infall_masses[i],
-                                   subhalo_x_kpc[i],
-                                   subhalo_y_kpc[i],
-                                   subhalo_final_bound_masses[i],
-                                   subhalo_infall_concentrations[i],
-                                   z_lens, lens_cosmo)
-        halo_list.append(halo)
+    for n,m_infall in enumerate(massInfall):
+        tnfw_args = {key:val[n] for key,val in tnfw_args_all.items()}
+        halo_list.append(TNFWFromParams(m_infall,x_kpc[n], y_kpc[n],None, z_lens,True,lens_cosmo,tnfw_args))
+
+    #tnfw_args = {key:val for key,val in tnfw_args_all.items()}
+    #halo_list.append(TNFWFromParams(massInfall,x_kpc, y_kpc, r3d_kpc,z_lens,True,lens_cosmo,tnfw_args))
 
     # combine the subhalos with line-of-sight halos
-    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model={},
-                                                    msheet_correction=False, rendering_classes=None)
-    return cdm_halos_LOS.join(subhalos_from_emulator)
+    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model= kwargs_halo_model,
+                                                    msheet_correction=True, rendering_classes=rendering_classes, geometry = geometry)
+
+    #return halos_LOS.join(subhalos_from_emulator)
+    return subhalos_from_emulator
