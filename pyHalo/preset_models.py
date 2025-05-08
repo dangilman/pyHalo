@@ -33,9 +33,9 @@ def preset_model_from_name(name, custom_function=None):
     elif name == 'ULDM':
         from pyHalo.PresetModels.uldm import ULDM
         return ULDM
-    elif name == 'CDMEmulator':
-        from pyHalo.PresetModels.external import CDMFromEmulator
-        return CDMFromEmulator
+    elif name == 'DMEmulator':
+        from pyHalo.PresetModels.external import DMFromEmulator
+        return DMFromEmulator
     elif name == 'WDM_mixed':
         from pyHalo.PresetModels.wdm import WDM_mixed
         return WDM_mixed
