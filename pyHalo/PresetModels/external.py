@@ -174,6 +174,7 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     return halos_LOS.join(subhalos_from_params)
 
 def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos = {}, concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos = {}, truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos = {}, truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos = {}, mass_range_is_bound = True, proj_angle_theta = 0, proj_angle_phi = 0, preset_model_los = 'WDM', geometry_type = 'DOUBLE_CONE', kwargs_cosmo = None, **kwargs_los):
+
     log_m_host = kwargs_los['log_m_host']
     log_mc = kwargs_los['log_mc']
     cone_opening_angle_arcsec = kwargs_los['cone_opening_angle_arcsec']
@@ -243,9 +244,9 @@ def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kw
     massBound = data[2]
     redshiftLastIsolated = data[3]
     lens_redshifts = np.array([z_lens] * len(massInfall))
-    rt = data[4]
-    x_kpc = MPC_TO_KPC * data[5]
-    y_kpc = MPC_TO_KPC * data[6]
+    rt = data[4] # This has an MPC_TO_KPC conversion in the tabulate_params() function
+    x_kpc = data[5] * MPC_TO_KPC
+    y_kpc = data[6] * MPC_TO_KPC
 
     r_vir = ((3 * h * massInfall)/(4 * 200 * np.pi * lens_cosmo._nfw_param.rhoc_z(lens_redshifts)))**(1/3)
     r_vir = r_vir/h

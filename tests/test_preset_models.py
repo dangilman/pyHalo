@@ -167,42 +167,35 @@ class TestPresetModels(object):
 
         def emulator_input_callable(*args, **kwargs):
             subhalo_infall_masses = np.array([10**7,10**8])
-            subhalo_x_kpc = np.array([1.0, 1.0])
-            subhalo_y_kpc = np.array([1.0, 1.0])
-            subhalo_final_bound_masses = subhalo_infall_masses / 2
             subhalo_infall_concentrations = np.array([16.0, 20.0])
-            return subhalo_infall_masses, subhalo_x_kpc, subhalo_y_kpc, subhalo_final_bound_masses, subhalo_infall_concentrations
+            subhalo_final_bound_masses = subhalo_infall_masses / 2
+            subhalo_infall_redshifts = np.array([2.0, 3.0])
+            subhalo_truncation_radii_kpc = np.array([5.0, 6.0])
+            subhalo_x_Mpc = np.array([0.001, 0.001])
+            subhalo_y_Mpc = np.array([0.001, 0.001])
+            return subhalo_infall_masses, subhalo_infall_concentrations, subhalo_final_bound_masses, subhalo_infall_redshifts, subhalo_truncation_radii_kpc, subhalo_x_Mpc, subhalo_y_Mpc
 
         concentrations = np.array([16.0, 20.0])
         mass_array = np.array([10 ** 7, 10 ** 8])
-        kwargs_cdm = {'LOS_normalization': 0.0,
+        infall_redshifts = np.array([2.0, 3.0])
+        truncation_radii = np.array([5.0, 6.0])
+        emulator_kwargs = {'LOS_normalization': 0.0,
                              'log_m_host': 13.3,
               'cone_opening_angle_arcsec': 8.0,
                               'sigma_sub': 0.12,
                                  'log_mc': 4.0,
                          'emulator_input': emulator_input_callable}
 
-        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, kwargs_cdm)
+        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, **emulator_kwargs)
         _ = dm_subhalo_emulator.lensing_quantities()
         for i, halo in enumerate(dm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
+            npt.assert_equal(halo.c, concentrations[i])
+            #npt.assert_equal(halo.bound_mass, mass_array[i]/2)
+            npt.assert_equal(halo.z_infall, infall_redshifts[i])
+            #npt.assert_equal(halo.params_physical['r_trunc_kpc'], truncation_radii[i])
             npt.assert_almost_equal(halo.x, 0.1584666, 4)
             npt.assert_almost_equal(halo.y, 0.1584666, 4)
-            npt.assert_equal(halo.c, concentrations[i])
-
-        emulator_input_array = np.empty((2, 5))
-        emulator_input_array[:, 0] = mass_array
-        emulator_input_array[:, 1] = np.array([1.0, 1.0])
-        emulator_input_array[:, 2] = np.array([1.0, 1.0])
-        emulator_input_array[:, 3] = mass_array / 2
-        emulator_input_array[:, 4] = concentrations
-        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, kwargs_cdm)
-        _ = dm_subhalo_emulator.lensing_quantities()
-        for i, halo in enumerate(dm_subhalo_emulator.halos):
-            npt.assert_equal(halo.mass, mass_array[i])
-            npt.assert_almost_equal(halo.x, 0.1584666, 4)
-            npt.assert_almost_equal(halo.y, 0.1584666, 4)
-            npt.assert_equal(halo.c, concentrations[i])
 
     def test_galacticus(self):
         util = GalacticusUtil()
