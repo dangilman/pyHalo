@@ -20,10 +20,10 @@ class pyHalo(object):
     def __init__(self, zlens, zsource, kwargs_cosmo=None):
 
         """
-
-        :param zlens:
-        :param zsource:
-        :param kwargs_cosmo:
+        Initialize the class with the lens and source redshifts, and keyword arguments for the Cosmology class
+        :param zlens: lens redshift (note: should be specified to 2 decimal places)
+        :param zsource: source redshift
+        :param kwargs_cosmo: keyword arguments for the Cosmology class
         """
         if kwargs_cosmo is None:
             astropy_instance = None
@@ -49,7 +49,7 @@ class pyHalo(object):
                scale_2halo_boost_factor=1.0, nrealizations=1):
 
         """
-
+        Return a list of instances of the SingleRealization class
         :param population_model_list:
         :param mass_function_class_list:
         :param kwargs_mass_function_list:

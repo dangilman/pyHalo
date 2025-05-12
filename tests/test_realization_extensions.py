@@ -116,7 +116,7 @@ class TestRealizationExtensions(object):
         sigma = mass_total / area
         npt.assert_almost_equal(sigma / gc_surface_mass_density, 1, 2)
 
-    def test_toSIDM(self):
+    def test_toSIDM_evolving(self):
 
         cdm = CDM(0.5, 1.5, sigma_sub=0.1, LOS_normalization=0., log_mlow=7.0)
         ext = RealizationExtensions(cdm)
@@ -193,6 +193,56 @@ class TestRealizationExtensions(object):
         # plt.show()
         npt.assert_array_less(abs(np.median(ratio_list) - 1), 0.05)
         npt.assert_array_less(np.std(ratio_list), 0.05)
+
+    def test_toSIDM(self):
+
+        cdm = CDM(0.5, 1.5, sigma_sub=0.1, LOS_normalization=0., log_mlow=7.0)
+        cdm = cdm.filter_bound_mass(10**3)
+        ext = RealizationExtensions(cdm)
+        mass_bin_list = [[6, 10]]
+        sigma_eff = 1000
+        log10_effective_sigma = [np.log10(sigma_eff)]
+        log10_subhalo_time_scaling = 0.0
+        x_core_halo = 0.25
+        sidm = ext.toSIDM_from_cross_section(mass_bin_list,
+                                             log10_effective_sigma,
+                                             log10_subhalo_time_scaling,
+                                             evolving_SIDM_profile=False,
+                                             x_core_halo=x_core_halo)
+
+        ratio_list = []
+        for cdm_halo, sidm_halo in zip(cdm.halos, sidm.halos):
+            rs = cdm_halo.nfw_params[1]
+            kwargs_nfw = cdm_halo.lenstronomy_params[0]
+            kwargs_sidm = sidm_halo.lenstronomy_params[0]
+            npt.assert_equal(cdm_halo.c, sidm_halo.c)
+            for kw in kwargs_nfw:
+                kw['center_x'] = 0.0
+                kw['center_y'] = 0.0
+            for kw in kwargs_sidm:
+                kw['center_x'] = 0.0
+                kw['center_y'] = 0.0
+            _, rt_kpc = cdm_halo.profile_args
+            tau = rt_kpc / cdm_halo.nfw_params[1]
+            if sidm_halo.mdef == 'TNFWC':
+                x = np.linspace(min(0.01 * tau, 0.01), cdm_halo.c, 5000)
+                r = x * rs
+                rho_nfw = cdm_halo.density_profile_3d_lenstronomy(r)
+                rho_sidm = sidm_halo.density_profile_3d_lenstronomy(r)
+                mass_nfw = np.trapz(4 * np.pi * r ** 2 * rho_nfw, r)
+                mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_sidm, r)
+                ratio = mass_sidm / mass_nfw
+                ratio_list.append(ratio)
+                npt.assert_equal(sidm_halo._args['x_core_halo'], x_core_halo)
+            else:
+                halo_age = cdm.lens_cosmo.sidm_halo_effective_age(cdm_halo.z, cdm_halo.z_eval, 1.0)
+                rhos, rs, _ = cdm_halo.nfw_params
+                tc = cdm.lens_cosmo.sidm_collapse_timescale(rhos, rs, sigma_eff)
+                t_over_tc = halo_age / tc
+                npt.assert_equal(t_over_tc<1, True)
+
+        npt.assert_array_less(abs(np.median(ratio_list)-1), 0.05)
+        npt.assert_array_less(np.std(ratio_list), 0.1)
 
     def test_add_core_collapsed_halos(self):
 

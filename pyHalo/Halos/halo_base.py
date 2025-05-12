@@ -145,6 +145,16 @@ class Halo(ABC):
             assert self._time_since_infall > 0
         return self._time_since_infall
 
+    def set_infall_redshift(self, z):
+        """
+        Manually set the infall redshift of a subhalo
+        :param z: infall redshift
+        """
+        if self.is_subhalo:
+            self._z_infall = z
+        else:
+            raise Exception('Can only set the infall redshift for subhalos!')
+
     def set_bound_mass(self, bound_mass):
         """
         Allows the explicit assignment of bound mass to halos

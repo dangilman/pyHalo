@@ -289,7 +289,8 @@ class RealizationExtensions(object):
                            t_c=None,
                            subhalo_evolution_scaling=None,
                            x_core_halo=None,
-                           t_over_tc_cut=0.15):
+                           t_over_tc_cut=0.15,
+                           evolving_profile=True):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class, should be a TNFW field or sub-halo
@@ -301,16 +302,22 @@ class RealizationExtensions(object):
         override the functionality associated with t_c and the parametric model
         :param t_over_tc_cut: the timescale before which halos are modeled as NFW profiles; this is intended to force
         SIDM realizations to reduce to CDM-like realizations when t_c -> infinity
+        :param evolving_profile: bool; three possibilities:
+        - if False, and t_c > 1, will make a core-collapse profile from a TNFWC halo with the
+        specified value of x_core_halo
+        - if False, and t_c < 1, will use NFW profile
+        - if True, will use the parametric model by Yang et al. (2022) to model the profile
         :return: an SIDM halo
         """
 
         _, rt_kpc = halo.profile_args
         truncation_class = None
         concentration_class = ConcentrationConstant(None, halo.c)
+        mass_conservation = halo.mass_3d('r200')
         if t_c is None:
             assert x_core_halo is not None
             kwargs_profile = {'x_core_halo': x_core_halo,
-                              'mass_conservation': halo.mass_3d('r200'),
+                              'mass_conservation': mass_conservation,
                               'rt_kpc': rt_kpc}
             sidm_halo = TNFWCHaloParametric(halo.mass,
                                             halo.x,
@@ -329,35 +336,50 @@ class RealizationExtensions(object):
         else:
             kwargs_profile = {'sidm_timescale': t_c}
             if halo.is_subhalo:
-                subhalo_flag = True
                 kwargs_profile['lambda_t'] = subhalo_evolution_scaling
             else:
-                subhalo_flag = False
                 kwargs_profile['lambda_t'] = 1.0
-            kwargs_profile['mass_conservation'] = halo.mass_3d('r200')
+            kwargs_profile['mass_conservation'] = mass_conservation
             kwargs_profile['rt_kpc'] = rt_kpc
-            sidm_halo = TNFWCHaloEvolving(halo.mass, halo.x, halo.y, halo.r3d, halo.z, subhalo_flag,
+            sidm_halo = TNFWCHaloEvolving(halo.mass, halo.x, halo.y, halo.r3d,
+                                          halo.z, halo.is_subhalo,
                                           halo.lens_cosmo, kwargs_profile,
                                           truncation_class,
                                           concentration_class,
                                           halo.unique_tag)
             if sidm_halo.is_subhalo:
                 sidm_halo.set_bound_mass(halo.bound_mass)
-            if sidm_halo.t_over_tc < t_over_tc_cut:
-                # use original NFW profile
-                return halo
-                # make a Hybrid profile; when rescale=1 NFW halo goes away
-                # rescale = sidm_halo.t_over_tc / t_over_tc_cut
-                # sidm_halo = Hybrid(halo, sidm_halo, rescale)
-                # if subhalo_flag:
-                #     sidm_halo.set_bound_mass(halo.bound_mass)
-                # return sidm_halo
+                sidm_halo.set_infall_redshift(halo.z_eval)
+            if evolving_profile:
+                if sidm_halo.t_over_tc < t_over_tc_cut:
+                    return halo
+                else:
+                    return sidm_halo
             else:
-                return sidm_halo
+                if sidm_halo.t_over_tc < 1.0:
+                    return halo
+                else:
+                    kwargs_profile = {'x_core_halo': x_core_halo,
+                                      'mass_conservation': mass_conservation,
+                                      'rt_kpc': rt_kpc}
+                    sidm_halo = TNFWCHaloParametric(halo.mass,
+                                                    halo.x,
+                                                    halo.y,
+                                                    halo.r3d,
+                                                    halo.z,
+                                                    halo.is_subhalo,
+                                                    halo.lens_cosmo,
+                                                    kwargs_profile,
+                                                    truncation_class,
+                                                    concentration_class,
+                                                    halo.unique_tag)
+                    return sidm_halo
 
     def toSIDM_from_cross_section(self, mass_bin_list,
                                   log10_effective_cross_section_list,
-                                  log10_subhalo_time_scaling):
+                                  log10_subhalo_time_scaling,
+                                  evolving_SIDM_profile=True,
+                                  x_core_halo=None):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
         https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse.
@@ -366,7 +388,8 @@ class RealizationExtensions(object):
         :param log10_effective_cross_section_list: a list of effective cross sections in each mass range given in log10(cm^2 / gram)
         :param log10_subhalo_time_scaling: rescales the collpse timescale for subhalos relative to field halos
         :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
-        :return: a realization of SIDM halos created from the population of CDM halos
+        :param x_core_halo: the radio of the SIDM halo core size to the halo scale radius; only used when
+        evolving_SIDM_profile=False. Otherwise, the profile is determined by the parametric model by Yang et al. (2022)
         :return: a realization of SIDM halos created from the population of CDM halos
         """
         sidm_halos = []
@@ -383,7 +406,9 @@ class RealizationExtensions(object):
                 subhalo_evolution_scaling = 10**log10_subhalo_time_scaling
                 new_halo = self.toSIDM_single_halo(halo,
                                                t_c=t_c,
-                                               subhalo_evolution_scaling=subhalo_evolution_scaling)
+                                               x_core_halo=x_core_halo,
+                                               subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                               evolving_profile=evolving_SIDM_profile)
                 sidm_halos.append(new_halo)
             else:
                 sidm_halos.append(halo)
@@ -497,7 +522,8 @@ class RealizationExtensions(object):
                     new_halo = self.toSIDM_single_halo(halo,
                                                        t_c,
                                                        subhalo_evolution_scaling,
-                                                       x_core_halo)
+                                                       x_core_halo,
+                                                       evolving_profile=False)
                 else:
                     truncation_class = halo._truncation_class
                     concentration_class = halo._concentration_class
