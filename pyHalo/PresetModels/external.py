@@ -173,14 +173,14 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
 
     return halos_LOS.join(subhalos_from_params)
 
-def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos = {}, concentration_model_fieldhalos='BOSE2016', kwargs_concentration_model_fieldhalos = {}, truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos = {}, truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos = {}, mass_range_is_bound = True, proj_angle_theta = 0, proj_angle_phi = 0, preset_model_los = 'WDM', geometry_type = 'DOUBLE_CONE', kwargs_cosmo = None, **kwargs_los):
+def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos = {}, truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos = {}, mass_range_is_bound = True, proj_angle_theta = 0, proj_angle_phi = 0, preset_model_los = 'WDM', geometry_type = 'DOUBLE_CONE', kwargs_cosmo = None, **emulator_kwargs):
 
-    log_m_host = kwargs_los['log_m_host']
-    log_mc = kwargs_los['log_mc']
-    cone_opening_angle_arcsec = kwargs_los['cone_opening_angle_arcsec']
-    kwargs_los["z_lens"] = z_lens
-    kwargs_los["z_source"] = z_source
-    emulator_data = kwargs_los.pop('emulator_input') # the pop command returns the value of the key in parentheses, then "pops" that entry from the dictionary
+    log_m_host = emulator_kwargs['log_m_host']
+    log_mc = emulator_kwargs['log_mc']
+    cone_opening_angle_arcsec = emulator_kwargs['cone_opening_angle_arcsec']
+    emulator_kwargs["z_lens"] = z_lens
+    emulator_kwargs["z_source"] = z_source
+    emulator_data = emulator_kwargs.pop('emulator_input') # the pop command returns the value of the key in parentheses, then "pops" that entry from the dictionary
     data = emulator_data()
 
     # import here to avoid circular import
@@ -194,39 +194,27 @@ def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kw
 
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
-    kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
 
     model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
                                                                  kwargs_concentration_model_subhalos)
 
 
     concentration_model_subhalos = model_subhalos(log_mc = log_mc, **kwargs_mc_subs)
-
-    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
-                                                                    kwargs_concentration_model_fieldhalos)
-    concentration_model_fieldhalos = model_fieldhalos(log_mc = log_mc, **kwargs_mc_field)
-    c_host = concentration_model_fieldhalos.nfw_concentration(10 ** log_m_host, z_lens)
+    c_host = concentration_model_subhalos.nfw_concentration(10 ** log_m_host, z_lens)
 
     # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
     kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
     kwargs_truncation_model_subhalos['c_host'] = c_host
-    kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
 
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
 
-    model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
-    kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
-    truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
-
     kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
                          'concentration_model_subhalos': concentration_model_subhalos,
-                         'truncation_model_field_halos': truncation_model_fieldhalos,
-                         'concentration_model_field_halos': concentration_model_fieldhalos,
                          'kwargs_density_profile': {}}
 
-    halos_LOS = preset_model_from_name(preset_model_los)(**kwargs_los)
+    halos_LOS = preset_model_from_name(preset_model_los)(**emulator_kwargs)
     rendering_classes = halos_LOS.rendering_classes
 
     # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
