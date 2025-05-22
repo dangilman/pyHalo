@@ -1,13 +1,18 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
-from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 from pyHalo.PresetModels.cdm import CDM
+from pyHalo.pyhalo import pyHalo
+from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.galacticus_util.galacticus_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_range,nodedata_apply_filter
+from pyHalo.concentration_models import preset_concentration_models
+from pyHalo.truncation_models import truncation_models
+from lenstronomy.LensModel.Profiles.tnfw import TNFW
 import h5py
-
+import random
+import sys
 
 def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_index,log_mlow_galacticus,log_mhigh_galacticus,
                      mass_range_is_bound=True, proj_angle_theta=0, proj_angle_phi=0,
@@ -82,7 +87,8 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
     else:
         nodedata = galacticus_hdf5
 
-    z_lens = np.mean(nodedata[gutil.PARAM_Z_LAST_ISOLATED][np.logical_not(nodedata_filter_subhalos(nodedata,gutil))])
+    #z_lens = np.mean(nodedata[gutil.PARAM_Z_LAST_ISOLATED][np.logical_not(nodedata_filter_subhalos(nodedata,gutil))])
+    z_lens = 0.5
 
     tree_index = int(np.round(tree_index))
 
@@ -166,74 +172,77 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
 
     return halos_LOS.join(subhalos_from_params)
 
-def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
-    """
-    This generates a realization of subhalos using an emulator of the semi-analytic modeling code Galacticus, and
-     generates line-of-sight halos from a mass function parameterized as Sheth-Tormen.
+def DMFromEmulator(z_lens, z_source, preset_model_los = 'WDM', geometry_type = 'DOUBLE_CONE', **emulator_kwargs):
 
-    :param z_lens: main deflector redshift
-    :param z_source: sourcee redshift
-    :param emulator_input: either an array or a callable function
+    log_m_host = emulator_kwargs['log_m_host']
+    log_mc = emulator_kwargs['log_mc']
+    cone_opening_angle_arcsec = emulator_kwargs['cone_opening_angle_arcsec']
+    emulator_kwargs["z_lens"] = z_lens
+    emulator_kwargs["z_source"] = z_source
+    emulator_data = emulator_kwargs.pop('emulator_input') # the pop command returns the value of the key in parentheses, then "pops" that entry from the dictionary
+    data = emulator_data()
 
-    if callable: a function that returns an array of
-    1) subhalo masses at infall [M_sun]
-    2) subhalo projected x position [kpc]
-    3) subhalo projected y position [kpc]
-    4) subhalo final_bound_mass [M_sun]
-    5) subhalo concentrations at infall
+    # import here to avoid circular import
+    from pyHalo.preset_models import preset_model_from_name
 
-    if not callable: an array with shape (N_subhalos 5) that contains masses, positions x, positions y, etc.
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
 
-    Mass convention is m200 with respect to the critical density of the Universe at redshift Z_infall, where Z_infall is
-    the infall redshift (not necessarily the redshift at the time of lensing).
-
-    :param cone_opening_angle_arcsec: the opening angle of the double cone rendering volume in arcsec
-    :param log_mlow: log10(minimum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param log_mhigh: log10(maximum halo mass) rendered, or a function that returns log_mlow given a redshift
-    :param LOS_normalization: rescaling of the line of sight halo mass function relative to Sheth-Tormen
-    :param log_m_host: log10 host halo mass in M_sun
-    :param kwargs_other: allows for additional keyword arguments to be specified when creating realization
-
-    The following optional keywords specify a concentration-mass relation for field halos parameterized as a power law
-    in peak height. If they are not set in the function call, pyHalo assumes a default concentration-mass relation from Diemer&Joyce
-    :param c0: amplitude of the mass-concentration relation at 10^8
-    :param log10c0: logarithmic amplitude of the mass-concentration relation at 10^8 (only if c0_mcrelation is None)
-    :param beta: logarithmic slope of the mass-concentration-relation pivoting around 10^8
-    :param zeta: modifies the redshift evolution of the mass-concentration-relation
-    :param two_halo_contribution: whether to include the two-halo term for correlated structure near the main deflector
-    :param kwargs_halo_mass_function: keyword arguments passed to the LensingMassFunction class
-    (see Cosmology.lensing_mass_function)
-    :return: a realization of CDM halos
-    """
-
-    # we create a realization of only line-of-sight halos by setting sigma_sub = 0.0
-    kwargs_cdm['sigma_sub'] = 0.0
-    cdm_halos_LOS = CDM(z_lens, z_source, **kwargs_cdm)
     # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
-    lens_cosmo = cdm_halos_LOS.lens_cosmo
+    halos_LOS = preset_model_from_name(preset_model_los)(**emulator_kwargs)
+    lens_cosmo = halos_LOS.lens_cosmo
 
-    # now create subhalos from the specified properties using the TNFWSubhaloEmulator class
+    #kpc_per_arcsec_at_z = lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
+
+    #h = lens_cosmo.h
+    h = 0.7
+    #rhoc_zlens = lens_cosmo._nfw_param.rhoc_z(z_lens)
+    MPC_TO_KPC = 1e3
+
+    # Here, data = emulator_data from normalizing_flows.py
+    massInfall = data[0]
+    concentration = data[1]
+    massBound = data[2]
+    redshiftLastIsolated = data[3]
+    lens_redshifts = np.array([z_lens] * len(massInfall))
+    rt = data[4] # This has an MPC_TO_KPC conversion in the tabulate_params() function
+    x_kpc = data[5] * MPC_TO_KPC
+    y_kpc = data[6] * MPC_TO_KPC
+
+    r_vir = ((3 * h * massInfall)/(4 * 200 * np.pi * lens_cosmo._nfw_param.rhoc_z(lens_redshifts)))**(1/3)
+    r_vir = r_vir/h
+
+    rs = r_vir/concentration
+    ones = np.ones(len(concentration))
+    rhos = h**2 * 200.0 / 3 * lens_cosmo._nfw_param.rhoc_z(lens_redshifts) * concentration**3 / (np.log(ones + concentration) - concentration / (ones + concentration))
+
+    def tabulate_params():
+
+        key_id = []
+        for i in range(len(rhos)):
+            key_id.append('TNFW')
+
+        return {
+            TNFWFromParams.KEY_RHO_S:       rhos / (MPC_TO_KPC)**3,
+            TNFWFromParams.KEY_RS :         rs * MPC_TO_KPC,
+            TNFWFromParams.KEY_RT :         rt * MPC_TO_KPC,
+            TNFWFromParams.KEY_RV :         r_vir  * MPC_TO_KPC,
+            TNFWFromParams.KEY_Z_INFALL:    redshiftLastIsolated,
+            TNFWFromParams.KEY_ID :         key_id
+        }
+
+    tnfw_args_all = tabulate_params()
+
     halo_list = []
-    if callable(emulator_input):
-        subhalo_infall_masses, subhalo_x_kpc, subhalo_y_kpc, subhalo_final_bound_masses, \
-        subhalo_infall_concentrations = emulator_input()
-    else:
-        subhalo_infall_masses = emulator_input[:, 0]
-        subhalo_x_kpc = emulator_input[:, 1]
-        subhalo_y_kpc = emulator_input[:, 2]
-        subhalo_final_bound_masses = emulator_input[:, 3]
-        subhalo_infall_concentrations = emulator_input[:, 4]
 
-    for i in range(0, len(subhalo_infall_masses)):
-        halo = TNFWSubhaloEmulator(subhalo_infall_masses[i],
-                                   subhalo_x_kpc[i],
-                                   subhalo_y_kpc[i],
-                                   subhalo_final_bound_masses[i],
-                                   subhalo_infall_concentrations[i],
-                                   z_lens, lens_cosmo)
-        halo_list.append(halo)
+    for n,m_infall in enumerate(massInfall):
+        tnfw_args = {key:val[n] for key,val in tnfw_args_all.items()}
+        halo_list.append(TNFWFromParams(m_infall,x_kpc[n], y_kpc[n],None, z_lens,True,lens_cosmo,tnfw_args))
 
-    # combine the subhalos with line-of-sight halos
-    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model={},
-                                                    msheet_correction=False, rendering_classes=None)
-    return cdm_halos_LOS.join(subhalos_from_emulator)
+    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model= {},
+                                                    msheet_correction=False, rendering_classes=None, geometry = geometry)
+
+    return subhalos_from_emulator
