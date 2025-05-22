@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
-from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 from pyHalo.PresetModels.cdm import CDM
 from pyHalo.pyhalo import pyHalo
@@ -173,7 +172,7 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
 
     return halos_LOS.join(subhalos_from_params)
 
-def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kwargs_concentration_model_subhalos = {}, truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos = {}, mass_range_is_bound = True, proj_angle_theta = 0, proj_angle_phi = 0, preset_model_los = 'WDM', geometry_type = 'DOUBLE_CONE', kwargs_cosmo = None, **emulator_kwargs):
+def DMFromEmulator(z_lens, z_source, preset_model_los = 'WDM', geometry_type = 'DOUBLE_CONE', **emulator_kwargs):
 
     log_m_host = emulator_kwargs['log_m_host']
     log_mc = emulator_kwargs['log_mc']
@@ -187,43 +186,20 @@ def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kw
     from pyHalo.preset_models import preset_model_from_name
 
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
-    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    pyhalo = pyHalo(z_lens, z_source)
     # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
     geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
                         cone_opening_angle_arcsec, geometry_type)
 
-    # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
-    kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
-
-    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
-                                                                 kwargs_concentration_model_subhalos)
-
-
-    concentration_model_subhalos = model_subhalos(log_mc = log_mc, **kwargs_mc_subs)
-    c_host = concentration_model_subhalos.nfw_concentration(10 ** log_m_host, z_lens)
-
-    # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
-    kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
-    kwargs_truncation_model_subhalos['c_host'] = c_host
-
-    model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
-    kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
-    truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
-
-    kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
-                         'concentration_model_subhalos': concentration_model_subhalos,
-                         'kwargs_density_profile': {}}
-
-    halos_LOS = preset_model_from_name(preset_model_los)(**emulator_kwargs)
-    rendering_classes = halos_LOS.rendering_classes
-
     # get lens_cosmo class from class containing LOS objects; note that this will work even if there are no LOS halos
+    halos_LOS = preset_model_from_name(preset_model_los)(**emulator_kwargs)
     lens_cosmo = halos_LOS.lens_cosmo
 
-    kpc_per_arcsec_at_z = lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
+    #kpc_per_arcsec_at_z = lens_cosmo.cosmo.kpc_proper_per_asec(z_lens)
 
-    h = lens_cosmo.h
-    rhoc_zlens = lens_cosmo._nfw_param.rhoc_z(z_lens)
+    #h = lens_cosmo.h
+    h = 0.7
+    #rhoc_zlens = lens_cosmo._nfw_param.rhoc_z(z_lens)
     MPC_TO_KPC = 1e3
 
     # Here, data = emulator_data from normalizing_flows.py
@@ -266,7 +242,7 @@ def DMFromEmulator(z_lens, z_source, concentration_model_subhalos='BOSE2016', kw
         tnfw_args = {key:val[n] for key,val in tnfw_args_all.items()}
         halo_list.append(TNFWFromParams(m_infall,x_kpc[n], y_kpc[n],None, z_lens,True,lens_cosmo,tnfw_args))
 
-    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model= kwargs_halo_model,
-                                                    msheet_correction=True, rendering_classes=rendering_classes, geometry = geometry)
+    subhalos_from_emulator = Realization.from_halos(halo_list, lens_cosmo, kwargs_halo_model= {},
+                                                    msheet_correction=False, rendering_classes=None, geometry = geometry)
 
     return subhalos_from_emulator
