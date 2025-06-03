@@ -4,7 +4,7 @@ from lenstronomy.Cosmo.nfw_param import NFWParam
 import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
-from pyHalo.Halos.accretion import InfallDistributionGalacticus2024, InfallDistributionHybrid
+from pyHalo.Halos.accretion import InfallDistributionGalacticus2024, InfallDistributionHybrid, InfallDistributionDirect
 
 
 class NFWParampyHalo(NFWParam):
@@ -65,7 +65,18 @@ class LensCosmo(object):
             self._infall_pdf_set = False
 
     def setup_infall_model(self, infall_redshift_model, kwargs_infall_model):
-
+        """
+        Setup the subhalo infall redshift model that determines the probability that a subhalo was accreted at a
+        redshift z
+        :param infall_redshift_model: a string specifying the model, options include
+        - HYBRID_INFALL: a definition of infall time the accounts for directly-infalling halos and infalling sub-subhalos
+        - DIRECT_INFALL: a definition of infall time that captures directly-infalling objects
+        - GALACTICUS_2024: a definition of infall time for directly infalling objects output by the operational version
+        of Galacticus as of Spring, 2024
+        :param kwargs_infall_model: keyword arguments for infall time model; for HYBRID_INFALL and DIRECT_INFALL should
+        include log_m_host, the log10(host_halo_mass).
+        :return:
+        """
         self._infall_pdf_set = True
         if infall_redshift_model == 'HYBRID_INFALL':
             if 'm_host' in list(kwargs_infall_model.keys()):
@@ -77,6 +88,8 @@ class LensCosmo(object):
                 kwargs_infall_model['log_m_host'] = 13.0
             self._z_infall_model = InfallDistributionHybrid(self.z_lens, kwargs_infall_model['log_m_host'])
         elif infall_redshift_model == 'DIRECT_INFALL':
+            self._z_infall_model = InfallDistributionDirect(self.z_lens, kwargs_infall_model['log_m_host'])
+        elif infall_redshift_model == 'GALACTICUS_2024':
             self._z_infall_model = InfallDistributionGalacticus2024(self.z_lens)
         else:
             try:
@@ -121,7 +134,6 @@ class LensCosmo(object):
         return 1. + mean_boost
 
     def twohaloterm(self, r, M, z, mdef='200c'):
-
         """
         Computes the boost to the background density of the Universe
         from correlated structure around a host of mass M
@@ -189,10 +201,12 @@ class LensCosmo(object):
     def nfwParam_physical(self, m, c, z, pseudo_nfw=False):
         """
         returns the NFW parameters in physical units
-        updates lenstronomy implementation with arbitrary redshift
 
         :param m: physical mass in M_sun
         :param c: concentration
+        :param z: redshift
+        :param pseudo_nfw: if False, performs calculations for NFW profile; if True, performs calculations with
+        NFW-like profile with (1+x^2) in the denominator rather than (1+x)^2
         :return: rho0 [Msun/Mpc^3], Rs [Mpc], r200 [Mpc]
         """
         if pseudo_nfw is None:
@@ -385,3 +399,4 @@ class LensCosmo(object):
         G = 4.3e-6 # kpc / solar mass * (km/sec)^2
         vmax = 1.64 * numpy.sqrt(G * rhos * rs ** 2)
         return vmax
+

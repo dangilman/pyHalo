@@ -82,15 +82,15 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     return sidm
 
 def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, log10_subhalo_time_scaling=0.0,
-        sigma_sub=0.025, log10_sigma_sub=None, log10_dNdA=None, log_mlow=6., log_mhigh=10.,
-        concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
+        sigma_sub=0.025, log10_sigma_sub=None, log10_dNdA=None, evolving_SIDM_profile=True, x_core_halo=None,
+        log_mlow=6., log_mhigh=10., concentration_model_subhalos='DIEMERJOYCE19', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='DIEMERJOYCE19', kwargs_concentration_model_fieldhalos={},
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, add_globular_clusters=False,
-                    kwargs_globular_clusters=None):
+        kwargs_globular_clusters=None):
     """
 
     Generates realizations of SIDM halos in terms of the effective scattering cross section in different mass bins using the
@@ -156,7 +156,9 @@ def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_s
     extension = RealizationExtensions(cdm)
     sidm = extension.toSIDM_from_cross_section(log10_mass_ranges,
                                                    log10_effective_cross_section_list,
-                                                   log10_subhalo_time_scaling)
+                                                   log10_subhalo_time_scaling,
+                                                    evolving_SIDM_profile,
+                                                    x_core_halo)
     if add_globular_clusters:
         ext = RealizationExtensions(sidm)
         sidm = ext.add_globular_clusters(**kwargs_globular_clusters)
@@ -171,7 +173,7 @@ def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_si
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
-        add_globular_clusters=False, kwargs_globular_clusters=None):
+        add_globular_clusters=False, kwargs_globular_clusters=None, evolving_profile=True, x_core_halo=None):
     """
     This function uses the SIDM_parametric model with a preset list of logarithmic mass bins 10^log_mlow - 10^7.5,
     10^7.5-10^8.5, 10^8.5-10^10. The two parameters log10_sigma_eff_mlow_8 and log10_sigma_eff_8_mhigh set the cross section
@@ -185,13 +187,14 @@ def SIDM_parametric_fixedbins(z_lens, z_source, log10_sigma_eff_mlow_8, log10_si
         raise Exception('to use this function log_mlow must be < 8')
     log10_mass_ranges = [[log_mlow, 8.0], [8.0, log_mhigh]]
     log10_effective_cross_section_list = [log10_sigma_eff_mlow_8, log10_sigma_eff_8_mhigh]
-    return SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list,
-        log10_subhalo_time_scaling, sigma_sub, log10_sigma_sub, log10_dNdA, log_mlow, log_mhigh,
-        concentration_model_subhalos, kwargs_concentration_model_subhalos,
+    return SIDM_parametric(
+        z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, log10_subhalo_time_scaling,
+        sigma_sub, log10_sigma_sub, log10_dNdA, evolving_profile, x_core_halo,
+        log_mlow, log_mhigh, concentration_model_subhalos, kwargs_concentration_model_subhalos,
         concentration_model_fieldhalos, kwargs_concentration_model_fieldhalos,
         truncation_model_subhalos, kwargs_truncation_model_subhalos,
-        infall_redshift_model, kwargs_infall_model,
-        truncation_model_fieldhalos, kwargs_truncation_model_fieldhalos,
-        shmf_log_slope, cone_opening_angle_arcsec, log_m_host,  r_tidal,
-        LOS_normalization, geometry_type, kwargs_cosmo,
-        add_globular_clusters, kwargs_globular_clusters)
+        infall_redshift_model, kwargs_infall_model, truncation_model_fieldhalos,
+        kwargs_truncation_model_fieldhalos, shmf_log_slope, cone_opening_angle_arcsec,
+        log_m_host, r_tidal, LOS_normalization, geometry_type, kwargs_cosmo,
+        add_globular_clusters,  kwargs_globular_clusters
+    )

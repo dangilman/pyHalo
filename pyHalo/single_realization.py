@@ -120,6 +120,30 @@ class Realization(object):
         self._rendering_center_x = rendering_center_x
         self._rendering_center_y = rendering_center_y
 
+    @property
+    def subhalos(self):
+        """
+        Return all subhalos in the realization, identified by their is_subhalo attribute being "True"
+        :return: a list of subhalos
+        """
+        subhalos = []
+        for halo in self.halos:
+            if halo.is_subhalo:
+                subhalos.append(halo)
+        return subhalos
+
+    @property
+    def field_halos(self):
+        """
+        Return all field halos in the realization, identified by their is_subhalo attribute being "False"
+        :return: a list of subhalos
+        """
+        field_halos = []
+        for halo in self.halos:
+            if not halo.is_subhalo:
+                field_halos.append(halo)
+        return field_halos
+
     def filter_bound_mass(self, bound_mass_minimum):
         """
         This routine creates an instance of realization after removing halos/subhalos with attributes .bound_mass below

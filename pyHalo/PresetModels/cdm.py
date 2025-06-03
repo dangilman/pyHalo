@@ -21,7 +21,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         log_m_host=13.3,  r_tidal=0.25, LOS_normalization=1.0, two_halo_contribution=True,
         delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
         redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
-        add_globular_clusters=False, kwargs_globular_clusters=None, mass_threshold_sis=5*10**10, galaxy_model='GNFW'):
+        add_globular_clusters=False, kwargs_globular_clusters=None, mass_threshold_sis=5*10**10,
+        galaxy_model='GNFW'):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 

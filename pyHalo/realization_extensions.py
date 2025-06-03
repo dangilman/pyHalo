@@ -309,7 +309,6 @@ class RealizationExtensions(object):
         - if True, will use the parametric model by Yang et al. (2022) to model the profile
         :return: an SIDM halo
         """
-
         _, rt_kpc = halo.profile_args
         truncation_class = None
         concentration_class = ConcentrationConstant(None, halo.c)
@@ -347,16 +346,22 @@ class RealizationExtensions(object):
                                           truncation_class,
                                           concentration_class,
                                           halo.unique_tag)
+            halo_effective_age = sidm_halo.halo_effective_age
+            t_over_tc = sidm_halo.t_over_tc
             if sidm_halo.is_subhalo:
                 sidm_halo.set_bound_mass(halo.bound_mass)
                 sidm_halo.set_infall_redshift(halo.z_eval)
             if evolving_profile:
                 if sidm_halo.t_over_tc < t_over_tc_cut:
+                    halo.halo_effective_age = halo_effective_age
+                    halo.t_over_tc = t_over_tc
                     return halo
                 else:
                     return sidm_halo
             else:
                 if sidm_halo.t_over_tc < 1.0:
+                    halo.halo_effective_age = halo_effective_age
+                    halo.t_over_tc = t_over_tc
                     return halo
                 else:
                     kwargs_profile = {'x_core_halo': x_core_halo,
@@ -373,6 +378,8 @@ class RealizationExtensions(object):
                                                     truncation_class,
                                                     concentration_class,
                                                     halo.unique_tag)
+                    sidm_halo.t_over_tc = t_over_tc
+                    sidm_halo.halo_effective_age = halo_effective_age
                     return sidm_halo
 
     def toSIDM_from_cross_section(self, mass_bin_list,
@@ -388,7 +395,7 @@ class RealizationExtensions(object):
         :param log10_effective_cross_section_list: a list of effective cross sections in each mass range given in log10(cm^2 / gram)
         :param log10_subhalo_time_scaling: rescales the collpse timescale for subhalos relative to field halos
         :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
-        :param x_core_halo: the radio of the SIDM halo core size to the halo scale radius; only used when
+        :param x_core_halo: the ratio of the SIDM halo core size to the halo scale radius; only used when
         evolving_SIDM_profile=False. Otherwise, the profile is determined by the parametric model by Yang et al. (2022)
         :return: a realization of SIDM halos created from the population of CDM halos
         """
