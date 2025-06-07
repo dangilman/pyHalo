@@ -3,7 +3,7 @@ from pyHalo.PresetModels.wdm import WDM, WDM_mixed
 from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.preset_models import preset_model_from_name
-from pyHalo.PresetModels.external import CDMFromEmulator, DMFromGalacticus
+from pyHalo.PresetModels.external import DMFromEmulator, DMFromGalacticus
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 import pytest
@@ -163,40 +163,34 @@ class TestPresetModels(object):
                    kwargs_globular_clusters=kwargs_globular_clusters)
         _ = wdm.lensing_quantities()
 
-    def test_CDM_emulator(self):
+    def test_DM_emulator(self):
 
         def emulator_input_callable(*args, **kwargs):
             subhalo_infall_masses = np.array([10**7,10**8])
-            subhalo_x_kpc = np.array([1.0, 1.0])
-            subhalo_y_kpc = np.array([1.0, 1.0])
-            subhalo_final_bound_masses = subhalo_infall_masses / 2
             subhalo_infall_concentrations = np.array([16.0, 20.0])
-            return subhalo_infall_masses, subhalo_x_kpc, subhalo_y_kpc, subhalo_final_bound_masses, subhalo_infall_concentrations
+            subhalo_final_bound_masses = subhalo_infall_masses / 2
+            subhalo_infall_redshifts = np.array([2.0, 3.0])
+            subhalo_truncation_radii_kpc = np.array([5.0, 6.0])
+            subhalo_x_Mpc = np.array([0.001, 0.001])
+            subhalo_y_Mpc = np.array([0.001, 0.001])
+            return subhalo_infall_masses, subhalo_infall_concentrations, subhalo_final_bound_masses, subhalo_infall_redshifts, subhalo_truncation_radii_kpc, subhalo_x_Mpc, subhalo_y_Mpc
 
         concentrations = np.array([16.0, 20.0])
         mass_array = np.array([10 ** 7, 10 ** 8])
-        kwargs_cdm = {'LOS_normalization': 0.0}
-        cdm_subhalo_emulator = CDMFromEmulator(0.5, 1.5, emulator_input_callable, kwargs_cdm)
-        _ = cdm_subhalo_emulator.lensing_quantities()
-        for i, halo in enumerate(cdm_subhalo_emulator.halos):
-            npt.assert_equal(halo.mass, mass_array[i])
-            npt.assert_almost_equal(halo.x, 0.1584666, 4)
-            npt.assert_almost_equal(halo.y, 0.1584666, 4)
-            npt.assert_equal(halo.c, concentrations[i])
+        infall_redshifts = np.array([2.0, 3.0])
+        truncation_radii = np.array([5.0, 6.0])
+        emulator_kwargs = {'emulator_data_function': emulator_input_callable}
 
-        emulator_input_array = np.empty((2, 5))
-        emulator_input_array[:, 0] = mass_array
-        emulator_input_array[:, 1] = np.array([1.0, 1.0])
-        emulator_input_array[:, 2] = np.array([1.0, 1.0])
-        emulator_input_array[:, 3] = mass_array / 2
-        emulator_input_array[:, 4] = concentrations
-        cdm_subhalo_emulator = CDMFromEmulator(0.5, 1.5, emulator_input_array, kwargs_cdm)
-        _ = cdm_subhalo_emulator.lensing_quantities()
-        for i, halo in enumerate(cdm_subhalo_emulator.halos):
+        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, **emulator_kwargs)
+        _ = dm_subhalo_emulator.lensing_quantities()
+        for i, halo in enumerate(dm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
+            npt.assert_equal(halo.c, concentrations[i])
+            #npt.assert_equal(halo.bound_mass, mass_array[i]/2)
+            npt.assert_equal(halo.z_infall, infall_redshifts[i])
+            #npt.assert_equal(halo.params_physical['r_trunc_kpc'], truncation_radii[i])
             npt.assert_almost_equal(halo.x, 0.1584666, 4)
             npt.assert_almost_equal(halo.y, 0.1584666, 4)
-            npt.assert_equal(halo.c, concentrations[i])
 
     def test_galacticus(self):
         util = GalacticusUtil()
