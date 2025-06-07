@@ -172,7 +172,7 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
 
     return halos_LOS.join(subhalos_from_params)
 
-def DMFromEmulator(z_lens, z_source, emulator_data_function, cone_opening_angle_arcsec = 8.0):
+def DMFromEmulator(z_lens, z_source, cone_opening_angle_arcsec = 8.0, geometry_type = 'DOUBLE_CONE', **emulator_kwargs):
     
     """
     Generate a pyHalo realization from an emulator trained on Galacticus simulations
@@ -182,14 +182,13 @@ def DMFromEmulator(z_lens, z_source, emulator_data_function, cone_opening_angle_
     :param emulator_data_function: a callable function that on each call returns the properties of halos from the emulator
     :return: a pyHalo realization object
     """
-    print(emulator_data_function)
-    #emulator_data = emulator_kwargs.pop('emulator_input') # the pop command returns the value of the key in parentheses, then "pops" that entry from the dictionary
-    data = emulator_data_function()
+
+    emulator_data = emulator_kwargs.pop('emulator_input') # the pop command returns the value of the key in parentheses, then "pops" that entry from the dictionary
+    data = emulator_data()
 
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
     pyhalo = pyHalo(z_lens, z_source)
     # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
-    geometry_type = 'DOUBLE_CONE'
     geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
                         cone_opening_angle_arcsec, geometry_type)
 

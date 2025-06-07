@@ -179,12 +179,7 @@ class TestPresetModels(object):
         mass_array = np.array([10 ** 7, 10 ** 8])
         infall_redshifts = np.array([2.0, 3.0])
         truncation_radii = np.array([5.0, 6.0])
-        emulator_kwargs = {'LOS_normalization': 0.0,
-                             'log_m_host': 13.3,
-              'cone_opening_angle_arcsec': 8.0,
-                              'sigma_sub': 0.12,
-                                 'log_mc': 4.0,
-                         'emulator_input': emulator_input_callable}
+        emulator_kwargs = {'emulator_data_function': emulator_input_callable}
 
         dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, **emulator_kwargs)
         _ = dm_subhalo_emulator.lensing_quantities()
