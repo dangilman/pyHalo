@@ -648,6 +648,65 @@ class TestRealizationExtensions(object):
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
 
+    def test_SIDM_halo_transform(self):
+        """
+        This asserts that a list of SIDM halo profiles created from an NFW subhalo will have consistent properties
+        (e.g. infall redshift, concentration, etc)
+        :return:
+        """
+        cosmo = Cosmology()
+        lens_cosmo = LensCosmo(0.5, 2.0, cosmo)
+        from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
+        m = 10 ** 10.7
+        f_bound = 0.02
+        z_infall = 4.5
+        infall_concentration = 6.0
+        z = 0.5
+        cdm_subhalo = TNFWSubhalo.simple_setup(m, f_bound, z_infall, 0.0, 0.0, z, lens_cosmo)
+        cdm_subhalo._c = infall_concentration
+        x_core_halo_list = [0.01, 0.05, 0.06, 0.15, 0.2, 0.3, 0.4]
+
+        class DummyRealization(object):
+            def __init__(self, lens_cosmo):
+                self.lens_cosmo = lens_cosmo
+
+        dummy = DummyRealization(cdm_subhalo)
+        ext = RealizationExtensions(dummy)
+        for xcore in x_core_halo_list:
+            subhalo_evolution_scaling = 1.0
+            halo = ext.toSIDM_single_halo(cdm_subhalo,
+                                          t_c=None,
+                                          subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                          evolving_profile=False,
+                                          x_core_halo=xcore)
+            npt.assert_equal(halo.c, infall_concentration)
+            npt.assert_equal(halo.z, 0.5)
+            npt.assert_equal(halo.z_eval, z_infall)
+            npt.assert_equal(halo.bound_mass, cdm_subhalo.bound_mass)
+        tc_list = [8.2/0.5, 8.2/1.0, 8.2, 1.2]
+        for tc in tc_list:
+            subhalo_evolution_scaling = 1.0
+            halo = ext.toSIDM_single_halo(cdm_subhalo,
+                                          t_c=tc,
+                                          subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                          evolving_profile=True,
+                                          x_core_halo=xcore)
+            npt.assert_equal(halo.c, infall_concentration)
+            npt.assert_equal(halo.z, 0.5)
+            npt.assert_equal(halo.z_eval, z_infall)
+            npt.assert_equal(halo.bound_mass, cdm_subhalo.bound_mass)
+
+            halo = ext.toSIDM_single_halo(cdm_subhalo,
+                                          t_c=tc,
+                                          subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                          evolving_profile=False,
+                                          x_core_halo=xcore)
+            npt.assert_equal(halo.c, infall_concentration)
+            npt.assert_equal(halo.z, 0.5)
+            npt.assert_equal(halo.z_eval, z_infall)
+            npt.assert_equal(halo.bound_mass, cdm_subhalo.bound_mass)
+
+
 if __name__ == '__main__':
       pytest.main()
 

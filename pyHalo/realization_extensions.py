@@ -330,6 +330,7 @@ class RealizationExtensions(object):
                                             concentration_class,
                                             halo.unique_tag)
             if halo.is_subhalo:
+                sidm_halo.set_infall_redshift(halo.z_eval)
                 sidm_halo.set_bound_mass(halo.bound_mass)
             return sidm_halo
         else:
@@ -348,15 +349,15 @@ class RealizationExtensions(object):
                                           halo.unique_tag)
             halo_effective_age = sidm_halo.halo_effective_age
             t_over_tc = sidm_halo.t_over_tc
-            if sidm_halo.is_subhalo:
-                sidm_halo.set_bound_mass(halo.bound_mass)
-                sidm_halo.set_infall_redshift(halo.z_eval)
             if evolving_profile:
                 if sidm_halo.t_over_tc < t_over_tc_cut:
                     halo.halo_effective_age = halo_effective_age
                     halo.t_over_tc = t_over_tc
                     return halo
                 else:
+                    if sidm_halo.is_subhalo:
+                        sidm_halo.set_bound_mass(halo.bound_mass)
+                        sidm_halo.set_infall_redshift(halo.z_eval)
                     return sidm_halo
             else:
                 if sidm_halo.t_over_tc < 1.0:
@@ -380,6 +381,9 @@ class RealizationExtensions(object):
                                                     halo.unique_tag)
                     sidm_halo.t_over_tc = t_over_tc
                     sidm_halo.halo_effective_age = halo_effective_age
+                    if sidm_halo.is_subhalo:
+                        sidm_halo.set_infall_redshift(halo.z_eval)
+                        sidm_halo.set_bound_mass(halo.bound_mass)
                     return sidm_halo
 
     def toSIDM_from_cross_section(self, mass_bin_list,
@@ -531,6 +535,7 @@ class RealizationExtensions(object):
                                                        subhalo_evolution_scaling,
                                                        x_core_halo,
                                                        evolving_profile=False)
+
                 else:
                     truncation_class = halo._truncation_class
                     concentration_class = halo._concentration_class

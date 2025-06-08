@@ -1,3 +1,4 @@
+from cobaya.mpi import scatter
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
@@ -182,6 +183,35 @@ class TNFWSubhalo(TNFWFieldHalo):
     """
     Defines a truncated NFW halo that is a subhalo of the host dark matter halo
     """
+
+    @classmethod
+    def simple_setup(cls, mass, f_bound, z_infall, x, y, z, lens_cosmo):
+        """
+        Creates an instance of the TNFWSubhalo class with a specified bound mass, from which the density profile is
+        computed using the tidal track
+        :param mass:
+        :param f_bound:
+        :param z_infall:
+        :param x:
+        :param y:
+        :param z:
+        :param lens_cosmo:
+        :return:
+        """
+        r3d = None
+        sub_flag = True
+        args = {}
+        from pyHalo.concentration_models import preset_concentration_models
+        from pyHalo.truncation_models import truncation_models
+        _c_model, _ = preset_concentration_models('DIEMERJOYCE19')
+        _t_model, _ = truncation_models('TRUNCATION_GALACTICUS')
+        concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
+        truncation_class = _t_model(lens_cosmo, 5.0)
+        tnfw_subhalo = TNFWSubhalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
+                             truncation_class, concentration_class, 1.0)
+        tnfw_subhalo._mbound_galacticus_definition = f_bound * mass
+        tnfw_subhalo.set_infall_redshift(z_infall)
+        return tnfw_subhalo
 
     @property
     def bound_mass(self):

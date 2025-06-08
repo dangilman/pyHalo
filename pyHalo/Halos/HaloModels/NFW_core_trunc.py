@@ -58,6 +58,29 @@ class TNFWCHaloParametric(Halo):
                                                             kwargs_lenstronomy['r_core'],
                                                             kwargs_lenstronomy['r_trunc'])
 
+    def mass_2d(self, rmax):
+        """
+        Computes the 2-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        if rmax == 'r200':
+            rmax = self.nfw_params[-1]
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        x = np.logspace(-3.5, 0.0, 5000) * rmax / kpc_per_arcsec
+        y = 0
+        fxx, _, _, fyy = self.tnfwc_lenstronomy.hessian(x, y,
+                                                        kwargs_lenstronomy['Rs'],
+                                                        kwargs_lenstronomy['alpha_Rs'],
+                                                        kwargs_lenstronomy['r_core'],
+                                                        kwargs_lenstronomy['r_trunc'])
+        kappa = 0.5 * (fxx + fyy)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        sigma_crit_arcsec = sigma_crit_kpc * kpc_per_arcsec ** 2
+        return np.trapz(kappa * 2 * np.pi * x, x) * sigma_crit_arcsec
+
     @property
     def c(self):
         """

@@ -1,6 +1,6 @@
 import numpy.testing as npt
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Halos.accretion import InfallDistributionGalacticus2024, InfallDistributionHybrid
+from pyHalo.Halos.accretion import InfallDistributionGalacticus2024, InfallDistributionHybrid, InfallDistributionDirect
 import numpy as np
 import pytest
 from astropy.cosmology import FlatLambdaCDM
@@ -86,6 +86,10 @@ class TestLensCosmo(object):
         z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
         npt.assert_equal(True, z_infall > zlens)
 
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='GALACTICUS_2024')
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
+
         infall_time_model = InfallDistributionGalacticus2024
         kwargs_infall_model = {}
         lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
@@ -94,6 +98,13 @@ class TestLensCosmo(object):
         npt.assert_equal(True, z_infall > zlens)
 
         infall_time_model = InfallDistributionHybrid
+        kwargs_infall_model = {'log_m_host': 13.0}
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
+                               kwargs_infall_model=kwargs_infall_model)
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
+
+        infall_time_model = InfallDistributionDirect
         kwargs_infall_model = {'log_m_host': 13.0}
         lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
                                kwargs_infall_model=kwargs_infall_model)

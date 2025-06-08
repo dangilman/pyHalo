@@ -192,6 +192,44 @@ class TestTNFWHalos(object):
         vmax = tnfw_fieldhalo.vmax_nfw
         npt.assert_almost_equal(vmax / vmax_calc, np.sqrt(10), 1)
 
+    def test_subhalo_simple_setup(self):
+
+        x = 0.5
+        y = 1.0
+        z = 0.45
+        z_infall = 0.8
+        mass = 10 ** 9
+        f_bound = 0.1
+        conc_model = ConcentrationDiemerJoyce(self.lens_cosmo.cosmo, scatter=False)
+        tnfw_subhalo = TNFWSubhalo.simple_setup(mass,
+                                                  f_bound,
+                                                  z_infall,
+                                                  x, y, z, self.lens_cosmo)
+        c = conc_model.nfw_concentration(mass, z_infall)
+        npt.assert_almost_equal(tnfw_subhalo.bound_mass_galacticus_definition, mass * f_bound)
+        npt.assert_almost_equal(tnfw_subhalo.z_eval, z_infall)
+        npt.assert_almost_equal(tnfw_subhalo.c, c)
+        npt.assert_equal(tnfw_subhalo.is_subhalo, True)
+
+    def test_fieldhalo_simple_setup(self):
+
+        x = 0.5
+        y = 1.0
+        z = 0.45
+        mass = 10 ** 9
+        conc_model = ConcentrationDiemerJoyce(self.lens_cosmo.cosmo, scatter=False)
+        tau = 100
+        tnfw_fieldhalo = TNFWFieldHalo.simple_setup(
+            mass, x, y, z, tau, self.lens_cosmo,
+            concentration_model='DIEMERJOYCE19'
+        )
+        c = conc_model.nfw_concentration(mass, z)
+        npt.assert_almost_equal(tnfw_fieldhalo.c, c)
+        npt.assert_almost_equal(tnfw_fieldhalo.mass, mass)
+        npt.assert_almost_equal(tnfw_fieldhalo.z, z)
+        npt.assert_equal(tnfw_fieldhalo.is_subhalo, False)
+
+
 if __name__ == '__main__':
     pytest.main()
 

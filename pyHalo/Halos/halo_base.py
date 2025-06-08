@@ -226,9 +226,10 @@ class Halo(ABC):
     def logarithmic_profile_slope(self, r, profile_args=None):
         """
 
-        :param r:
-        :param profile_args:
-        :return:
+        :param r: distance from center of halo [kpc]
+        :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
+        each halo class
+        :return: the density profile in units M_sun / kpc^3
         """
         density = self.density_profile_3d(r, profile_args)
         log_density = np.log(density)

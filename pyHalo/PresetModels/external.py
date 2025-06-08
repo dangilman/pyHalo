@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
+from pyHalo.pyhalo import pyHalo
+from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 from pyHalo.PresetModels.cdm import CDM
@@ -165,6 +167,71 @@ def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_ind
                                                     msheet_correction=False, rendering_classes=None)
 
     return halos_LOS.join(subhalos_from_params)
+
+def DMFromEmulator(z_lens, z_source, cone_opening_angle_arcsec, emulator_data_function):
+    """
+    Generate a pyHalo realization from an emulator trained on Galacticus simulations
+    :param z_lens: main deflector redshift
+    :param z_source: source redshift
+    :param cone_opening_angle_arcsec: twice the radius in arcsec of the rendering area
+    :param emulator_data_function: a callable function that on each call returns the properties of halos from the emulator
+    :return: a pyHalo realization object
+    """
+    data = emulator_data_function()
+
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source)
+    geometry_type = 'DOUBLE_CONE'
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
+    lens_cosmo = pyhalo.lens_cosmo
+    h = lens_cosmo.cosmo.h
+
+    MPC_TO_KPC = 1e3
+    # Here, data = emulator_data from normalizing_flows.py
+    massInfall = data[0]
+    concentration = data[1]
+    massBound = data[2]
+    redshiftLastIsolated = data[3]
+    lens_redshifts = np.array([z_lens] * len(massInfall))
+    rt = data[4] # This has an MPC_TO_KPC conversion in the tabulate_params() function
+    x_kpc = data[5] * MPC_TO_KPC
+    y_kpc = data[6] * MPC_TO_KPC
+
+    r_vir = ((3 * h * massInfall)/(4 * 200 * np.pi * lens_cosmo._nfw_param.rhoc_z(lens_redshifts)))**(1/3)
+    r_vir = r_vir/h
+
+    rs = r_vir/concentration
+    ones = np.ones(len(concentration))
+    rhos = (h**2 * 200.0 / 3 * lens_cosmo._nfw_param.rhoc_z(lens_redshifts) *
+            concentration**3 / (np.log(ones + concentration) - concentration / (ones + concentration)))
+
+    key_id = ['TNFW'] * len(rhos)
+    tnfw_args_all = {
+            TNFWFromParams.KEY_RHO_S:       rhos / (MPC_TO_KPC)**3,
+            TNFWFromParams.KEY_RS :         rs * MPC_TO_KPC,
+            TNFWFromParams.KEY_RT :         rt * MPC_TO_KPC,
+            TNFWFromParams.KEY_RV :         r_vir  * MPC_TO_KPC,
+            TNFWFromParams.KEY_Z_INFALL:    redshiftLastIsolated,
+            TNFWFromParams.KEY_ID :         key_id
+        }
+
+    halo_list = []
+    for n, m_infall in enumerate(massInfall):
+        tnfw_args = {key:val[n] for key,val in tnfw_args_all.items()}
+        r3d = None
+        subhalo_flag = True
+        halo = TNFWFromParams(m_infall,x_kpc[n], y_kpc[n],r3d, z_lens,subhalo_flag,lens_cosmo,tnfw_args)
+        halo_list.append(halo)
+
+    subhalos_from_emulator = Realization.from_halos(halo_list,
+                                                    lens_cosmo,
+                                                    kwargs_halo_model= {},
+                                                    msheet_correction=False,
+                                                    rendering_classes=None,
+                                                    geometry=geometry)
+
+    return subhalos_from_emulator
 
 def CDMFromEmulator(z_lens, z_source, emulator_input, kwargs_cdm):
     """

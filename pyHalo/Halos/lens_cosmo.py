@@ -78,7 +78,7 @@ class LensCosmo(object):
         :return:
         """
         self._infall_pdf_set = True
-        if infall_redshift_model == 'HYBRID_INFALL':
+        if infall_redshift_model in ['DIRECT_INFALL', 'HYBRID_INFALL']:
             if 'm_host' in list(kwargs_infall_model.keys()):
                 kwargs_infall_model['log_m_host'] = numpy.log10(kwargs_infall_model['m_host'])
                 del kwargs_infall_model['m_host']

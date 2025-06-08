@@ -508,6 +508,39 @@ class TestSingleRealization(object):
         ax1 = plt.subplot(111, projection='3d')
         self.realization.plot(ax1)
 
+    def test_subhalo_fieldhalo_selection(self):
+
+        astropy = self.realization.lens_cosmo.cosmo.astropy
+        concentration_model = ConcentrationDiemerJoyce(astropy)
+        halo_z = 0.5
+        z_lens = 0.5
+        kwargs_halo_model = {'concentration_model': concentration_model,
+         'truncation_model': None,
+         'kwargs_density_profile': {}}
+        _halo_1 = SingleHalo(10 ** 8, 0.5, 1.0, 'NFW', halo_z, z_lens, 1.5,
+                            r3d=None, subhalo_flag=False,
+                            kwargs_halo_model=kwargs_halo_model)
+        halo_1 = _halo_1.halos[0]
+        halo_z = 0.5
+        halo_2 = SingleHalo(10 ** 8, 0.5, 1.0, 'NFW', halo_z, z_lens, 1.5,
+                            r3d=None, subhalo_flag=True,
+                            kwargs_halo_model=kwargs_halo_model).halos[0]
+        halo_z = 0.7
+        halo_3 = SingleHalo(10 ** 8, 0.5, 1.0, 'NFW', halo_z, z_lens, 1.5,
+                            r3d=None, subhalo_flag=False,
+                            kwargs_halo_model=kwargs_halo_model).halos[0]
+        halo_1.unique_tag = 1
+        halo_2.unique_tag = 2
+        halo_3.unique_tag = 3
+        realization = Realization.from_halos([halo_1, halo_2, halo_3], _halo_1.lens_cosmo,
+                                             kwargs_halo_model, False, None, 0.0, 0.0, _halo_1.geometry)
+        subhalos = realization.subhalos
+        field_halos = realization.field_halos
+
+        npt.assert_equal(subhalos.halos[0].unique_tag, 2)
+        npt.assert_equal(field_halos.halos[0].unique_tag, 1)
+        npt.assert_equal(field_halos.halos[0].unique_tag, 3)
+
 
 if __name__ == '__main__':
     pytest.main()
