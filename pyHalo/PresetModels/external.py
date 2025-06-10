@@ -1,24 +1,13 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
-<<<<<<< HEAD
-from pyHalo.pyhalo import pyHalo
-from pyHalo.Cosmology.geometry import Geometry
-from pyHalo.Halos.HaloModels.TNFWemulator import TNFWSubhaloEmulator
-=======
->>>>>>> 53d99ea84827e6dc2e582c59d895facc3abc48d5
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
-from pyHalo.PresetModels.cdm import CDM
 from pyHalo.pyhalo import pyHalo
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.galacticus_util.galacticus_filter import nodedata_filter_subhalos,nodedata_filter_tree,nodedata_filter_virialized,nodedata_filter_range,nodedata_apply_filter
-from pyHalo.concentration_models import preset_concentration_models
-from pyHalo.truncation_models import truncation_models
-from lenstronomy.LensModel.Profiles.tnfw import TNFW
 import h5py
-import random
-import sys
+
 
 def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_index,log_mlow_galacticus,log_mhigh_galacticus,
                      mass_range_is_bound=True, proj_angle_theta=0, proj_angle_phi=0,
