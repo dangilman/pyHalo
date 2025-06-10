@@ -537,10 +537,9 @@ class TestSingleRealization(object):
         subhalos = realization.subhalos
         field_halos = realization.field_halos
 
-        npt.assert_equal(subhalos.halos[0].unique_tag, 2)
-        npt.assert_equal(field_halos.halos[0].unique_tag, 1)
-        npt.assert_equal(field_halos.halos[0].unique_tag, 3)
-
+        npt.assert_equal(subhalos[0].unique_tag, 2)
+        npt.assert_equal(field_halos[0].unique_tag, 1)
+        npt.assert_equal(field_halos[1].unique_tag, 3)
 
 if __name__ == '__main__':
     pytest.main()

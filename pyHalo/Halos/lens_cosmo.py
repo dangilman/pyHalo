@@ -86,6 +86,7 @@ class LensCosmo(object):
                 print('the HYBRID_INFALL model for subhalos requires m_host or log_m_host to be passed as'
                       'keyword arguments through kwargs_infall_model. Using a default value of log_m_host = 13.0')
                 kwargs_infall_model['log_m_host'] = 13.0
+        if infall_redshift_model == 'HYBRID_INFALL':
             self._z_infall_model = InfallDistributionHybrid(self.z_lens, kwargs_infall_model['log_m_host'])
         elif infall_redshift_model == 'DIRECT_INFALL':
             self._z_infall_model = InfallDistributionDirect(self.z_lens, kwargs_infall_model['log_m_host'])

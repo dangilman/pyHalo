@@ -13,7 +13,6 @@ from pyHalo.Rendering.MassFunctions.gaussian import Gaussian
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.utilities import generate_lens_plane_redshifts, mask_annular
 from pyHalo.Rendering.SpatialDistributions.uniform import Uniform, LensConeUniform
-from pyHalo.Halos.tidal_truncation import Multiple_RS
 from pyHalo.Halos.concentration import ConcentrationConstant
 from copy import deepcopy
 from scipy.interpolate import RectBivariateSpline
@@ -36,7 +35,6 @@ class RealizationExtensions(object):
 
         :param realization: an instance of Realization
         """
-
         self._realization = realization
 
     def SIS_injection(self, mass_threshold, galaxy_model='GNFW'):
@@ -283,6 +281,50 @@ class RealizationExtensions(object):
                 GC_realization = GC_realization.join(gcs_realization)
         # print('added '+str(len(GC_realization.halos))+' globular clusters... ')
         new_realization = self._realization.join(GC_realization)
+        return new_realization
+
+    def add_cored_halos(self, halo_index_list, beta, core_density_profile='CNFW'):
+        """
+        Replace objects in the lens model with cored NFW profiles
+        :param halo_index_list: a list of indexes specifying which objects to replace with cored halos
+        :param core_density_profile: name of the density profile, either CNFW or TNFWC
+        :param beta: core size in units of scale radius (used with CNFW profile)
+        :return: realization with objects replaced by cored halos
+        """
+        from pyHalo.Halos.HaloModels.NFW_core import CoreNFWHalo
+        new_halo_list = []
+        truncation_class = None
+        args = {'beta': beta}
+        for i, halo in enumerate(self._realization.halos):
+            concentration_class = ConcentrationConstant(self._realization.lens_cosmo.cosmo,
+                                                        halo.c)
+            if core_density_profile == 'CNFW':
+                if i in halo_index_list:
+                    r3d = None
+                    new_halo = CoreNFWHalo(halo.mass, halo.x, halo.y, r3d, halo.z,
+                                           halo.is_subhalo, self._realization.lens_cosmo, args,
+                                           truncation_class, concentration_class, halo.unique_tag)
+                    if halo.is_subhalo:
+                        new_halo.set_bound_mass(halo.bound_mass)
+                        new_halo.set_infall_redshift(halo.z_infall)
+                    new_halo_list.append(new_halo)
+                else:
+                    new_halo_list.append(halo)
+            else:
+                new_halo = self.toSIDM_single_halo(halo,
+                                                   None,
+                                                   subhalo_evolution_scaling=1.0,
+                                                   x_core_halo=beta,
+                                                   evolving_profile=False)
+                new_halo_list.append(new_halo)
+        new_realization = Realization.from_halos(new_halo_list, self._realization.lens_cosmo,
+                                                 self._realization.kwargs_halo_model,
+                                                 self._realization.apply_mass_sheet_correction,
+                                                 self._realization.rendering_classes,
+                                                 self._realization._rendering_center_x,
+                                                 self._realization._rendering_center_y,
+                                                 self._realization.geometry)
+        new_realization._has_been_shifted = self._realization._has_been_shifted
         return new_realization
 
     def toSIDM_single_halo(self, halo,

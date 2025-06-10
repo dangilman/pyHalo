@@ -81,6 +81,29 @@ class TNFWCHaloParametric(Halo):
         sigma_crit_arcsec = sigma_crit_kpc * kpc_per_arcsec ** 2
         return np.trapz(kappa * 2 * np.pi * x, x) * sigma_crit_arcsec
 
+    def log_slope_2d(self, r):
+        """
+        Computes the 2-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        y = 0
+        r_arcsec = r / kpc_per_arcsec
+        fxx, _, _, fyy = self.tnfwc_lenstronomy.hessian(r_arcsec,
+                                                        y,
+                                                        kwargs_lenstronomy['Rs'],
+                                                        kwargs_lenstronomy['alpha_Rs'],
+                                                        kwargs_lenstronomy['r_core'],
+                                                        kwargs_lenstronomy['r_trunc'])
+        kappa = 0.5 * (fxx + fyy)
+        log_kappa = np.log(kappa)
+        logr = np.log(r_arcsec)
+        dlog_kappa_dlog_r = np.gradient(log_kappa, logr)
+        return dlog_kappa_dlog_r
+
+
     @property
     def c(self):
         """
