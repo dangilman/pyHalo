@@ -1,4 +1,3 @@
-from cobaya.mpi import scatter
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
