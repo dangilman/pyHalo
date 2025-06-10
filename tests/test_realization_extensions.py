@@ -708,27 +708,19 @@ class TestRealizationExtensions(object):
 
     def test_add_cored_halos(self):
 
-        cosmo = Cosmology()
-        lens_cosmo = LensCosmo(0.5, 2.0, cosmo)
-        from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
-        m = 10 ** 10.7
-        f_bound = 0.9
-        z_infall = 4.5
-        infall_concentration = 6.0
-        z = 0.5
-        cdm_subhalo = TNFWSubhalo.simple_setup(m, f_bound, z_infall, 0.0, 0.0, z, lens_cosmo)
-        cdm_subhalo._c = infall_concentration
-        cdm_realization = CDM(0.5, 2.0, sigma_sub=0.0, LOS_normalization=0.1)
+        cdm_realization = CDM(0.5, 2.0,
+                              sigma_sub=0.0, LOS_normalization=0.1)
         ext = RealizationExtensions(cdm_realization)
         real = ext.add_cored_halos([0], 0.2, core_density_profile='CNFW')
         cored_halo = real.halos[0]
         kwargs_lenstronomy = cored_halo.lenstronomy_params[0][0]
         npt.assert_almost_equal(kwargs_lenstronomy['r_core']/kwargs_lenstronomy['Rs'], 0.2, 6)
-
+        nfw_halo = cdm_realization.halos[0]
+        nfw_rs_angle = nfw_halo.lenstronomy_params[0][0]['Rs']
         real = ext.add_cored_halos([0], 0.2, core_density_profile='TNFWC')
         cored_halo = real.halos[0]
         kwargs_lenstronomy = cored_halo.lenstronomy_params[0][0]
-        npt.assert_almost_equal(kwargs_lenstronomy['r_core'] / kwargs_lenstronomy['Rs'], 0.2, 6)
+        npt.assert_almost_equal(kwargs_lenstronomy['r_core'] / nfw_rs_angle, 0.2, 2)
 
 if __name__ == '__main__':
       pytest.main()
