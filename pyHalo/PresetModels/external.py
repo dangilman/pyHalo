@@ -223,7 +223,7 @@ def DMSubhalosFromEmulator(z_lens, z_source, emulator_data_function, cone_openin
 
     return subhalos_from_emulator
 
-def JointModelWithEmulator(z_lens,
+def JointLOSWithEmulator(z_lens,
                            z_source,
                            emulator_data_function,
                            cone_opening_angle_arcsec,

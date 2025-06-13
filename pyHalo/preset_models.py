@@ -50,6 +50,9 @@ def preset_model_from_name(name, custom_function=None):
         return CDM_plus_BH
     elif name == 'CUSTOM':
         return custom_function
+    elif name == 'JointLOSWithEmulator':
+        from pyHalo.PresetModels.external import JointLOSWithEmulator
+        return JointLOSWithEmulator
     else:
         raise Exception('preset model '+ str(name)+' not recognized!')
 
