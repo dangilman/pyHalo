@@ -12,7 +12,8 @@ class CoreNFWHalo(Halo):
     """
 
     def __init__(self, mass, x, y, r3d, z,
-                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag,
+                 conserve_m200=True):
 
         """
         See documentation in base class (Halos/halo_base.py)
@@ -22,6 +23,10 @@ class CoreNFWHalo(Halo):
         self._concentration_class = concentration_class
         self._cnfw_lenstronomy = NFWLenstronomy()
         mdef = 'CNFW'
+        if 'conserve_m200' in list(args.keys()):
+            pass
+        else:
+            args['conserve_m200'] = conserve_m200
         super(CoreNFWHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
@@ -31,7 +36,7 @@ class CoreNFWHalo(Halo):
         :param r: distance from center of halo [kpc]
         :return: the density profile in units M_sun / kpc^3
         """
-        rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval)
+        rhos, rs, _ = self.nfw_params
         x = r/rs
         beta = self._args['beta']
         return scaling * rhos / (x + beta) / (1 + x) ** 2
@@ -60,7 +65,16 @@ class CoreNFWHalo(Halo):
         x, y = np.round(self.x, 4), np.round(self.y, 4)
         Rs_angle = np.round(Rs_angle, 10)
         theta_Rs = np.round(theta_Rs, 10)
-        kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle, 'r_core': beta * Rs_angle,
+        if self._args['conserve_m200']:
+            c = self.c
+            m200 = 4 * np.pi * rhos_kpc * rs_kpc ** 3 * (np.log(1+c) - c/(1+c))
+            r = np.logspace(-2.5, np.log10(self.c), 2000) * rs_kpc
+            rho = self.density_profile_3d(r)
+            m = np.trapz(4 * np.pi * rho * r ** 2, r)
+            mass_rescale = m200 / m
+        else:
+            mass_rescale = 1.0
+        kwargs = [{'alpha_Rs': mass_rescale * self._rescale_norm * theta_Rs, 'Rs': Rs_angle, 'r_core': beta * Rs_angle,
                   'center_x': x, 'center_y': y}]
         return kwargs, None
 

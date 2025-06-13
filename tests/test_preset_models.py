@@ -3,7 +3,7 @@ from pyHalo.PresetModels.wdm import WDM, WDM_mixed
 from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.preset_models import preset_model_from_name
-from pyHalo.PresetModels.external import DMFromEmulator, DMFromGalacticus
+from pyHalo.PresetModels.external import DMSubhalosFromEmulator, DMFromGalacticus
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 import pytest
@@ -181,7 +181,7 @@ class TestPresetModels(object):
         truncation_radii = np.array([5.0, 6.0])
         emulator_kwargs = {'emulator_data_function': emulator_input_callable}
 
-        dm_subhalo_emulator = DMFromEmulator(0.5, 1.5, **emulator_kwargs)
+        dm_subhalo_emulator = DMSubhalosFromEmulator(0.5, 1.5, **emulator_kwargs)
         _ = dm_subhalo_emulator.lensing_quantities()
         for i, halo in enumerate(dm_subhalo_emulator.halos):
             npt.assert_equal(halo.mass, mass_array[i])
