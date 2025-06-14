@@ -711,10 +711,17 @@ class TestRealizationExtensions(object):
         cdm_realization = CDM(0.5, 2.0,
                               sigma_sub=0.0, LOS_normalization=0.1)
         ext = RealizationExtensions(cdm_realization)
-        real = ext.add_cored_halos([0], 0.2, core_density_profile='CNFW')
+        real = ext.add_cored_halos([0], 0.2, core_density_profile='CNFW', cnfw_mass_conservation=True)
         cored_halo = real.halos[0]
         kwargs_lenstronomy = cored_halo.lenstronomy_params[0][0]
         npt.assert_almost_equal(kwargs_lenstronomy['r_core']/kwargs_lenstronomy['Rs'], 0.2, 6)
+
+        real = ext.add_cored_halos([0], 0.2, core_density_profile='CNFW', cnfw_mass_conservation=False)
+        cored_halo = real.halos[0]
+        kwargs_lenstronomy_2 = cored_halo.lenstronomy_params[0][0]
+        print(kwargs_lenstronomy_2['alpha_Rs'] / kwargs_lenstronomy['alpha_Rs'])
+        npt.assert_equal(kwargs_lenstronomy_2['alpha_Rs'] / kwargs_lenstronomy['alpha_Rs'] < 1, True)
+
         nfw_halo = cdm_realization.halos[0]
         nfw_rs_angle = nfw_halo.lenstronomy_params[0][0]['Rs']
         real = ext.add_cored_halos([0], 0.2, core_density_profile='TNFWC')

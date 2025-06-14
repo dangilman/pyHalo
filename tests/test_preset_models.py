@@ -3,7 +3,7 @@ from pyHalo.PresetModels.wdm import WDM, WDM_mixed
 from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
 from pyHalo.preset_models import preset_model_from_name
-from pyHalo.PresetModels.external import DMSubhalosFromEmulator, DMFromGalacticus
+from pyHalo.PresetModels.external import DMSubhalosFromEmulator, DMFromGalacticus, JointLOSWithEmulator
 from pyHalo.Halos.galacticus_util.galacticus_util import GalacticusUtil
 from pyHalo.Halos.HaloModels.TNFWFromParams import TNFWFromParams
 import pytest
@@ -191,6 +191,25 @@ class TestPresetModels(object):
             #npt.assert_equal(halo.params_physical['r_trunc_kpc'], truncation_radii[i])
             npt.assert_almost_equal(halo.x, 0.1584666, 4)
             npt.assert_almost_equal(halo.y, 0.1584666, 4)
+
+    def test_DM_emulator_with_LOS(self):
+
+        def emulator_input_callable(*args, **kwargs):
+            subhalo_infall_masses = np.array([10**7,10**8])
+            subhalo_infall_concentrations = np.array([16.0, 20.0])
+            subhalo_final_bound_masses = subhalo_infall_masses / 2
+            subhalo_infall_redshifts = np.array([2.0, 3.0])
+            subhalo_truncation_radii_kpc = np.array([5.0, 6.0])
+            subhalo_x_Mpc = np.array([0.001, 0.001])
+            subhalo_y_Mpc = np.array([0.001, 0.001])
+            return subhalo_infall_masses, subhalo_infall_concentrations, subhalo_final_bound_masses, subhalo_infall_redshifts, subhalo_truncation_radii_kpc, subhalo_x_Mpc, subhalo_y_Mpc
+
+        preset_model_name_LOS = 'WDM'
+        cone_opening_angle_arcsec = 6.0
+        dm_emulator = JointLOSWithEmulator(0.5, 1.5, emulator_input_callable,
+                                                   cone_opening_angle_arcsec, preset_model_name_LOS,
+                                                   sigma_sub=0.0, LOS_normalization=1.0, log_mc=7.7)
+        _ = dm_emulator.lensing_quantities()
 
     def test_galacticus(self):
         util = GalacticusUtil()

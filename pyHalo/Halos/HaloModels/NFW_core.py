@@ -97,17 +97,3 @@ class CoreNFWHalo(Halo):
             concentration, beta = self.c, self._args['beta']
             self._profile_args = (concentration, beta)
         return self._profile_args
-
-    def mass_3d(self, rmax, profile_args=None):
-        """
-        Calculate the enclosed mass in 3D
-        :param rmax:
-        :param profile_args:
-        :return:
-        """
-        if rmax == 'r200':
-            rmax = self.nfw_params[1] * self.c
-        rs = self.nfw_params[1]
-        rho0 = self.nfw_params[0] * self._rescale_norm
-        r_core = self._args['beta'] * rs
-        return self._cnfw_lenstronomy.mass_3d(rmax, rs, rho0, r_core)
