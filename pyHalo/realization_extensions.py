@@ -333,7 +333,8 @@ class RealizationExtensions(object):
                            subhalo_evolution_scaling=None,
                            x_core_halo=None,
                            t_over_tc_cut=0.15,
-                           evolving_profile=True):
+                           evolving_profile=True,
+                           collapse_probability=1.0):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class, should be a TNFW field or sub-halo
@@ -350,6 +351,8 @@ class RealizationExtensions(object):
         specified value of x_core_halo
         - if False, and t_c < 1, will use NFW profile
         - if True, will use the parametric model by Yang et al. (2022) to model the profile
+        :param collapse_probability: the probability that an object actually core collapses, given its evolution
+        timescale
         :return: an SIDM halo
         """
         _, rt_kpc = halo.profile_args
@@ -397,6 +400,10 @@ class RealizationExtensions(object):
                     halo.halo_effective_age = halo_effective_age
                     halo.t_over_tc = t_over_tc
                     return halo
+                elif collapse_probability < np.random.rand():
+                    halo.halo_effective_age = halo_effective_age
+                    halo.t_over_tc = t_over_tc
+                    return halo
                 else:
                     if sidm_halo.is_subhalo:
                         sidm_halo.set_bound_mass(halo.bound_mass)
@@ -404,6 +411,10 @@ class RealizationExtensions(object):
                     return sidm_halo
             else:
                 if sidm_halo.t_over_tc < 1.0:
+                    halo.halo_effective_age = halo_effective_age
+                    halo.t_over_tc = t_over_tc
+                    return halo
+                elif collapse_probability < np.random.rand():
                     halo.halo_effective_age = halo_effective_age
                     halo.t_over_tc = t_over_tc
                     return halo
@@ -433,7 +444,8 @@ class RealizationExtensions(object):
                                   log10_effective_cross_section_list,
                                   log10_subhalo_time_scaling,
                                   evolving_SIDM_profile=True,
-                                  x_core_halo=None):
+                                  x_core_halo=None,
+                                  collapse_probability=1.0):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
         https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse.
@@ -444,6 +456,7 @@ class RealizationExtensions(object):
         :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
         :param x_core_halo: the ratio of the SIDM halo core size to the halo scale radius; only used when
         evolving_SIDM_profile=False. Otherwise, the profile is determined by the parametric model by Yang et al. (2022)
+        :param collapse_probability: the probability that an object with an age / time_scale > 1 actually core collapses
         :return: a realization of SIDM halos created from the population of CDM halos
         """
         sidm_halos = []
@@ -462,7 +475,8 @@ class RealizationExtensions(object):
                                                t_c=t_c,
                                                x_core_halo=x_core_halo,
                                                subhalo_evolution_scaling=subhalo_evolution_scaling,
-                                               evolving_profile=evolving_SIDM_profile)
+                                               evolving_profile=evolving_SIDM_profile,
+                                               collapse_probability=collapse_probability)
                 sidm_halos.append(new_halo)
             else:
                 sidm_halos.append(halo)

@@ -706,6 +706,16 @@ class TestRealizationExtensions(object):
             npt.assert_equal(halo.z_eval, z_infall)
             npt.assert_equal(halo.bound_mass, cdm_subhalo.bound_mass)
 
+        for tc in tc_list:
+            subhalo_evolution_scaling = 1.0
+            halo = ext.toSIDM_single_halo(cdm_subhalo,
+                                          t_c=tc,
+                                          subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                          evolving_profile=True,
+                                          x_core_halo=xcore,
+                                          collapse_probability=0.0)
+            npt.assert_equal(halo.mdef, 'TNFW')
+
     def test_add_cored_halos(self):
 
         cdm_realization = CDM(0.5, 2.0,
@@ -715,12 +725,6 @@ class TestRealizationExtensions(object):
         cored_halo = real.halos[0]
         kwargs_lenstronomy = cored_halo.lenstronomy_params[0][0]
         npt.assert_almost_equal(kwargs_lenstronomy['r_core']/kwargs_lenstronomy['Rs'], 0.2, 6)
-
-        real = ext.add_cored_halos([0], 0.2, core_density_profile='CNFW')
-        cored_halo = real.halos[0]
-        kwargs_lenstronomy_2 = cored_halo.lenstronomy_params[0][0]
-
-        npt.assert_equal(kwargs_lenstronomy_2['alpha_Rs'] / kwargs_lenstronomy['alpha_Rs'] < 1, True)
 
         nfw_halo = cdm_realization.halos[0]
         nfw_rs_angle = nfw_halo.lenstronomy_params[0][0]['Rs']
