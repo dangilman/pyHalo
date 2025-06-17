@@ -283,8 +283,7 @@ class RealizationExtensions(object):
         new_realization = self._realization.join(GC_realization)
         return new_realization
 
-    def add_cored_halos(self, halo_index_list, beta, core_density_profile='CNFW',
-                        cnfw_mass_conservation=True):
+    def add_cored_halos(self, halo_index_list, beta, core_density_profile='CNFW'):
         """
         Replace objects in the lens model with cored NFW profiles
         :param halo_index_list: a list of indexes specifying which objects to replace with cored halos
@@ -302,7 +301,6 @@ class RealizationExtensions(object):
                                                         halo.c)
             if core_density_profile == 'CNFW':
                 if i in halo_index_list:
-                    args['conserve_m200'] = cnfw_mass_conservation
                     r3d = None
                     new_halo = CoreNFWHalo(halo.mass, halo.x, halo.y, r3d, halo.z,
                                            halo.is_subhalo, self._realization.lens_cosmo, args,

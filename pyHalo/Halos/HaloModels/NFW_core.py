@@ -1,5 +1,5 @@
 from pyHalo.Halos.halo_base import Halo
-from lenstronomy.LensModel.Profiles.nfw import NFW as NFWLenstronomy
+from lenstronomy.LensModel.Profiles.cnfw import CNFW as CNFWLenstronomy
 import numpy as np
 
 class CoreNFWHalo(Halo):
@@ -10,7 +10,6 @@ class CoreNFWHalo(Halo):
 
     See the base class in Halos/halo_base.py for the required routines for any instance of a Halo class
     """
-
     def __init__(self, mass, x, y, r3d, z,
                  sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag,
                  conserve_m200=True):
@@ -21,12 +20,8 @@ class CoreNFWHalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._truncation_class = truncation_class
         self._concentration_class = concentration_class
-        self._cnfw_lenstronomy = NFWLenstronomy()
+        self._cnfw_lenstronomy = CNFWLenstronomy()
         mdef = 'CNFW'
-        if 'conserve_m200' in list(args.keys()):
-            pass
-        else:
-            args['conserve_m200'] = conserve_m200
         super(CoreNFWHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
@@ -36,17 +31,16 @@ class CoreNFWHalo(Halo):
         :param r: distance from center of halo [kpc]
         :return: the density profile in units M_sun / kpc^3
         """
-        rhos, rs, _ = self.nfw_params
-        x = r/rs
-        beta = self._args['beta']
-        return scaling * rhos / (x + beta) / (1 + x) ** 2
+        rho0, Rs, _ = self.nfw_params
+        M0 = 4 * np.pi * rho0 * Rs ** 3
+        r_core = self._args['beta'] * Rs
+        return (M0 / 4 / np.pi) * ((r_core + r) * (r + Rs) ** 2) ** -1
 
     @property
     def lenstronomy_ID(self):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-
         return ['CNFW']
 
     @property
@@ -54,7 +48,6 @@ class CoreNFWHalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-
         rhos_kpc, rs_kpc, _ = self.nfw_params
         rhos_mpc = rhos_kpc * 1e9
         rs_mpc = rs_kpc * 1e-3
@@ -65,16 +58,7 @@ class CoreNFWHalo(Halo):
         x, y = np.round(self.x, 4), np.round(self.y, 4)
         Rs_angle = np.round(Rs_angle, 10)
         theta_Rs = np.round(theta_Rs, 10)
-        if self._args['conserve_m200']:
-            c = self.c
-            m200 = 4 * np.pi * rhos_kpc * rs_kpc ** 3 * (np.log(1+c) - c/(1+c))
-            r = np.logspace(-2.5, np.log10(self.c), 2000) * rs_kpc
-            rho = self.density_profile_3d(r)
-            m = np.trapz(4 * np.pi * rho * r ** 2, r)
-            mass_rescale = m200 / m
-        else:
-            mass_rescale = 1.0
-        kwargs = [{'alpha_Rs': mass_rescale * self._rescale_norm * theta_Rs, 'Rs': Rs_angle, 'r_core': beta * Rs_angle,
+        kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle, 'r_core': beta * Rs_angle,
                   'center_x': x, 'center_y': y}]
         return kwargs, None
 
