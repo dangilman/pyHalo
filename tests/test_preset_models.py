@@ -91,18 +91,42 @@ class TestPresetModels(object):
                   kwargs_globular_clusters=kwargs_globular_clusters)
         _ = wdm.lensing_quantities()
 
-    def test_SIDM(self):
+    def test_SIDM_parametric(self):
 
         mass_ranges = [[6, 8], [8, 10]]
-        collapse_times = [10.5, 1.0]
-        sidm = SIDM_parametric(0.5, 1.5, mass_ranges, collapse_times)
+        log10_effective_cross_section_list = [2.0, 1.0]
+        sidm = SIDM_parametric(0.5, 1.5, mass_ranges, log10_effective_cross_section_list)
         _ = sidm.lensing_quantities()
         _ = preset_model_from_name('SIDM_parametric')
         self._test_default_infall_model(sidm, 'hybrid')
 
         model = preset_model_from_name('SIDM_parametric_fixedbins')
-        realization = model(0.5, 1.5, 5.0, 1.0)
+        realization = model(0.5, 1.5, 2.0, 1.0)
         _ = realization.lensing_quantities()
+
+    def test_SIDM_collapse_by_mass(self):
+
+        mass_ranges = [[6, 8], [8, 10]]
+        probabilities_subhalos = [1.0, 1.0]
+        probabilities_fieldhalos = [0.0, 0.0]
+        sidm = SIDM_core_collapse(0.5, 1.5, mass_ranges, mass_ranges,
+                                  probabilities_subhalos, probabilities_fieldhalos, collapsed_halo_profile='TNFWC',
+                                  x_core_halo=0.05)
+        _ = sidm.lensing_quantities()
+        _ = preset_model_from_name('SIDM_parametric')
+        self._test_default_infall_model(sidm, 'hybrid')
+
+        model = preset_model_from_name('SIDM_core_collapse')
+        realization = model(0.5, 1.5, mass_ranges, mass_ranges,
+                                  probabilities_subhalos, probabilities_fieldhalos, collapsed_halo_profile='TNFWC',
+                                  x_core_halo=0.05)
+        _ = realization.lensing_quantities()
+
+        for halo in sidm.halos:
+            if halo.is_subhalo:
+                npt.assert_string_equal(halo.mdef, 'TNFWC')
+            else:
+                npt.assert_string_equal(halo.mdef, 'TNFW')
 
     def test_ULDM(self):
 
@@ -112,17 +136,6 @@ class TestPresetModels(object):
         _ = uldm.lensing_quantities()
         _ = preset_model_from_name('ULDM')
         self._test_default_infall_model(uldm, 'hybrid')
-
-    def test_SIDM_core_collapse(self):
-        mass_ranges_subhalos = [[6, 8], [8, 10]]
-        mass_ranges_field_halos = [[6, 8], [8, 10]]
-        probabilities_subhalos = [1, 1]
-        probabilities_field_halos = [1, 1]
-        sidm_cc = SIDM_core_collapse(0.5, 1.5, mass_ranges_subhalos, mass_ranges_field_halos,
-        probabilities_subhalos, probabilities_field_halos)
-        _ = sidm_cc.lensing_quantities()
-        _ = preset_model_from_name('SIDM_core_collapse')
-        self._test_default_infall_model(sidm_cc, 'hybrid')
 
     def test_WDM_mixed(self):
         wdm_mixed = WDM_mixed(0.5, 1.5, 8.0, 0.5)
@@ -142,6 +155,7 @@ class TestPresetModels(object):
         _ = preset_model_from_name('CDM_plus_BH')
 
     def test_WDM_general(self):
+
         func = preset_model_from_name('WDMGeneral')
         wdm = func(0.5, 1.5, 7.7, -2.0)
         _ = wdm.lensing_quantities()
