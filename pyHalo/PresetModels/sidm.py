@@ -10,11 +10,13 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
-        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, collapsed_halo_profile='SPL_CORE',
-        kwargs_collapsed_profile={'x_core_halo': 0.05, 'x_match': 'c', 'log_slope_halo': 3.0}):
+        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
+        redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
+        add_globular_clusters=False, kwargs_globular_clusters=None, mass_threshold_sis=5*10**10,
+        galaxy_model='GNFW', collapsed_halo_profile='TNFWC', **kwargs_halo_profile):
 
     """
-    Generates realizations of SIDM given the fraction of core-collapsed halos as a function of halo mass
+    Generate a population of core-collapsed halos according the collapse probability in different mass bins
 
     :param z_lens: main deflector redshift
     :param z_source: source redshift
@@ -57,12 +59,26 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
     :param geometry_type: string that specifies the geometry of the rendering volume; options include
     DOUBLE_CONE, CONE, CYLINDER
     :param kwargs_cosmo: keyword arguments that specify the cosmology, see Cosmology/cosmology.py
-    :param collapsed_halo_profile: string that sets the density profile of core-collapsed halos
-    currently implemented models are SPL_CORE and GNFW (see example notebook)
-    :param kwargs_collapsed_profile: keyword arguments for the collapsed profile (see example notebook)
-    :return: a realization of dark matter structure in SIDM
+    :param host_scaling_factor: the scaling with host halo mass of the projected number density of subhalos
+    :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
+    :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
+    main deflector presented by Lazar et al. (2021)
+    :param c_host: manually set host halo concentration
+    :param add_globular_clusters: bool; include a population of globular clusters around image positions
+    :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
+    :param mass_threshold_sis: the mass threshold above which NFW profiles become SIS/GNFW
+    :param galaxy_model: the profile of massive line-of-sight galaxies; either SIS or GNFW
+    :param collapsed_halo_profile: a string that specifies the collapsed halo profile, options include SPL_CORE, TNFWC, GNFW
+    :param kwargs_halo: the keyword arguments for the collapsed halo profile
+        - For SPL_CORE: should include 'log_slope_halo' and 'x_core_halo', the log profile slope and core size in units of
+        NFW r_s
+        - For GNFW: should include 'gamma_inner' and 'gamma_outer', the logarithmic profile slopes interior to and exterior
+        to NFW r_s
+        - For TNFWC: should include x_core_halo, the same parameter as in SPL_CORE (core size in units of rs)
+        Note: if the truncation radius is smaller than rs, then rs will equal rt; if rt is smaller than rc, then rc
+        will also equal rt (in this case, all three scales are equal in the profile drops like 1/r^5 outside the core)
+    :return: a realization of collapsed SIDM halo profiles and NFW profiles
     """
-
     two_halo_contribution = True
     delta_power_law_index = 0.0
     subhalo_spatial_distribution = 'UNIFORM'
@@ -74,11 +90,13 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
               infall_redshift_model, kwargs_infall_model, subhalo_spatial_distribution,
               shmf_log_slope, cone_opening_angle_arcsec, log_m_host, r_tidal,
               LOS_normalization, two_halo_contribution, delta_power_law_index,
-              geometry_type, kwargs_cosmo)
+              geometry_type, kwargs_cosmo, host_scaling_factor,
+                redshift_scaling_factor, two_halo_Lazar_correction, draw_poisson, c_host,
+              add_globular_clusters, kwargs_globular_clusters, mass_threshold_sis, galaxy_model)
     extension = RealizationExtensions(cdm)
     index_collapsed = extension.core_collapse_by_mass(mass_ranges_subhalos, mass_ranges_field_halos,
         probabilities_subhalos, probabilities_field_halos)
-    sidm = extension.add_core_collapsed_halos(index_collapsed, collapsed_halo_profile, **kwargs_collapsed_profile)
+    sidm = extension.add_core_collapsed_halos(index_collapsed, collapsed_halo_profile, **kwargs_halo_profile)
     return sidm
 
 def SIDM_parametric(z_lens, z_source, log10_mass_ranges, log10_effective_cross_section_list, log10_subhalo_time_scaling=0.0,
