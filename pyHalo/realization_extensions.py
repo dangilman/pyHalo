@@ -522,6 +522,9 @@ class RealizationExtensions(object):
 
             u = np.random.rand()
 
+            if halo.mdef != 'TNFW':
+                continue
+
             if halo.is_subhalo:
                 for i, mrange in enumerate(mass_ranges_subhalos):
                     if halo.mass >= 10**mrange[0] and halo.mass < 10**mrange[1]:
