@@ -152,7 +152,6 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                        'log_m_host': log_m_host,
                     'draw_poisson': draw_poisson}
     kwargs_mass_function_list = [kwargs_subhalos, kwargs_los]
-
     # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
     if subhalo_spatial_distribution == 'UNIFORM':
         subhalo_spatial_distribution = Uniform
