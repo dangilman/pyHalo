@@ -210,9 +210,9 @@ class InfallDistributionClusterDirect(object):
         :param massRatio: mass ratio of the subhao relative to the host, i.e. Msub / Mhost
         :return: the mean infall redshift relative to the host redshift
         """
-        a = 1.83256604
-        b = 8.34655678
-        c = -4.26423697
+        a = 2.05705664
+        b = 9.43229827
+        c = -4.69408104
         return a / (1 + b * (-numpy.log10(massRatio)) ** c)
 
     @staticmethod
@@ -223,7 +223,7 @@ class InfallDistributionClusterDirect(object):
         :param massRatio: mass ratio of the subhao relative to the host, i.e. Msub / Mhost
         :return: the standard deviation of infall redshift
         """
-        a = 1.8094271
-        b = 9.17341074
-        c = -2.05254907
+        a = 1.60922533
+        b = 9.45120467
+        c = -2.5087969
         return a / (1 + b * (-numpy.log10(massRatio)) ** c)
