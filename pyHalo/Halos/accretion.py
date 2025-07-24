@@ -152,19 +152,78 @@ class InfallDistributionDirect(object):
         b = 4.91504583
         c = -2.4187402
         return a / (1 + b * (-numpy.log10(massRatio)) ** c)
-#
-# pdf = InfallDistributionHybrid(0.5, 13)
-# pdf_direct = InfallDistributionDirect(0.5, 13)
-#
-# import numpy as np
-# m_sub = np.logspace(8., 9, 10000)
-# z = [pdf(m_sub_i) for m_sub_i in m_sub]
-# z_direct = [pdf_direct(m_sub_i) for m_sub_i in m_sub]
-# import matplotlib.pyplot as plt
-#
-# plt.hist(z,color='k',alpha=0.5,bins=20,range=(0.5, 10),label='hybrid')
-# plt.hist(z_direct, color='r', alpha=0.5,bins=20,range=(0.5, 10),label='direct')
-# plt.legend(fontsize=12)
-# plt.gca().annotate('m < 10^9', xy=(0.7, 0.5),
-#                    fontsize=14,xycoords='axes fraction')
-# plt.show()
+
+class InfallDistributionClusterDirect(object):
+    name = 'direct_cluster'
+    """Accretion redshift pdf meant for directly-infalling subhalos onto galaxy clusters M_host ~ 5*10^14
+    Distribution is evaluated at 0.08 * R_vir
+
+    M_host = 5.0e14 Msun
+    mu: a = 2.05705664,  b = 9.43229827, c = -4.69408104
+    sigma: a = 1.60922533,  b = 9.45120467, c = -2.5087969
+
+    M_host = 1.0e15 Msun
+    mu: a = 1.83256604,  b = 8.34655678, c = -4.26423697
+    sigma: a = 1.8094271 ,  b = 9.17341074, c = -2.05254907
+    """
+    def __init__(self, z_lens, log_m_host):
+        """
+
+        :param z_lens: main deflector redshift
+        """
+        if log_m_host > 15.0 or log_m_host < 14.0:
+            raise ValueError('infall redshift distribution for cluster-mass halos only valid for host halo masses '
+                             'between 10^14 - 10^15 M_sun!')
+        self._m_host = 10 ** log_m_host
+        self._z_lens = z_lens
+
+    def __call__(self, m_sub):
+        """
+        Return the infall redshift for a subhalo with infall mass m_sub
+        :param m_sub: infall mass in solar masses
+        :return: infall redshift
+        """
+        mass_ratio = self._mass_ratio_in_bounds(m_sub / self._m_host)
+        mu = self.z_inf_to_z_host_mean(mass_ratio)
+        sig = self.z_inf_to_z_host_std(mass_ratio)
+        bounds = [0.0, 15.0]
+        z = float(truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
+                                 loc=mu, scale=sig))
+        return self._z_lens + z
+
+    @staticmethod
+    def _mass_ratio_in_bounds(massRatio):
+        """
+        Make sure the ratio m_infall / m_host falls in the calibrated range 10^-5 - 10^-0.5
+        :param massRatio:
+        :return: the ratio m_infall / m_host
+        """
+        massRatio = max(10 ** -5, massRatio)
+        massRatio = min(10 ** -0.5, massRatio)
+        return massRatio
+
+    @staticmethod
+    def z_inf_to_z_host_mean(massRatio):
+        """
+        Return the mean infall redshift relative to the host redshift for subhalos with a mass ratio of
+        massRatio = Msub / Mhost.
+        :param massRatio: mass ratio of the subhao relative to the host, i.e. Msub / Mhost
+        :return: the mean infall redshift relative to the host redshift
+        """
+        a = 1.83256604
+        b = 8.34655678
+        c = -4.26423697
+        return a / (1 + b * (-numpy.log10(massRatio)) ** c)
+
+    @staticmethod
+    def z_inf_to_z_host_std(massRatio):
+        """
+        Return the standard deviation of infall redshift for subhalos with a mass ratio of
+        massRatio = Msub / Mhost.
+        :param massRatio: mass ratio of the subhao relative to the host, i.e. Msub / Mhost
+        :return: the standard deviation of infall redshift
+        """
+        a = 1.8094271
+        b = 9.17341074
+        c = -2.05254907
+        return a / (1 + b * (-numpy.log10(massRatio)) ** c)

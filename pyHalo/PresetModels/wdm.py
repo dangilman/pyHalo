@@ -86,7 +86,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
     geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
                         cone_opening_angle_arcsec, geometry_type)
-    if infall_redshift_model == 'HYBRID_INFALL':
+    if infall_redshift_model in ['HYBRID_INFALL', 'DIRECT_INFALL_CLUSTER']:
         kwargs_infall_model['log_m_host'] = log_m_host
     pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
 
@@ -353,7 +353,7 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
     geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
                         cone_opening_angle_arcsec, geometry_type)
-    if infall_redshift_model == 'HYBRID_INFALL':
+    if infall_redshift_model in ['HYBRID_INFALL', 'DIRECT_INFALL_CLUSTER']:
         kwargs_infall_model['log_m_host'] = log_m_host
     pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
 

@@ -4,7 +4,8 @@ from lenstronomy.Cosmo.nfw_param import NFWParam
 import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
-from pyHalo.Halos.accretion import InfallDistributionGalacticus2024, InfallDistributionHybrid, InfallDistributionDirect
+from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid,
+                                    InfallDistributionDirect, InfallDistributionClusterDirect)
 
 
 class NFWParampyHalo(NFWParam):
@@ -92,6 +93,14 @@ class LensCosmo(object):
             self._z_infall_model = InfallDistributionDirect(self.z_lens, kwargs_infall_model['log_m_host'])
         elif infall_redshift_model == 'GALACTICUS_2024':
             self._z_infall_model = InfallDistributionGalacticus2024(self.z_lens)
+        elif infall_redshift_model == 'DIRECT_INFALL_CLUSTER':
+            if 'm_host' in list(kwargs_infall_model.keys()):
+                kwargs_infall_model['log_m_host'] = numpy.log10(kwargs_infall_model['m_host'])
+                del kwargs_infall_model['m_host']
+            if 'log_m_host' not in list(kwargs_infall_model.keys()):
+                print('the DIRECT_INFALL_CLUSTER model for cluster subhalos requires m_host or log_m_host to be passed as'
+                      'keyword arguments through kwargs_infall_model, log_m_host must be between 10^14-10^15 M_sun')
+            self._z_infall_model = InfallDistributionClusterDirect(self.z_lens, kwargs_infall_model['log_m_host'])
         else:
             try:
                 self._z_infall_model = infall_redshift_model(self.z_lens, **kwargs_infall_model)
@@ -400,4 +409,3 @@ class LensCosmo(object):
         G = 4.3e-6 # kpc / solar mass * (km/sec)^2
         vmax = 1.64 * numpy.sqrt(G * rhos * rs ** 2)
         return vmax
-

@@ -1,6 +1,7 @@
 import numpy.testing as npt
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Halos.accretion import InfallDistributionGalacticus2024, InfallDistributionHybrid, InfallDistributionDirect
+from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid,
+                                    InfallDistributionDirect, InfallDistributionClusterDirect)
 import numpy as np
 import pytest
 from astropy.cosmology import FlatLambdaCDM
@@ -81,14 +82,23 @@ class TestLensCosmo(object):
         lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='HYBRID_INFALL')
         z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
         npt.assert_equal(True, z_infall > zlens)
+        npt.assert_string_equal(lens_cosmo._z_infall_model.name, 'hybrid')
 
         lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='DIRECT_INFALL')
         z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
         npt.assert_equal(True, z_infall > zlens)
+        npt.assert_string_equal(lens_cosmo._z_infall_model.name, 'direct')
 
         lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='GALACTICUS_2024')
         z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
         npt.assert_equal(True, z_infall > zlens)
+        npt.assert_string_equal(lens_cosmo._z_infall_model.name, 'version2024')
+
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='DIRECT_INFALL_CLUSTER',
+                               kwargs_infall_model={'log_m_host': 14.5})
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
+        npt.assert_string_equal(lens_cosmo._z_infall_model.name, 'direct_cluster')
 
         infall_time_model = InfallDistributionGalacticus2024
         kwargs_infall_model = {}
@@ -106,6 +116,13 @@ class TestLensCosmo(object):
 
         infall_time_model = InfallDistributionDirect
         kwargs_infall_model = {'log_m_host': 13.0}
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
+                               kwargs_infall_model=kwargs_infall_model)
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(True, z_infall > zlens)
+
+        infall_time_model = InfallDistributionClusterDirect
+        kwargs_infall_model = {'log_m_host': 14.5}
         lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
                                kwargs_infall_model=kwargs_infall_model)
         z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
