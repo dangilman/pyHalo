@@ -22,7 +22,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
         redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
         add_globular_clusters=False, kwargs_globular_clusters=None, mass_threshold_sis=5*10**10,
-        galaxy_model='GNFW'):
+        galaxy_model='GNFW', halo_mass_profile='TNFW'):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -73,6 +73,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
     :param mass_threshold_sis: the mass threshold above which NFW profiles become SIS/GNFW
     :param galaxy_model: the profile of massive line-of-sight galaxies; either SIS or GNFW
+    :param halo_mass_profile: sets the subhalo mass profile for field halos and subhalos (must be either NFW or TNFW)
     :return: a realization of dark matter halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -89,8 +90,10 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     mass_function_model_fieldhalos = ShethTormen
 
     # set the density profile definition
-    mdef_subhalos = 'TNFW'
-    mdef_field_halos = 'TNFW'
+    if halo_mass_profile not in ['NFW', 'TNFW']:
+        raise Exception('halo mass profile must be either NFW or TNFW')
+    mdef_subhalos = halo_mass_profile
+    mdef_field_halos = halo_mass_profile
 
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo

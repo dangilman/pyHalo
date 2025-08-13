@@ -62,6 +62,14 @@ class TestPresetModels(object):
                   kwargs_globular_clusters=kwargs_globular_clusters)
         _ = cdm.lensing_quantities()
 
+        cdm = CDM(0.5, 1.5,
+                  sigma_sub=0.1,
+                  add_globular_clusters=False,
+                  halo_mass_profile='NFW')
+        _ = cdm.lensing_quantities()
+        for halo in cdm.halos:
+            npt.assert_string_equal(halo.mdef, 'NFW')
+
     def test_CDM_correlated_structure_only(self):
 
         cdm = CDMCorrelatedStructure(0.5, 1.5)
