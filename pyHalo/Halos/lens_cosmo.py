@@ -5,7 +5,7 @@ import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
 from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid,
-                                    InfallDistributionDirect, InfallDistributionClusterDirect)
+                                    InfallDistributionDirect, InfallDistributionClusterDirect, InfallAtZlens)
 
 
 class NFWParampyHalo(NFWParam):
@@ -72,8 +72,10 @@ class LensCosmo(object):
         :param infall_redshift_model: a string specifying the model, options include
         - HYBRID_INFALL: a definition of infall time the accounts for directly-infalling halos and infalling sub-subhalos
         - DIRECT_INFALL: a definition of infall time that captures directly-infalling objects
-        - GALACTICUS_2024: a definition of infall time for directly infalling objects output by the operational version
-        of Galacticus as of Spring, 2024
+        - GALACTICUS_2024: a definition of infall time for directly infalling objects output by the version of
+        Galacticus as of Spring, 2024
+        - DIRECT_INFALL_CLUSTER: appropriate for cluster-mass halos M_200 > 10^14 M_sun
+        - INFALL_ZLENS: simply sets z_infall = z_lens
         :param kwargs_infall_model: keyword arguments for infall time model; for HYBRID_INFALL and DIRECT_INFALL should
         include log_m_host, the log10(host_halo_mass).
         :return:
@@ -101,6 +103,8 @@ class LensCosmo(object):
                 print('the DIRECT_INFALL_CLUSTER model for cluster subhalos requires m_host or log_m_host to be passed as'
                       'keyword arguments through kwargs_infall_model, log_m_host must be between 10^14-10^15 M_sun')
             self._z_infall_model = InfallDistributionClusterDirect(self.z_lens, kwargs_infall_model['log_m_host'])
+        elif infall_redshift_model == 'INFALL_ZLENS':
+            self._z_infall_model = InfallAtZlens(self.z_lens)
         else:
             try:
                 self._z_infall_model = infall_redshift_model(self.z_lens, **kwargs_infall_model)

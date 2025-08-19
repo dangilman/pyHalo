@@ -1,7 +1,7 @@
 import numpy.testing as npt
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid,
-                                    InfallDistributionDirect, InfallDistributionClusterDirect)
+                                    InfallDistributionDirect, InfallDistributionClusterDirect, InfallAtZlens)
 import numpy as np
 import pytest
 from astropy.cosmology import FlatLambdaCDM
@@ -100,6 +100,11 @@ class TestLensCosmo(object):
         npt.assert_equal(True, z_infall > zlens)
         npt.assert_string_equal(lens_cosmo._z_infall_model.name, 'direct_cluster')
 
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model='INFALL_ZLENS')
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(z_infall, zlens)
+        npt.assert_string_equal(lens_cosmo._z_infall_model.name, 'direct_zlens')
+
         infall_time_model = InfallDistributionGalacticus2024
         kwargs_infall_model = {}
         lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
@@ -127,6 +132,13 @@ class TestLensCosmo(object):
                                kwargs_infall_model=kwargs_infall_model)
         z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
         npt.assert_equal(True, z_infall > zlens)
+
+        infall_time_model = InfallAtZlens
+        kwargs_infall_model = {}
+        lens_cosmo = LensCosmo(zlens, zsource, self.cosmo, infall_redshift_model=infall_time_model,
+                               kwargs_infall_model=kwargs_infall_model)
+        z_infall = lens_cosmo.z_accreted_from_zlens(10 ** 8)
+        npt.assert_equal(z_infall, zlens)
 
     def test_sidm_halo_age(self):
 

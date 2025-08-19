@@ -227,3 +227,23 @@ class InfallDistributionClusterDirect(object):
         b = 9.45120467
         c = -2.5087969
         return a / (1 + b * (-numpy.log10(massRatio)) ** c)
+
+class InfallAtZlens(object):
+    name = 'direct_zlens'
+    """
+    Accretion redshift that sets z_infall = z_lens
+    """
+    def __init__(self, z_lens, *args, **kwargs):
+        """
+
+        :param z_lens: main deflector redshift
+        """
+        self._z_lens = z_lens
+
+    def __call__(self, m_sub):
+        """
+        Return the infall redshift for a subhalo with infall mass m_sub
+        :param m_sub: infall mass in solar masses
+        :return: infall redshift
+        """
+        return self._z_lens
