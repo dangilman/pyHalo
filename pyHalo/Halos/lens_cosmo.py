@@ -5,7 +5,7 @@ import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
 from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid,
-                                    InfallDistributionDirect, InfallDistributionClusterDirect, InfallAtZlens)
+                                    InfallDistributionDirect, InfallDistributionClusterDirect, InfallAtZlens, Infall0)
 
 
 class NFWParampyHalo(NFWParam):
@@ -105,6 +105,8 @@ class LensCosmo(object):
             self._z_infall_model = InfallDistributionClusterDirect(self.z_lens, kwargs_infall_model['log_m_host'])
         elif infall_redshift_model == 'INFALL_ZLENS':
             self._z_infall_model = InfallAtZlens(self.z_lens)
+        elif infall_redshift_model == 'INFALL_0':
+            self._z_infall_model = Infall0()
         else:
             try:
                 self._z_infall_model = infall_redshift_model(self.z_lens, **kwargs_infall_model)

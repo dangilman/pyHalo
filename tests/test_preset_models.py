@@ -79,6 +79,15 @@ class TestPresetModels(object):
             npt.assert_equal(halo.z_infall, 0.5)
             npt.assert_equal(halo.z_eval, 0.5)
 
+        cdm = CDM(0.5, 1.5,
+                  sigma_sub=0.05,
+                  LOS_normalization=0.0,
+                  add_globular_clusters=False,
+                  infall_redshift_model='INFALL_0')
+        for halo in cdm.halos:
+            npt.assert_equal(halo.z_infall, 0.0)
+            npt.assert_equal(halo.z_eval, 0.0)
+
     def test_CDM_correlated_structure_only(self):
 
         cdm = CDMCorrelatedStructure(0.5, 1.5)

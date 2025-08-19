@@ -247,3 +247,24 @@ class InfallAtZlens(object):
         :return: infall redshift
         """
         return self._z_lens
+
+class Infall0(object):
+    name = 'direct_0'
+    """
+    Accretion redshift that sets z_infall = 0.0
+    """
+
+    def __init__(self, z_lens=None, *args, **kwargs):
+        """
+
+        :param z_lens: main deflector redshift
+        """
+        self._z_lens = z_lens
+
+    def __call__(self, m_sub):
+        """
+        Return the infall redshift for a subhalo with infall mass m_sub
+        :param m_sub: infall mass in solar masses
+        :return: infall redshift
+        """
+        return 0.0

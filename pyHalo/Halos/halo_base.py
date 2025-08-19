@@ -126,7 +126,9 @@ class Halo(ABC):
 
         if not hasattr(self, '_z_infall'):
             self._z_infall = self.lens_cosmo.z_accreted_from_zlens(self.mass)
-            assert self._z_infall >= self.z, 'infall redshifts less than current redshift are unphysical'
+            if self._z_infall < self.z:
+                print('WARNING: infall redshifts less than current redshift are unphysical, '
+                      'z_infall equals '+str(self.z_infall)+' and z='+str(self.z))
         return self._z_infall
 
     @property
