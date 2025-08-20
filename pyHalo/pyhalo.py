@@ -6,7 +6,7 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.defaults import cosmo_default
 
-_CODE_VERSION = '1.4.2'
+_CODE_VERSION = '1.4.3'
 
 def check_code_version(required):
     assert required == _CODE_VERSION

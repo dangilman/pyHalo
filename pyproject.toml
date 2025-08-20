@@ -1,6 +1,6 @@
 [project]
 name = "pyhalo"
-version = "1.4.2"
+version = "1.4.3"
 authors = [
   { name="Daniel Gilman", email="gilmanda@uchicago.edu" },
 ]
