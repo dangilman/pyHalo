@@ -144,7 +144,7 @@ class Halo(ABC):
         if not hasattr(self, '_time_since_infall'):
             astropy = self.lens_cosmo.cosmo.astropy
             self._time_since_infall = astropy.age(self.z).value - astropy.age(self.z_infall).value
-            assert self._time_since_infall > 0
+            assert self._time_since_infall >= 0
         return self._time_since_infall
 
     def set_infall_redshift(self, z):
