@@ -60,7 +60,7 @@ class TestRealizationExtensions(object):
             npt.assert_almost_equal(bh.mass/2, nfw.mass)
             npt.assert_almost_equal(bh.redshift, nfw.redshift)
 
-    def test_globular_clusters(self):
+    def test_power_law_globular_clusters(self):
 
         cdm = CDM(0.5, 2.0, sigma_sub=0.01, LOS_normalization=0.1)
         n_halos_cdm = len(cdm.halos)
@@ -75,8 +75,9 @@ class TestRealizationExtensions(object):
         gc_size_mean = 300
         gc_size_sigma = 150
         gc_surface_mass_density = 1e6
+        gc_density_profile = 'POWERLAW'
         cdm_with_GCs = ext.add_globular_clusters(
-            log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean, gamma_sigma,
+            log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_density_profile, gamma_mean, gamma_sigma,
             gc_concentration_mean, gc_concentration_sigma, gc_size_mean, gc_size_sigma, gc_surface_mass_density,
             center_x=0, center_y=0
         )
@@ -86,7 +87,7 @@ class TestRealizationExtensions(object):
         cdm0 = CDM(0.5, 2.0, sigma_sub=0.0, LOS_normalization=0.0)
         ext_onlygc = RealizationExtensions(cdm0)
         gcs = ext_onlygc.add_globular_clusters(
-            log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean, gamma_sigma,
+            log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_density_profile, gamma_mean, gamma_sigma,
             gc_concentration_mean, gc_concentration_sigma, gc_size_mean, gc_size_sigma, gc_surface_mass_density,
             center_x=0, center_y=0
         )
@@ -115,6 +116,26 @@ class TestRealizationExtensions(object):
         area = np.pi * (kpc_per_arcsec * rendering_radius_arcsec) ** 2
         sigma = mass_total / area
         npt.assert_almost_equal(sigma / gc_surface_mass_density, 1, 2)
+
+    def test_ptmass_globular_clusters(self):
+
+        cdm = CDM(0.5, 2.0, sigma_sub=0.01, LOS_normalization=0.1)
+        n_halos_cdm = len(cdm.halos)
+        ext = RealizationExtensions(cdm)
+        log10_mgc_mean = 4.5
+        log10_mgc_sigma = 0.2
+        rendering_radius_arcsec = 10.0
+        cdm_with_GCs = ext.add_globular_clusters(
+            log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_density_profile='PTMASS',
+            center_x=0, center_y=0
+        )
+        n_halos_cdm_plus_gcs = len(cdm_with_GCs.halos)
+        npt.assert_equal(n_halos_cdm_plus_gcs>n_halos_cdm, True)
+        for halo in cdm_with_GCs.halos:
+            if halo.mdef == 'TNFW':
+                pass
+            else:
+                npt.assert_string_equal(halo.lenstronomy_ID[0], 'POINT_MASS')
 
     def test_toSIDM_evolving(self):
 

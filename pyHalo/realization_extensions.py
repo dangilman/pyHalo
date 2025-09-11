@@ -212,8 +212,8 @@ class RealizationExtensions(object):
                                    self._realization.geometry)
         return mbh_realization
 
-    def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gamma_mean=3.25,
-                              gamma_sigma=0.25, gc_concentration_mean=50, gc_concentration_sigma=10,
+    def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_density_profile='POWERLAW',
+                              gamma_mean=3.25, gamma_sigma=0.25, gc_concentration_mean=50, gc_concentration_sigma=10,
                               gc_size_mean=100, gc_size_sigma=10, gc_surface_mass_density=10 ** 5.3,
                               center_x=0, center_y=0):
         """
@@ -222,6 +222,7 @@ class RealizationExtensions(object):
         :param log10_mgc_sigma: the standard deviation of the Gaussian mass function for log10(m)
         :param rendering_radius_arcsec [arcsec]: sets the area around (center_x, center_y) where the GC's appear; GC's are
         distributed uniformly in a circle centered at (center_x, center_y) with this radius
+        :param gc_density_profile: either POWERLAW or PTMASS
         :param gamma_mean: the mean logarithmic power-law slope for the GCs
         :param gamma_sigma: half the width of the slope distribution around gamma mean, assuming a uniform distribution
         :param gc_concentration_mean: the ratio of the GC core size to the total size, where the total size is defined as
@@ -256,18 +257,32 @@ class RealizationExtensions(object):
             y = y_kpc / self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
             GCS = []
             for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
-                gamma = np.random.uniform(gamma_mean - gamma_sigma, gamma_mean + gamma_sigma)
-                gc_concentration = np.random.uniform(gc_concentration_mean - gc_concentration_sigma,
-                                                     gc_concentration_mean + gc_concentration_sigma)
-                gc_size = np.random.uniform(gc_size_mean - gc_size_sigma, gc_size_mean + gc_size_sigma)
-                gc_size_lightyear = gc_size * (m_gc / 10 ** 5) ** (1/3)
-                gc_profile_args = {'gamma': gamma,
-                                   'gc_size_lightyear': gc_size_lightyear,
-                                   'gc_concentration': gc_concentration}
                 unique_tag = np.random.rand()
-                profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
-                                          gc_profile_args, unique_tag)
-                GCS.append(profile)
+                if gc_density_profile == 'POWERLAW':
+                    gamma = np.random.uniform(gamma_mean - gamma_sigma, gamma_mean + gamma_sigma)
+                    gc_concentration = np.random.uniform(gc_concentration_mean - gc_concentration_sigma,
+                                                         gc_concentration_mean + gc_concentration_sigma)
+                    gc_size = np.random.uniform(gc_size_mean - gc_size_sigma, gc_size_mean + gc_size_sigma)
+                    gc_size_lightyear = gc_size * (m_gc / 10 ** 5) ** (1/3)
+                    gc_profile_args = {'gamma': gamma,
+                                       'gc_size_lightyear': gc_size_lightyear,
+                                       'gc_concentration': gc_concentration}
+                    profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
+                                              gc_profile_args, unique_tag)
+                    GCS.append(profile)
+                elif gc_density_profile == 'PTMASS':
+                    r3d = None
+                    sub_flag = False
+                    args = ()
+                    truncation_class = None
+                    concentration_class = None
+                    profile = BlackHole(m_gc, x_center_gc, y_center_gc, r3d, z,
+                                         sub_flag, lens_cosmo, args,
+                                         truncation_class, concentration_class, unique_tag,
+                                         fixed_position=True)
+                    GCS.append(profile)
+                else:
+                    raise Exception('Unknown gc density profile '+str(gc_density_profile))
             gcs_realization = Realization.from_halos(GCS, self._realization.lens_cosmo,
                                                      self._realization.kwargs_halo_model,
                                                      self._realization.apply_mass_sheet_correction,
@@ -548,7 +563,6 @@ class RealizationExtensions(object):
         return indexes
 
     def add_core_collapsed_halos(self, indexes, halo_profile='TNFWC', **kwargs_halo):
-
         """
         This function turns NFW halos into profiles that are meant to represent core-collapsed SIDM halos. The halo
         profile can be specified through either SPL_CORE, GNFW, or TNFWC. see the SIDM example notebooks for details

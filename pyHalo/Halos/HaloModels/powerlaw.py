@@ -166,6 +166,19 @@ class GlobularCluster(Halo):
                                        kwargs['gamma'])
 
     @property
+    def half_mass_radius(self):
+        """
+        The radius that encloses half the mass
+        :return: radius in pc
+        """
+        rho0, gc_size_kpc, gamma, r_core_kpc = self.profile_args
+        r = np.linspace(0.01 * gc_size_kpc, gc_size_kpc, 1000)
+        density = self.density_profile_3d_lenstronomy(r)
+        m = np.trapz(4 * np.pi * r**2 * density, r)
+        index = np.argmin(abs(m / self.mass - 0.5))
+        return r[index] * 1000
+
+    @property
     def lenstronomy_params(self):
         """
         See documentation in base class (Halos/halo_base.py)
