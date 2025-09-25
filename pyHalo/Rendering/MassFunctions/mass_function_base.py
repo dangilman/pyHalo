@@ -21,10 +21,14 @@ class _PowerLawBase(object):
         self._index = power_law_index
         self._draw_poisson = draw_poisson
         self._normalization = normalization
-        self.n_mean = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10**log_mhigh,
-                                                   0.0, power_law_index)
-        self.first_moment = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10**log_mhigh,
-                                                   1.0, power_law_index)
+        if log_mlow >= log_mhigh:
+            self.n_mean = 0
+            self.first_moment = 0
+        else:
+            self.n_mean = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10**log_mhigh,
+                                                       0.0, power_law_index)
+            self.first_moment = integrate_power_law_analytic(normalization, 10 ** log_mlow, 10**log_mhigh,
+                                                       1.0, power_law_index)
 
     def evaluate(self, m):
         """
@@ -42,7 +46,6 @@ class _PowerLawBase(object):
 
         mH = 10 ** self._logmhigh
         mL = 10 ** self._logmlow
-
         if self._draw_poisson:
             ndraw = np.random.poisson(self.n_mean)
         else:
