@@ -199,7 +199,7 @@ class TestTNFWHalos(object):
         z = 0.45
         z_infall = 0.8
         mass = 10 ** 9
-        f_bound = 0.1
+        f_bound = 0.3
         conc_model = ConcentrationDiemerJoyce(self.lens_cosmo.cosmo, scatter=False)
         tnfw_subhalo = TNFWSubhalo.simple_setup(mass,
                                                   f_bound,
@@ -210,6 +210,37 @@ class TestTNFWHalos(object):
         npt.assert_almost_equal(tnfw_subhalo.z_eval, z_infall)
         npt.assert_almost_equal(tnfw_subhalo.c, c)
         npt.assert_equal(tnfw_subhalo.is_subhalo, True)
+
+        x = 0.5
+        y = 1.0
+        z = 0.45
+        z_infall = 1.0
+        mass = 10 ** 9
+        f_bound = 0.025
+        conc_model = ConcentrationDiemerJoyce(self.lens_cosmo.cosmo, scatter=False)
+        tnfw_subhalo = TNFWSubhalo.simple_setup(mass,
+                                                f_bound,
+                                                z_infall,
+                                                x, y, z, self.lens_cosmo)
+        _ = tnfw_subhalo.profile_args
+        c = conc_model.nfw_concentration(mass, z_infall)
+        npt.assert_almost_equal(tnfw_subhalo.bound_mass_galacticus_definition, mass * f_bound)
+        npt.assert_almost_equal(tnfw_subhalo.z_eval, z_infall)
+        npt.assert_almost_equal(tnfw_subhalo.c, c)
+        npt.assert_equal(tnfw_subhalo.is_subhalo, True)
+
+        rhos, rs, r200 = tnfw_subhalo.nfw_params
+        rescale_norm = tnfw_subhalo.rescale_norm
+        r = np.linspace(r200/500, r200, 4000)
+        rt = tnfw_subhalo.profile_args[1]
+        density = tnfw_subhalo.density_profile_3d_lenstronomy(r)
+        mass3d = np.trapz(4 * np.pi * r**2 * density, r)
+        x = r/rs
+        tau = rt/rs
+        density = rescale_norm * rhos * tau**2 / (x * (1+x)**2) / (x**2 + tau**2)
+        mass3d_analytic = np.trapz(4*np.pi*density * r**2, r)
+        npt.assert_almost_equal(mass3d/ tnfw_subhalo.mass_3d('r200'),1, 2)
+        npt.assert_almost_equal(mass3d / mass3d_analytic, 1, 2)
 
     def test_fieldhalo_simple_setup(self):
 
