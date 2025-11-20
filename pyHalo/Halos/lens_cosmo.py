@@ -4,6 +4,8 @@ from lenstronomy.Cosmo.nfw_param import NFWParam
 import astropy.units as un
 from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
+from scipy.interpolate import interp1d
+from pyHalo.utilities import generate_lens_plane_redshifts
 from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid,
                                     InfallDistributionDirect, InfallDistributionClusterDirect, InfallAtZlens, Infall0)
 
@@ -46,6 +48,7 @@ class LensCosmo(object):
         # critical density of the universe in M_sun h^2 Mpc^-3
         rhoc = un.Quantity(self.cosmo.astropy.critical_density(0), unit=un.Msun / un.Mpc ** 3).value
         self.rhoc = rhoc / self.cosmo.h ** 2
+        self.sigma_crit_arcsecond_interp = None
         if z_lens is not None and z_source is not None:
             # critical density for lensing in units M_sun * Mpc ^ -2
             self.sigma_crit_lensing = self.get_sigma_crit_lensing(z_lens, z_source)
@@ -56,6 +59,11 @@ class LensCosmo(object):
             # lensing distances
             self.D_d, self.D_s, self.D_ds = self.cosmo.D_A_z(z_lens), self.cosmo.D_A_z(z_source), self.cosmo.D_A(
                 z_lens, z_source)
+            plane_redshifts, _ = generate_lens_plane_redshifts(z_lens, z_source)
+            sigma_crit = numpy.array([self.get_sigma_crit_lensing(zi, z_source) for zi in plane_redshifts])
+            to_arcsec = numpy.array([0.001 * self.cosmo.kpc_proper_per_asec(zi) for zi in plane_redshifts]) ** 2
+            self.sigma_crit_arcsecond_interp = interp1d(plane_redshifts, to_arcsec * sigma_crit)
+
         self._computed_zacc_pdf = False
         self._nfw_param = NFWParampyHalo(self.cosmo.astropy)
         self.z_lens = z_lens

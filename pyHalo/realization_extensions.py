@@ -2,7 +2,7 @@ import numpy as np
 from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving, TNFWCHaloParametric
 from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
-from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
+from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo, GeneralNFWHaloFromMass
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
 from pyHalo.Halos.HaloModels.blackhole import BlackHole
@@ -349,7 +349,11 @@ class RealizationExtensions(object):
                            x_core_halo=None,
                            t_over_tc_cut=0.15,
                            evolving_profile=True,
-                           collapse_probability=1.0):
+                           collapse_probability=1.0,
+                           core_collapse_mass_conservation=1,
+                           gamma_inner=None,
+                           halo_profile=None
+                           ):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class, should be a TNFW field or sub-halo
@@ -368,32 +372,80 @@ class RealizationExtensions(object):
         - if True, will use the parametric model by Yang et al. (2022) to model the profile
         :param collapse_probability: the probability that an object actually core collapses, given its evolution
         timescale
+        :param core_collapse_mass_conservation: the radius within which an SIDM halo mass matches the reference NFW halo
+        mass; the number should be a number between 0 and 1, with 0 conserving mass within rs and 1 conserving mass within
+        r200
+        :param gamma_inner: inner profile slope when using GNFW model
+        :param halo_profile: string that specifies the halo profile
         :return: an SIDM halo
         """
         _, rt_kpc = halo.profile_args
         truncation_class = None
         concentration_class = ConcentrationConstant(None, halo.c)
-        mass_conservation = halo.mass_3d('r200')
+        _, rs_nfw, r200_nfw = halo.nfw_params
+        r_match = core_collapse_mass_conservation * (r200_nfw - rs_nfw) + rs_nfw
+        mass_conservation = halo.mass_3d(r_match)
         if t_c is None:
-            assert x_core_halo is not None
-            kwargs_profile = {'x_core_halo': x_core_halo,
-                              'mass_conservation': mass_conservation,
-                              'rt_kpc': rt_kpc}
-            sidm_halo = TNFWCHaloParametric(halo.mass,
-                                            halo.x,
-                                            halo.y,
-                                            halo.r3d,
-                                            halo.z,
-                                            halo.is_subhalo,
-                                            halo.lens_cosmo,
-                                            kwargs_profile,
-                                            truncation_class,
-                                            concentration_class,
-                                            halo.unique_tag)
-            if halo.is_subhalo:
-                sidm_halo.set_infall_redshift(halo.z_eval)
-                sidm_halo.set_bound_mass(halo.bound_mass)
-            return sidm_halo
+            if halo_profile == 'TNFWC':
+                assert core_collapse_mass_conservation >= 0
+                assert core_collapse_mass_conservation <= 1
+                assert x_core_halo is not None
+                kwargs_profile = {'x_core_halo': x_core_halo,
+                                  'mass_conservation': mass_conservation,
+                                  'r_match': r_match,
+                                  'rt_kpc': rt_kpc}
+                sidm_halo = TNFWCHaloParametric(halo.mass,
+                                                halo.x,
+                                                halo.y,
+                                                halo.r3d,
+                                                halo.z,
+                                                halo.is_subhalo,
+                                                halo.lens_cosmo,
+                                                kwargs_profile,
+                                                truncation_class,
+                                                concentration_class,
+                                                halo.unique_tag)
+                if halo.is_subhalo:
+                    sidm_halo.set_infall_redshift(halo.z_eval)
+                    sidm_halo.set_bound_mass(halo.bound_mass)
+                return sidm_halo
+            elif halo_profile == 'GNFW':
+                # try conserving within rs
+                assert core_collapse_mass_conservation >= 0
+                assert core_collapse_mass_conservation <= 1
+                if halo.is_subhalo:
+                    r_transition = rt_kpc
+                    gamma_outer = 5.0
+                else:
+                    r_transition = rs_nfw
+                    gamma_outer = 3.0
+                kwargs_profile = {'gamma_inner': gamma_inner,
+                                  'gamma_outer': gamma_outer,
+                                  'M': mass_conservation, # this much mass
+                                  'R': r_match, # inside this radius
+                                  'r': r_transition}
+                sidm_halo = GeneralNFWHaloFromMass(halo.mass,
+                                                halo.x,
+                                                halo.y,
+                                                halo.r3d,
+                                                halo.z,
+                                                halo.is_subhalo,
+                                                halo.lens_cosmo,
+                                                kwargs_profile,
+                                                truncation_class,
+                                                concentration_class,
+                                                halo.unique_tag)
+                if halo.is_subhalo:
+                    sidm_halo.set_infall_redshift(halo.z_eval)
+                    sidm_halo.set_bound_mass(halo.bound_mass)
+
+                return sidm_halo
+            else:
+                if halo_profile is None:
+                    raise Exception('Halo profile not specified, must be one of TNFWC or GNFW')
+                else:
+                    print('only halo profiles GNFW and TNFWC implemented for binary collapsed/not collapsed models, '
+                          'you provided: '+str(halo_profile))
         else:
             kwargs_profile = {'sidm_timescale': t_c}
             if halo.is_subhalo:

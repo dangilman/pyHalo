@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo
+from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo, GeneralNFWHaloFromMass, GeneralNFWHaloFromMassRs
 from pyHalo.Halos.HaloModels.NFW import NFWFieldHalo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePowerlaw
@@ -123,39 +123,69 @@ class TestGeneralNFW(object):
         c_sub = gnfw_subhalo.profile_args[0]
         npt.assert_equal(False, c==c_sub)
 
-    # def test_profile(self):
-    #     m = 10 ** 8
-    #     x = 0.5
-    #     y = 1.0
-    #     r3d = 100
-    #     is_subhalo = False
-    #     gamma_inner = 1.0
-    #     gamma_outer = 3.001
-    #     x_match = 'c'
-    #     unique_tag = 1.0
-    #     kwargs_profile = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'x_match': x_match,
-    #                       'evaluate_mc_at_zlens': True}
-    #     gnfw = GeneralNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
-    #                                self.truncation_class, self.concentration_class, unique_tag)
-    #     nfw = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
-    #                        self.truncation_class, self.concentration_class, unique_tag)
-    #     import matplotlib.pyplot as plt
-    #     kwargs_gnfw = gnfw.lenstronomy_params[0][0]
-    #     kwargs_nfw = nfw.lenstronomy_params[0][0]
-    #
-    #     rs = gnfw.nfw_params[1]
-    #     x = np.logspace(-1.5, 1, 100)
-    #     r = rs * x
-    #     del kwargs_gnfw['center_x']
-    #     del kwargs_gnfw['center_y']
-    #     del kwargs_nfw['center_x']
-    #     del kwargs_nfw['center_y']
-    #     # plt.loglog(x, self.gnfw_profile_lenstronomy.density_lens(r, **kwargs_gnfw))
-    #     # plt.loglog(x, self.nfw_profile_lenstronomy.density_lens(r, **kwargs_nfw), color='k')
-    #     plt.loglog(x, gnfw.density_profile_3d(r), color='r')
-    #     plt.loglog(x, nfw.density_profile_3d(r), color='k')
-    #     plt.show()
+    def test_from_mass(self):
 
+        m = 10 ** 8
+        c = 10
+        z = 0.5
+
+        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(m, c, z)
+
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        gamma_inner = 1.5
+        gamma_outer = 3.01
+        is_subhalo = False
+        kwargs_profile = {'M': m, 'R': r200, 'r': rs, 'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer}
+        unique_tag = 1.0
+        gnfw = GeneralNFWHaloFromMass(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                 self.truncation_class, self.concentration_class, unique_tag)
+        rkpc = np.linspace(0.01, c, 1000) * rs
+        density_profile_gnfw = gnfw.density_profile_3d_lenstronomy(rkpc)
+        m_numerical = np.trapz(4*np.pi*density_profile_gnfw * rkpc**2, rkpc)
+        npt.assert_almost_equal(m_numerical / m, 1, decimal=3)
+
+        kwargs_profile = {'M': m, 'R': r200, 'r': 2*rs, 'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer}
+        unique_tag = 1.0
+        gnfw = GeneralNFWHaloFromMass(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                      self.truncation_class, self.concentration_class, unique_tag)
+        rkpc = np.linspace(0.01, c, 1000) * rs
+        density_profile_gnfw = gnfw.density_profile_3d_lenstronomy(rkpc)
+        m_numerical = np.trapz(4 * np.pi * density_profile_gnfw * rkpc ** 2, rkpc)
+        npt.assert_almost_equal(m_numerical / m, 1, decimal=3)
+
+        factor_nfw = (np.log(2) - 0.5) / (np.log(1+c) - c/(1+c))
+        kwargs_profile = {'M': m * factor_nfw, 'R': rs, 'r': rs, 'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer}
+        unique_tag = 1.0
+        gnfw = GeneralNFWHaloFromMass(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                      self.truncation_class, self.concentration_class, unique_tag)
+        rkpc = np.linspace(0.001, rs, 10000)
+        density_profile_gnfw = gnfw.density_profile_3d_lenstronomy(rkpc)
+        m_numerical = np.trapz(4 * np.pi * density_profile_gnfw * rkpc ** 2, rkpc)
+        m_target = m * factor_nfw
+        npt.assert_almost_equal(m_numerical/m_target, 1, decimal=3)
+
+    def test_gnfw_m200rs_field_halo(self):
+
+        m = 10 ** 8
+        c = 10
+        z = 0.5
+        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(m, c, z)
+        M_rs = 4 *np.pi * rhos * rs **3 * ( np.log(2) - 0.5 )
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        gamma_inner = 2.5
+        gamma_outer = 3.01
+        is_subhalo = False
+        kwargs_profile = {'M_200': m, 'R_200': r200, 'Rs': rs, 'M_rs': M_rs, 'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer}
+        unique_tag = 1.0
+        gnfw = GeneralNFWHaloFromMassRs(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                      self.truncation_class, self.concentration_class, unique_tag)
+
+        rho0, r_transition = gnfw._solve_rtransition_rho0()
+        print(rho0, r_transition)
 
 if __name__ == '__main__':
     pytest.main()
