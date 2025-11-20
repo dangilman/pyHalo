@@ -3,7 +3,6 @@ from pyHalo.defaults import lenscone_default
 from scipy.interpolate import interp1d
 from pyHalo.Cosmology.cosmology import Cosmology
 from scipy.integrate import quad
-from pyHalo.Halos.lens_cosmo import LensCosmo
 from scipy.integrate import simpson as simps
 from pyHalo.concentration_models import preset_concentration_models
 from lenstronomy.LensModel.lens_model import LensModel
@@ -238,6 +237,7 @@ def delta_kappa(z_lens, z_source, m, rein, de_Broglie_wavelength):
     :param rein: Einstein radius in kpc
     :param de_Broglie_wavelength: de Broglie wavelength of axion in kpc
     '''
+    from pyHalo.Halos.lens_cosmo import LensCosmo
     l = LensCosmo(z_lens,z_source)
     sigma_crit = l.get_sigma_crit_lensing(z_lens, z_source) * (1e-3) ** 2
     ds = delta_sigma(m, z_lens, rein, de_Broglie_wavelength)
@@ -253,6 +253,7 @@ def delta_sigma(m, z, rein, de_Broglie_wavelength):
     :param de_Broglie_wavelength:
     :return:
     """
+    from pyHalo.Halos.lens_cosmo import LensCosmo
     cosmo = Cosmology()
     l = LensCosmo(z, 2.0, cosmo)
     model, _ = preset_concentration_models('DIEMERJOYCE19')

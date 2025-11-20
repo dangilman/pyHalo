@@ -151,7 +151,7 @@ class TNFWCHaloParametric(Halo):
             _, rs_kpc0, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval,
                                                                pseudo_nfw=False)
             r200_kpc = rs_kpc0 * self.c
-            r_match_kpc = self.c * rs_kpc0
+            r_match_kpc = self._args['r_match']
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             rt_kpc = self._args['rt_kpc']
             r_trunc_angle = rt_kpc / kpc_per_arcsec

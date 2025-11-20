@@ -143,7 +143,6 @@ def ULDM(z_lens, z_source, log10_m_uldm, log10_fluc_amplitude=-0.8, fluctuation_
     log_m_min = MinHaloMassULDM(log10_m_uldm, pyhalo.astropy_cosmo, log_mlow)
     kwargs_density_profile = {}
     kwargs_density_profile['log10_m_uldm'] = log10_m_uldm
-    kwargs_density_profile['scale_nfw'] = False
     kwargs_density_profile['uldm_plaw'] = uldm_plaw
     kwargs_wdm = {'z_lens': z_lens, 'z_source': z_source, 'log_mc': log_m0, 'sigma_sub': sigma_sub,
                   'log10_sigma_sub': log10_sigma_sub, 'log10_dNdA': log10_dNdA,

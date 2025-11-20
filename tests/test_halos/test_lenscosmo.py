@@ -206,6 +206,24 @@ class TestLensCosmo(object):
         tc_yangetal_2023 = self.lens_cosmo.sidm_collapse_timescale(rhos, rs, 7.1)
         npt.assert_almost_equal(tc_yangetal_2023, 28.07, 2)
 
+    def test_sigmacrit_interp(self):
+
+        zlens, zsource = 0.6, 3.0
+        self.lens_cosmo = LensCosmo(zlens, zsource, self.cosmo)
+        zi = 0.4
+        sigma_crit_arcsec = self.lens_cosmo.get_sigma_crit_lensing(zi, 3.0)
+        sigma_crit_arcsec *= (0.001 * self.lens_cosmo.cosmo.kpc_proper_per_asec(zi))**2
+        npt.assert_almost_equal(sigma_crit_arcsec / self.lens_cosmo.sigma_crit_arcsecond_interp(zi), 1, 3)
+
+        zi = 0.8
+        sigma_crit_arcsec = self.lens_cosmo.get_sigma_crit_lensing(zi, 3.0)
+        sigma_crit_arcsec *= (0.001 * self.lens_cosmo.cosmo.kpc_proper_per_asec(zi)) ** 2
+        npt.assert_almost_equal(sigma_crit_arcsec / self.lens_cosmo.sigma_crit_arcsecond_interp(zi), 1, 3)
+
+        zi = 2.4
+        sigma_crit_arcsec = self.lens_cosmo.get_sigma_crit_lensing(zi, 3.0)
+        sigma_crit_arcsec *= (0.001 * self.lens_cosmo.cosmo.kpc_proper_per_asec(zi)) ** 2
+        npt.assert_almost_equal(sigma_crit_arcsec / self.lens_cosmo.sigma_crit_arcsecond_interp(zi), 1, 3)
 
 if __name__ == '__main__':
     pytest.main()
