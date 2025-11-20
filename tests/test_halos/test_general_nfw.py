@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo, GeneralNFWHaloFromMass, GeneralNFWHaloFromMassRs
+from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo, GeneralNFWHaloFromMass
 from pyHalo.Halos.HaloModels.NFW import NFWFieldHalo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePowerlaw
@@ -166,26 +166,6 @@ class TestGeneralNFW(object):
         m_target = m * factor_nfw
         npt.assert_almost_equal(m_numerical/m_target, 1, decimal=3)
 
-    def test_gnfw_m200rs_field_halo(self):
-
-        m = 10 ** 8
-        c = 10
-        z = 0.5
-        rhos, rs, r200 = self.lens_cosmo.NFW_params_physical(m, c, z)
-        M_rs = 4 *np.pi * rhos * rs **3 * ( np.log(2) - 0.5 )
-        x = 0.5
-        y = 1.0
-        r3d = 100
-        gamma_inner = 2.5
-        gamma_outer = 3.01
-        is_subhalo = False
-        kwargs_profile = {'M_200': m, 'R_200': r200, 'Rs': rs, 'M_rs': M_rs, 'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer}
-        unique_tag = 1.0
-        gnfw = GeneralNFWHaloFromMassRs(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
-                                      self.truncation_class, self.concentration_class, unique_tag)
-
-        rho0, r_transition = gnfw._solve_rtransition_rho0()
-        print(rho0, r_transition)
 
 if __name__ == '__main__':
     pytest.main()
