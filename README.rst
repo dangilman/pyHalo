@@ -27,7 +27,7 @@ One can choose to install via pypi: "python3 -m pip install pyhalo".
 
 Features
 --------
-The purpose of this code is to quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. pyHalo also transltes halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy. Implemented dark matter models currently include:
+The purpose of this code is to quickly render full populations of dark matter subhalos and line of sight halos for gravitational lensing simulations. pyHalo also transltes halo properties (mass, concentration, redshift, etc) into angular units for lensing computations with lenstronomy. The code supports a variety of dark matter models and applications: 
 
 1) cold dark matter
     - https://arxiv.org/abs/1909.02573
@@ -50,6 +50,9 @@ The purpose of this code is to quickly render full populations of dark matter su
 
 5) black holes
     - https://ui.adsabs.harvard.edu/abs/2023MNRAS.522.5434D/abstract
+
+6) gravitational waves
+    - https://ui.adsabs.harvard.edu/abs/2025arXiv251014953V/abstract
 
 (if you have used pyHalo in a paper but your publication is not listed here, feel free to submit a pull request to edit the README)
 
