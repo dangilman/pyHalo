@@ -23,6 +23,24 @@ class GeneralNFWSubhalo(Halo):
         super(GeneralNFWSubhalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                               lens_cosmo_instance, args, unique_tag)
 
+    def density_profile_3d(self, r, profile_args=None):
+        """
+        Compute the 3D density profile
+        :param r: radius in 3D [kpc]
+        :param profile_args:
+        :return: density profile in solar masses / kpc^3
+        """
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_arcsec = self._lens_cosmo.sigma_crit_arcsecond_interp(self.z)
+        sigma_crit_kpc = sigma_crit_arcsec / kpc_per_arcsec ** 2
+        factor = sigma_crit_kpc / kpc_per_arcsec
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        return factor * self._prof.density_lens(r / kpc_per_arcsec,
+                                                            kwargs_lenstronomy['Rs'],
+                                                            kwargs_lenstronomy['alpha_Rs'],
+                                                            kwargs_lenstronomy['gamma_inner'],
+                                                            kwargs_lenstronomy['gamma_outer'])
+
     @property
     def c(self):
         """
@@ -80,7 +98,9 @@ class GeneralNFWSubhalo(Halo):
         """
         if not hasattr(self, '_rho0_norm'):
             (concentration, gamma_inner, gamma_outer) = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
+            rhos, rs_nfw, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
+            if 'r_transition' not in self._args.keys():
+                self._args['r_transition'] = rs_nfw
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             if 'x_match' in self._args.keys():
                 if self._args['x_match'] == 'c':
@@ -90,14 +110,29 @@ class GeneralNFWSubhalo(Halo):
             else:
                 # r_vmax = 2.16 * rs
                 x_match = 2.16
-            rs_arcsec = rs / kpc_per_arcsec
-            r_match_arcsec = x_match * rs / kpc_per_arcsec
-            fx = np.log(1 + x_match) - x_match / (1 + x_match)
-            m_nfw = 4 * np.pi * rs ** 3 * rhos * fx
-            sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
-            sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
-            self._rho0_norm = m_nfw / self._prof.mass_3d(r_match_arcsec, rs_arcsec, sigma_crit_arcsec, gamma_inner, gamma_outer)
+            rs_arcsec = self._args['r_transition'] / kpc_per_arcsec
+            r_match_arcsec = x_match * self._args['r_transition'] / kpc_per_arcsec
+            if 'mass_conservation' in self._args.keys():
+                m_match = self._args['mass_conservation']
+            else:
+                fx = np.log(1 + x_match) - x_match / (1 + x_match)
+                m_match = 4 * np.pi * self._args['r_transition'] ** 3 * rhos * fx
+            sigma_crit_arcsec = self._lens_cosmo.sigma_crit_arcsecond_interp(self.z)
+            self._rho0_norm = m_match / self._prof.mass_3d(r_match_arcsec, rs_arcsec, sigma_crit_arcsec, gamma_inner, gamma_outer)
         return self._rho0_norm
+
+    @staticmethod
+    def log_profile_slope(r, rs, gamma_inner, gamma_outer):
+        """
+        Compute the logarithmic profile slope for an array of radial (in 3D) coordinates r
+        :param r: distance from center of halo [kpc]
+        :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
+        each halo class
+        :return: the density profile in units M_sun / kpc^3
+        """
+        x = r/rs
+        d_log_rho_d_log_r = -(gamma_inner + gamma_outer * x ** 2) / (1 + x ** 2)
+        return d_log_rho_d_log_r
 
 class GeneralNFWFieldHalo(GeneralNFWSubhalo):
     """

@@ -227,7 +227,21 @@ class Halo(ABC):
 
     def logarithmic_profile_slope(self, r, profile_args=None):
         """
+        Compute the logarithmic profile slope at a coordinate r
+        :param r: distance from center of halo [kpc]
+        :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
+        each halo class
+        :return: the density profile in units M_sun / kpc^3
+        """
+        if isinstance(r, float) or isinstance(r, int):
+            r_eval = np.append(np.array(r), r + 0.001 * r)
+            return self._logarithmic_profile_slope_array(r_eval, profile_args)[0]
+        else:
+            return self._logarithmic_profile_slope_array(r, profile_args)
 
+    def _logarithmic_profile_slope_array(self, r, profile_args=None):
+        """
+        Compute the logarithmic profile slope for an array of radial (in 3D) coordinates r
         :param r: distance from center of halo [kpc]
         :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
         each halo class

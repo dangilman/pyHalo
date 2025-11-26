@@ -3,6 +3,7 @@ from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving, TNFWCHaloP
 from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
+from pyHalo.Halos.HaloModels.core_collapsed_halo import CoreCollapsedHalo
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
 from pyHalo.Halos.HaloModels.blackhole import BlackHole
@@ -331,7 +332,8 @@ class RealizationExtensions(object):
                                                    None,
                                                    subhalo_evolution_scaling=1.0,
                                                    x_core_halo=beta,
-                                                   evolving_profile=False)
+                                                   evolving_profile=False,
+                                                   halo_profile='TNFWC')
                 new_halo_list.append(new_halo)
         new_realization = Realization.from_halos(new_halo_list, self._realization.lens_cosmo,
                                                  self._realization.kwargs_halo_model,
@@ -349,7 +351,11 @@ class RealizationExtensions(object):
                            x_core_halo=None,
                            t_over_tc_cut=0.15,
                            evolving_profile=True,
-                           collapse_probability=1.0):
+                           collapse_probability=1.0,
+                           halo_profile='TNFWC',
+                           gamma_inner=None,
+                           scale_match_r=2.0,
+                           log_slope_match=-2.0):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class, should be a TNFW field or sub-halo
@@ -368,63 +374,162 @@ class RealizationExtensions(object):
         - if True, will use the parametric model by Yang et al. (2022) to model the profile
         :param collapse_probability: the probability that an object actually core collapses, given its evolution
         timescale
+        :param halo_profile: the density profile for a collapsed halo, can be either TNFWC or CC_COMPOSITE
+        :param gamma_inner: the inner halo density profile (with CC_COMPOSITE)
+        :param scale_match_r: the scaling factor for mass conservation inside r_match
+        :param log_slope_match: the logarithmic slope that determines r_match
         :return: an SIDM halo
         """
         _, rt_kpc = halo.profile_args
         truncation_class = None
         concentration_class = ConcentrationConstant(None, halo.c)
-        mass_conservation = halo.mass_3d('r200')
         if t_c is None:
-            assert x_core_halo is not None
-            kwargs_profile = {'x_core_halo': x_core_halo,
-                              'mass_conservation': mass_conservation,
-                              'rt_kpc': rt_kpc}
-            sidm_halo = TNFWCHaloParametric(halo.mass,
-                                            halo.x,
-                                            halo.y,
-                                            halo.r3d,
-                                            halo.z,
-                                            halo.is_subhalo,
-                                            halo.lens_cosmo,
-                                            kwargs_profile,
-                                            truncation_class,
-                                            concentration_class,
-                                            halo.unique_tag)
-            if halo.is_subhalo:
-                sidm_halo.set_infall_redshift(halo.z_eval)
-                sidm_halo.set_bound_mass(halo.bound_mass)
-            return sidm_halo
+            if halo_profile == 'CC_COMPOSITE':
+                _, rs, r200 = halo.nfw_params
+                rt_kpc = halo.profile_args[1]
+                r_match_kpc = halo.log_derivative_inverse(log_slope_match, rs, rt_kpc)
+                mass_R = halo.mass_3d(r_match_kpc)
+                mass_R200 = halo.mass_3d(r200)
+                args = {'gamma_inner': gamma_inner,
+                        'gamma_outer': 6.0,
+                        'rt_kpc': rt_kpc,
+                        'm_target_r200': mass_R200,
+                        'm_target_R': scale_match_r * mass_R,
+                        'r_match_kpc': r_match_kpc,
+                        'Rs_inner_kpc': r_match_kpc}
+                sidm_halo = CoreCollapsedHalo(halo.mass,
+                                              halo.x,
+                                              halo.y,
+                                              halo.r3d,
+                                              halo.z,
+                                              halo.is_subhalo,
+                                              halo.lens_cosmo,
+                                              args,
+                                              truncation_class,
+                                              concentration_class,
+                                              halo.unique_tag)
+                if halo.is_subhalo:
+                    sidm_halo.set_infall_redshift(halo.z_eval)
+                    sidm_halo.set_bound_mass(halo.bound_mass)
+                return sidm_halo
+
+            elif halo_profile == 'TNFWC':
+                mass_conservation = halo.mass_3d('r200')
+                assert x_core_halo is not None
+                kwargs_profile = {'x_core_halo': x_core_halo,
+                                  'mass_conservation': mass_conservation,
+                                  'rt_kpc': rt_kpc}
+                sidm_halo = TNFWCHaloParametric(halo.mass,
+                                                halo.x,
+                                                halo.y,
+                                                halo.r3d,
+                                                halo.z,
+                                                halo.is_subhalo,
+                                                halo.lens_cosmo,
+                                                kwargs_profile,
+                                                truncation_class,
+                                                concentration_class,
+                                                halo.unique_tag)
+                if halo.is_subhalo:
+                    sidm_halo.set_infall_redshift(halo.z_eval)
+                    sidm_halo.set_bound_mass(halo.bound_mass)
+                return sidm_halo
+            else:
+                raise ValueError('halo_profile should be either TNFWC or CC_COMPOSITE')
         else:
-            kwargs_profile = {'sidm_timescale': t_c}
-            if halo.is_subhalo:
-                kwargs_profile['lambda_t'] = subhalo_evolution_scaling
-            else:
-                kwargs_profile['lambda_t'] = 1.0
-            kwargs_profile['mass_conservation'] = mass_conservation
-            kwargs_profile['rt_kpc'] = rt_kpc
-            sidm_halo = TNFWCHaloEvolving(halo.mass, halo.x, halo.y, halo.r3d,
-                                          halo.z, halo.is_subhalo,
-                                          halo.lens_cosmo, kwargs_profile,
-                                          truncation_class,
-                                          concentration_class,
-                                          halo.unique_tag)
-            halo_effective_age = sidm_halo.halo_effective_age
-            t_over_tc = sidm_halo.t_over_tc
-            if evolving_profile:
-                if sidm_halo.t_over_tc < t_over_tc_cut:
-                    halo.halo_effective_age = halo_effective_age
-                    halo.t_over_tc = t_over_tc
-                    return halo
-                elif collapse_probability < np.random.rand():
-                    halo.halo_effective_age = halo_effective_age
-                    halo.t_over_tc = t_over_tc
-                    return halo
+            if halo_profile == 'TNFWC':
+                mass_conservation = halo.mass_3d('r200')
+                kwargs_profile = {'sidm_timescale': t_c}
+                if halo.is_subhalo:
+                    kwargs_profile['lambda_t'] = subhalo_evolution_scaling
                 else:
-                    if sidm_halo.is_subhalo:
-                        sidm_halo.set_bound_mass(halo.bound_mass)
-                        sidm_halo.set_infall_redshift(halo.z_eval)
-                    return sidm_halo
-            else:
+                    kwargs_profile['lambda_t'] = 1.0
+                kwargs_profile['mass_conservation'] = mass_conservation
+                kwargs_profile['rt_kpc'] = rt_kpc
+                sidm_halo = TNFWCHaloEvolving(halo.mass, halo.x, halo.y, halo.r3d,
+                                              halo.z, halo.is_subhalo,
+                                              halo.lens_cosmo, kwargs_profile,
+                                              truncation_class,
+                                              concentration_class,
+                                              halo.unique_tag)
+                halo_effective_age = sidm_halo.halo_effective_age
+                t_over_tc = sidm_halo.t_over_tc
+                if evolving_profile:
+                    if sidm_halo.t_over_tc < t_over_tc_cut:
+                        halo.halo_effective_age = halo_effective_age
+                        halo.t_over_tc = t_over_tc
+                        return halo
+                    elif collapse_probability < np.random.rand():
+                        halo.halo_effective_age = halo_effective_age
+                        halo.t_over_tc = t_over_tc
+                        return halo
+                    else:
+                        if sidm_halo.is_subhalo:
+                            sidm_halo.set_bound_mass(halo.bound_mass)
+                            sidm_halo.set_infall_redshift(halo.z_eval)
+                        return sidm_halo
+                else:
+                    if sidm_halo.t_over_tc < 1.0:
+                        halo.halo_effective_age = halo_effective_age
+                        halo.t_over_tc = t_over_tc
+                        return halo
+                    elif collapse_probability < np.random.rand():
+                        halo.halo_effective_age = halo_effective_age
+                        halo.t_over_tc = t_over_tc
+                        return halo
+                    else:
+                        kwargs_profile = {'x_core_halo': x_core_halo,
+                                          'mass_conservation': mass_conservation,
+                                          'rt_kpc': rt_kpc}
+                        sidm_halo = TNFWCHaloParametric(halo.mass,
+                                                        halo.x,
+                                                        halo.y,
+                                                        halo.r3d,
+                                                        halo.z,
+                                                        halo.is_subhalo,
+                                                        halo.lens_cosmo,
+                                                        kwargs_profile,
+                                                        truncation_class,
+                                                        concentration_class,
+                                                        halo.unique_tag)
+                        sidm_halo.t_over_tc = t_over_tc
+                        sidm_halo.halo_effective_age = halo_effective_age
+                        if sidm_halo.is_subhalo:
+                            sidm_halo.set_infall_redshift(halo.z_eval)
+                            sidm_halo.set_bound_mass(halo.bound_mass)
+                        return sidm_halo
+            elif halo_profile == 'CC_COMPOSITE':
+                _, rs, r200 = halo.nfw_params
+                rt_kpc = halo.profile_args[1]
+                r_match_kpc = halo.log_derivative_inverse(log_slope_match, rs, rt_kpc)
+                mass_R = halo.mass_3d(r_match_kpc)
+                mass_R200 = halo.mass_3d(r200)
+                args = {'gamma_inner': gamma_inner,
+                        'gamma_outer': 6.0,
+                        'rt_kpc': rt_kpc,
+                        'm_target_r200': mass_R200,
+                        'm_target_R': scale_match_r * mass_R,
+                        'r_match_kpc': r_match_kpc,
+                        'Rs_inner_kpc': r_match_kpc,
+                        'sidm_timescale': t_c,
+                        }
+                if halo.is_subhalo:
+                    args['lambda_t'] = subhalo_evolution_scaling
+                else:
+                    args['lambda_t'] = 1.0
+                sidm_halo = CoreCollapsedHalo(halo.mass,
+                                              halo.x,
+                                              halo.y,
+                                              halo.r3d,
+                                              halo.z,
+                                              halo.is_subhalo,
+                                              halo.lens_cosmo,
+                                              args,
+                                              truncation_class,
+                                              concentration_class,
+                                              halo.unique_tag)
+                halo_effective_age = sidm_halo.halo_effective_age
+                t_over_tc = sidm_halo.t_over_tc
                 if sidm_halo.t_over_tc < 1.0:
                     halo.halo_effective_age = halo_effective_age
                     halo.t_over_tc = t_over_tc
@@ -434,33 +539,25 @@ class RealizationExtensions(object):
                     halo.t_over_tc = t_over_tc
                     return halo
                 else:
-                    kwargs_profile = {'x_core_halo': x_core_halo,
-                                      'mass_conservation': mass_conservation,
-                                      'rt_kpc': rt_kpc}
-                    sidm_halo = TNFWCHaloParametric(halo.mass,
-                                                    halo.x,
-                                                    halo.y,
-                                                    halo.r3d,
-                                                    halo.z,
-                                                    halo.is_subhalo,
-                                                    halo.lens_cosmo,
-                                                    kwargs_profile,
-                                                    truncation_class,
-                                                    concentration_class,
-                                                    halo.unique_tag)
-                    sidm_halo.t_over_tc = t_over_tc
-                    sidm_halo.halo_effective_age = halo_effective_age
-                    if sidm_halo.is_subhalo:
+                    if halo.is_subhalo:
                         sidm_halo.set_infall_redshift(halo.z_eval)
                         sidm_halo.set_bound_mass(halo.bound_mass)
                     return sidm_halo
+
+            else:
+                raise ValueError('halo_profile should be either TNFWC or CC_COMPOSITE')
 
     def toSIDM_from_cross_section(self, mass_bin_list,
                                   log10_effective_cross_section_list,
                                   log10_subhalo_time_scaling,
                                   evolving_SIDM_profile=True,
                                   x_core_halo=None,
-                                  collapse_probability=1.0):
+                                  collapse_probability=1.0,
+                                  halo_profile='TNFWC',
+                                  gamma_inner=2.5,
+                                  scale_match_r=2.0,
+                                  log_slope_match=-2.0
+                                  ):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
         https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse.
@@ -468,10 +565,14 @@ class RealizationExtensions(object):
         :param mass_bin_list: a list of mass ranges in log10 e.g. [[6, 8], [8, 10]]
         :param log10_effective_cross_section_list: a list of effective cross sections in each mass range given in log10(cm^2 / gram)
         :param log10_subhalo_time_scaling: rescales the collpse timescale for subhalos relative to field halos
-        :param set_bound_mass: bool; set the bound mass of SIDM profiles to match the CDM profiles
         :param x_core_halo: the ratio of the SIDM halo core size to the halo scale radius; only used when
         evolving_SIDM_profile=False. Otherwise, the profile is determined by the parametric model by Yang et al. (2022)
+        :param evolving_SIDM_profile: toggle time-evoling SIDM profile
         :param collapse_probability: the probability that an object with an age / time_scale > 1 actually core collapses
+        :param halo_profile: the density profile for a collapsed halo, can be either TNFWC or CC_COMPOSITE
+        :param gamma_inner: the inner halo density profile (with CC_COMPOSITE)
+        :param scale_match_r: the scaling factor for mass conservation inside r_match
+        :param log_slope_match: the logarithmic slope that determines r_match
         :return: a realization of SIDM halos created from the population of CDM halos
         """
         sidm_halos = []
@@ -491,7 +592,11 @@ class RealizationExtensions(object):
                                                x_core_halo=x_core_halo,
                                                subhalo_evolution_scaling=subhalo_evolution_scaling,
                                                evolving_profile=evolving_SIDM_profile,
-                                               collapse_probability=collapse_probability)
+                                               collapse_probability=collapse_probability,
+                                               halo_profile=halo_profile,
+                                               gamma_inner=gamma_inner,
+                                               scale_match_r=scale_match_r,
+                                               log_slope_match=log_slope_match)
                 sidm_halos.append(new_halo)
             else:
                 sidm_halos.append(halo)
@@ -589,10 +694,10 @@ class RealizationExtensions(object):
         elif halo_profile == 'SPL_CORE':
             subhalo_model = PowerLawSubhalo
             fieldhalo_model = PowerLawFieldHalo
-        elif halo_profile == 'TNFWC':
+        elif halo_profile in ['TNFWC', 'CC_COMPOSITE']:
             pass
         else:
-            raise Exception('only halo profile models GNFW, SPL_CORE, and TNFWC are supported')
+            raise Exception('only halo profile models GNFW, SPL_CORE, TNFWC, and CC_COMPOSITE are supported')
 
         for i, halo in enumerate(halos):
             if i in indexes:
@@ -604,11 +709,30 @@ class RealizationExtensions(object):
                     t_c = None
                     x_core_halo = kwargs_halo['x_core_halo']
                     subhalo_evolution_scaling = 1.0
+                    evolving_profile = False
                     new_halo = self.toSIDM_single_halo(halo,
-                                                       t_c,
-                                                       subhalo_evolution_scaling,
-                                                       x_core_halo,
-                                                       evolving_profile=False)
+                                                       t_c=t_c,
+                                                       subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                                       x_core_halo=x_core_halo,
+                                                       halo_profile=halo_profile,
+                                                       evolving_profile=evolving_profile)
+                elif halo_profile == 'CC_COMPOSITE':
+                    t_c = None
+                    x_core_halo = None
+                    subhalo_evolution_scaling = 1.0
+                    evolving_profile = False
+                    gamma_inner = kwargs_halo['gamma_inner']
+                    scale_match_r = kwargs_halo['scale_match_r']
+                    log_slope_match = kwargs_halo['log_slope_match']
+                    new_halo = self.toSIDM_single_halo(halo,
+                                                       t_c=t_c,
+                                                       subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                                       x_core_halo=x_core_halo,
+                                                       halo_profile=halo_profile,
+                                                       evolving_profile=evolving_profile,
+                                                       gamma_inner=gamma_inner,
+                                                       scale_match_r=scale_match_r,
+                                                       log_slope_match=log_slope_match)
 
                 else:
                     truncation_class = halo._truncation_class

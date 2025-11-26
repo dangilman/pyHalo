@@ -260,6 +260,45 @@ class TestTNFWHalos(object):
         npt.assert_almost_equal(tnfw_fieldhalo.z, z)
         npt.assert_equal(tnfw_fieldhalo.is_subhalo, False)
 
+    def test_logarithmic_profile_slope(self):
+
+        def exact(x, t):
+            return -5 + 2 / (1 + x) + (2*t ** 2) / (t ** 2 + x ** 2)
+
+        mass = 10 ** 8
+        x = 0.0
+        y = 0.0
+        z = 0.5
+        tau = 2.2
+        halo = TNFWFieldHalo.simple_setup(mass, x, y, z, tau, self.lens_cosmo)
+        rt = halo.profile_args[1]
+        rs = halo.nfw_params[1]
+
+        r = 0.8 * rs
+        dlogrho_dlogr_exact = exact(r/rs, rt/rs)
+        dlogrho_dlogr_numerical = halo.logarithmic_profile_slope(r)
+        npt.assert_almost_equal(dlogrho_dlogr_numerical, dlogrho_dlogr_exact,2)
+        npt.assert_almost_equal(dlogrho_dlogr_numerical, halo.log_profile_slope(r, rs, rt), 2)
+
+        r_array = np.linspace(0.1, 3, 100) * rs
+        dlogrho_dlogr_numerical = halo.logarithmic_profile_slope(r_array)
+        dlogrho_dlogr_exact = exact(r_array/rs, rt/rs)
+        npt.assert_allclose(dlogrho_dlogr_numerical, dlogrho_dlogr_exact, 2)
+
+    def test_log_derivative_inverse(self):
+
+        mass = 10 ** 8
+        x = 0.0
+        y = 0.0
+        z = 0.5
+        tau = 2.2
+        halo = TNFWFieldHalo.simple_setup(mass, x, y, z, tau, self.lens_cosmo)
+        rt = halo.profile_args[1]
+        rs = halo.nfw_params[1]
+        gamma_target = -2.3
+        r_solution = halo.log_derivative_inverse(gamma_target, rs, rt)
+        log_derivative = halo.log_profile_slope(r_solution, rs, rt)
+        npt.assert_almost_equal(log_derivative, gamma_target, 5)
 
 if __name__ == '__main__':
     pytest.main()
