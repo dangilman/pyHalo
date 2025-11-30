@@ -201,6 +201,8 @@ class Halo(ABC):
                 self._zeval = self.z_infall
             else:
                 self._zeval = self.z
+        if self._zeval < 0:
+            raise ValueError('redshift must be positive, not '+str(self._zeval))
         return self._zeval
 
     @property
