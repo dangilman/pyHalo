@@ -345,6 +345,70 @@ class RealizationExtensions(object):
         new_realization._has_been_shifted = self._realization._has_been_shifted
         return new_realization
 
+    def toSIDM_halo_list(self, halo_list,
+                         t_c=None,
+                         subhalo_evolution_scaling=None,
+                         x_core_halo=None,
+                         t_over_tc_cut=0.15,
+                         evolving_profile=True,
+                         collapse_probability=1.0,
+                         halo_profile='TNFWC',
+                         gamma_inner=2.6,
+                         scale_match_r=1.6,
+                         log_slope_match=-1.9,
+                         t_over_tc=None
+                         ):
+        """
+        Performs the same function at toSIDM single_halo, but returns a realization from a halo list
+        :param halo_list: an instance of a Halo class, should be a TNFW field or sub-halo
+        :param t_c: the core collapse timescale for the halo; if specified, will use the parametric model from
+        Yang et al. (2022) to model the density profile; if None, then x_core_halo should be provided
+        :param subhalo_evolution_scaling: rescales the time evolution of subhalos relative to field halos since infall;
+        only used when t_c is provided
+        :param x_core_halo: the SIDM halo core size in units of the NFW halo scale radius; if provided, this will
+        override the functionality associated with t_c and the parametric model
+        :param t_over_tc_cut: the timescale before which halos are modeled as NFW profiles; this is intended to force
+        SIDM realizations to reduce to CDM-like realizations when t_c -> infinity
+        :param evolving_profile: bool; three possibilities:
+        - if False, and t_c > 1, will make a core-collapse profile from a TNFWC halo with the
+        specified value of x_core_halo
+        - if False, and t_c < 1, will use NFW profile
+        - if True, will use the parametric model by Yang et al. (2022) to model the profile
+        :param collapse_probability: the probability that an object actually core collapses, given its evolution
+        timescale
+        :param halo_profile: the density profile for a collapsed halo, can be either TNFWC or CC_COMPOSITE
+        :param gamma_inner: the inner halo density profile (with CC_COMPOSITE)
+        :param scale_match_r: the scaling factor for mass conservation inside r_match
+        :param log_slope_match: the logarithmic slope that determines r_match
+        :param t_over_tc: if specified, then t_c is computed for each halo such that halo_age / t_c = t_over_tc. Note that
+        this should be used only with evolving_halo = True, and should not also specify t_c directly
+        :return: an SIDM halo Realization object
+        """
+        halo_list_out = []
+        for halo in halo_list:
+            sidm_halo = self.toSIDM_single_halo(halo,
+                                                t_c,
+                                                 subhalo_evolution_scaling,
+                                                 x_core_halo,
+                                                 t_over_tc_cut,
+                                                 evolving_profile,
+                                                 collapse_probability,
+                                                 halo_profile,
+                                                 gamma_inner,
+                                                 scale_match_r,
+                                                 log_slope_match,
+                                                 t_over_tc)
+            halo_list_out.append(sidm_halo)
+        new_realization = Realization.from_halos(halo_list_out, self._realization.lens_cosmo,
+                                                 self._realization.kwargs_halo_model,
+                                                 self._realization.apply_mass_sheet_correction,
+                                                 self._realization.rendering_classes,
+                                                 self._realization._rendering_center_x,
+                                                 self._realization._rendering_center_y,
+                                                 self._realization.geometry)
+        new_realization._has_been_shifted = self._realization._has_been_shifted
+        return new_realization
+
     def toSIDM_single_halo(self, halo,
                            t_c=None,
                            subhalo_evolution_scaling=None,

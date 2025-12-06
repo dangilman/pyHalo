@@ -154,6 +154,25 @@ class TestRealizationExtensions(object):
                                       t_over_tc=0.77)
             npt.assert_almost_equal(sidm_halo.t_over_tc, 0.77)
 
+    def test_toSIDM_halo_list(self):
+
+        # with a fixed t_over_tc
+        cdm = CDM(0.5, 1.5, sigma_sub=0.1, LOS_normalization=0., log_mlow=7.0)
+        ext = RealizationExtensions(cdm)
+        halo_list = cdm.halos
+        sidm_realization = ext.toSIDM_halo_list(halo_list,
+                                                t_c=None,
+                                                subhalo_evolution_scaling=1.0,
+                                                x_core_halo=None,
+                                                t_over_tc_cut=0.0,
+                                                evolving_profile=True,
+                                                collapse_probability=1.0,
+                                                halo_profile='TNFWC',
+                                                t_over_tc=0.77
+                                                )
+        for sidm_halo in sidm_realization.halos:
+            npt.assert_almost_equal(sidm_halo.t_over_tc, 0.77)
+
     def test_toSIDM_evolving(self):
         # full time evolving profile
         cdm = CDM(0.5, 1.5, sigma_sub=0.1, LOS_normalization=0., log_mlow=7.0)
