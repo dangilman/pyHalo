@@ -353,9 +353,10 @@ class RealizationExtensions(object):
                            evolving_profile=True,
                            collapse_probability=1.0,
                            halo_profile='TNFWC',
-                           gamma_inner=None,
-                           scale_match_r=2.0,
-                           log_slope_match=-2.0):
+                           gamma_inner=2.6,
+                           scale_match_r=1.6,
+                           log_slope_match=-1.9,
+                           t_over_tc=None):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class, should be a TNFW field or sub-halo
@@ -378,12 +379,14 @@ class RealizationExtensions(object):
         :param gamma_inner: the inner halo density profile (with CC_COMPOSITE)
         :param scale_match_r: the scaling factor for mass conservation inside r_match
         :param log_slope_match: the logarithmic slope that determines r_match
+        :param t_over_tc: if specified, then t_c is computed for each halo such that halo_age / t_c = t_over_tc. Note that
+        this should be used only with evolving_halo = True, and should not also specify t_c directly
         :return: an SIDM halo
         """
         _, rt_kpc = halo.profile_args
         truncation_class = None
         concentration_class = ConcentrationConstant(None, halo.c)
-        if t_c is None:
+        if t_c is None and t_over_tc is None:
             if halo_profile == 'CC_COMPOSITE':
                 _, rs, r200 = halo.nfw_params
                 rt_kpc = halo.profile_args[1]
@@ -439,10 +442,14 @@ class RealizationExtensions(object):
         else:
             if halo_profile == 'TNFWC':
                 mass_conservation = halo.mass_3d('r200')
-                kwargs_profile = {'sidm_timescale': t_c}
-                if halo.is_subhalo:
-                    kwargs_profile['lambda_t'] = subhalo_evolution_scaling
+                if t_over_tc is None:
+                    kwargs_profile = {'sidm_timescale': t_c}
+                    if halo.is_subhalo:
+                        kwargs_profile['lambda_t'] = subhalo_evolution_scaling
+                    else:
+                        kwargs_profile['lambda_t'] = 1.0
                 else:
+                    kwargs_profile = {'sidm_timescale': halo.halo_age / t_over_tc}
                     kwargs_profile['lambda_t'] = 1.0
                 kwargs_profile['mass_conservation'] = mass_conservation
                 kwargs_profile['rt_kpc'] = rt_kpc
@@ -469,6 +476,9 @@ class RealizationExtensions(object):
                             sidm_halo.set_infall_redshift(halo.z_eval)
                         return sidm_halo
                 else:
+                    if t_over_tc is not None:
+                        print('WARNING: t_over_tc is specified for evolving_halo=False, which is not the intended '
+                              'functionality of this method')
                     if sidm_halo.t_over_tc < 1.0:
                         halo.halo_effective_age = halo_effective_age
                         halo.t_over_tc = t_over_tc

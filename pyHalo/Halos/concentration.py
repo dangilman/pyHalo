@@ -145,10 +145,9 @@ class ConcentrationLudlow(_ConcentrationCDM):
         Evaluates the concentration of an NFW profile
         :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
-        :return: halo concentratioon
+        :return: halo concentration
         """
         M_h = M * self._cosmo.h
-        z = min(15.0, z)
         c = concentration(M_h, mdef=self._mdef, model='ludlow16', z=z)
         return c
 

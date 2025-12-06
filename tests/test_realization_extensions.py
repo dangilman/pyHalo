@@ -137,8 +137,25 @@ class TestRealizationExtensions(object):
             else:
                 npt.assert_string_equal(halo.lenstronomy_ID[0], 'POINT_MASS')
 
-    def test_toSIDM_evolving(self):
+    def test_toSIDM_evolving_fix_tovertc(self):
 
+        # with a fixed t_over_tc
+        cdm = CDM(0.5, 1.5, sigma_sub=0.1, LOS_normalization=0., log_mlow=7.0)
+        ext = RealizationExtensions(cdm)
+        for cdm_halo in cdm.halos:
+            sidm_halo = ext.toSIDM_single_halo(cdm_halo,
+                                      t_c=None,
+                                      subhalo_evolution_scaling=1.0,
+                                      x_core_halo=None,
+                                      t_over_tc_cut=0.0,
+                                      evolving_profile=True,
+                                      collapse_probability=1.0,
+                                      halo_profile='TNFWC',
+                                      t_over_tc=0.77)
+            npt.assert_almost_equal(sidm_halo.t_over_tc, 0.77)
+
+    def test_toSIDM_evolving(self):
+        # full time evolving profile
         cdm = CDM(0.5, 1.5, sigma_sub=0.1, LOS_normalization=0., log_mlow=7.0)
         ext = RealizationExtensions(cdm)
         mass_bin_list = [[6, 10]]

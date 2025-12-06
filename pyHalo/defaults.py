@@ -21,7 +21,6 @@ class CosmoDefaults(object):
         # self.curvature = 'flat'
         # self.ns = 0.9608
         # self.power_law = False
-
         # default from PLANCK2018
         self.H0 = 67.5
         self.Ob0 = 0.049

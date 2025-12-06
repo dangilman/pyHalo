@@ -134,7 +134,6 @@ class TNFWFieldHalo(Halo):
         """
         Computes the halo concentration (once)
         """
-
         if not hasattr(self, '_c'):
             self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
         return self._c
