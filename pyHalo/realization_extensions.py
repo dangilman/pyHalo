@@ -748,7 +748,7 @@ class RealizationExtensions(object):
 
         :param indexes: a list of integers corresponding to halos in the realization that will be transformed into
         collapsed profiles
-        :param halo_profile: specifies whether to transform to, ether SPL_CORE, GNFW, TNFWC
+        :param halo_profile: specifies whether to transform to, ether SPL_CORE, GNFW, TNFWC, CC_COMPOSITE
         :param kwargs_halo: the keyword arguments for the collapsed halo profile
         - For SPL_CORE: should include 'log_slope_halo' and 'x_core_halo', the log profile slope and core size in units of
         NFW r_s

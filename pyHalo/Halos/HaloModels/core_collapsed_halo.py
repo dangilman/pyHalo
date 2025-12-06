@@ -2,10 +2,7 @@ import numpy as np
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePowerlaw
 from pyHalo.Halos.halo_base import Halo
-from scipy.optimize import minimize
 from copy import deepcopy
-
-
 
 class CoreCollapsedHalo(Halo):
     _pseudo_nfw = False
@@ -123,17 +120,10 @@ class CoreCollapsedHalo(Halo):
         return ['CORE_COLLAPSED_HALO']
 
     @property
-    def profile_matching(self):
+    def profile_args(self):
         """
 
         :return:
-        """
-        return self._penalty_final_R200, self._penalty_final_R
-
-    @property
-    def profile_args(self):
-        """
-        See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_profile_args'):
             # solve for lens model parameters that conserve mass inside rs and r200
@@ -144,26 +134,39 @@ class CoreCollapsedHalo(Halo):
             sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
             sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
             rhos, rs, r200 = self.nfw_params
-            x0 = (0.001, 0.001)
-            r200_arcsec = r200 / kpc_per_arcsec
             Rs_angle = rs / kpc_per_arcsec
             r_trunc_angle = rt_kpc / kpc_per_arcsec
             Rs_angle_inner = self._args['Rs_inner_kpc'] / kpc_per_arcsec
-            args = (r200_arcsec, gamma_inner, gamma_outer, Rs_angle, Rs_angle_inner, r_trunc_angle, sigma_crit_arcsec,
-                    self._args['m_target_r200'], self._args['m_target_R'], self._args['r_match_kpc'] / kpc_per_arcsec,
-                    10, 10)
-            opt = minimize(self.constraint_mass, x0=x0, args=args, method='Nelder-Mead')
-            alpha_Rs_center, alpha_Rs_envelope = opt['x']
-            args = (r200_arcsec, gamma_inner, gamma_outer, Rs_angle, Rs_angle_inner, r_trunc_angle, sigma_crit_arcsec,
-                    self._args['m_target_r200'], self._args['m_target_R'], self._args['r_match_kpc'] / kpc_per_arcsec,
-                    1.0, 0.0)
-            penalty_final_m200 = self.constraint_mass(opt['x'], *args)
-            self._penalty_final_R200 = penalty_final_m200
-            args = (r200_arcsec, gamma_inner, gamma_outer, Rs_angle, Rs_angle_inner, r_trunc_angle, sigma_crit_arcsec,
-                    self._args['m_target_r200'], self._args['m_target_R'], self._args['r_match_kpc'] / kpc_per_arcsec,
-                    0.0, 1.0)
-            penalty_final_R = self.constraint_mass(opt['x'], *args)
-            self._penalty_final_R = penalty_final_R
+
+            rho0 = self._profile_envelope.alpha2rho0(1.0, Rs_angle)
+            r_match_arcsec = self._args['r_match_kpc'] / kpc_per_arcsec
+            r200_arcsec = r200 / kpc_per_arcsec
+            a = self._profile_envelope.mass_3d(r_match_arcsec,
+                                               Rs_angle,
+                                               rho0,
+                                               r_trunc_angle/Rs_angle) # mass enclosed NFW inside r_match
+            b = self._profile_center.mass_3d_lens(r_match_arcsec,
+                                                  Rs_angle_inner,
+                                                  1.0,
+                                                  gamma_inner,
+                                                  gamma_outer)  # mass enclosed NFW inside r_match
+            c = self._profile_envelope.mass_3d(r200_arcsec,
+                                               Rs_angle,
+                                               rho0,
+                                               r_trunc_angle / Rs_angle)  # mass enclosed NFW inside r_match
+            d = self._profile_center.mass_3d_lens(r200_arcsec,
+                                                  Rs_angle_inner,
+                                                  1.0,
+                                                  gamma_inner,
+                                                  gamma_outer)  # mass enclosed NFW inside r_match
+            x = np.array([self._args['m_target_R'], self._args['m_target_r200']])
+            M_inverse = (1 / (a * d - b * c)) * np.array([[d, -b], [-c, a]])
+            y = np.matmul(M_inverse, x) / sigma_crit_arcsec
+            alpha_Rs_envelope, alpha_Rs_center = y[0], y[1]
+            if alpha_Rs_center < 0 or alpha_Rs_envelope < 0:
+                raise Exception('alpha_Rs_envelope and alpha_Rs_center cannot be negative')
+            assert np.isfinite(alpha_Rs_envelope)
+            assert np.isfinite(alpha_Rs_center)
             self._profile_args = (alpha_Rs_center, Rs_angle, Rs_angle_inner, gamma_inner,
                                   gamma_outer, alpha_Rs_envelope, Rs_angle, r_trunc_angle)
 
@@ -195,30 +198,3 @@ class CoreCollapsedHalo(Halo):
         :return:
         """
         return self.halo_effective_age / self.sidm_timescale
-
-    def constraint_mass(self, x, r200_arcsec, gamma_inner, gamma_outer, Rs_angle, Rs_angle_inner, r_trunc_angle,
-                        sigma_crit_arcsec,
-                        m_target_r200,
-                        m_target_r,
-                        r_match_arcsec,
-                        weight_r200=1.0,
-                        weight_R=1.0):
-
-        (alpha_Rs_center, alpha_Rs_envelope) = x
-        if alpha_Rs_center < 0:
-            return np.inf
-        if alpha_Rs_envelope < 0:
-            return np.inf
-        rho0 = self._profile_envelope.alpha2rho0(alpha_Rs_envelope, Rs_angle)
-        envelope_mass = self._profile_envelope.mass_3d(r200_arcsec, Rs_angle, rho0, r_trunc_angle / Rs_angle)
-        central_mass = self._profile_center.mass_3d_lens(r200_arcsec, Rs_angle_inner, alpha_Rs_center, gamma_inner,
-                                                         gamma_outer)
-        total_mass_r200 = sigma_crit_arcsec * (envelope_mass + central_mass)
-        penalty_r200 = abs(total_mass_r200 / m_target_r200 - 1)
-
-        envelope_mass = self._profile_envelope.mass_3d(r_match_arcsec, Rs_angle, rho0, r_trunc_angle / Rs_angle)
-        central_mass = self._profile_center.mass_3d_lens(r_match_arcsec, Rs_angle_inner, alpha_Rs_center, gamma_inner,
-                                                         gamma_outer)
-        total_mass_R = sigma_crit_arcsec * (envelope_mass + central_mass)
-        penalty_R = abs(total_mass_R / m_target_r - 1)
-        return penalty_r200 * weight_r200 + penalty_R * weight_R

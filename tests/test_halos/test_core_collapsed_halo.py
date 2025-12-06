@@ -237,9 +237,7 @@ class TestCoreCollapsedHalo(object):
 
         halo = CoreCollapsedHalo(mass, x, y, r3d, z,
                                  sub_flag, lens_cosmo, args, truncation_class, concentration_class, unique_tag)
-        penalty1, penalty2 = halo.profile_matching
-        npt.assert_equal(penalty1,None)
-        npt.assert_equal(penalty2, None)
+
         r = np.logspace(-3.5, np.log10(tnfw_subhalo.c), 1000) * rs
         density_inner, density_outer = halo.component_density_profile_3d(r)
         m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
@@ -249,10 +247,6 @@ class TestCoreCollapsedHalo(object):
         density_inner, density_outer = halo.component_density_profile_3d(r)
         m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1+m_num / m_target_R), 0.04)
-
-        penalty1, penalty2 = halo.profile_matching
-        npt.assert_array_less(penalty1, 0.05)
-        npt.assert_array_less(penalty2, 0.05)
 
     def test_through_realization_extensions(self):
 
@@ -296,6 +290,7 @@ class TestCoreCollapsedHalo(object):
         density_inner, density_outer = halo.component_density_profile_3d(r)
         m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1 + m_num / m_target_R), 0.04)
+
 
 if __name__ == '__main__':
     pytest.main()
