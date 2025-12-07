@@ -68,53 +68,6 @@ class RealizationExtensions(object):
                                              self._realization.geometry)
         return realization
 
-    def add_prompt_cusps(self, a=0.04, b=-0.8, c=0.15):
-        """
-
-        :param a: normalization of cusp mass / halo mass relation
-        :param b: exponent of cusp mass / halo mass relation
-        :param c: scatter of relation in dex
-        :return: an instance of Realization with prompt cusps added
-        """
-        from pyHalo.Halos.HaloModels.prompt_cusp import PrompCusp
-        halo_list = []
-        for halo in self._realization.halos:
-            _ = halo.profile_args # need to set this before doing anything else
-            cuspM_haloM_median = a * (halo.mass / 10 ** 7.25) ** b
-            log10_cuspM_haloM_median = np.log10(cuspM_haloM_median)
-            if c == 0:
-                scatter = 0.0
-            elif c > 0:
-                scatter = np.random.normal(0, c)
-            else:
-                raise Exception('scatter must be > 0!')
-            log10_cuspM_over_haloM = log10_cuspM_haloM_median + scatter
-            cuspM_over_haloM = 10 ** log10_cuspM_over_haloM
-            cuspM = halo.mass * cuspM_over_haloM
-            rescale_norm = 1 - cuspM_over_haloM
-            log10_cuspA = 1.2 * log10_cuspM_haloM_median/(-3.5) + 10.25 # in Mpc^-1.5
-            cuspA = 10 ** log10_cuspA
-            R = (3 * cuspM / (8 * np.pi * cuspA)) ** (2/3) # in mpc
-            args = {'cusp_A': cuspA, 'cusp_R': R}
-            prompt_cusp = PrompCusp(halo.mass, halo.x, halo.y, halo.r3d,
-                                    halo.z, halo.is_subhalo, halo.lens_cosmo,
-                                    args, halo._truncation_class, halo._concentration_class,
-                                    halo.unique_tag)
-            if halo.is_subhalo:
-                prompt_cusp.set_bound_mass(halo.bound_mass)
-            halo._rescale_norm *= rescale_norm
-            halo_list.append(halo)
-            halo_list.append(prompt_cusp)
-
-        realization = Realization.from_halos(halo_list, self._realization.lens_cosmo,
-                               self._realization.kwargs_halo_model,
-                               self._realization.apply_mass_sheet_correction,
-                               self._realization.rendering_classes,
-                               self._realization._rendering_center_x,
-                               self._realization._rendering_center_y,
-                               self._realization.geometry)
-        return realization
-
     def add_black_holes(self, log10_mass_ratio,
                         f,
                         log10_mlow_halos_subres=5.0,
@@ -949,12 +902,8 @@ class RealizationExtensions(object):
                                                    delta_z_list, self._realization)
 
         for image_index, (x_image_interp, y_image_interp) in enumerate(zip(x_image_interp_list, y_image_interp_list)):
-            masses, x, y, r3d, redshifts, subhalo_flag, rescale_indicies, rescale_factors = correlated_structure.render(
+            masses, x, y, r3d, redshifts, subhalo_flag, rescale_factor = correlated_structure.render(
                 r_max, x_image_interp, y_image_interp, arcsec_per_pixel)
-
-            if rescale_normalizations:
-                for i, index in enumerate(rescale_indicies):
-                    realization_copy.halos[index].rescale_normalization(rescale_factors[i])
 
             mdefs = [mass_definition] * len(masses)
             kwargs_halo_model = {'truncation_model': None, 'concentration_model': None, 'kwargs_density_profile': {}}
@@ -964,13 +913,19 @@ class RealizationExtensions(object):
             elif image_index>0:
                 realization_pbh = realization_pbh.join(Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
                                            self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model))
-
+        if rescale_normalizations:
+            for halo in realization_copy.halos:
+                halo.rescale_normalization(rescale_factor, log=False, force=True)
         new_realization = realization_copy.join(realization_pbh)
-
         return new_realization
 
-    def add_primordial_black_holes(self, pbh_mass_fraction, kwargs_pbh_mass_function, mass_fraction_in_halos,
-                                   x_image_interp_list, y_image_interp_list, r_max_arcsec, arcsec_per_pixel=0.005,
+    def add_primordial_black_holes(self, pbh_mass_fraction,
+                                   logM_pbh,
+                                   mass_fraction_in_halos,
+                                   x_image_interp_list,
+                                   y_image_interp_list,
+                                   r_max_arcsec,
+                                   arcsec_per_pixel=0.005,
                                    rescale_normalizations=True):
 
         """
@@ -1021,13 +976,10 @@ class RealizationExtensions(object):
                 rendering_radius = r_max * geometry.rendering_scale(zi)
                 spatial_distribution_model_smooth = Uniform(rendering_radius, geometry)
 
-                if kwargs_pbh_mass_function['mass_function_type'] == 'DELTA':
-                    rho_smooth = mass_fraction_smooth * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
-                    volume = geometry.volume_element_comoving(zi, delta_zi)
-                    mass_function_smooth = DeltaFunction(10 ** kwargs_pbh_mass_function['logM'],
-                                                         volume, rho_smooth, draw_poisson=True)
-                else:
-                    raise Exception('no mass function type for PBH currently implemented besides DELTA')
+                rho_smooth = mass_fraction_smooth * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
+                volume = geometry.volume_element_comoving(zi, delta_zi)
+                mass_function_smooth = DeltaFunction(10 ** logM_pbh,
+                                                     volume, rho_smooth, draw_poisson=True)
 
                 m_smooth = mass_function_smooth.draw()
                 if len(m_smooth) > 0:
@@ -1047,7 +999,11 @@ class RealizationExtensions(object):
         realization_smooth = Realization(masses, xcoords, ycoords, r3d, mdefs, redshifts, subhalo_flag,
                                          self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model,
                                          mass_sheet_correction=False)
+        kwargs_pbh_mass_function = {}
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
+        kwargs_pbh_mass_function['logM'] = logM_pbh
+        kwargs_pbh_mass_function['mass_function_type'] = 'DELTA'
+        kwargs_pbh_mass_function['mass_function_type'] == 'DELTA'
         for ii, (x_image_interp, y_image_interp, r_max) in enumerate(zip(x_image_interp_list, y_image_interp_list, r_max_arcsec)):
             realization_with_clustering_temp = self.add_correlated_structure(DeltaFunction,
                                  kwargs_pbh_mass_function,

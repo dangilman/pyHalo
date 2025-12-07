@@ -679,7 +679,7 @@ class TestRealizationExtensions(object):
         lens_model_list_init, _, kwargs_init, _ = realization.lensing_quantities()
         ext = RealizationExtensions(realization)
         mass_fraction = 0.1
-        kwargs_mass_function = {'mass_function_type': 'DELTA', 'logM': 5., 'mass_fraction': 0.5}
+        logM_pbh = 5.0
         fraction_in_halos = 0.9
 
         _zlist = np.round(np.arange(0.00, 1.02, 0.02), 2)
@@ -693,7 +693,8 @@ class TestRealizationExtensions(object):
         r_array = np.zeros(len(x_image_interp_list))
         r_array[0:] = rmax
 
-        pbh_realization = ext.add_primordial_black_holes(mass_fraction, kwargs_mass_function,
+        pbh_realization = ext.add_primordial_black_holes(mass_fraction,
+                                                         logM_pbh,
                                                          fraction_in_halos,
                                                          x_image_interp_list,
                                                          y_image_interp_list,

@@ -61,25 +61,36 @@ class Halo(ABC):
     def rescale_norm(self):
         return self._rescale_norm
 
-    def rescale_normalization(self, factor, force=False):
+    def rescale_normalization(self, factor, force=False, log=True):
         """
         Sets the rescaling factor for the normalization (only can do this once)
         :param factor:
+        :param force:
+        :param log:
         :return:
         """
         if force:
-            self._rescale_norm = factor
-            self._rescaled_once = True
-        else:
-            if self._rescaled_once:
-                pass
-            else:
+            if log:
                 self._rescaled_once = True
-                self._rescale_norm *= factor
-                if hasattr(self, '_params_physical'):
-                    delattr(self, '_params_physical')
-                if hasattr(self, '_kwargs_lenstronomy'):
-                    delattr(self, '_kwargs_lenstronomy')
+            self._rescale_norm *= factor
+            if hasattr(self, '_params_physical'):
+                delattr(self, '_params_physical')
+            if hasattr(self, '_kwargs_lenstronomy'):
+                delattr(self, '_kwargs_lenstronomy')
+            if hasattr(self, '_nfw_params'):
+                delattr(self, '_nfw_params')
+        elif self._rescaled_once:
+            pass
+        else:
+            if log:
+                self._rescaled_once = True
+            self._rescale_norm *= factor
+            if hasattr(self, '_params_physical'):
+                delattr(self, '_params_physical')
+            if hasattr(self, '_kwargs_lenstronomy'):
+                delattr(self, '_kwargs_lenstronomy')
+            if hasattr(self, '_nfw_params'):
+                delattr(self, '_nfw_params')
 
     @property
     @abstractmethod

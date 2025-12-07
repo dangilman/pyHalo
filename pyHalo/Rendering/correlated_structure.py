@@ -27,7 +27,7 @@ class CorrelatedStructure(RenderingClassBase):
         """
         Generates halo masses and positions for correlated structure along the line of sight around
         the angular coordinate of each light ray
-        :r_max: the maximum radius in arcsec around (x_center, y_center) around which to generate halos
+        :rmax: the maximum radius in arcsec around (x_center, y_center) around which to generate halos
         :param x_center_interp: an interp1d function that returns the x angular position of a
         ray given a comoving distance
         :param y_center_interp: an interp1d function that returns the y angular position of a
@@ -43,8 +43,6 @@ class CorrelatedStructure(RenderingClassBase):
 
         plane_redshifts = self._realization.unique_redshifts
         delta_z = []
-        rescale_inds = []
-        rescale_factors = []
 
         for i, zi in enumerate(plane_redshifts[0:-1]):
             delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
@@ -64,43 +62,33 @@ class CorrelatedStructure(RenderingClassBase):
                 x = np.append(x, _x)
                 y = np.append(y, _y)
                 redshifts = np.append(redshifts, _z)
-                rescale_inds += halo_inds
-                rescale_factors += [rescale_factor] * len(halo_inds)
 
         subhalo_flag = [False] * len(masses)
         r3d = np.array([None] * len(masses))
 
-        return masses, x, y, r3d, redshifts, subhalo_flag, rescale_inds, rescale_factors
+        return masses, x, y, r3d, redshifts, subhalo_flag, rescale_factor
 
     def render_at_z(self, z, angular_coordinate_x, angular_coordinate_y, rendering_radius, arcsec_per_pixel):
-
         """
 
-        :param n: number of objects to render
-        :param z: redshift
-        :param angular_coordinate_x: the angular coordinate in arcsec of a light ray at redshift z
-        :param angular_coordinate_y: the angular coordinate in arcsec of a light ray at redshift z
-        :param rendering_radius: the angular radius inside which to render objects
-        :param arcsec_per_pixel: sets the spatial resolution for the rendering of correlated structure
-        :return: the positions in arcsec of the rendered objects
+        :param z:
+        :param angular_coordinate_x:
+        :param angular_coordinate_y:
+        :param rendering_radius:
+        :param arcsec_per_pixel:
+        :return:
         """
-
-        kpc_per_asec = self._cylinder_geometry.kpc_per_arcsec(z)
 
         pdf, mass_in_area, halo_indexes = self._kappa_at_lens_plane(z, angular_coordinate_x, angular_coordinate_y, rendering_radius,
                                                       arcsec_per_pixel)
-
-        if np.sum(pdf) == 0:
+        if len(halo_indexes) == 0: # nothing here
             return np.array([]), np.array([]), np.array([]), [], 1.
-
         m, rescale_factor = self.render_masses_at_z(mass_in_area)
-
+        kpc_per_asec = self._cylinder_geometry.kpc_per_arcsec(z)
         n_halos = len(m)
         if n_halos > 0:
             x_kpc, y_kpc = self._spatial_distribution_model.draw(n_halos, rendering_radius, pdf, z,
                                                                 angular_coordinate_x, angular_coordinate_y)
-
-
             x_arcsec = x_kpc / kpc_per_asec
             y_arcsec = y_kpc / kpc_per_asec
             return m, x_arcsec, y_arcsec, halo_indexes, rescale_factor
@@ -114,7 +102,6 @@ class CorrelatedStructure(RenderingClassBase):
         :return: halo masses at the desired redshift in units Msun, and the factor by which to rescale the
         original halo profiles
         """
-
         if self._mass_function_model.name == 'DELTA_FUNCTION':
             rescale_factor = 1.-self._kwargs_mass_function['mass_fraction']
             volume = 1.
@@ -155,7 +142,7 @@ class CorrelatedStructure(RenderingClassBase):
             return np.array([]), np.array([]), []
 
         lens_model = LensModel(lens_model_list)
-        npix = int(2 * rendering_radius / arcsec_per_pixel)
+        npix = max(20, int(2 * rendering_radius / arcsec_per_pixel))
         _r = np.linspace(-rendering_radius, rendering_radius, npix)
         xx, yy = np.meshgrid(_r, _r)
         shape0 = xx.shape
@@ -167,8 +154,7 @@ class CorrelatedStructure(RenderingClassBase):
         inds_nan = np.where(np.isnan(pdf))
         pdf[inds_nan] = 0.
         npixels = len(inds_zero)
-        rendering_radius_mpc = rendering_radius * (0.001 * self._cylinder_geometry.kpc_per_arcsec(z))
-        effective_area = np.pi * rendering_radius_mpc ** 2 / npixels
+        effective_area = np.pi * rendering_radius ** 2 / npixels
         mass_in_area = self._mass_in_area(pdf, z, effective_area)
         return pdf.reshape(shape0), mass_in_area, halo_indexes
 
@@ -178,11 +164,10 @@ class CorrelatedStructure(RenderingClassBase):
 
         :param kappa_pdf: a convergence map at the given redshift
         :param z: redshift
-        :param area: the "area" of the convergence map in Mpc^2/pixel
+        :param area: the "area" of the convergence map in arcsec^2/pixel
         :return: the total mass contained in the convergence map
         """
-        sigma_crit = self._realization.lens_cosmo.get_sigma_crit_lensing(
-            z, self._realization.lens_cosmo.z_source)
-        mass_in_area = np.sum(kappa_pdf * sigma_crit) * area
+        sigma_crit_arcsec = self._realization.lens_cosmo.sigma_crit_arcsecond_interp(z)
+        mass_in_area = np.sum(kappa_pdf * sigma_crit_arcsec) * area
         return mass_in_area
 
