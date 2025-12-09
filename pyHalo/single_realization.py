@@ -99,7 +99,6 @@ class Realization(object):
         self._loaded_models = {}
         self._has_been_shifted = False
         self.kwargs_halo_model = kwargs_halo_model
-
         if halos is None:
             for mi, xi, yi, r3di, mdefi, zi, sub_flag in zip(masses, x, y, r3d,
                            mdefs, z, subhalo_flag):

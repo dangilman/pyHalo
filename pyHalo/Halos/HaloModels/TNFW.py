@@ -286,10 +286,12 @@ class TNFWSubhalo(TNFWFieldHalo):
         Computes the mass inside the virial radius (with truncation effects included)
         :return: the mass inside r = c * r_s
         """
-        if self._truncation_class.name in ['TruncationGalacticus', 'TruncationGalacticusKeeley24']:
+        if self._truncation_class.name in ['TruncationGalacticus',
+                                           'TruncationGalacticusKeeley24',
+                                           'TruncationGalacticusApproxCDM']:
             pass
         else:
-            raise Exception('this method can only be called when using the TruncationGalacticus class')
+            raise Exception('this method can only be called when using one of the TruncationGalacticus class')
         if not hasattr(self, '_mbound_galacticus_definition'):
             self._mbound_galacticus_definition = self._truncation_class.calculate_mbound(self)
         return self._mbound_galacticus_definition

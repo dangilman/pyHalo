@@ -885,7 +885,8 @@ class RealizationExtensions(object):
                                  mass_definition,
                                    x_image_interp_list,
                                    y_image_interp_list,
-                                   arcsec_per_pixel, r_max,
+                                   arcsec_per_pixel,
+                                 r_max,
                                  rescale_normalizations=True):
 
         """
@@ -900,11 +901,11 @@ class RealizationExtensions(object):
         correlated_structure = CorrelatedStructure(mass_function_model, kwargs_mass_function,
                  self._realization.geometry, self._realization.lens_cosmo, lens_plane_redshifts,
                                                    delta_z_list, self._realization)
-
+        rescale_indicies = []
         for image_index, (x_image_interp, y_image_interp) in enumerate(zip(x_image_interp_list, y_image_interp_list)):
-            masses, x, y, r3d, redshifts, subhalo_flag, rescale_factor = correlated_structure.render(
+            masses, x, y, r3d, redshifts, subhalo_flag, rescale_factor, _rescale_indicies = correlated_structure.render(
                 r_max, x_image_interp, y_image_interp, arcsec_per_pixel)
-
+            rescale_indicies += list(_rescale_indicies)
             mdefs = [mass_definition] * len(masses)
             kwargs_halo_model = {'truncation_model': None, 'concentration_model': None, 'kwargs_density_profile': {}}
             if image_index==0:
@@ -914,8 +915,8 @@ class RealizationExtensions(object):
                 realization_pbh = realization_pbh.join(Realization(masses, x, y, r3d, mdefs, redshifts, subhalo_flag,
                                            self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model))
         if rescale_normalizations:
-            for halo in realization_copy.halos:
-                halo.rescale_normalization(rescale_factor, log=False, force=True)
+            for halo_index in np.unique(rescale_indicies):
+                realization_copy.halos[halo_index].rescale_normalization(rescale_factor, log=False, force=True)
         new_realization = realization_copy.join(realization_pbh)
         return new_realization
 
@@ -1003,20 +1004,14 @@ class RealizationExtensions(object):
         kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
         kwargs_pbh_mass_function['logM'] = logM_pbh
         kwargs_pbh_mass_function['mass_function_type'] = 'DELTA'
-        kwargs_pbh_mass_function['mass_function_type'] == 'DELTA'
-        for ii, (x_image_interp, y_image_interp, r_max) in enumerate(zip(x_image_interp_list, y_image_interp_list, r_max_arcsec)):
-            realization_with_clustering_temp = self.add_correlated_structure(DeltaFunction,
-                                 kwargs_pbh_mass_function,
-                                 mass_definition,
-                                   [x_image_interp],
-                                   [y_image_interp],
-                                   arcsec_per_pixel, r_max,
-                                 rescale_normalizations)
-            if ii == 0:
-                realization_with_clustering = realization_with_clustering_temp
-                continue # first time through loop
-            realization_with_clustering = realization_with_clustering.join(realization_with_clustering_temp)
-
+        realization_with_clustering = self.add_correlated_structure(DeltaFunction,
+                                                                         kwargs_pbh_mass_function,
+                                                                         mass_definition,
+                                                                        x_image_interp_list,
+                                                                        y_image_interp_list,
+                                                                         arcsec_per_pixel,
+                                                                            r_max,
+                                                                         rescale_normalizations)
         return realization_with_clustering.join(realization_smooth)
 
 def _get_number_flucs(realization, de_Broglie_wavelength, fluctuation_size_scale, n_fluc_scale, shape, args):

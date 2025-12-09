@@ -5,6 +5,8 @@ from colossus.lss import peaks
 from colossus.halo import splashback
 from pyHalo.Halos.galacticus_truncation.interp_mass_loss import InterpGalacticus, InterpGalacticusKeeley24
 from pyHalo.Halos.galacticus_truncation.transfer_function_density_profile import compute_r_te_and_f_t
+from scipy.stats import truncnorm
+from scipy.interpolate import interp1d
 
 
 class TruncationSplashBack(object):
@@ -342,20 +344,97 @@ class TruncationGalacticus(object):
         halo.rescale_normalization(f_t)
         return r_te
 
+class TruncationGalacticusApproxCDM(object):
+    name = "TruncationGalacticusApproxCDM"
+    """
+    This approximates the TruncationGalacticus predictions for CDM halos
+    """
+    def __init__(self, lens_cosmo):
+        """
+
+        :param z_lens: host halo redshift
+        """
+        z_lens = lens_cosmo.z_lens
+        z_lens = max(z_lens, 0.2)
+        z_lens = min(z_lens, 1.2)
+        self._lens_cosmo = lens_cosmo
+        scale_array = np.array([2.5, 1.8, 1.2, 0.6])
+        loc_array = np.array([-4.0, -1.3, -1.0, -1.0])
+        zlens_array = [0.2, 0.5, 0.8, 1.2]
+        scale_interp = interp1d(zlens_array, scale_array)
+        loc_interp = interp1d(zlens_array, loc_array)
+        self._scale = scale_interp(z_lens)
+        self._loc = loc_interp(z_lens)
+        self._tau_mf_interpolation = tau_mf_interpolation()
+
+    @property
+    def compute_f_bound(self):
+        """
+
+        :return:
+        """
+        a_trunc = -10
+        b_trunc = 0.0
+        a, b = (a_trunc - self._loc) / self._scale, (b_trunc - self._loc) / self._scale
+        log10f_bound = truncnorm.rvs(a=a, b=b, scale=self._scale, loc=self._loc, size=1)
+        return 10**float(log10f_bound)
+
+    def calculate_mbound(self, halo):
+        """
+        compute the bound mass
+        :param halo:
+        :return:
+        """
+        m_bound = halo.mass * self.compute_f_bound
+        return m_bound
+
+    def truncation_radius_halo(self, halo, psuedo_nfw=False):
+        """
+        Compute the truncation radius using the class attributes of an instance of Halo
+        :param halo: an instance of halo
+        :return: the truncation radius in physical kpc
+        """
+
+        halo_mass = halo.mass
+        infall_concentration = halo.c
+        m_bound = self.calculate_mbound(halo)
+        _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
+                                                           infall_concentration,
+                                                           halo.z_eval,
+                                                           psuedo_nfw)
+        r_te, f_t = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
+        halo.rescale_normalization(f_t)
+        return r_te
+
+    def truncation_radius_from_bound_mass(self, halo, m_bound, psuedo_nfw=False):
+        """
+        This method computes the truncation radius given the bound mass of a halo
+        :param halo: an instance of a Halo class
+        :param m_bound: the bound mass in solar masses
+        :param psuedo_nfw: see documentation in LensCosmo / nfw_parameter classes
+        :return: the truncation radius in physical kpc
+        """
+        halo_mass = halo.mass
+        infall_concentration = halo.c
+        _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
+                                                           infall_concentration,
+                                                           halo.z_eval,
+                                                           psuedo_nfw)
+        r_te, f_t = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
+        halo.rescale_normalization(f_t)
+        return r_te
+
     def truncation_radius(self, halo_mass, infall_concentration,
-                          time_since_infall, z_eval, psuedo_nfw=False):
+                          z_eval, psuedo_nfw=False):
         """
 
         :param halo_mass:
         :param infall_concentration:
-        :param time_since_infall:
         :param chost:
         :param z_eval:
         :return:
         """
-        log10c = np.log10(infall_concentration)
-        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
-        m_bound = halo_mass * 10 ** log10mbound_over_minfall
+        m_bound = self.calculate_mbound(halo_mass)
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
                                                         z_eval,

@@ -14,10 +14,21 @@ class CorrelatedStructure(RenderingClassBase):
     """
     def __init__(self, mass_function_model, kwargs_mass_function,
                  geometry, lens_cosmo, lens_plane_redshifts, delta_z_list, realization):
+        """
 
+        :param mass_function_model:
+        :param kwargs_mass_function:
+        :param geometry:
+        :param lens_cosmo:
+        :param lens_plane_redshifts:
+        :param delta_z_list:
+        :param realization:
+        """
         self._cylinder_geometry = Geometry(lens_cosmo.cosmo, lens_cosmo.z_lens, lens_cosmo.z_source,
                                            1.0, 'CYLINDER')
         spatial_distribution_model = Correlated2D(self._cylinder_geometry)
+        self._halo_redshifts = np.array([halo.z for halo in realization.halos])
+        self._halo_x, self._halo_y = np.array([halo.x for halo in realization.halos]), np.array([halo.y for halo in realization.halos])
         super(CorrelatedStructure, self).__init__(mass_function_model, kwargs_mass_function, spatial_distribution_model,
                  geometry, lens_cosmo, lens_plane_redshifts, delta_z_list)
         self._realization = realization
@@ -47,7 +58,7 @@ class CorrelatedStructure(RenderingClassBase):
         for i, zi in enumerate(plane_redshifts[0:-1]):
             delta_z.append(plane_redshifts[i + 1] - plane_redshifts[i])
         delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
-
+        rescale_indexes = []
         for z, dz in zip(plane_redshifts, delta_z):
 
             #rendering_radius = rmax * self._cylinder_geometry.rendering_scale(z)
@@ -56,6 +67,11 @@ class CorrelatedStructure(RenderingClassBase):
             y_angle = y_center_interp(d)
             _m, _x, _y, halo_inds, rescale_factor = self.render_at_z(z, x_angle, y_angle,
                                                 rmax, arcsec_per_pixel)
+            # find all halos within rmax of coordinate
+            _x, _y = self._halo_x, self._halo_y
+            dr = np.hypot(_x - x_angle, _y - y_angle)
+            indexes = list(np.where(np.logical_and(self._halo_redshifts == z, dr < rmax))[0])
+            rescale_indexes += list(indexes)
             if len(_m) > 0:
                 _z = np.array([z] * len(_x))
                 masses = np.append(masses, _m)
@@ -66,7 +82,7 @@ class CorrelatedStructure(RenderingClassBase):
         subhalo_flag = [False] * len(masses)
         r3d = np.array([None] * len(masses))
 
-        return masses, x, y, r3d, redshifts, subhalo_flag, rescale_factor
+        return masses, x, y, r3d, redshifts, subhalo_flag, rescale_factor, np.unique(rescale_indexes)
 
     def render_at_z(self, z, angular_coordinate_x, angular_coordinate_y, rendering_radius, arcsec_per_pixel):
         """

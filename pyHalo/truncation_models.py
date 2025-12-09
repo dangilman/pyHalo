@@ -1,6 +1,7 @@
-from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, \
+from pyHalo.Halos.tidal_truncation import (TruncationRN, TruncationRoche, \
     TruncationSplashBack, TruncateMeanDensity, \
-    TruncationGalacticus, ConstantTruncationArcsec, TruncationGalacticusKeeley24, Multiple_RS, TruncationBoundMassPDF
+    TruncationGalacticus, ConstantTruncationArcsec, TruncationGalacticusKeeley24, Multiple_RS, TruncationBoundMassPDF,
+                                           TruncationGalacticusApproxCDM)
 
 
 def truncation_models(model_name):
@@ -40,6 +41,8 @@ def truncation_models(model_name):
             return Multiple_RS, kwargs_model
         elif model_name == 'BOUND_MASS_PDF':
             return TruncationBoundMassPDF, kwargs_model
+        elif model_name == 'TRUNCATION_GALACTICUS_CDM_APPROX':
+            return TruncationGalacticusApproxCDM, kwargs_model
         else:
             raise Exception('model '+str(model_name)+' not recognized')
     else:
