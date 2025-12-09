@@ -344,6 +344,27 @@ class TruncationGalacticus(object):
         halo.rescale_normalization(f_t)
         return r_te
 
+    def truncation_radius(self, halo_mass, infall_concentration,
+                          time_since_infall, z_eval, psuedo_nfw=False):
+        """
+
+        :param halo_mass:
+        :param infall_concentration:
+        :param time_since_infall:
+        :param chost:
+        :param z_eval:
+        :return:
+        """
+        log10c = np.log10(infall_concentration)
+        log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
+        m_bound = halo_mass * 10 ** log10mbound_over_minfall
+        _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
+                                                        infall_concentration,
+                                                        z_eval,
+                                                        psuedo_nfw)
+        r_te, _ = compute_r_te_and_f_t(m_bound, halo_mass, r200, infall_concentration)
+        return r_te
+
 class TruncationGalacticusApproxCDM(object):
     name = "TruncationGalacticusApproxCDM"
     """
