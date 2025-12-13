@@ -13,7 +13,11 @@ import numpy as np
 from copy import deepcopy
 
 
-def realization_at_z(realization, z, angular_coordinate_x=None, angular_coordinate_y=None, max_range=None,
+def realization_at_z(realization,
+                     z,
+                     angular_coordinate_x=None,
+                     angular_coordinate_y=None,
+                     max_range=None,
                      mass_sheet_correction=True):
     """
     :param realization: an instance of Realization
@@ -554,7 +558,6 @@ class Realization(object):
                 continue
             halos.append(halo)
             index.append(i)
-
         return halos, index
 
     def mass_at_z_exact(self, z):

@@ -1,4 +1,6 @@
 import pytest
+from astropy.io.ascii.basic import CsvSplitter
+
 from pyHalo.single_realization import SingleHalo
 from pyHalo.realization_extensions import RealizationExtensions, corr_kappa_with_mask, xi_l, xi_l_to_Pk_l, fit_correlation_multipole
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -11,7 +13,10 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.PresetModels.cdm import CDM
 from lenstronomy.LensModel.Profiles.splcore import SPLCORE
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo
-from pyHalo.single_realization import Realization
+from pyHalo.single_realization import Realization, realization_at_z
+from pyHalo.utilities import interpolate_ray_paths
+from lenstronomy.LensModel.lens_model import LensModel
+from pyHalo.Halos.galacticus_truncation.transfer_function_density_profile import compute_r_te_and_f_t
 
 class TestRealizationExtensions(object):
 
@@ -790,6 +795,187 @@ class TestRealizationExtensions(object):
         cored_halo = real.halos[0]
         kwargs_lenstronomy = cored_halo.lenstronomy_params[0][0]
         npt.assert_almost_equal(kwargs_lenstronomy['r_core'] / nfw_rs_angle, 0.2, 2)
+
+    def _create_single_halo(self, halo_mass, x, y, zhalo, is_subhalo=False, unique_tag=0):
+
+        zlens = 0.5
+        zsource = 2.5
+        mass_definition = 'TNFW'
+        lens_cosmo = LensCosmo(zlens, zsource)
+        astropy_class = lens_cosmo.cosmo
+        model, kwargs_concentration_model = ConcentrationDiemerJoyce, {}
+        kwargs_concentration_model['scatter'] = False
+        kwargs_concentration_model['cosmo'] = astropy_class
+        concentration_model = model(**kwargs_concentration_model)
+        lens_cosmo = LensCosmo(zlens, zsource)
+        chost = 5.0
+        if is_subhalo:
+            halo_truncation_model = TruncationGalacticus(lens_cosmo, chost)  # an NFW halo has no formal truncation radius, so we don't need to specify this
+        else:
+            halo_truncation_model = TruncationRN(lens_cosmo)
+        kwargs_halo_model = {'truncation_model': halo_truncation_model,
+                             'concentration_model': concentration_model,
+                             'kwargs_density_profile': {}}
+        single_halo = SingleHalo(halo_mass, x, y, mass_definition, zhalo, zlens, zsource,
+                                   None, is_subhalo, kwargs_halo_model=kwargs_halo_model)
+        single_halo.halos[0].unique_tag = unique_tag
+        return single_halo
+
+    def test_pbh_mass_rescaling(self):
+
+        z_lens = 0.5
+        z_source = 2.5
+        kwargs_macromodel = [{'theta_E': 1.0, 'center_x': 0.0, 'center_y': 0.0, 'e1': 0.1, 'e2': 0.1, 'gamma': 2.0},
+                             {'gamma1': 0.05, 'gamma2': 0.0}]
+        lens_model_list_macro = ['EPL', 'SHEAR']
+        from pyHalo.Cosmology.cosmology import Cosmology
+        cosmo = Cosmology()
+        astropy_instance = cosmo.astropy
+        lens_model_smooth = LensModel(lens_model_list=lens_model_list_macro,
+                               lens_redshift_list=[z_lens] * 2,
+                               z_source=z_source, multi_plane=True, cosmo=astropy_instance)
+        ray_interp_x_smooth, ray_interp_y_smooth = interpolate_ray_paths([1.0],
+                                                           [0.0],
+                                                           lens_model_smooth,
+                                                           kwargs_macromodel,
+                                                           z_source)
+        foreground_halo_1 = self._create_single_halo(halo_mass=10**8,
+                                               x=1.0,
+                                               y=0.0,
+                                               zhalo=0.1,
+                                               unique_tag=0)
+        foreground_halo_2 = self._create_single_halo(halo_mass=10 ** 8,
+                                               x=1.05,
+                                               y=0.0,
+                                               zhalo=0.4,
+                                                unique_tag=1)
+        foreground_halo_3 = self._create_single_halo(halo_mass=10 ** 8,
+                                                     x=0.2,
+                                                     y=-0.5,
+                                                     zhalo=0.3,
+                                                     unique_tag=2)
+        subhalo_1 = self._create_single_halo(halo_mass=10 ** 8,
+                                               x=1.05,
+                                               y=0.0,
+                                               zhalo=0.5,
+                                             is_subhalo=True,
+                                             unique_tag=3)
+        subhalo_2 = self._create_single_halo(halo_mass=10 ** 8,
+                                             x=-1.05,
+                                             y=0.0,
+                                             zhalo=0.5,
+                                             is_subhalo=True,
+                                             unique_tag=4)
+        dc_calc = subhalo_2.lens_cosmo.cosmo.D_C_transverse
+        zbkg = 0.9
+        xbkg = float(ray_interp_x_smooth[0](dc_calc(zbkg)))
+        ybkg = float(ray_interp_y_smooth[0](dc_calc(zbkg)))
+        bkg_halo_1 = self._create_single_halo(halo_mass=10 ** 8,
+                                              x=-10+xbkg,
+                                              y=ybkg,
+                                              zhalo=zbkg,
+                                              is_subhalo=True,
+                                              unique_tag=5)
+
+        zbkg = 0.9
+        xbkg = float(ray_interp_x_smooth[0](dc_calc(zbkg)))
+        ybkg = float(ray_interp_y_smooth[0](dc_calc(zbkg)))
+        bkg_halo_2 = self._create_single_halo(halo_mass=10 ** 8,
+                                             x=xbkg,
+                                             y=ybkg,
+                                             zhalo=zbkg,
+                                             is_subhalo=False,
+                                             unique_tag=6)
+
+        zbkg = 2.0
+        xbkg = float(ray_interp_x_smooth[0](dc_calc(zbkg)))
+        ybkg = float(ray_interp_y_smooth[0](dc_calc(zbkg)))
+        bkg_halo_3 = self._create_single_halo(halo_mass=10 ** 8,
+                                              x=xbkg,
+                                              y=ybkg,
+                                              zhalo=zbkg,
+                                              is_subhalo=False,
+                                              unique_tag=7)
+
+        zbkg = 2.1
+        bkg_halo_4 = self._create_single_halo(halo_mass=10 ** 8,
+                                              x=-0.5,
+                                              y=0.0,
+                                              zhalo=zbkg,
+                                              is_subhalo=False,
+                                              unique_tag=8)
+
+        zbkg = 2.1
+        xbkg = float(ray_interp_x_smooth[0](dc_calc(zbkg)))
+        ybkg = float(ray_interp_y_smooth[0](dc_calc(zbkg)))
+        bkg_halo_5 = self._create_single_halo(halo_mass=10 ** 8,
+                                              x=xbkg+0.009,
+                                              y=ybkg,
+                                              zhalo=zbkg,
+                                              is_subhalo=False,
+                                              unique_tag=9)
+
+        zbkg = 2.35
+        xbkg = float(ray_interp_x_smooth[0](dc_calc(zbkg)))
+        ybkg = float(ray_interp_y_smooth[0](dc_calc(zbkg)))
+        bkg_halo_6 = self._create_single_halo(halo_mass=10 ** 8,
+                                              x=xbkg + 0.002,
+                                              y=ybkg - 0.005,
+                                              zhalo=zbkg,
+                                              is_subhalo=False,
+                                              unique_tag=10)
+
+        index_rescaled = [0, 1, 3, 6, 7, 9, 10]
+        cdm = bkg_halo_6.join(bkg_halo_5).join(bkg_halo_4).join(bkg_halo_3).join(bkg_halo_2).join(bkg_halo_1).join(subhalo_2).join(subhalo_1).join(foreground_halo_1).join(foreground_halo_2).join(foreground_halo_3)
+
+        lens_model_list_halos, redshift_array_halos, kwargs_halos, _ = cdm.lensing_quantities()
+        lens_model = LensModel(lens_model_list=lens_model_list_macro + lens_model_list_halos,
+                               lens_redshift_list=[z_lens] * 2 + list(redshift_array_halos),
+                               z_source=z_source, multi_plane=True, cosmo=astropy_instance)
+        ray_interp_x, ray_interp_y = interpolate_ray_paths([1.0],
+                                                           [0.0],
+                                                           lens_model,
+                                                           kwargs_macromodel + kwargs_halos,
+                                                           z_source)
+        ext = RealizationExtensions(cdm)
+        pbh_mass_fraction = 10 ** -1.0  # fraction of DM in PBH
+        logM_pbh = 4.5  # mass of PBH
+        mass_fraction_in_halos = 0.5  # sets the cluster/unclustered fraction
+        r_max_arcsec = [0.1] * len(ray_interp_x)
+        pbh = ext.add_primordial_black_holes(pbh_mass_fraction,
+                                             logM_pbh,
+                                             mass_fraction_in_halos,
+                                             ray_interp_x,
+                                             ray_interp_y,
+                                             r_max_arcsec,
+                                             arcsec_per_pixel=0.005,
+                                             rescale_normalizations=True)
+
+        count = 0
+        for zi in pbh.unique_redshifts:
+            d = pbh.lens_cosmo.cosmo.D_C_transverse(zi)
+            rayx, rayy = ray_interp_x[0](d), ray_interp_y[0](d)
+            real_at_z, _ = realization_at_z(pbh, zi)
+            for halo in real_at_z.halos:
+                if halo.mdef == 'PT_MASS':
+                    continue
+                dr = np.hypot(halo.x - rayx, halo.y - rayy)
+                if halo.is_subhalo:
+                    m_bound = halo.bound_mass_galacticus_definition
+                    r200 = halo.nfw_params[2]
+                    cinfall = halo.c
+                    _, fte = compute_r_te_and_f_t(m_bound, halo.mass, r200, cinfall)
+                else:
+                    fte = 1.0
+                if dr < 0.1:
+                    #print('close', halo, halo.unique_tag)
+                    npt.assert_equal(halo.unique_tag, index_rescaled[count])
+                    npt.assert_almost_equal(halo.rescale_norm,
+                                            fte * (1 - pbh_mass_fraction * (1 - mass_fraction_in_halos)))
+                    count += 1
+                else:
+                    #print('far', halo, halo.unique_tag)
+                    npt.assert_almost_equal(halo.rescale_norm, fte)
 
 if __name__ == '__main__':
       pytest.main()

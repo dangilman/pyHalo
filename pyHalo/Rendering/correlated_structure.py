@@ -2,7 +2,6 @@ import numpy as np
 from lenstronomy.LensModel.lens_model import LensModel
 from pyHalo.Rendering.rendering_class_base import RenderingClassBase
 from pyHalo.Rendering.SpatialDistributions.correlated import Correlated2D
-from pyHalo.Rendering.MassFunctions.delta_function import DeltaFunction
 from pyHalo.Cosmology.geometry import Geometry
 from pyHalo.single_realization import realization_at_z
 
@@ -148,9 +147,12 @@ class CorrelatedStructure(RenderingClassBase):
                                                    z,
                                                    angular_coordinate_x,
                                                    angular_coordinate_y,
-                                                   2*rendering_radius,
+                                                    rendering_radius,
                                                    mass_sheet_correction=False)
-
+        # print('redshift: ', z)
+        # for halo in realization_at_plane.halos:
+        #     print(halo.unique_tag)
+        # a=input('continue')
         lens_model_list, _, kwargs_lens, _ = realization_at_plane.lensing_quantities(
             add_mass_sheet_correction=False)
 
@@ -186,4 +188,3 @@ class CorrelatedStructure(RenderingClassBase):
         sigma_crit_arcsec = self._realization.lens_cosmo.sigma_crit_arcsecond_interp(z)
         mass_in_area = np.sum(kappa_pdf * sigma_crit_arcsec) * area
         return mass_in_area
-

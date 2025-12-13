@@ -43,11 +43,14 @@ class TNFWFieldHalo(Halo):
         r3d = None
         sub_flag = False
         args = {}
-        from pyHalo.concentration_models import preset_concentration_models
+        if isinstance(concentration_model, str):
+            from pyHalo.concentration_models import preset_concentration_models
+            _c_model, _ = preset_concentration_models(concentration_model)
+            concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
+        else:
+            concentration_class = concentration_model
         from pyHalo.truncation_models import truncation_models
-        _c_model, _ = preset_concentration_models(concentration_model)
         _t_model, _ = truncation_models('MULTIPLE_RS')
-        concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
         truncation_class = _t_model(lens_cosmo, tau)
         return TNFWFieldHalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
                              truncation_class, concentration_class, 1.0)
@@ -238,7 +241,8 @@ class TNFWSubhalo(TNFWFieldHalo):
     """
 
     @classmethod
-    def simple_setup(cls, mass, f_bound, z_infall, x, y, z, lens_cosmo):
+    def simple_setup(cls, mass, f_bound, z_infall, x, y, z, lens_cosmo,
+                     concentration_model='DIEMERJOYCE19'):
         """
         Creates an instance of the TNFWSubhalo class with a specified bound mass, from which the density profile is
         computed using the tidal track
@@ -254,11 +258,14 @@ class TNFWSubhalo(TNFWFieldHalo):
         r3d = None
         sub_flag = True
         args = {}
-        from pyHalo.concentration_models import preset_concentration_models
+        if isinstance(concentration_model, str):
+            from pyHalo.concentration_models import preset_concentration_models
+            _c_model, _ = preset_concentration_models(concentration_model)
+            concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
+        else:
+            concentration_class = concentration_model
         from pyHalo.truncation_models import truncation_models
-        _c_model, _ = preset_concentration_models('DIEMERJOYCE19')
         _t_model, _ = truncation_models('TRUNCATION_GALACTICUS')
-        concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
         truncation_class = _t_model(lens_cosmo, 5.0)
         tnfw_subhalo = TNFWSubhalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
                              truncation_class, concentration_class, 1.0)
