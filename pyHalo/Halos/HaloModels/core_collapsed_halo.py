@@ -66,7 +66,7 @@ class CoreCollapsedHalo(Halo):
         """
         See documentation in base class (Halos/halo_base.py)
         """
-        if not hasattr(self, '_lenstronomy_args'):
+        if not hasattr(self, '_lenstronomy_args_split'):
             (alpha_Rs_center, Rs_angle, Rs_angle_inner, gamma_inner,
              gamma_outer, alpha_Rs_envelope, Rs_angle, r_trunc_arcsec) = self.profile_args
 
@@ -88,8 +88,8 @@ class CoreCollapsedHalo(Halo):
                                'center_x': x,
                                'center_y': y,
                                'r_trunc': r_trunc_arcsec}
-            self._lenstronomy_args = [kwargs_collpsed_center, kwargs_envelope]
-        return self._lenstronomy_args, None
+            self._lenstronomy_args_split = [kwargs_collpsed_center, kwargs_envelope]
+        return self._lenstronomy_args_split, None
 
     @property
     def lenstronomy_params(self):

@@ -121,6 +121,17 @@ class TestConcentration(object):
         npt.assert_equal(c1, c2)
         npt.assert_almost_equal(c1, c3 / 2.5, 6)
 
+        c0 = 10
+        zeta = -0.0
+        beta = 0.5
+        concentration_model_4 = ConcentrationPeakHeight(self.astropy, c0, zeta, beta,
+                                                        False, scatter_dex=0.2,
+                                                        redshift_evolution='RHO_CRIT')
+        c1 = concentration_model_4.nfw_concentration(10**7, 0.0)
+        c2 = concentration_model_4.nfw_concentration(10**7, 1.5)
+        r = self.astropy.critical_density(1.5).value / self.astropy.critical_density(0.0).value
+        npt.assert_equal(c1/c2, r ** zeta)
+
     def test_concentration_wdm_polynomial(self):
 
         m = 10 ** 8

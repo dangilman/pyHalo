@@ -155,7 +155,8 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
 
     name = 'PEAK_HEIGHT_POWERLAW'
 
-    def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.2):
+    def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.2,
+                 redshift_evolution='PEAK_HEIGHT'):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param cosmo: an instance of astropy cosmology
@@ -164,11 +165,17 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :param beta: the logarithmic slope of the concentration-mass relation in peak height
         :param scatter: bool; whether to include scatter in concentration-mass relation
         :param scatter_dex: scatter in concentration in dex
+        :param redshift_evolution: the redshift evolution model; either PEAK_HEIGHT or RHO_CRIT
         """
         self._c0 = c0
         self._zeta = zeta
         self._beta = beta
-        self._redshift_evolution = _zEvolutionPeakHeight(cosmo)
+        if redshift_evolution == 'PEAK_HEIGHT':
+            self._redshift_evolution = _zEvolutionPeakHeight(cosmo)
+        elif redshift_evolution == 'RHO_CRIT':
+            self._redshift_evolution = _zEvolutionRhoCrit(cosmo)
+        else:
+            raise ValueError('Redshift evolution must be PEAK_HEIGHT or RHO_CRIT')
         super(ConcentrationPeakHeight, self).__init__(cosmo, scatter, scatter_dex)
 
     def _evaluate_concentration(self, M, z):
@@ -397,6 +404,21 @@ class _zEvolutionPeakHeight(object):
         """
         M_h = m * self._cosmo.h
         redshift_factor = peaks.peakHeight(M_h, 0.0) / peaks.peakHeight(M_h, z)
+        return redshift_factor
+
+class _zEvolutionRhoCrit(object):
+
+    def __init__(self, cosmo):
+        self._cosmo = cosmo
+
+    def __call__(self, m, z):
+        """
+        This method evaluates the redshift evolution according to the redshift evolution of the critical density
+        :param m: halo mass in units 200c; note that this model is independent of m
+        :param z: redshift
+        :return: the relative evolution of the critical density between z=0 and z=z
+        """
+        redshift_factor = self._cosmo.critical_density(z).value / self._cosmo.critical_density(0.0).value
         return redshift_factor
 
 class _zEvolutionBose2016(object):

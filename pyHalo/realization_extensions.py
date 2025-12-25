@@ -971,7 +971,6 @@ class RealizationExtensions(object):
                                         2 * r_max,
                                         'DOUBLE_CONE')
             for zi, delta_zi in zip(plane_redshifts, delta_z):
-
                 d = self._realization.lens_cosmo.cosmo.D_C_transverse(zi)
                 angle_x, angle_y = x_image_interp(d), y_image_interp(d)
                 rendering_radius = r_max * geometry.rendering_scale(zi)
