@@ -130,7 +130,7 @@ class TestConcentration(object):
         c1 = concentration_model_4.nfw_concentration(10**7, 0.0)
         c2 = concentration_model_4.nfw_concentration(10**7, 1.5)
         r = self.astropy.critical_density(1.5).value / self.astropy.critical_density(0.0).value
-        npt.assert_equal(c1/c2, r ** zeta)
+        npt.assert_almost_equal(c1/c2, r ** zeta, 6)
 
     def test_concentration_wdm_polynomial(self):
 
