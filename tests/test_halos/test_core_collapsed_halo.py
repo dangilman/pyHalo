@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.HaloModels.TNFW import TNFWFieldHalo, TNFWSubhalo
-from pyHalo.Halos.HaloModels.core_collapsed_halo import CoreCollapsedHalo
+from pyHalo.Halos.HaloModels.core_collapsed_halo import CoreCollapsedHalo, CoreCollapsedHaloBH
 from pyHalo.truncation_models import ConstantTruncationArcsec
 from pyHalo.concentration_models import ConcentrationConstant
 from pyHalo.Halos.lens_cosmo import LensCosmo
@@ -248,6 +248,52 @@ class TestCoreCollapsedHalo(object):
         m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1+m_num / m_target_R), 0.04)
 
+    def test_BH(self):
+
+        mass = 10 ** 8
+        x = 0.0
+        y = 0.0
+        r3d = None
+        z = 0.5
+        sub_flag = False
+        lens_cosmo = LensCosmo(z, 2.0)
+        unique_tag = 1.0
+        f_bound = 0.005
+        z_infall = 2.0
+        tnfw_subhalo = TNFWSubhalo.simple_setup(mass, f_bound, z_infall, x, y, z, lens_cosmo)
+        _, rs, r200 = tnfw_subhalo.nfw_params
+        rt_kpc = tnfw_subhalo.profile_args[1]
+        r_match_kpc = tnfw_subhalo.log_derivative_inverse(-2.0, rs, rt_kpc)
+        mass_R = tnfw_subhalo.mass_3d(r_match_kpc)
+        m_target_r200 = tnfw_subhalo.mass_3d(r200)
+        Rs_inner_kpc = r_match_kpc
+        gamma_inner = 2.4
+        gamma_outer = 6.0
+        scale_match_mass = 2.
+        m_target_R = scale_match_mass * mass_R
+        args = {'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer, 'rt_kpc': rt_kpc,
+                'm_target_r200': m_target_r200, 'm_target_R': m_target_R, 'r_match_kpc': r_match_kpc,
+                'Rs_inner_kpc': Rs_inner_kpc}
+
+        truncation_class = None
+        concentration_class = ConcentrationConstant(None, tnfw_subhalo.c)
+
+        halo_profile = CoreCollapsedHalo(mass, x, y, r3d, z,
+                                 sub_flag, lens_cosmo, args, truncation_class, concentration_class, unique_tag)
+        halo_bh = CoreCollapsedHaloBH(mass, x, y, r3d, z,
+                                 sub_flag, lens_cosmo, args, truncation_class, concentration_class, unique_tag)
+
+        kwargs_profile = halo_profile.lenstronomy_params_split[0]
+        kwargs_bh = halo_bh.lenstronomy_params[0][0]
+        kwargs_envelope_profile = kwargs_profile[1]
+        npt.assert_almost_equal(kwargs_envelope_profile['Rs'], kwargs_bh['Rs_outer'])
+        npt.assert_almost_equal(kwargs_envelope_profile['alpha_Rs'], kwargs_bh['alpha_Rs_outer'])
+        npt.assert_almost_equal(kwargs_envelope_profile['r_trunc'], kwargs_bh['r_trunc'])
+
+        # calculate the mass of the central profile
+        theta_E_target = lens_cosmo.point_mass_factor_z(halo_bh.z) * np.sqrt(m_target_R)
+        npt.assert_almost_equal(kwargs_bh['theta_E_inner'], theta_E_target)
+
     def test_through_realization_extensions(self):
 
         mass = 10 ** 9
@@ -291,6 +337,38 @@ class TestCoreCollapsedHalo(object):
         m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1 + m_num / m_target_R), 0.04)
 
+    def test_through_realization_extensions_BH(self):
+        mass = 10 ** 9
+        x = 0.0
+        y = 0.0
+        z = 0.5
+        lens_cosmo = LensCosmo(z, 2.0)
+        f_bound = 0.6
+        z_infall = 2.0
+        kwargs_halo_model = None
+        msheet_correction = None
+        rendering_classes = None
+        rendering_center_x = 0.0
+        rendering_center_y = 0.0
+        geometry = None
+        tnfw_subhalo = TNFWSubhalo.simple_setup(mass, f_bound, z_infall, x, y, z, lens_cosmo)
+        _, rs, r200 = tnfw_subhalo.nfw_params
+        log_slope_match = -2.1
+        scale_match_mass = 2.5
+        gamma_inner = -1
+        halo_realization = Realization.from_halos([tnfw_subhalo], lens_cosmo, kwargs_halo_model,
+                                                  msheet_correction, rendering_classes, rendering_center_x,
+                                                  rendering_center_y, geometry)
+        ext = RealizationExtensions(halo_realization)
+        kwargs_halo = {'gamma_inner': gamma_inner,
+                       'scale_match_r': scale_match_mass,
+                       'log_slope_match': log_slope_match}
+        realization_sidm = ext.add_core_collapsed_halos([0],
+                                                        halo_profile='CC_COMPOSITE',
+                                                        **kwargs_halo)
+        halo = realization_sidm.halos[0]
+        lenstronomy_ID = halo.lenstronomy_ID
+        npt.assert_string_equal(lenstronomy_ID[0], 'CORE_COLLAPSED_HALO_BH')
 
 if __name__ == '__main__':
     pytest.main()

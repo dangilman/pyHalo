@@ -3,7 +3,7 @@ from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving, TNFWCHaloP
 from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
-from pyHalo.Halos.HaloModels.core_collapsed_halo import CoreCollapsedHalo
+from pyHalo.Halos.HaloModels.core_collapsed_halo import CoreCollapsedHalo, CoreCollapsedHaloBH
 from pyHalo.single_realization import Realization
 from pyHalo.Halos.HaloModels.gaussianhalo import GaussianHalo
 from pyHalo.Halos.HaloModels.blackhole import BlackHole
@@ -417,17 +417,31 @@ class RealizationExtensions(object):
                         'm_target_R': scale_match_r * mass_R,
                         'r_match_kpc': r_match_kpc,
                         'Rs_inner_kpc': r_match_kpc}
-                sidm_halo = CoreCollapsedHalo(halo.mass,
-                                              halo.x,
-                                              halo.y,
-                                              halo.r3d,
-                                              halo.z,
-                                              halo.is_subhalo,
-                                              halo.lens_cosmo,
-                                              args,
-                                              truncation_class,
-                                              concentration_class,
-                                              halo.unique_tag)
+                if args['gamma_inner'] == -1.0:
+                    args['gamma_inner'] = 2.6
+                    sidm_halo = CoreCollapsedHaloBH(halo.mass,
+                                                  halo.x,
+                                                  halo.y,
+                                                  halo.r3d,
+                                                  halo.z,
+                                                  halo.is_subhalo,
+                                                  halo.lens_cosmo,
+                                                  args,
+                                                  truncation_class,
+                                                  concentration_class,
+                                                  halo.unique_tag)
+                else:
+                    sidm_halo = CoreCollapsedHalo(halo.mass,
+                                                  halo.x,
+                                                  halo.y,
+                                                  halo.r3d,
+                                                  halo.z,
+                                                  halo.is_subhalo,
+                                                  halo.lens_cosmo,
+                                                  args,
+                                                  truncation_class,
+                                                  concentration_class,
+                                                  halo.unique_tag)
                 if halo.is_subhalo:
                     sidm_halo.set_infall_redshift(halo.z_eval)
                     sidm_halo.set_bound_mass(halo.bound_mass)
@@ -544,17 +558,31 @@ class RealizationExtensions(object):
                     args['lambda_t'] = subhalo_evolution_scaling
                 else:
                     args['lambda_t'] = 1.0
-                sidm_halo = CoreCollapsedHalo(halo.mass,
-                                              halo.x,
-                                              halo.y,
-                                              halo.r3d,
-                                              halo.z,
-                                              halo.is_subhalo,
-                                              halo.lens_cosmo,
-                                              args,
-                                              truncation_class,
-                                              concentration_class,
-                                              halo.unique_tag)
+                if args['gamma_inner'] == -1.0:
+                    args['gamma_inner'] = 2.6
+                    sidm_halo = CoreCollapsedHaloBH(halo.mass,
+                                                  halo.x,
+                                                  halo.y,
+                                                  halo.r3d,
+                                                  halo.z,
+                                                  halo.is_subhalo,
+                                                  halo.lens_cosmo,
+                                                  args,
+                                                  truncation_class,
+                                                  concentration_class,
+                                                  halo.unique_tag)
+                else:
+                    sidm_halo = CoreCollapsedHalo(halo.mass,
+                                                  halo.x,
+                                                  halo.y,
+                                                  halo.r3d,
+                                                  halo.z,
+                                                  halo.is_subhalo,
+                                                  halo.lens_cosmo,
+                                                  args,
+                                                  truncation_class,
+                                                  concentration_class,
+                                                  halo.unique_tag)
                 halo_effective_age = sidm_halo.halo_effective_age
                 t_over_tc = sidm_halo.t_over_tc
                 if sidm_halo.t_over_tc < 1.0:

@@ -198,3 +198,109 @@ class CoreCollapsedHalo(Halo):
         :return:
         """
         return self.halo_effective_age / self.sidm_timescale
+
+class CoreCollapsedHaloBH(CoreCollapsedHalo):
+
+    @property
+    def lenstronomy_params_split(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_lenstronomy_args_split'):
+            (theta_E_inner, Rs_angle, alpha_Rs_envelope, Rs_angle, r_trunc_arcsec) = self.profile_args
+
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
+            Rs_angle = np.round(Rs_angle, 10)
+            r_trunc_arcsec = np.round(r_trunc_arcsec, 10)
+            alpha_Rs_envelope = np.round(alpha_Rs_envelope, 10)
+            theta_E_inner = np.round(theta_E_inner, 10)
+            kwargs_envelope = {'center_x': x,
+                               'center_y': y,
+                               'Rs': Rs_angle,
+                        'alpha_Rs': alpha_Rs_envelope,
+                        'r_trunc': r_trunc_arcsec}
+            kwargs_center = {'theta_E': theta_E_inner, 'center_x': x, 'cetner_y': y}
+            self._lenstronomy_args = [kwargs_center, kwargs_envelope]
+        return self._lenstronomy_args, None
+
+    @property
+    def lenstronomy_params(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        if not hasattr(self, '_lenstronomy_args'):
+            (theta_E_inner, Rs_angle, alpha_Rs_envelope, Rs_angle, r_trunc_arcsec) = self.profile_args
+
+            x, y = np.round(self.x, 4), np.round(self.y, 4)
+            Rs_angle = np.round(Rs_angle, 10)
+            r_trunc_arcsec = np.round(r_trunc_arcsec, 10)
+            alpha_Rs_envelope = np.round(alpha_Rs_envelope, 10)
+            theta_E_inner = np.round(theta_E_inner, 10)
+            kwargs = {'center_x': x, 'center_y': y,
+                      'Rs_outer': Rs_angle,
+                      'theta_E_inner': theta_E_inner,
+                      'alpha_Rs_outer': alpha_Rs_envelope,
+                      'r_trunc': r_trunc_arcsec}
+            self._lenstronomy_args = [kwargs]
+        return self._lenstronomy_args, None
+
+    @property
+    def lenstronomy_ID(self):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        return ['CORE_COLLAPSED_HALO_BH']
+
+    @property
+    def profile_args(self):
+        """
+
+        :return:
+        """
+        if not hasattr(self, '_profile_args'):
+            # solve for lens model parameters that conserve mass inside rs and r200
+            gamma_inner = self._args['gamma_inner']
+            gamma_outer = self._args['gamma_outer']
+            rt_kpc = self._args['rt_kpc']
+            kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+            sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
+            rhos, rs, r200 = self.nfw_params
+            Rs_angle = rs / kpc_per_arcsec
+            r_trunc_angle = rt_kpc / kpc_per_arcsec
+            Rs_angle_inner = self._args['Rs_inner_kpc'] / kpc_per_arcsec
+
+            rho0 = self._profile_envelope.alpha2rho0(1.0, Rs_angle)
+            r_match_arcsec = self._args['r_match_kpc'] / kpc_per_arcsec
+            r200_arcsec = r200 / kpc_per_arcsec
+            a = self._profile_envelope.mass_3d(r_match_arcsec,
+                                               Rs_angle,
+                                               rho0,
+                                               r_trunc_angle / Rs_angle)  # mass enclosed NFW inside r_match
+            b = self._profile_center.mass_3d_lens(r_match_arcsec,
+                                                  Rs_angle_inner,
+                                                  1.0,
+                                                  gamma_inner,
+                                                  gamma_outer)  # mass enclosed NFW inside r_match
+            c = self._profile_envelope.mass_3d(r200_arcsec,
+                                               Rs_angle,
+                                               rho0,
+                                               r_trunc_angle / Rs_angle)  # mass enclosed NFW inside r_match
+            d = self._profile_center.mass_3d_lens(r200_arcsec,
+                                                  Rs_angle_inner,
+                                                  1.0,
+                                                  gamma_inner,
+                                                  gamma_outer)  # mass enclosed NFW inside r_match
+            x = np.array([self._args['m_target_R'], self._args['m_target_r200']])
+            M_inverse = (1 / (a * d - b * c)) * np.array([[d, -b], [-c, a]])
+            y = np.matmul(M_inverse, x) / sigma_crit_arcsec
+            alpha_Rs_envelope, alpha_Rs_center = y[0], y[1]
+            if alpha_Rs_center < 0 or alpha_Rs_envelope < 0:
+                raise Exception('alpha_Rs_envelope and alpha_Rs_center cannot be negative')
+            assert np.isfinite(alpha_Rs_envelope)
+            assert np.isfinite(alpha_Rs_center)
+            factor = self._lens_cosmo.point_mass_factor_z(self.z)
+            theta_E_inner = factor * np.sqrt(self._args['m_target_R'])
+            self._profile_args = (theta_E_inner, Rs_angle, alpha_Rs_envelope, Rs_angle, r_trunc_angle)
+
+        return self._profile_args
