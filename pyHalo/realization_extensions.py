@@ -625,7 +625,9 @@ class RealizationExtensions(object):
         :param evolving_SIDM_profile: toggle time-evoling SIDM profile
         :param collapse_probability: the probability that an object with an age / time_scale > 1 actually core collapses
         :param halo_profile: the density profile for a collapsed halo, can be either TNFWC or CC_COMPOSITE
-        :param gamma_inner: the inner halo density profile (with CC_COMPOSITE)
+        :param gamma_inner: the inner halo density profile (with CC_COMPOSITE); if -1, then a black hole is injected at
+        the halo center. The mass of the BH is set by matching the enclosed mass * scale_match_r within the radius where
+        the log-slope equals log_slope_match
         :param scale_match_r: the scaling factor for mass conservation inside r_match
         :param log_slope_match: the logarithmic slope that determines r_match
         :return: a realization of SIDM halos created from the population of CDM halos
