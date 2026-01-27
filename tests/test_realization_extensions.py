@@ -649,7 +649,7 @@ class TestRealizationExtensions(object):
         new = ext.add_ULDM_fluctuations(wavelength,amp_var,fluc_size,fluc_var,n_cut,shape='ellipse',args=args_ellipse)
         _ = new.lensing_quantities()
 
-    def test_add_pbh(self):
+    def test_add_pbh_delta(self):
 
         cosmo = Cosmology()
         astropy_instance = cosmo.astropy
@@ -706,7 +706,73 @@ class TestRealizationExtensions(object):
                                                          r_array)
 
         for i, halo in enumerate(pbh_realization.halos):
+            if halo.mdef == 'PT_MASS':
+                npt.assert_almost_equal(halo.mass, 10**5)
+            condition1 = 'PT_MASS' == halo.mdef
+            condition2 = 'TNFW' == halo.mdef
+            npt.assert_equal(np.logical_or(condition1, condition2), True)
 
+    def test_add_pbh_gaussian(self):
+
+        cosmo = Cosmology()
+        astropy_instance = cosmo.astropy
+        lens_cosmo = LensCosmo(0.5, 1.5, cosmo)
+        truncation_class = TruncationRN(lens_cosmo)
+        concentration_class = ConcentrationDiemerJoyce(astropy_instance, scatter=False)
+        kwargs_halo_model = {'concentration_model': concentration_class,
+                             'truncation_model': truncation_class,
+                             'kwargs_density_profile': {}}
+
+        realization = SingleHalo(10**9, 0.9, 0.1, 'TNFW', 0.5, 0.5, 1.5,
+                                 subhalo_flag=False, kwargs_halo_model=kwargs_halo_model, lens_cosmo=lens_cosmo)
+        zlist = [0.2, 0.4, 0.6]
+        rmax = 0.4
+        main_halo_coord_x = []
+        main_halo_coord_y = []
+        for i, zi in enumerate(zlist):
+            nhalos = np.random.randint(1, 5)
+            _x, _y = [], []
+            for j in range(0, nhalos):
+                mi = np.random.uniform(8,  9)
+                xi = np.random.uniform(-0.2, 0.2)
+                yi = np.random.uniform(-0.2, 0.2)
+                _x.append(xi)
+                _y.append(yi)
+                single_halo = SingleHalo(10 ** mi, xi, yi, 'TNFW', zi, 0.5, 1.5, subhalo_flag=False,
+                                     kwargs_halo_model=kwargs_halo_model, lens_cosmo=lens_cosmo)
+                realization = realization.join(single_halo)
+            main_halo_coord_x.append(_x)
+            main_halo_coord_y.append(_y)
+
+        lens_model_list_init, _, kwargs_init, _ = realization.lensing_quantities()
+        ext = RealizationExtensions(realization)
+        mass_fraction = 0.1
+        logM_pbh = 5.0
+        fraction_in_halos = 0.9
+
+        _zlist = np.round(np.arange(0.00, 1.02, 0.02), 2)
+        x_image = [0.] * len(_zlist)
+        y_image = [0.] * len(_zlist)
+        cosmo = Cosmology()
+        dlist = [cosmo.D_C_transverse(zi) for zi in _zlist]
+        x_image_interp_list = [interp1d(dlist, x_image)]
+        y_image_interp_list = [interp1d(dlist, y_image)]
+
+        r_array = np.zeros(len(x_image_interp_list))
+        r_array[0:] = rmax
+
+        pbh_realization = ext.add_primordial_black_holes(mass_fraction,
+                                                         logM_pbh,
+                                                         fraction_in_halos,
+                                                         x_image_interp_list,
+                                                         y_image_interp_list,
+                                                         r_array,
+                                                         mass_function_type='GAUSSIAN',
+                                                         logM_pbh_sigma=0.001)
+
+        for i, halo in enumerate(pbh_realization.halos):
+            if halo.mdef == 'PT_MASS':
+                npt.assert_almost_equal(halo.mass / 10**5, 1, 1)
             condition1 = 'PT_MASS' == halo.mdef
             condition2 = 'TNFW' == halo.mdef
             npt.assert_equal(np.logical_or(condition1, condition2), True)
@@ -979,6 +1045,7 @@ class TestRealizationExtensions(object):
 
 if __name__ == '__main__':
       pytest.main()
+
 
 # class TestCorrelationComputation(object):
 #

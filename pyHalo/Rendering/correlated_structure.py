@@ -59,8 +59,6 @@ class CorrelatedStructure(RenderingClassBase):
         delta_z.append(self._realization.lens_cosmo.z_source - plane_redshifts[-1])
         rescale_indexes = []
         for z, dz in zip(plane_redshifts, delta_z):
-
-            #rendering_radius = rmax * self._cylinder_geometry.rendering_scale(z)
             d = self._lens_cosmo.cosmo.D_C_transverse(z)
             x_angle = x_center_interp(d)
             y_angle = y_center_interp(d)
@@ -77,10 +75,8 @@ class CorrelatedStructure(RenderingClassBase):
                 x = np.append(x, _x)
                 y = np.append(y, _y)
                 redshifts = np.append(redshifts, _z)
-
         subhalo_flag = [False] * len(masses)
         r3d = np.array([None] * len(masses))
-
         return masses, x, y, r3d, redshifts, subhalo_flag, rescale_factor, np.unique(rescale_indexes)
 
     def render_at_z(self, z, angular_coordinate_x, angular_coordinate_y, rendering_radius, arcsec_per_pixel):
@@ -123,8 +119,18 @@ class CorrelatedStructure(RenderingClassBase):
             rho = self._kwargs_mass_function['mass_fraction'] * mass_in_area
             mass = 10 ** self._kwargs_mass_function['logM']
             mass_function = self._mass_function_model(mass, volume, rho, self._kwargs_mass_function['draw_poisson'])
+        elif self._mass_function_model.name == 'GAUSSIAN':
+            rescale_factor = 1. - self._kwargs_mass_function['mass_fraction']
+            # replace with total mass from integral of log-normal mass function
+            log_normal_expectation_value = np.exp(np.log(10 ** self._kwargs_mass_function['logM']) +
+                                                   np.log(10 ** self._kwargs_mass_function['logM_sigma']) ** 2 / 2)
+            num_objects = self._kwargs_mass_function['mass_fraction'] * mass_in_area / log_normal_expectation_value
+            mass_function = self._mass_function_model(num_objects,
+                                                      self._kwargs_mass_function['logM'],
+                                                      self._kwargs_mass_function['logM_sigma'],
+                                                      self._kwargs_mass_function['draw_poisson'])
         else:
-            raise Exception('this class is only implemented for a delta function mass function')
+            raise Exception('this class is only implemented for DELTA_FUNCTION and GAUSSIAN mass functions')
 
         return mass_function.draw(), rescale_factor
 
@@ -149,13 +155,8 @@ class CorrelatedStructure(RenderingClassBase):
                                                    angular_coordinate_y,
                                                     rendering_radius,
                                                    mass_sheet_correction=False)
-        # print('redshift: ', z)
-        # for halo in realization_at_plane.halos:
-        #     print(halo.unique_tag)
-        # a=input('continue')
         lens_model_list, _, kwargs_lens, _ = realization_at_plane.lensing_quantities(
             add_mass_sheet_correction=False)
-
         if len(lens_model_list) == 0:
             return np.array([]), np.array([]), []
 

@@ -199,6 +199,7 @@ class RealizationExtensions(object):
         z = self._realization.lens_cosmo.z_lens
         kpc_per_arcsec = self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
         # determine number of GCs
+        # integral equivalent to 10 ** (log10_mgc_mean + log10_mgc_sigma ** 2 * np.log(10) / 2)
         integral = np.exp(np.log(10 ** log10_mgc_mean) + np.log(10 ** log10_mgc_sigma) ** 2 / 2)
         mass_in_gc = np.pi * gc_surface_mass_density * (rendering_radius_arcsec * kpc_per_arcsec) ** 2
         n = int(mass_in_gc / integral)
@@ -957,7 +958,9 @@ class RealizationExtensions(object):
                                    y_image_interp_list,
                                    r_max_arcsec,
                                    arcsec_per_pixel=0.005,
-                                   rescale_normalizations=True):
+                                   rescale_normalizations=True,
+                                   mass_function_type='DELTA',
+                                   logM_pbh_sigma=None):
 
         """
         This routine renders populations of primordial black holes modeled as point masses along the line of sight.
@@ -978,6 +981,9 @@ class RealizationExtensions(object):
         instantiate the class
         :param rescale_normalizations: bool; whether or not to rescale the density profile of halos to account for the
         mass added in correlated structure
+        :param mass_function_type: str; type of mass function to use. Currently implemented models are DELTA and GAUSSIAN
+        :param logM_pbh_sigma: float; standard deviation (base 10) of log-normal mass function when
+        mass_function_type == 'DELTA'
         :return: a new instance of Realization that contains primordial black holes modeled as point masses
         """
         mass_definition = 'PT_MASS'
@@ -1005,11 +1011,23 @@ class RealizationExtensions(object):
                 angle_x, angle_y = x_image_interp(d), y_image_interp(d)
                 rendering_radius = r_max * geometry.rendering_scale(zi)
                 spatial_distribution_model_smooth = Uniform(rendering_radius, geometry)
-
                 rho_smooth = mass_fraction_smooth * self._realization.lens_cosmo.cosmo.rho_dark_matter_crit
                 volume = geometry.volume_element_comoving(zi, delta_zi)
-                mass_function_smooth = DeltaFunction(10 ** logM_pbh,
-                                                     volume, rho_smooth, draw_poisson=True)
+                if mass_function_type == 'DELTA':
+                    mass_function_smooth = DeltaFunction(10 ** logM_pbh,
+                                                         volume,
+                                                         rho_smooth,
+                                                         draw_poisson=True)
+                elif mass_function_type == 'GAUSSIAN':
+                    logM_mean = np.exp(np.log(10 ** logM_pbh) +
+                                            np.log(10 ** logM_pbh_sigma) ** 2 / 2)
+                    num_objects = volume * rho_smooth / logM_mean
+                    mass_function_smooth = Gaussian(num_objects,
+                                                      logM_pbh,
+                                                      logM_pbh_sigma,
+                                                      draw_poisson=True)
+                else:
+                    raise ValueError('this class is only implemented for DELTA mass functions')
 
                 m_smooth = mass_function_smooth.draw()
                 if len(m_smooth) > 0:
@@ -1030,9 +1048,17 @@ class RealizationExtensions(object):
                                          self._realization.lens_cosmo, kwargs_halo_model=kwargs_halo_model,
                                          mass_sheet_correction=False)
         kwargs_pbh_mass_function = {}
-        kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
-        kwargs_pbh_mass_function['logM'] = logM_pbh
-        kwargs_pbh_mass_function['mass_function_type'] = 'DELTA'
+        if mass_function_type == 'DELTA':
+            kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
+            kwargs_pbh_mass_function['logM'] = logM_pbh
+            kwargs_pbh_mass_function['mass_function_type'] = mass_function_type
+        elif mass_function_type == 'GAUSSIAN':
+            kwargs_pbh_mass_function['mass_fraction'] = mass_fraction_clumpy
+            kwargs_pbh_mass_function['logM'] = logM_pbh
+            kwargs_pbh_mass_function['logM_sigma'] = logM_pbh_sigma
+            kwargs_pbh_mass_function['mass_function_type'] = mass_function_type
+        else:
+            raise ValueError('mass_function_type must be either DELTA or GAUSSIAN')
         realization_with_clustering = self.add_correlated_structure(DeltaFunction,
                                                                          kwargs_pbh_mass_function,
                                                                          mass_definition,
