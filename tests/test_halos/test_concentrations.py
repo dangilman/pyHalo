@@ -4,7 +4,7 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
 from pyHalo.Halos.concentration import ConcentrationLudlow, ConcentrationDiemerJoyce, \
-    ConcentrationPeakHeight, ConcentrationWDMPolynomial, ConcentrationWDMHyperbolic, ConcentrationLudlowWDM
+    ConcentrationPeakHeight, ConcentrationWDMPolynomial, ConcentrationWDMHyperbolic, ConcentrationLudlowWDM, BinnedHaloMass
 from astropy.cosmology import FlatLambdaCDM
 
 class TestConcentration(object):
@@ -184,6 +184,68 @@ class TestConcentration(object):
         c_cdm = concentration_cdm_diemer_joyce.nfw_concentration(m, z)
         suppression = 0.5 * (1 + np.tanh((np.log10(m/10**log_mc) - a) / (2 * b)))
         npt.assert_almost_equal(c_wdm, c_cdm * suppression)
+
+    def test_concentration_binned(self):
+
+        log10_mass_bins = [[6, 8], [8, 10.7]]
+        norm_low = 8.0
+        norm_high = 8.0
+        beta_low = 0.0
+        beta_high = 0.0
+        zeta_low = 0.0
+        zeta_high = 0.0
+        concentration_model_binned_uniform = BinnedHaloMass(self.astropy,
+                                                            log10_mass_bins,
+                                                            norm_low,
+                                                            norm_high,
+                                                            beta_low,
+                                                            beta_high,
+                                                            zeta_low,
+                                                            zeta_high,
+                                                            scatter=False)
+
+        c1 = concentration_model_binned_uniform.nfw_concentration(10** 7, 0.0)
+        c2 = concentration_model_binned_uniform.nfw_concentration(10 ** 8, 0.0)
+        c3 = concentration_model_binned_uniform.nfw_concentration(10 ** 9, 0.0)
+        npt.assert_almost_equal(c1, c2)
+        npt.assert_almost_equal(c1, c3)
+
+        norm_low = 8.0
+        norm_high = 18.0
+        beta_low = 0.2
+        beta_high = 0.9
+        zeta_low = -0.2
+        zeta_high = -0.6
+        model_binned = BinnedHaloMass(self.astropy,
+                                                log10_mass_bins,
+                                                norm_low,
+                                                norm_high,
+                                                beta_low,
+                                                beta_high,
+                                                zeta_low,
+                                                zeta_high,
+                                                scatter=False)
+        model_low = ConcentrationPeakHeight(self.astropy,
+                                            norm_low,
+                                            zeta_low,
+                                            beta_low,
+                                            scatter=False,
+                                            redshift_evolution='RHO_CRIT')
+        model_high = ConcentrationPeakHeight(self.astropy,
+                                            norm_high,
+                                            zeta_high,
+                                            beta_high,
+                                            scatter=False,
+                                            redshift_evolution='RHO_CRIT')
+        c1 = model_low.nfw_concentration(10 ** 7.5, 1.0)
+        c2 = model_high.nfw_concentration(10 ** 9.5, 2.0)
+        c1_binned = model_binned.nfw_concentration(10 ** 7.5, 1.0)
+        c2_binned = model_binned.nfw_concentration(10 ** 9.5, 2.0)
+        npt.assert_almost_equal(c1, c1_binned)
+        npt.assert_almost_equal(c2, c2_binned)
+
+        npt.assert_raises(ValueError, model_binned.nfw_concentration, 10 ** 5.5, 1.0)
+        npt.assert_raises(ValueError, model_binned.nfw_concentration, 10 ** 11.5, 9.0)
 
 if __name__ == '__main__':
     pytest.main()
