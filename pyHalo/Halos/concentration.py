@@ -408,18 +408,17 @@ class BinnedHaloMass(_ConcentrationCDM):
                  scatter_dex = 0.2):
         """
         Evaluate the concentration-mass relation as a power-law in peak height at different halo mass bins
-        :param cosmo:
-        :param log10_mass_bins:
-        :param normalization_low:
-        :param normalization_high:
-        :param beta_low:
-        :param beta_high:
-        :param zeta_low:
-        :param zeta_high:
-        :param redshift_evolution:
-        :param scatter:
-        :param scatter_dex:
-        :param mdef:
+        :param cosmo: instance of astropy cosmology
+        :param log10_mass_bins: a list of log10 halo mass bins
+        :param normalization_low: c8 parameter for the ConcentrationPeakHeight model applied to the lower mass bin
+        :param normalization_high: c8 parameter for the ConcentrationPeakHeight model applied to the upper mass bin
+        :param beta_low: beta parameter for the ConcentrationPeakHeight model applied to the lower mass bin
+        :param beta_high: beta parameter for the ConcentrationPeakHeight model applied to the upper mass bin
+        :param zeta_low: exponent for redshift evolution of ConcentrationPeakHeight model applied to the lower mass bin
+        :param zeta_high:exponent for redshift evolution of ConcentrationPeakHeight model applied to the upper mass bin
+        :param redshift_evolution: string specifying redshift evolution model, can be either RHO_CRIT or PEAK_HEIGHT
+        :param scatter: bool; include scatter
+        :param scatter_dex: scatter in dex
         """
         super(BinnedHaloMass, self).__init__(cosmo, scatter, scatter_dex)
         self._log10_mass_bins = log10_mass_bins
@@ -462,7 +461,7 @@ class BinnedHaloMass(_ConcentrationCDM):
 
         :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
-        :return: halo concentratioon
+        :return: halo concentration
         """
         if isinstance(M, float) or isinstance(M, int):
             pass
