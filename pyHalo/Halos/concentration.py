@@ -397,12 +397,9 @@ class BinnedHaloMass(_ConcentrationCDM):
     def __init__(self,
                  cosmo,
                  log10_mass_bins,
-                 normalization_low,
-                 normalization_high,
-                 beta_low,
-                 beta_high,
-                 zeta_low,
-                 zeta_high,
+                 normalization_list,
+                 beta_list,
+                 zeta_list,
                  redshift_evolution='RHO_CRIT',
                  scatter = True,
                  scatter_dex = 0.2):
@@ -410,34 +407,26 @@ class BinnedHaloMass(_ConcentrationCDM):
         Evaluate the concentration-mass relation as a power-law in peak height at different halo mass bins
         :param cosmo: instance of astropy cosmology
         :param log10_mass_bins: a list of log10 halo mass bins
-        :param normalization_low: c8 parameter for the ConcentrationPeakHeight model applied to the lower mass bin
-        :param normalization_high: c8 parameter for the ConcentrationPeakHeight model applied to the upper mass bin
-        :param beta_low: beta parameter for the ConcentrationPeakHeight model applied to the lower mass bin
-        :param beta_high: beta parameter for the ConcentrationPeakHeight model applied to the upper mass bin
-        :param zeta_low: exponent for redshift evolution of ConcentrationPeakHeight model applied to the lower mass bin
-        :param zeta_high:exponent for redshift evolution of ConcentrationPeakHeight model applied to the upper mass bin
+        :param normalization_list: c8 parameter for the ConcentrationPeakHeight model applied to each mass bin
+        :param beta_list: beta parameter for the ConcentrationPeakHeight model applied to each mass bin
+        :param zeta_list: exponent for redshift evolution of ConcentrationPeakHeight model applied to each mass bin
         :param redshift_evolution: string specifying redshift evolution model, can be either RHO_CRIT or PEAK_HEIGHT
-        :param scatter: bool; include scatter
+        :param scatter: bool; include scatter in MC relation
         :param scatter_dex: scatter in dex
         """
         super(BinnedHaloMass, self).__init__(cosmo, scatter, scatter_dex)
         self._log10_mass_bins = log10_mass_bins
-        self._model_low = ConcentrationPeakHeight(cosmo,
-                                                  normalization_low,
-                                                  zeta_low,
-                                                  beta_low,
-                                                  scatter,
-                                                  scatter_dex,
-                                                  redshift_evolution
-                                                  )
-        self._model_high = ConcentrationPeakHeight(cosmo,
-                                                  normalization_high,
-                                                  zeta_high,
-                                                  beta_high,
-                                                  scatter,
-                                                  scatter_dex,
-                                                  redshift_evolution
-                                                  )
+        self._model_list = []
+        for i in range(0, len(self._log10_mass_bins)):
+            model = ConcentrationPeakHeight(cosmo,
+                                          normalization_list[i],
+                                          zeta_list[i],
+                                          beta_list[i],
+                                          scatter,
+                                          scatter_dex,
+                                          redshift_evolution
+                                          )
+            self._model_list.append(model)
 
     def _check_in_bounds(self, M):
         """
@@ -449,9 +438,9 @@ class BinnedHaloMass(_ConcentrationCDM):
             if M < 10 ** self._log10_mass_bins[0][0]:
                 raise ValueError('Halo mass '+str(numpy.log10(M))+' is below the minimum halo '
                                                                   'mass bin: ', self._log10_mass_bins[0])
-            elif M > 10 ** self._log10_mass_bins[1][1]:
+            elif M > 10 ** self._log10_mass_bins[-1][1]:
                 raise ValueError('Halo mass ' + str(numpy.log10(M)) + ' is above the maximum halo '
-                                                                      'mass bin: ', self._log10_mass_bins[1])
+                                                                      'mass bin: ', self._log10_mass_bins[-1])
         return
 
     def _evaluate_concentration(self, M, z):
@@ -468,10 +457,12 @@ class BinnedHaloMass(_ConcentrationCDM):
         else:
             raise ValueError('M is not a float or int')
         self._check_in_bounds(M)
-        if M < 10 ** self._log10_mass_bins[0][1]:
-            return float(self._model_low._evaluate_concentration(M, z))
+        for bin_number in range(0, len(self._log10_mass_bins)):
+            if M < 10 ** self._log10_mass_bins[bin_number][1]:
+                return float(self._model_list[bin_number]._evaluate_concentration(M, z))
         else:
-            return float(self._model_high._evaluate_concentration(M, z))
+            raise ValueError('M  did not fall inside any specified mass bins! log10(M) = '+str(numpy.log10(M))+' '
+                        'mass bins: '+str(self._log10_mass_bins))
 
 
 class _zEvolutionPeakHeight(object):

@@ -194,14 +194,14 @@ class TestConcentration(object):
         beta_high = 0.0
         zeta_low = 0.0
         zeta_high = 0.0
+        norm_list = [norm_low, norm_high]
+        beta_list = [beta_low, beta_high]
+        zeta_list = [zeta_low, zeta_high]
         concentration_model_binned_uniform = BinnedHaloMass(self.astropy,
                                                             log10_mass_bins,
-                                                            norm_low,
-                                                            norm_high,
-                                                            beta_low,
-                                                            beta_high,
-                                                            zeta_low,
-                                                            zeta_high,
+                                                            norm_list,
+                                                            beta_list,
+                                                            zeta_list,
                                                             scatter=False)
 
         c1 = concentration_model_binned_uniform.nfw_concentration(10** 7, 0.0)
@@ -216,14 +216,14 @@ class TestConcentration(object):
         beta_high = 0.9
         zeta_low = -0.2
         zeta_high = -0.6
+        norm_list = [norm_low, norm_high]
+        beta_list = [beta_low, beta_high]
+        zeta_list = [zeta_low, zeta_high]
         model_binned = BinnedHaloMass(self.astropy,
                                                 log10_mass_bins,
-                                                norm_low,
-                                                norm_high,
-                                                beta_low,
-                                                beta_high,
-                                                zeta_low,
-                                                zeta_high,
+                                      norm_list,
+                                      beta_list,
+                                      zeta_list,
                                                 scatter=False)
         model_low = ConcentrationPeakHeight(self.astropy,
                                             norm_low,
@@ -246,6 +246,25 @@ class TestConcentration(object):
 
         npt.assert_raises(ValueError, model_binned.nfw_concentration, 10 ** 5.5, 1.0)
         npt.assert_raises(ValueError, model_binned.nfw_concentration, 10 ** 11.5, 9.0)
+
+        log10_mass_bins = [[6, 7.5], [7.5, 9.0], [9, 10.7]]
+        norm_low = 2
+        norm_mid = 10.0
+        norm_high = 1000.0
+        beta = 0.0
+        zeta = 0.0
+        norm_list = [norm_low, norm_mid, norm_high]
+        beta_list = [beta, beta, beta]
+        zeta_list = [zeta, zeta, zeta]
+        concentration_model_binned = BinnedHaloMass(self.astropy,
+                                                        log10_mass_bins,
+                                                        norm_list,
+                                                        beta_list,
+                                                        zeta_list,
+                                                        scatter=False)
+        npt.assert_almost_equal(concentration_model_binned.nfw_concentration(10**7, 0.3), 2)
+        npt.assert_almost_equal(concentration_model_binned.nfw_concentration(10 ** 8, 0.3), 10)
+        npt.assert_almost_equal(concentration_model_binned.nfw_concentration(10 ** 9, 0.3), 1000)
 
 if __name__ == '__main__':
     pytest.main()
