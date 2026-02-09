@@ -1,4 +1,4 @@
-from pyHalo.PresetModels.cdm import CDM, CDMCorrelatedStructure
+from pyHalo.PresetModels.cdm import CDM, CDMCorrelatedStructure, CDMBinned
 from pyHalo.PresetModels.wdm import WDM, WDM_mixed
 from pyHalo.PresetModels.sidm import SIDM_core_collapse, SIDM_parametric
 from pyHalo.PresetModels.uldm import ULDM
@@ -344,6 +344,95 @@ class TestPresetModels(object):
             npt.assert_almost_equal(sh.params_physical[TNFWFromParams.KEY_RT],mock_data[util.PARAM_TNFW_RADIUS_TRUNCATION][n] * MPC_TO_KPC)
             npt.assert_almost_equal(sh.z,0.5)
             npt.assert_almost_equal(sh.z_infall,mock_data[util.PARAM_Z_LAST_ISOLATED][n])
+
+    def test_CDM_binned(self):
+
+        cdmbinned = CDMBinned(0.5, 1.5, sigma_sub=0.02, LOS_normalization=1.0)
+        cdm = CDM(0.5, 1.5, sigma_sub=0.02, LOS_normalization=1.0, log_mhigh=10.7)
+        kwargs_mass_sheet_binned = {'kappa_scale_subhalos': 0.1}
+        kwargs_mass_sheet = {'log_mlow_sheets': 6.0, 'log_mhigh_sheets': 10.7, 'kappa_scale_subhalos': 0.1}
+        lens_model_listb, redshift_listb, kwargs_halosb, _ = cdmbinned.lensing_quantities(use_class_mass_ranges=True,
+                                                                                          kwargs_mass_sheet=kwargs_mass_sheet_binned)
+        lens_model_list, redshift_list, kwargs_halos, _ = cdm.lensing_quantities(use_class_mass_ranges=True,
+                                                                                 kwargs_mass_sheet=kwargs_mass_sheet)
+        z_eval = 0.6
+        kappa_binned = 0
+        kappa = 0
+        for i, lm in enumerate(lens_model_listb):
+            if lm == 'CONVERGENCE' and redshift_listb[i] == z_eval:
+                kappa_binned += kwargs_halosb[i]['kappa']
+        for i, lm in enumerate(lens_model_list):
+            if lm == 'CONVERGENCE' and redshift_list[i] == z_eval:
+                kappa += kwargs_halos[i]['kappa']
+        npt.assert_almost_equal(kappa_binned / kappa, 1, 2)
+
+        z_eval = 0.5
+        kappa_binned = 0
+        kappa = 0
+        for i, lm in enumerate(lens_model_listb):
+            if lm == 'CONVERGENCE' and redshift_listb[i] == z_eval:
+                kappa_binned += kwargs_halosb[i]['kappa']
+        for i, lm in enumerate(lens_model_list):
+            if lm == 'CONVERGENCE' and redshift_list[i] == z_eval:
+                kappa += kwargs_halos[i]['kappa']
+        npt.assert_almost_equal(kappa_binned / kappa, 1, 2)
+
+        zlens = 0.5
+        zsource = 1.5
+        log10_mc_low = 1.3 + 0.315
+        log10_mc_high = 1.15 - 0.315
+        gamma = 0.5
+        cdm_low = 1.3
+        cdm_high = 1.15
+        scale_mass_function_low = 10 ** (gamma * (log10_mc_low - cdm_low))
+        scale_mass_function_high = 10 ** (gamma * (log10_mc_high - cdm_high))
+        cdmbinned = CDMBinned(zlens, zsource,
+                              sigma_sub=0.3,
+                              LOS_normalization=2.5,
+                              log10_mc_low=log10_mc_low,
+                              log10_mc_high=log10_mc_high,
+                              scale_mass_function_low=scale_mass_function_low,
+                              scale_mass_function_high=scale_mass_function_high)
+        cdm = CDM(zlens, zsource, sigma_sub=0.3, LOS_normalization=2.5, log_mhigh=10.7)
+
+        halos_binned = cdmbinned.halos
+        halos = cdm.halos
+        number_low_binned = 0
+        number_high_binned = 0
+        c_low_binned = []
+        c_low= []
+        c_high_binned = []
+        c_high = []
+        number_low = 0
+        number_high = 0
+        for halo in halos_binned:
+            if halo.mass < 10 ** 8:
+                number_low_binned += 1
+                c_low_binned.append(halo.c)
+            else:
+                number_high_binned += 1
+                c_high_binned.append(halo.c)
+        for halo in halos:
+            if halo.mass < 10 ** 8:
+                number_low += 1
+                c_low.append(halo.c)
+            else:
+                number_high += 1
+                c_high.append(halo.c)
+
+        ratio = number_low / number_low_binned
+        npt.assert_array_less(abs(ratio * np.sqrt(2) - 1), 0.05)
+        ratio = number_high / number_high_binned
+        npt.assert_array_less(abs(ratio / np.sqrt(2) - 1), 0.2)
+
+        median_c_low_binned = np.median(c_low_binned)
+        median_c_low = np.median(c_low)
+        median_c_high_binned = np.median(c_high_binned)
+        median_c_high = np.median(c_high)
+        ratio = median_c_low_binned / median_c_low
+        npt.assert_array_less(abs(ratio - 2), 0.2)
+        ratio = median_c_high_binned / median_c_high
+        npt.assert_array_less(abs(ratio - 0.5), 0.2)
 
 if __name__ == '__main__':
     pytest.main()

@@ -156,7 +156,7 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
     name = 'PEAK_HEIGHT_POWERLAW'
 
     def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.2,
-                 redshift_evolution='PEAK_HEIGHT'):
+                 redshift_evolution='PEAK_HEIGHT', m_pivot=10**8):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param cosmo: an instance of astropy cosmology
@@ -166,10 +166,12 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :param scatter: bool; whether to include scatter in concentration-mass relation
         :param scatter_dex: scatter in concentration in dex
         :param redshift_evolution: the redshift evolution model; either PEAK_HEIGHT or RHO_CRIT
+        :param m_pivot: pivot scale for the power law in peak height
         """
         self._c0 = c0
         self._zeta = zeta
         self._beta = beta
+        self._m_pivot = m_pivot
         if redshift_evolution == 'PEAK_HEIGHT':
             self._redshift_evolution = _zEvolutionPeakHeight(cosmo)
         elif redshift_evolution == 'RHO_CRIT':
@@ -188,7 +190,7 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :return: halo concentratioon
         """
         M_h = M * self._cosmo.h
-        Mref_h = 10 ** 8 * self._cosmo.h
+        Mref_h = self._m_pivot * self._cosmo.h
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, z)
         redshift_factor = self._redshift_evolution(M, z)

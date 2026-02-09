@@ -279,3 +279,200 @@ def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
         ext = RealizationExtensions(realization)
         realization = ext.SIS_injection(mass_threshold_sis)
     return realization
+
+def CDMBinned(z_lens, z_source,
+          sigma_sub=0.1,
+          log10_sigma_sub=None,
+        log10_mc_low=1.3,
+        log10_mc_high=1.15,
+        scale_mass_function_low=1.0,
+        scale_mass_function_high=1.0,
+        beta=0.7,
+        zeta=-0.4,
+        concentration_scatter_dex=0.2,
+        concentration_model_subhalos='BINNED_HALO_MASS',
+        concentration_model_fieldhalos='BINNED_HALO_MASS',
+        truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
+        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
+        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6.0, log_m_host=13.3, LOS_normalization=1.0,
+        geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
+        redshift_scaling_factor=0.37, c_host=6.0,
+        add_globular_clusters=False, kwargs_globular_clusters=None, halo_mass_profile='TNFW'):
+    """
+    This class generates realizations of dark matter structure in Cold Dark Matter
+
+    :param z_lens: main deflector redshift
+    :param z_source: source redshift
+    :param sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2];
+    :param log10_sigma_sub: amplitude of the subhalo mass function at 10^8 solar masses in units [# of halos / kpc^2];
+    this setting, as well as sigma_sub, will trigger the automatic scaling with host halo mass and redshift
+    :param log10_mc_low: log10(halo concentration) in range 10^6 - 10^8
+    :param log10_mc_high: log10(halo concentration) in range 10^8 - 10^10.7
+    :mc_relation_normalization_list: the log10 normalization of the concentration mass relation in each mass bin
+    :param gamma_mfunc: exponent that connects the normalization of the (sub)halo mass function to the
+    parameters in mc_relation_normalization_list
+
+    The model is defined as: (dN / dm) / (dN_CDM / dm) = (c / c_CDM) ^ gamma_mfunc in each mass bin.
+
+    :param beta: the logarithmic slope of mc relation in each mass bin
+    :param zeta: the redshift evolution of the mc relation in each mass bin
+    :param concentration_scatter_dex: scatter in concentration-mass relation in dex
+    :param concentration_model_subhalos: the concentration-mass relation applied to subhalos,
+    see concentration_models.py for a complete list of available models
+    :param concentration_model_subhalos: the concentration-mass relation applied to field halos,
+    see concentration_models.py for a complete list of available models
+    :param truncation_model_subhalos: the truncation model applied to subhalos, see truncation_models for a complete list
+    :param kwargs_truncation_model_subhalos: keyword arguments for the truncation model applied to subhalos
+    :param truncation_model_fieldhalos: the truncation model applied to field halos, see truncation_models for a
+    complete list
+    :param kwargs_truncation_model_fieldhalos: keyword arguments for the truncation model applied to field halos
+    :param infall_redshift_model: a string that specifies that infall redshift sampling distribution, see the LensCosmo
+    class for details
+    :param kwargs_infall_model: keyword arguments for the infall redshift model
+    :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
+    :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
+    :param log_m_host: log base 10 of the host halo mass [M_sun]
+    in 3D with a cored NFW profile with this core radius
+    :param LOS_normalization: rescales the amplitude of the line-of-sight halo mass function
+    at 10^8 M_sun
+    :param geometry_type: string that specifies the geometry of the rendering volume; options include
+    DOUBLE_CONE, CONE, CYLINDER
+    :param kwargs_cosmo: keyword arguments that specify the cosmology (see pyHalo.Cosmology.cosmology)
+    :param host_scaling_factor: the scaling with host halo mass of the projected number density of subhalos
+    :param redshift_scaling_factor: the scaling with (1+z) of the projected number density of subhalos
+    :param c_host: manually set host halo concentration
+    :param add_globular_clusters: bool; include a population of globular clusters around image positions
+    :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
+    :param halo_mass_profile: sets the subhalo mass profile for field halos and subhalos (must be either NFW or TNFW)
+    :return: a realization of dark matter halos
+    """
+    # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
+    pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
+    # WE ALSO SPECIFY THE GEOMETRY OF THE RENDERING VOLUME
+    geometry = Geometry(pyhalo.cosmology, z_lens, z_source,
+                        cone_opening_angle_arcsec, geometry_type)
+    if infall_redshift_model in ['HYBRID_INFALL', 'DIRECT_INFALL_CLUSTER']:
+        kwargs_infall_model['log_m_host'] = log_m_host
+    pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
+    # NOW WE SET THE MASS FUNCTION CLASSES FOR SUBHALOS AND FIELD HALOS
+    # NOTE: MASS FUNCTION CLASSES SHOULD NOT BE INSTANTIATED HERE
+    mass_function_model_subhalos = CDMPowerLaw
+    mass_function_model_fieldhalos = ShethTormen
+
+    # set the density profile definition
+    if halo_mass_profile not in ['NFW', 'TNFW']:
+        raise Exception('halo mass profile must be either NFW or TNFW')
+    mdef_subhalos = halo_mass_profile
+    mdef_field_halos = halo_mass_profile
+
+    kwargs_concentration_model = {}
+    kwargs_concentration_model['cosmo'] = pyhalo.astropy_cosmo
+    # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
+    kwargs_concentration_model['normalization_list'] = [10**log10_mc_low, 10**log10_mc_high]
+    kwargs_concentration_model['beta_list'] = [beta,
+                                               beta]
+    kwargs_concentration_model['zeta_list'] = [zeta,
+                                               zeta]
+    kwargs_concentration_model['redshift_evolution'] = 'RHO_CRIT'
+    log10_mass_ranges = [[6, 8], [8, 10.7]]
+    kwargs_concentration_model['log10_mass_bins'] = log10_mass_ranges
+    model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
+                                                                 kwargs_concentration_model)
+    kwargs_mc_subs['scatter_dex'] = concentration_scatter_dex
+    concentration_model_subhalos = model_subhalos(**kwargs_mc_subs)
+
+    model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
+                                                                    kwargs_concentration_model)
+    scatter_dex_fieldhalos = 0.2
+    kwargs_mc_field['scatter_dex'] = concentration_scatter_dex
+    concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
+
+    # SET THE TRUNCATION RADIUS FOR SUBHALOS AND FIELD HALOS
+    kwargs_truncation_model_subhalos['lens_cosmo'] = pyhalo.lens_cosmo
+    kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
+
+    model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
+    kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
+    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24', 'TRUNCATION_GALACTICUS']:
+        kwargs_trunc_subs['c_host'] = c_host
+    truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
+    model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
+    kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
+    truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
+    mass_function_scale_low = 10 ** (log10_mc_low - 1.3)
+    # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
+    population_model_list = ['SUBHALOS', 'SUBHALOS', 'LINE_OF_SIGHT', 'LINE_OF_SIGHT']
+    mass_function_class_list = [mass_function_model_subhalos, mass_function_model_subhalos,
+                                mass_function_model_fieldhalos, mass_function_model_fieldhalos]
+    if log10_sigma_sub is not None:
+        sigma_sub = 10 ** log10_sigma_sub
+    kwargs_subhalos_low = {'log_mlow': log10_mass_ranges[0][0],
+                            'log_mhigh': log10_mass_ranges[0][1],
+                           'sigma_sub': scale_mass_function_low * sigma_sub,
+                            'm_pivot': 10 ** 8,
+                            'power_law_index': shmf_log_slope,
+                            'log_m_host': log_m_host,
+                            'delta_power_law_index': 0.0,
+                            'host_scaling_factor': host_scaling_factor,
+                            'redshift_scaling_factor': redshift_scaling_factor,
+                            'draw_poisson': True}
+    kwargs_los_low = {'log_mlow': log10_mass_ranges[0][0],
+                            'log_mhigh': log10_mass_ranges[0][1],
+                  'LOS_normalization': scale_mass_function_low * LOS_normalization,
+                       'm_pivot': 10 ** 8,
+                       'delta_power_law_index': 0.0,
+                       'log_m_host': log_m_host,
+                    'draw_poisson': True}
+    kwargs_subhalos_high = {'log_mlow': log10_mass_ranges[1][0],
+                           'log_mhigh': log10_mass_ranges[1][1],
+                           'sigma_sub': scale_mass_function_high * sigma_sub,
+                           'm_pivot': 10 ** 8,
+                           'power_law_index': shmf_log_slope,
+                           'log_m_host': log_m_host,
+                           'delta_power_law_index': 0.0,
+                           'host_scaling_factor': host_scaling_factor,
+                           'redshift_scaling_factor': redshift_scaling_factor,
+                           'draw_poisson': True}
+    kwargs_los_high = {'log_mlow': log10_mass_ranges[1][0],
+                      'log_mhigh': log10_mass_ranges[1][1],
+                      'LOS_normalization': scale_mass_function_high * LOS_normalization,
+                      'm_pivot': 10 ** 8,
+                      'delta_power_law_index': 0.0,
+                      'log_m_host': log_m_host,
+                      'draw_poisson': True}
+    kwargs_mass_function_list = [kwargs_subhalos_low, kwargs_subhalos_high, kwargs_los_low, kwargs_los_high]
+    # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
+    subhalo_spatial_distribution = Uniform
+    kwargs_subhalos_spatial = {'rmax2d_arcsec': cone_opening_angle_arcsec / 2,
+                               'geometry': geometry
+                               }
+    fieldhalo_spatial_distribution = LensConeUniform
+    spatial_distribution_class_list = [subhalo_spatial_distribution, subhalo_spatial_distribution,
+                                       fieldhalo_spatial_distribution, fieldhalo_spatial_distribution]
+    kwargs_los_spatial = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}
+    kwargs_spatial_distribution_list = [kwargs_subhalos_spatial, kwargs_subhalos_spatial,
+                                        kwargs_los_spatial, kwargs_los_spatial]
+
+    population_model_list += ['TWO_HALO', 'TWO_HALO']
+    kwargs_two_halo_low = copy(kwargs_los_low)
+    kwargs_two_halo_high = copy(kwargs_los_high)
+    kwargs_mass_function_list += [kwargs_two_halo_low, kwargs_two_halo_high]
+    spatial_distribution_class_list += [LensConeUniform, LensConeUniform]
+    kwargs_spatial_distribution_list += [kwargs_los_spatial, kwargs_los_spatial]
+    mass_function_class_list += [ShethTormen, ShethTormen]
+    kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
+                         'concentration_model_subhalos': concentration_model_subhalos,
+                         'truncation_model_field_halos': truncation_model_fieldhalos,
+                         'concentration_model_field_halos': concentration_model_fieldhalos,
+                         'kwargs_density_profile': {}}
+    two_halo_Lazar_correction = True
+    realization = pyhalo.render(population_model_list, mass_function_class_list, kwargs_mass_function_list,
+                                     spatial_distribution_class_list, kwargs_spatial_distribution_list,
+                                     geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
+                                     two_halo_Lazar_correction, scale_2halo_boost_factor=1.0,
+                                     nrealizations=1)[0]
+    if add_globular_clusters:
+        ext = RealizationExtensions(realization)
+        realization = ext.add_globular_clusters(**kwargs_globular_clusters)
+    return realization

@@ -97,7 +97,8 @@ class Subhalos(RenderingClassBase):
                             'currently implemented')
         return self._mass_function_model(**kwargs_model)
 
-    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, *args, **kwargs):
+    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, use_class_mass_ranges=False,
+                                     *args, **kwargs):
         """
 
         :param kappa_scale:
@@ -107,10 +108,12 @@ class Subhalos(RenderingClassBase):
         :param kwargs:
         :return:
         """
+        if use_class_mass_ranges:
+            log_mlow = self._kwargs_mass_function['log_mlow']
+            log_mhigh = self._kwargs_mass_function['log_mhigh']
         mass_in_subhalos = self._get_mass_function_model(log_mlow, log_mhigh).first_moment
         if mass_in_subhalos == 0:
             return [], [], []
-
         area = self._geometry.angle_to_physical_area(0.5 * self._geometry.cone_opening_angle, self._lens_cosmo.z_lens)
         kappa = mass_in_subhalos / self._lens_cosmo.sigma_crit_mass(self._lens_cosmo.z_lens, area)
         negative_kappa = -1 * kappa_scale * kappa

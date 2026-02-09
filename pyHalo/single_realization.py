@@ -462,10 +462,14 @@ class Realization(object):
 
         return new_realization
 
-    def lensing_quantities(self, add_mass_sheet_correction=True, kwargs_mass_sheet={}):
+    def lensing_quantities(self, add_mass_sheet_correction=True,
+                           use_class_mass_ranges=False,
+                           kwargs_mass_sheet={}):
 
         """
         :param add_mass_sheet_correction: include sheets of negative convergence to correct for mass added subhalos/field halos
+        :param use_class_mass_ranges: bool; if True, will use the minimum/maximum halo masses specified for the realization
+        to compute the mass sheet correction
         :param kwargs_mass_sheet: keyword arguments for the mass sheets, see the method _mass_sheet_correction
         :return: the lens_model_list, redshift_list, kwargs_lens, and numerical_alpha_class keywords that can be plugged
         directly into a lenstronomy LensModel class
@@ -491,8 +495,10 @@ class Realization(object):
             if self.rendering_classes is None:
                 raise Exception('if applying a convergence sheet correction, must specify '
                                 'the rendering classes used to determine them.')
-            kwargs_mass_sheets, profile_list, z_sheets = self._mass_sheet_correction(self.rendering_classes,
-                                                                                     **kwargs_mass_sheet)
+            kwargs_mass_sheets, profile_list, z_sheets = self._mass_sheet_correction(
+                self.rendering_classes,
+                use_class_mass_ranges=use_class_mass_ranges,
+                **kwargs_mass_sheet)
             kwargs_lens += kwargs_mass_sheets
             lens_model_list += profile_list
             redshift_array = np.append(redshift_array, z_sheets)
@@ -618,7 +624,9 @@ class Realization(object):
                                kappa_scale=1.0,
                                log_mlow_sheets=7.0,
                                log_mhigh_sheets=10.0,
-                               zmin=None, zmax=None):
+                               zmin=None,
+                               zmax=None,
+                               use_class_mass_ranges=False):
 
         """
         This routine adds the negative mass sheet corrections along the LOS and in the main lens plane.
@@ -635,6 +643,7 @@ class Realization(object):
         :param log_mhigh_sheets: sets the maximum halo mass to subtract mass
         :param zmin: sets the lower limit in redshift
         :param zmax: sets upper limit in redshift
+        :param use_class_mass_ranges: bool; if True, uses the log_mlow/log_mhigh mass ranges stored in each class
         :return:
         """
         kwargs_mass_sheets_out = []
@@ -650,17 +659,16 @@ class Realization(object):
                 kwargs_sheet = {'kappa': kappa_ext}
                 kwargs_mass_sheets_out.append(kwargs_sheet)
             profiles_out = ['CONVERGENCE'] * len(kwargs_mass_sheets_out)
-
         else:
             for i, rendering_class in enumerate(rendering_classes):
                 if rendering_class is None:
                     continue
                 elif rendering_class.name == 'SUBHALOS':
                     kwargs_new, profiles_new, redshifts_new = rendering_class.convergence_sheet_correction(
-                        kappa_scale_subhalos, log_mlow_sheets, log_mhigh_sheets, zmin, zmax)
+                        kappa_scale_subhalos, log_mlow_sheets, log_mhigh_sheets, use_class_mass_ranges)
                 else:
                     kwargs_new, profiles_new, redshifts_new = rendering_class.convergence_sheet_correction(
-                        kappa_scale, log_mlow_sheets, log_mhigh_sheets, zmin, zmax)
+                        kappa_scale, log_mlow_sheets, log_mhigh_sheets, zmin, zmax, use_class_mass_ranges)
                 kwargs_mass_sheets_out += kwargs_new
                 redshifts_out += redshifts_new
                 profiles_out += profiles_new
