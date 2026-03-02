@@ -365,7 +365,7 @@ class TruncationGalacticus(object):
         """
         log10c = np.log10(infall_concentration)
         log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
-        m_bound = halo_mass * halo_mass * 10 ** log10mbound_over_minfall
+        m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
                                                         z_eval,
@@ -607,7 +607,7 @@ class TruncationGalacticusMilkyWay(object):
         """
         log10c = np.log10(infall_concentration)
         log10mbound_over_minfall = self._mass_loss_interp(log10c, time_since_infall, self._chost)
-        m_bound = halo_mass * halo_mass * 10 ** log10mbound_over_minfall
+        m_bound = halo_mass * 10 ** log10mbound_over_minfall
         _, rs, r200 = self._lens_cosmo.NFW_params_physical(halo_mass,
                                                         infall_concentration,
                                                         z_eval,

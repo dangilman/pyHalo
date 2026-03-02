@@ -17,6 +17,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         subhalo_spatial_distribution='PROJECTED_NFW',
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
+        two_halo_contribution=True,
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
@@ -61,6 +62,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     HYBRID_INFALL (accounts for subhalos and sub-subhalos) and DIRECT_INFALL (only subhalos)
     :param kwargs_infall_model: keyword arguments for the infall redshift model
     :param subhalo_spatial_distribution: the spatial distribution model for subhalos
+    :param two_halo_contribution: bool; include the two-halo term
     :param shmf_log_slope: the logarithmic slope of the subhalo mass function pivoting around 10^8 M_sun
     :param cone_opening_angle_arcsec: the opening angle of the rendering volume in arcsec
     :param log_m_host: log base 10 of the host halo mass [M_sun]
@@ -138,10 +140,13 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
 
     # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
-    population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT', 'TWO_HALO']
+    population_model_list = ['SUBHALOS', 'LINE_OF_SIGHT']
     mass_function_class_list = [mass_function_model_subhalos,
-                                mass_function_model_fieldhalos,
-                                mass_function_model_fieldhalos]
+                                mass_function_model_fieldhalos
+                                ]
+    if two_halo_contribution is True:
+        population_model_list += ['TWO_HALO']
+        mass_function_class_list += [mass_function_model_fieldhalos]
     kwargs_subhalo_mfunc = {'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                        'm_pivot': 10 ** 8,
@@ -165,7 +170,9 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
                   'm_pivot': 10 ** 8,
                   'log_m_host': log_m_host,
                   'delta_power_law_index': 0.0, 'draw_poisson': draw_poisson})
-    kwargs_mass_function_list = [kwargs_mass_function_subhalos, kwargs_mass_function_fieldhalos, kwargs_mass_function_fieldhalos]
+    kwargs_mass_function_list = [kwargs_mass_function_subhalos, kwargs_mass_function_fieldhalos]
+    if two_halo_contribution is True:
+        kwargs_mass_function_list += [kwargs_mass_function_fieldhalos]
 
     # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
     if subhalo_spatial_distribution == 'UNIFORM':
