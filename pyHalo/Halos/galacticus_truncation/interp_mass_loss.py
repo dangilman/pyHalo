@@ -75,7 +75,7 @@ class InterpGalacticusKeeley24(object):
 class InterpGalacticus(object):
     """
     This class interpolates output from the semi-analytic model galacticus to predict the bound mass of a subhalo
-    as a function of its infall mass, concentration, host halo concentration, and the time since infall.
+    as a function of its infall time, concentration, host halo concentration.
     """
     def __init__(self):
         from pyHalo.Halos.galacticus_truncation.johnsonSUparams import a_fit, \
@@ -109,5 +109,42 @@ class InterpGalacticus(object):
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
         output = float(johnsonsu.rvs(a, b))
-        #output -= 0.25
         return min(output, 0.0)
+
+class InterpGalacticusMW(object):
+
+    def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.johnsonSUparams_MW import a_fit, \
+            b_fit
+        nstep = 15
+        log10c_values = np.linspace(np.log10(2.0), np.log10(128), nstep)
+        t_inf_values = np.linspace(0.0, 12.9, nstep)
+        chost_values = np.linspace(6.0, 12, nstep)
+        a_values = np.array(a_fit).reshape(nstep, nstep, nstep)
+        b_values = np.array(b_fit).reshape(nstep, nstep, nstep)
+        _points = (t_inf_values, log10c_values, chost_values)
+        self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
+                                               fill_value=None)
+        self._b_interp = RegularGridInterpolator(_points, b_values, bounds_error=False,
+                                           fill_value=None)
+
+    def __call__(self, log10_concentration_infall, time_since_infall, chost):
+        """
+        Evaluates the prediction from galacticus for subhalo bound mass
+        :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
+        :param time_since_infall: the time ellapsed since infall and the deflector redshift
+        :param chost: host halo concentration at z=0.5
+        :return: the log10(bound mass divided by the infall mass), plus scatter
+        """
+        log10_concentration_infall = max(np.log10(2), log10_concentration_infall)
+        log10_concentration_infall = min(np.log10(128), log10_concentration_infall)
+        time_since_infall = max(0.0, time_since_infall)
+        time_since_infall = min(time_since_infall, 12.9)
+        chost = max(6.0, chost)
+        chost = min(12.0, chost)
+        p = (time_since_infall, log10_concentration_infall, chost)
+        a, b = self._a_interp(p), self._b_interp(p)
+        output = float(johnsonsu.rvs(a, b))
+        return min(output, 0.0)
+
+
