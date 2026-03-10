@@ -6,7 +6,7 @@ from colossus.lss.bias import twoHaloTerm
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
 from pyHalo.utilities import generate_lens_plane_redshifts
-from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid,
+from pyHalo.Halos.accretion import (InfallDistributionGalacticus2024, InfallDistributionHybrid, InfallDistributionHybridMilkyWay,
                                     InfallDistributionDirect, InfallDistributionClusterDirect, InfallAtZlens, Infall0)
 
 
@@ -98,6 +98,8 @@ class LensCosmo(object):
                 kwargs_infall_model['log_m_host'] = 13.0
         if infall_redshift_model == 'HYBRID_INFALL':
             self._z_infall_model = InfallDistributionHybrid(self.z_lens, kwargs_infall_model['log_m_host'])
+        elif infall_redshift_model == 'HYBRID_INFALL_MW':
+            self._z_infall_model = InfallDistributionHybridMilkyWay(self.z_lens, kwargs_infall_model['log_m_host'])
         elif infall_redshift_model == 'DIRECT_INFALL':
             self._z_infall_model = InfallDistributionDirect(self.z_lens, kwargs_infall_model['log_m_host'])
         elif infall_redshift_model == 'GALACTICUS_2024':

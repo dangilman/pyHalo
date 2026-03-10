@@ -5,7 +5,6 @@ from scipy.interpolate import interp1d
 
 __all__ = ['CDMPowerLaw', 'WDMPowerLaw', 'MixedWDMPowerLaw']
 
-
 class _PowerLawBase(object):
     name = 'BASE_POWER_LAW'
     def __init__(self, log_mlow, log_mhigh, power_law_index, draw_poisson, normalization):

@@ -113,9 +113,15 @@ class InterpGalacticus(object):
 
 class InterpGalacticusMW(object):
 
-    def __init__(self):
-        from pyHalo.Halos.galacticus_truncation.johnsonSUparams_MW import a_fit, \
-            b_fit
+    def __init__(self, rmax=200):
+        if rmax == 50:
+            from pyHalo.Halos.galacticus_truncation.johnsonSUparams_MW_rmax50kpc import a_fit, \
+                b_fit
+        elif rmax == 200:
+            from pyHalo.Halos.galacticus_truncation.johnsonSUparams_MW_rmax200kpc import a_fit, \
+                b_fit
+        else:
+            raise ValueError('rmax must be 30 or 80 kpc')
         nstep = 15
         log10c_values = np.linspace(np.log10(2.0), np.log10(128), nstep)
         t_inf_values = np.linspace(0.0, 12.9, nstep)
