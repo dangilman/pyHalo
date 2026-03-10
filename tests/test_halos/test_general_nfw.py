@@ -1,7 +1,7 @@
 import numpy.testing as npt
 import numpy as np
 from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo
+from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWFieldHalo, GeneralNFWSubhalo, GeneralNFWHaloFromMass
 from pyHalo.Halos.HaloModels.NFW import NFWFieldHalo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePowerlaw
