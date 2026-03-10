@@ -145,10 +145,9 @@ class ConcentrationLudlow(_ConcentrationCDM):
         Evaluates the concentration of an NFW profile
         :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
-        :return: halo concentratioon
+        :return: halo concentration
         """
         M_h = M * self._cosmo.h
-        z = min(15.0, z)
         c = concentration(M_h, mdef=self._mdef, model='ludlow16', z=z)
         return c
 
@@ -156,7 +155,8 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
 
     name = 'PEAK_HEIGHT_POWERLAW'
 
-    def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.2):
+    def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.2,
+                 redshift_evolution='PEAK_HEIGHT', m_pivot=10**8):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param cosmo: an instance of astropy cosmology
@@ -165,11 +165,19 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :param beta: the logarithmic slope of the concentration-mass relation in peak height
         :param scatter: bool; whether to include scatter in concentration-mass relation
         :param scatter_dex: scatter in concentration in dex
+        :param redshift_evolution: the redshift evolution model; either PEAK_HEIGHT or RHO_CRIT
+        :param m_pivot: pivot scale for the power law in peak height
         """
         self._c0 = c0
         self._zeta = zeta
         self._beta = beta
-        self._redshift_evolution = _zEvolutionPeakHeight(cosmo)
+        self._m_pivot = m_pivot
+        if redshift_evolution == 'PEAK_HEIGHT':
+            self._redshift_evolution = _zEvolutionPeakHeight(cosmo)
+        elif redshift_evolution == 'RHO_CRIT':
+            self._redshift_evolution = _zEvolutionRhoCrit(cosmo)
+        else:
+            raise ValueError('Redshift evolution must be PEAK_HEIGHT or RHO_CRIT')
         super(ConcentrationPeakHeight, self).__init__(cosmo, scatter, scatter_dex)
 
     def _evaluate_concentration(self, M, z):
@@ -182,7 +190,7 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :return: halo concentratioon
         """
         M_h = M * self._cosmo.h
-        Mref_h = 10 ** 8 * self._cosmo.h
+        Mref_h = self._m_pivot * self._cosmo.h
         nu = peaks.peakHeight(M_h, z)
         nu_ref = peaks.peakHeight(Mref_h, z)
         redshift_factor = self._redshift_evolution(M, z)
@@ -382,6 +390,83 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
         arg = (log10u - a) / (2 * b)
         return 0.5 * (1 + numpy.tanh(arg))
 
+
+class BinnedHaloMass(_ConcentrationCDM):
+    name = 'BINNED_HALO_MASS'
+    """
+    This model evaluates concentrations in fixed halo mass bins
+    """
+    def __init__(self,
+                 cosmo,
+                 log10_mass_bins,
+                 normalization_list,
+                 beta_list,
+                 zeta_list,
+                 redshift_evolution='RHO_CRIT',
+                 scatter = True,
+                 scatter_dex = 0.2):
+        """
+        Evaluate the concentration-mass relation as a power-law in peak height at different halo mass bins
+        :param cosmo: instance of astropy cosmology
+        :param log10_mass_bins: a list of log10 halo mass bins
+        :param normalization_list: c8 parameter for the ConcentrationPeakHeight model applied to each mass bin
+        :param beta_list: beta parameter for the ConcentrationPeakHeight model applied to each mass bin
+        :param zeta_list: exponent for redshift evolution of ConcentrationPeakHeight model applied to each mass bin
+        :param redshift_evolution: string specifying redshift evolution model, can be either RHO_CRIT or PEAK_HEIGHT
+        :param scatter: bool; include scatter in MC relation
+        :param scatter_dex: scatter in dex
+        """
+        super(BinnedHaloMass, self).__init__(cosmo, scatter, scatter_dex)
+        self._log10_mass_bins = log10_mass_bins
+        self._model_list = []
+        for i in range(0, len(self._log10_mass_bins)):
+            model = ConcentrationPeakHeight(cosmo,
+                                          normalization_list[i],
+                                          zeta_list[i],
+                                          beta_list[i],
+                                          scatter,
+                                          scatter_dex,
+                                          redshift_evolution
+                                          )
+            self._model_list.append(model)
+
+    def _check_in_bounds(self, M):
+        """
+        Check that the halo mass in inside a bin
+        :param M: halo mass
+        :return: bool
+        """
+        if isinstance(M, float) or isinstance(M, int):
+            if M < 10 ** self._log10_mass_bins[0][0]:
+                raise ValueError('Halo mass '+str(numpy.log10(M))+' is below the minimum halo '
+                                                                  'mass bin: ', self._log10_mass_bins[0])
+            elif M > 10 ** self._log10_mass_bins[-1][1]:
+                raise ValueError('Halo mass ' + str(numpy.log10(M)) + ' is above the maximum halo '
+                                                                      'mass bin: ', self._log10_mass_bins[-1])
+        return
+
+    def _evaluate_concentration(self, M, z):
+
+        """
+        Evaluates the concentration of an NFW profile
+
+        :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
+        :param z: redshift
+        :return: halo concentration
+        """
+        if isinstance(M, float) or isinstance(M, int):
+            pass
+        else:
+            raise ValueError('M is not a float or int')
+        self._check_in_bounds(M)
+        for bin_number in range(0, len(self._log10_mass_bins)):
+            if M < 10 ** self._log10_mass_bins[bin_number][1]:
+                return float(self._model_list[bin_number]._evaluate_concentration(M, z))
+        else:
+            raise ValueError('M  did not fall inside any specified mass bins! log10(M) = '+str(numpy.log10(M))+' '
+                        'mass bins: '+str(self._log10_mass_bins))
+
+
 class _zEvolutionPeakHeight(object):
 
     def __init__(self, cosmo):
@@ -398,6 +483,21 @@ class _zEvolutionPeakHeight(object):
         """
         M_h = m * self._cosmo.h
         redshift_factor = peaks.peakHeight(M_h, 0.0) / peaks.peakHeight(M_h, z)
+        return redshift_factor
+
+class _zEvolutionRhoCrit(object):
+
+    def __init__(self, cosmo):
+        self._cosmo = cosmo
+
+    def __call__(self, m, z):
+        """
+        This method evaluates the redshift evolution according to the redshift evolution of the critical density
+        :param m: halo mass in units 200c; note that this model is independent of m
+        :param z: redshift
+        :return: the relative evolution of the critical density between z=0 and z=z
+        """
+        redshift_factor = self._cosmo.critical_density(z).value / self._cosmo.critical_density(0.0).value
         return redshift_factor
 
 class _zEvolutionBose2016(object):

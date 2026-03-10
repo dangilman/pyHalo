@@ -62,6 +62,31 @@ class TestCNFWHalos(object):
         rho_cdm = cdm_halo.density_profile_3d(r)
         npt.assert_almost_equal(np.sum(rho_sidm / rho_cdm)/len(rho_sidm), 1, 1)
 
+    def test_density_profile(self):
+
+        m = 10 ** 8
+        x = 0.5
+        y = 1.0
+        r3d = 100
+        unique_tag = 1.0
+        kwargs_profile = {'beta': 0.7}
+        is_subhalo = False
+        zlens, zsource = 0.5, 2.0
+        lens_cosmo = LensCosmo(zlens, zsource)
+        cdm_halo = TNFWFieldHalo.simple_setup(m, 0.0, 0.0, zlens, tau=1000, lens_cosmo=lens_cosmo)
+        cnfw_halo = CoreNFWHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+                                self.truncation_class, self.concentration_class, unique_tag)
+        cnfw_halo._c = cdm_halo.c
+        n = 2000
+        r = np.logspace(-2, np.log10(cdm_halo.c),
+                        n) * cnfw_halo.nfw_params[1]
+        rho_sidm = cnfw_halo.density_profile_3d(r)
+        rho_cdm = cdm_halo.density_profile_3d(r)
+
+        m_3d = np.trapz(4*np.pi*rho_sidm *r**2, r)
+        m_3d_nfw = np.trapz(4 * np.pi * rho_cdm * r ** 2, r)
+        npt.assert_equal(m_3d / m_3d_nfw < 1, True)
+
 
 if __name__ == '__main__':
     pytest.main()

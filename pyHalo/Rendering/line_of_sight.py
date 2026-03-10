@@ -64,12 +64,14 @@ class LineOfSight(LineOfSightNoSheet):
     the main deflector, with the inclusion of negative sheets of convergence to remove the mass added in halos
     """
     name = 'LINE_OF_SIGHT'
-    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, zmin=None, zmax=None, *args, **kwargs):
+    def convergence_sheet_correction(self, kappa_scale, log_mlow, log_mhigh, zmin=None, zmax=None,
+                                     use_class_mass_ranges=False, *args, **kwargs):
 
         """
         this routine applies the negative convergence sheet correction for lens planes along the line of sight
+        :param use_defined_mass_ranges: if True, will use log_mlow / log_mhigh as stored in the class
         :param kwargs_mass_sheets: keyword arguments that overwrite whatever the default settings for the mass sheet
-        sheet are - leave it as None for most applications
+        are - leave it as None for most applications
         :return:
         """
 
@@ -78,7 +80,9 @@ class LineOfSight(LineOfSightNoSheet):
         kwargs_out = []
         profile_names_out = []
         redshifts = []
-
+        if use_class_mass_ranges:
+            log_mlow = self._kwargs_mass_function['log_mlow']
+            log_mhigh = self._kwargs_mass_function['log_mhigh']
         if zmin is None:
             zmin = 0.0
         if zmax is None:

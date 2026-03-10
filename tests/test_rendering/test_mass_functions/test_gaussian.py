@@ -6,8 +6,9 @@ from pyHalo.Rendering.MassFunctions.gaussian import Gaussian
 class TestGaussian(object):
 
     def setup_method(self):
+
         n0 = 5000
-        mean = 5.0
+        mean = 5.5
         sigma = 0.5
         mfunc = Gaussian(n0, mean, sigma, draw_poisson=False)
         mfunc_piosson = Gaussian(n0, mean, sigma, draw_poisson=True)
@@ -24,8 +25,7 @@ class TestGaussian(object):
         mu, sigma = np.mean(log10_m), np.std(log10_m)
         npt.assert_almost_equal(mu, self.mean, 1)
         npt.assert_almost_equal(sigma, self.sigma, 1)
-        npt.assert_almost_equal(mu, self.mass_function_poisson.first_moment,1)
-
+        npt.assert_almost_equal(np.sum(m) / (self.n0 * self.mfunc.first_moment), 1, 1)
     def test_draw_poisson(self):
 
         m = self.mfunc.draw()

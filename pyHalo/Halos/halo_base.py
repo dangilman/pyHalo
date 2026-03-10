@@ -61,25 +61,36 @@ class Halo(ABC):
     def rescale_norm(self):
         return self._rescale_norm
 
-    def rescale_normalization(self, factor, force=False):
+    def rescale_normalization(self, factor, force=False, log=True):
         """
         Sets the rescaling factor for the normalization (only can do this once)
         :param factor:
+        :param force:
+        :param log:
         :return:
         """
         if force:
-            self._rescale_norm = factor
-            self._rescaled_once = True
-        else:
-            if self._rescaled_once:
-                pass
-            else:
+            if log:
                 self._rescaled_once = True
-                self._rescale_norm *= factor
-                if hasattr(self, '_params_physical'):
-                    delattr(self, '_params_physical')
-                if hasattr(self, '_kwargs_lenstronomy'):
-                    delattr(self, '_kwargs_lenstronomy')
+            self._rescale_norm *= factor
+            if hasattr(self, '_params_physical'):
+                delattr(self, '_params_physical')
+            if hasattr(self, '_kwargs_lenstronomy'):
+                delattr(self, '_kwargs_lenstronomy')
+            if hasattr(self, '_nfw_params'):
+                delattr(self, '_nfw_params')
+        elif self._rescaled_once:
+            pass
+        else:
+            if log:
+                self._rescaled_once = True
+            self._rescale_norm *= factor
+            if hasattr(self, '_params_physical'):
+                delattr(self, '_params_physical')
+            if hasattr(self, '_kwargs_lenstronomy'):
+                delattr(self, '_kwargs_lenstronomy')
+            if hasattr(self, '_nfw_params'):
+                delattr(self, '_nfw_params')
 
     @property
     @abstractmethod
@@ -227,7 +238,21 @@ class Halo(ABC):
 
     def logarithmic_profile_slope(self, r, profile_args=None):
         """
+        Compute the logarithmic profile slope at a coordinate r
+        :param r: distance from center of halo [kpc]
+        :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
+        each halo class
+        :return: the density profile in units M_sun / kpc^3
+        """
+        if isinstance(r, float) or isinstance(r, int):
+            r_eval = np.append(np.array(r), r + 0.001 * r)
+            return self._logarithmic_profile_slope_array(r_eval, profile_args)[0]
+        else:
+            return self._logarithmic_profile_slope_array(r, profile_args)
 
+    def _logarithmic_profile_slope_array(self, r, profile_args=None):
+        """
+        Compute the logarithmic profile slope for an array of radial (in 3D) coordinates r
         :param r: distance from center of halo [kpc]
         :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
         each halo class

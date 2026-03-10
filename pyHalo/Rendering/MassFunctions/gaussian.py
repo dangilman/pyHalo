@@ -13,13 +13,14 @@ class Gaussian(object):
         """
         :param n: normalization, also equal to the number of objects
         :param mean: mass of objects to render
-        :param sigma: rendering volume
+        :param sigma: standard deviation
         :param draw poisson: whether or not to draw from a poisson distribution
         """
         self.mean = mean
         self.sigma = sigma
         self.n_mean = n
-        self.first_moment = self.mean
+        # expectation value of pdf
+        self.first_moment = 10 ** (mean + sigma ** 2 * np.log(10) / 2)
         self.draw_poisson = draw_poisson
 
     def draw(self):

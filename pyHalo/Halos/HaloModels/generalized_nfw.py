@@ -99,7 +99,9 @@ class GeneralNFWSubhalo(Halo):
         """
         if not hasattr(self, '_rho0_norm'):
             (concentration, gamma_inner, gamma_outer) = self.profile_args
-            rhos, rs, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
+            rhos, rs_nfw, r200 = self._lens_cosmo.NFW_params_physical(self.mass, concentration, self.z_eval)
+            if 'r_transition' not in self._args.keys():
+                self._args['r_transition'] = rs_nfw
             kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
             if 'x_match' in self._args.keys():
                 if self._args['x_match'] == 'c':
@@ -109,13 +111,29 @@ class GeneralNFWSubhalo(Halo):
             else:
                 # r_vmax = 2.16 * rs
                 x_match = 2.16
-            rs_arcsec = rs / kpc_per_arcsec
-            r_match_arcsec = x_match * rs / kpc_per_arcsec
-            fx = np.log(1 + x_match) - x_match / (1 + x_match)
-            m_nfw = 4 * np.pi * rs ** 3 * rhos * fx
+            rs_arcsec = self._args['r_transition'] / kpc_per_arcsec
+            r_match_arcsec = x_match * self._args['r_transition'] / kpc_per_arcsec
+            if 'mass_conservation' in self._args.keys():
+                m_match = self._args['mass_conservation']
+            else:
+                fx = np.log(1 + x_match) - x_match / (1 + x_match)
+                m_match = 4 * np.pi * self._args['r_transition'] ** 3 * rhos * fx
             sigma_crit_arcsec = self._lens_cosmo.sigma_crit_arcsecond_interp(self.z)
-            self._rho0_norm = m_nfw / self._prof.mass_3d(r_match_arcsec, rs_arcsec, sigma_crit_arcsec, gamma_inner, gamma_outer)
+            self._rho0_norm = m_match / self._prof.mass_3d(r_match_arcsec, rs_arcsec, sigma_crit_arcsec, gamma_inner, gamma_outer)
         return self._rho0_norm
+
+    @staticmethod
+    def log_profile_slope(r, rs, gamma_inner, gamma_outer):
+        """
+        Compute the logarithmic profile slope for an array of radial (in 3D) coordinates r
+        :param r: distance from center of halo [kpc]
+        :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
+        each halo class
+        :return: the density profile in units M_sun / kpc^3
+        """
+        x = r/rs
+        d_log_rho_d_log_r = -(gamma_inner + gamma_outer * x ** 2) / (1 + x ** 2)
+        return d_log_rho_d_log_r
 
 class GeneralNFWFieldHalo(GeneralNFWSubhalo):
     """

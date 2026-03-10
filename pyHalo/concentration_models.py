@@ -1,5 +1,6 @@
-from pyHalo.Halos.concentration import ConcentrationLudlow, ConcentrationDiemerJoyce, \
-    ConcentrationPeakHeight, ConcentrationWDMHyperbolic, ConcentrationWDMPolynomial, ConcentrationLudlowWDM, ConcentrationConstant
+from pyHalo.Halos.concentration import (ConcentrationLudlow, ConcentrationDiemerJoyce, \
+    ConcentrationPeakHeight, ConcentrationWDMHyperbolic, ConcentrationWDMPolynomial, ConcentrationLudlowWDM, ConcentrationConstant,
+                                        BinnedHaloMass)
 from copy import deepcopy
 import numpy as np
 
@@ -21,6 +22,8 @@ def preset_concentration_models(model_name, kwargs_model=None):
         return ConcentrationLudlow, kwargs_model_return
     elif model_name == 'PEAK_HEIGHT_POWERLAW':
         return ConcentrationPeakHeight, kwargs_model_return
+    elif model_name == 'BINNED_HALO_MASS':
+        return BinnedHaloMass, kwargs_model_return
     elif model_name == 'WDM_HYPERBOLIC':
         return ConcentrationWDMHyperbolic, kwargs_model_return
     elif model_name == 'WDM_POLYNOMIAL':

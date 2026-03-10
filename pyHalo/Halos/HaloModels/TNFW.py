@@ -2,6 +2,8 @@ from pyHalo.Halos.halo_base import Halo
 import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
+from scipy.optimize import minimize
+
 
 class TNFWFieldHalo(Halo):
     # we use the pseudo nfw methods to normalize profile
@@ -41,11 +43,14 @@ class TNFWFieldHalo(Halo):
         r3d = None
         sub_flag = False
         args = {}
-        from pyHalo.concentration_models import preset_concentration_models
+        if isinstance(concentration_model, str):
+            from pyHalo.concentration_models import preset_concentration_models
+            _c_model, _ = preset_concentration_models(concentration_model)
+            concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
+        else:
+            concentration_class = concentration_model
         from pyHalo.truncation_models import truncation_models
-        _c_model, _ = preset_concentration_models(concentration_model)
         _t_model, _ = truncation_models('MULTIPLE_RS')
-        concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
         truncation_class = _t_model(lens_cosmo, tau)
         return TNFWFieldHalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
                              truncation_class, concentration_class, 1.0)
@@ -132,7 +137,6 @@ class TNFWFieldHalo(Halo):
         """
         Computes the halo concentration (once)
         """
-
         if not hasattr(self, '_c'):
             self._c = self._concentration_class.nfw_concentration(self.mass, self.z_eval)
         return self._c
@@ -200,13 +204,45 @@ class TNFWFieldHalo(Halo):
     def pseudo_nfw(self):
         return False
 
+    @staticmethod
+    def log_derivative_inverse(gamma, rs, rt):
+        """
+        Find the radius where the logartihmic slope equals gamma
+        :param gamma: log-profile slope
+        :param rs: scale radius
+        :param rt: truncation radius
+        :return: the coordinate r where the log-slope equals gamma
+        """
+        tau = rt/rs
+        def _func_to_minimize(x):
+            if x < 0:
+                return np.inf
+            else:
+                return abs(-gamma - 5 + (2 / (1 + x)) + 2 * tau ** 2 / (tau ** 2 + x ** 2))
+        opt = minimize(_func_to_minimize, x0=2.0, method='Nelder-Mead')
+        return float(opt['x']) * rs
+
+    @staticmethod
+    def log_profile_slope(r, rs, rt):
+        """
+        Compute the logarithmic profile slope for an array of radial (in 3D) coordinates r
+        :param r: distance from center of halo [kpc]
+        :param profile_args: keyword arguments for the density profile; if not specified, uses the ones computed inside
+        each halo class
+        :return: the density profile in units M_sun / kpc^3
+        """
+        x, t = r/rs, rt/rs
+        d_log_rho_d_log_r = -5 + 2/(1 + x) + (2 * t ** 2)/(t ** 2 + x ** 2)
+        return d_log_rho_d_log_r
+
 class TNFWSubhalo(TNFWFieldHalo):
     """
     Defines a truncated NFW halo that is a subhalo of the host dark matter halo
     """
 
     @classmethod
-    def simple_setup(cls, mass, f_bound, z_infall, x, y, z, lens_cosmo):
+    def simple_setup(cls, mass, f_bound, z_infall, x, y, z, lens_cosmo,
+                     concentration_model='DIEMERJOYCE19'):
         """
         Creates an instance of the TNFWSubhalo class with a specified bound mass, from which the density profile is
         computed using the tidal track
@@ -222,11 +258,14 @@ class TNFWSubhalo(TNFWFieldHalo):
         r3d = None
         sub_flag = True
         args = {}
-        from pyHalo.concentration_models import preset_concentration_models
+        if isinstance(concentration_model, str):
+            from pyHalo.concentration_models import preset_concentration_models
+            _c_model, _ = preset_concentration_models(concentration_model)
+            concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
+        else:
+            concentration_class = concentration_model
         from pyHalo.truncation_models import truncation_models
-        _c_model, _ = preset_concentration_models('DIEMERJOYCE19')
         _t_model, _ = truncation_models('TRUNCATION_GALACTICUS')
-        concentration_class = _c_model(lens_cosmo.cosmo.astropy, scatter=False)
         truncation_class = _t_model(lens_cosmo, 5.0)
         tnfw_subhalo = TNFWSubhalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
                              truncation_class, concentration_class, 1.0)
@@ -254,10 +293,12 @@ class TNFWSubhalo(TNFWFieldHalo):
         Computes the mass inside the virial radius (with truncation effects included)
         :return: the mass inside r = c * r_s
         """
-        if self._truncation_class.name in ['TruncationGalacticus', 'TruncationGalacticusKeeley24']:
+        if self._truncation_class.name in ['TruncationGalacticus',
+                                           'TruncationGalacticusKeeley24',
+                                           'TruncationGalacticusApproxCDM']:
             pass
         else:
-            raise Exception('this method can only be called when using the TruncationGalacticus class')
+            raise Exception('this method can only be called when using one of the TruncationGalacticus class')
         if not hasattr(self, '_mbound_galacticus_definition'):
             self._mbound_galacticus_definition = self._truncation_class.calculate_mbound(self)
         return self._mbound_galacticus_definition

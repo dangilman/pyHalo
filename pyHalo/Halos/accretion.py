@@ -268,3 +268,114 @@ class Infall0(object):
         :return: infall redshift
         """
         return 0.0
+
+class InfallRedshiftDistributionBase(object):
+    name = 'BASE'
+    def __init__(self, z_lens, log_m_host,
+                 a_mean, b_mean, c_mean,
+                 a_std, b_std, c_std
+                 ):
+        """
+
+        :param z_lens: main deflector redshift
+        :param log_m_host: log10 host halo mass in solar masses
+        """
+        self._m_host = 10**log_m_host
+        self._z_lens = z_lens
+        self.a_mean = a_mean
+        self.b_mean = b_mean
+        self.c_mean = c_mean
+        self.a_std = a_std
+        self.b_std = b_std
+        self.c_std = c_std
+
+    def __call__(self, m_sub):
+        """
+        Return the infall redshift for a subhalo with infall mass m_sub
+        :param m_sub: infall mass in solar masses
+        :return: infall redshift
+        """
+        mass_ratio = self._mass_ratio_in_bounds(m_sub / self._m_host)
+        mu = self.z_inf_to_z_host_mean(mass_ratio)
+        sig = self.z_inf_to_z_host_std(mass_ratio)
+        bounds = [0.0, 15.0]
+        z = float(truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
+                                 loc=mu, scale=sig))
+        return self._z_lens + z
+
+    @staticmethod
+    def _mass_ratio_in_bounds(massRatio):
+        """
+        Make sure the ratio m_infall / m_host falls in the calibrated range 10^-5 - 10^-0.5
+        :param massRatio:
+        :return: the ratio m_infall / m_host
+        """
+        massRatio = max(10 ** -5.0, massRatio)
+        massRatio = min(10 ** -0.5, massRatio)
+        return massRatio
+
+    def z_inf_to_z_host_mean(self, massRatio):
+        """
+        Return the mean infall redshift relative to the host redshift for subhalos with a mass ratio of
+        massRatio = Msub / Mhost.
+        :param massRatio: mass ratio of the subhao relative to the host, i.e. Msub / Mhost
+        :return: the mean infall redshift relative to the host redshift
+        """
+        a = self.a_mean
+        b = self.b_mean
+        c = self.c_mean
+        return a / (1 + b * (-numpy.log10(massRatio)) ** c)
+
+    def z_inf_to_z_host_std(self, massRatio):
+        """
+        Return the standard deviation of infall redshift for subhalos with a mass ratio of
+        massRatio = Msub / Mhost.
+        :param massRatio: mass ratio of the subhao relative to the host, i.e. Msub / Mhost
+        :return: the standard deviation of infall redshift
+        """
+        a = self.a_std
+        b = self.b_std
+        c = self.c_std
+        return a / (1 + b * (-numpy.log10(massRatio)) ** c)
+
+class InfallDistributionDirectMilkyWay50kpc(InfallRedshiftDistributionBase):
+    name = 'directMW'
+    """Accretion redshift pdf that is a combination of directly and indirectly infalling halos for the Milky Way for
+    subhalos inside 50 kpc"""
+    def __init__(self, z_lens, log_m_host):
+        """
+
+        :param z_lens: main deflector redshift
+        :param log_m_host: log10 host halo mass in solar masses
+        """
+        a_mean = 2.665359 * 1.1
+        b_mean = 12.9739762
+        c_mean = -13.705261
+        a_std = 1.81890
+        b_std = 1.7708778
+        c_std = -2.491004
+        super(InfallDistributionDirectMilkyWay50kpc, self).__init__(z_lens, log_m_host,
+                                                                    a_mean, b_mean, c_mean,
+                                                                    a_std, b_std, c_std)
+
+class InfallDistributionDirectMilkyWay200kpc(InfallRedshiftDistributionBase):
+    name = 'directMW'
+    """Accretion redshift pdf that is a combination of directly and indirectly infalling halos for the Milky Way for
+    subhalos inside 200 kpc"""
+    def __init__(self, z_lens, log_m_host):
+        """
+
+        :param z_lens: main deflector redshift
+        :param log_m_host: log10 host halo mass in solar masses
+        """
+        a_mean = 1.27060
+        b_mean = 13.04
+        c_mean = -11.3861
+        a_std = 2.07127
+        b_std = 2.22591
+        c_std = -2.619518
+        super(InfallDistributionDirectMilkyWay200kpc, self).__init__(z_lens, log_m_host,
+                                                                    a_mean, b_mean, c_mean,
+                                                                    a_std, b_std, c_std)
+
+
