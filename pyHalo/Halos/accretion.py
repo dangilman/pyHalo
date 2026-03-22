@@ -338,6 +338,26 @@ class InfallRedshiftDistributionBase(object):
         c = self.c_std
         return a / (1 + b * (-numpy.log10(massRatio)) ** c)
 
+class InfallDistributionDirectMilkyWay30kpc(InfallRedshiftDistributionBase):
+    name = 'directMW'
+    """Accretion redshift pdf that is a combination of directly and indirectly infalling halos for the Milky Way for
+    subhalos inside 50 kpc"""
+    def __init__(self, z_lens, log_m_host):
+        """
+
+        :param z_lens: main deflector redshift
+        :param log_m_host: log10 host halo mass in solar masses
+        """
+        a_mean = 3.2
+        b_mean = -3
+        c_mean = -3
+        a_std = 1.8
+        b_std = 2.0
+        c_std = -2.6
+        super(InfallDistributionDirectMilkyWay30kpc, self).__init__(z_lens, log_m_host,
+                                                                    a_mean, b_mean, c_mean,
+                                                                    a_std, b_std, c_std)
+
 class InfallDistributionDirectMilkyWay50kpc(InfallRedshiftDistributionBase):
     name = 'directMW'
     """Accretion redshift pdf that is a combination of directly and indirectly infalling halos for the Milky Way for
@@ -348,12 +368,12 @@ class InfallDistributionDirectMilkyWay50kpc(InfallRedshiftDistributionBase):
         :param z_lens: main deflector redshift
         :param log_m_host: log10 host halo mass in solar masses
         """
-        a_mean = 2.665359 * 1.1
-        b_mean = 12.9739762
-        c_mean = -13.705261
-        a_std = 1.81890
-        b_std = 1.7708778
-        c_std = -2.491004
+        a_mean = 2.7
+        b_mean = -2.0
+        c_mean = -3.0
+        a_std = 1.8
+        b_std = 2.0
+        c_std = -2.6
         super(InfallDistributionDirectMilkyWay50kpc, self).__init__(z_lens, log_m_host,
                                                                     a_mean, b_mean, c_mean,
                                                                     a_std, b_std, c_std)
@@ -368,8 +388,8 @@ class InfallDistributionDirectMilkyWay200kpc(InfallRedshiftDistributionBase):
         :param z_lens: main deflector redshift
         :param log_m_host: log10 host halo mass in solar masses
         """
-        a_mean = 1.27060
-        b_mean = 13.04
+        a_mean = 0.5
+        b_mean = 2.04
         c_mean = -11.3861
         a_std = 2.07127
         b_std = 2.22591

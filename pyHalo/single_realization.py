@@ -248,8 +248,11 @@ class Realization(object):
                log_mass_allowed_in_aperture_back,
                log_mass_allowed_global_front,
                log_mass_allowed_global_back,
-               interpolated_x_angle, interpolated_y_angle,
-               zmin=None, zmax=None, aperture_units='ANGLES'):
+               interpolated_x_angle,
+               interpolated_y_angle,
+               zmin=None,
+               zmax=None,
+               aperture_units='ANGLES'):
 
         """
 
@@ -286,73 +289,51 @@ class Realization(object):
         :return: A new instance of Realization with the cuts on position and mass applied
         """
         halos = []
-
         if zmax is None:
             zmax = self._zsource
         if zmin is None:
             zmin = 0
-
         for plane_index, zi in enumerate(self.unique_redshifts):
-
-            plane_halos, _ = self.halos_at_z(zi)
-
-            inds_at_z = np.where(self.redshifts == zi)[0]
-            x_at_z = self.x[inds_at_z]
-            y_at_z = self.y[inds_at_z]
-            masses_at_z = np.absolute(self.masses[inds_at_z])
-
             if zi < zmin:
                 continue
             if zi > zmax:
                 continue
-
+            plane_halos, _ = self.halos_at_z(zi)
+            inds_at_z = np.where(self.redshifts == zi)[0]
+            x_at_z = self.x[inds_at_z]
+            y_at_z = self.y[inds_at_z]
+            masses_at_z = np.absolute(self.masses[inds_at_z])
             comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(zi)
-
             if zi <= self._zlens:
-
                 minimum_mass_everywhere = deepcopy(log_mass_allowed_global_front)
                 minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_front)
                 aperture_radius_arcsec = deepcopy(aperture_radius_front)
-
             else:
-
                 minimum_mass_everywhere = deepcopy(log_mass_allowed_global_back)
                 minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_back)
                 aperture_radius_arcsec = deepcopy(aperture_radius_back)
-
             keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
             inds_m_low = np.where(masses_at_z < 10 ** minimum_mass_everywhere)[0]
             keep_inds_dr = []
-
             for idx in inds_m_low:
-
                 for k, (interp_x, interp_y) in enumerate(zip(interpolated_x_angle, interpolated_y_angle)):
-
                     dx = x_at_z[idx] - interp_x(comoving_distance_z)
                     dy = y_at_z[idx] - interp_y(comoving_distance_z)
-
                     if aperture_units == 'ANGLES':
                         dr_cut = aperture_radius_arcsec
-
                     elif aperture_units == 'MPC':
                         dx *= comoving_distance_z
                         dy *= comoving_distance_z
                         dr_cut = aperture_radius_arcsec * self.lens_cosmo.cosmo.D_C_z(0.5)
                     else:
                         raise Exception('aperture units must be either MPC or ANGLES')
-
                     dr = np.sqrt(dx ** 2 + dy ** 2)
-
                     if dr <= dr_cut:
                         keep_inds_dr.append(idx)
                         break
-
             keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
-
             tempmasses = np.absolute(masses_at_z[keep_inds])
-
             keep_inds = keep_inds[np.where(tempmasses >= 10 ** minimum_mass_in_window)[0]]
-
             for halo_index in keep_inds:
                 halos.append(plane_halos[halo_index])
 

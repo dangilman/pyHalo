@@ -112,9 +112,15 @@ class InterpGalacticus(object):
         return min(output, 0.0)
 
 class InterpGalacticusMW(object):
-
-    def __init__(self, rmax=200):
-        if rmax == 50:
+    """
+    This class implements a tidal evolution model for the Milky Way. The rmax option selects inside what volume the
+    model will be evaluated
+    """
+    def __init__(self, rmax=30):
+        if rmax == 30:
+            from pyHalo.Halos.galacticus_truncation.johnsonSUparams_MW_rmax30kpc import a_fit, \
+                b_fit
+        elif rmax == 50:
             from pyHalo.Halos.galacticus_truncation.johnsonSUparams_MW_rmax50kpc import a_fit, \
                 b_fit
         elif rmax == 200:
