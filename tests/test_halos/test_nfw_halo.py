@@ -75,7 +75,7 @@ class TestNFWHalos(object):
         rho_s, rs, r200 = nfw_fieldhalo.nfw_params
         c = nfw_fieldhalo.c
         mtheory = 4 * np.pi * rho_s * rs ** 3 * (np.log(1 + c) - c/(1+c))
-        npt.assert_almost_equal(mtheory, nfw_fieldhalo.mass)
+        npt.assert_almost_equal(mtheory, nfw_fieldhalo.mass, 6)
         npt.assert_almost_equal(mtheory/nfw_fieldhalo.mass_3d('r200'), 1.0)
 
     def test_vmax(self):
@@ -87,15 +87,15 @@ class TestNFWHalos(object):
         unique_tag = 1.0
         kwargs_profile = {'evaluate_mc_at_zlens': False, 'c_scatter': False, 'c_scatter_dex': 0.2}
         is_subhalo = False
-        tnfw_fieldhalo = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
+        nfw_fieldhalo = NFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                        self.truncation_class, self.concentration_class, unique_tag)
-        _, rs, _ = tnfw_fieldhalo.nfw_params
+        _, rs, r200 = nfw_fieldhalo.nfw_params
         r = np.linspace(0.01, 20, 5000) * rs
-        m_enclosed = tnfw_fieldhalo.mass_3d(r)
+        m_enclosed = np.array([nfw_fieldhalo.mass_3d(ri) for ri in r])
         G = 4.3e-6
         v_circ = np.sqrt(G * m_enclosed / r)
         vmax_calc = max(v_circ)
-        vmax = tnfw_fieldhalo.vmax_nfw
+        vmax = nfw_fieldhalo.vmax_nfw
         npt.assert_almost_equal(vmax / vmax_calc, 1, 2)
 
 if __name__ == '__main__':

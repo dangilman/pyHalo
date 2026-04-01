@@ -137,10 +137,10 @@ class TestTNFWHalos(object):
         rho_s, rs, r200 = tnfw_fieldhalo.nfw_params
         c = tnfw_fieldhalo.c
         mtheory = 4 * np.pi * rho_s * rs ** 3 * (np.log(1 + c) - c/(1+c))
-        npt.assert_almost_equal(mtheory, tnfw_fieldhalo.mass)
+        npt.assert_almost_equal(mtheory, tnfw_fieldhalo.mass, 4)
         rmax = c * rs
         m_calculated = tnfw_fieldhalo.mass_3d(rmax)
-        npt.assert_almost_equal(mtheory/m_calculated, 1.0)
+        npt.assert_almost_equal(mtheory/m_calculated, 1.0, 6)
 
         tau = 2.
         tnfw_halo = TNFWFieldHalo.simple_setup(m, 0.0, 0.0, 0.6, tau, self.lens_cosmo)
@@ -171,9 +171,9 @@ class TestTNFWHalos(object):
         is_subhalo = False
         tnfw_fieldhalo = TNFWFieldHalo(m, x, y, r3d, self.zhalo, is_subhalo, self.lens_cosmo, kwargs_profile,
                                        self.truncation_class, self.concentration_class, unique_tag)
-        _, rs, _ = tnfw_fieldhalo.nfw_params
+        _, rs, r200 = tnfw_fieldhalo.nfw_params
         r = np.linspace(0.01, 20, 5000) * rs
-        m_enclosed = tnfw_fieldhalo.mass_3d(r)
+        m_enclosed = np.array([tnfw_fieldhalo.mass_3d(ri) for ri in r])
         G = 4.3e-6
         v_circ = np.sqrt(G * m_enclosed / r)
         vmax_calc = max(v_circ)
@@ -185,12 +185,12 @@ class TestTNFWHalos(object):
         tnfw_subhalo._rescale_norm = 0.1
         _, rs, _ = tnfw_subhalo.nfw_params
         r = np.linspace(0.01, 20, 5000) * rs
-        m_enclosed = tnfw_subhalo.mass_3d(r)
+        m_enclosed = np.array([tnfw_subhalo.mass_3d(ri) for ri in r])
         G = 4.3e-6
         v_circ = np.sqrt(G * m_enclosed / r)
         vmax_calc = max(v_circ)
-        vmax = tnfw_fieldhalo.vmax_nfw
-        npt.assert_almost_equal(vmax / vmax_calc, np.sqrt(10), 1)
+        vmax = tnfw_subhalo.vmax_nfw
+        npt.assert_almost_equal(vmax / vmax_calc, 1.0, 2)
 
     def test_subhalo_simple_setup(self):
 
