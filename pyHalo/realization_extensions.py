@@ -374,7 +374,8 @@ class RealizationExtensions(object):
                            gamma_inner=2.6,
                            scale_match_r=1.6,
                            log_slope_match=-1.9,
-                           t_over_tc=None):
+                           t_over_tc=None,
+                           t_over_tc_collapse_threshold=1.0):
         """
         Transform a single NFW profile into a cored or core-collapsed SIDM profile
         :param halo: an instance of a Halo class, should be a TNFW field or sub-halo
@@ -399,8 +400,10 @@ class RealizationExtensions(object):
         :param log_slope_match: the logarithmic slope that determines r_match
         :param t_over_tc: if specified, then t_c is computed for each halo such that halo_age / t_c = t_over_tc. Note that
         this should be used only with evolving_halo = True, and should not also specify t_c directly
+        :param t_over_tc_collapse_threshold: the timescale before which halos are modeled as NFW profiles
         :return: an SIDM halo
         """
+        assert halo.mdef == 'TNFW'
         _, rt_kpc = halo.profile_args
         truncation_class = None
         concentration_class = ConcentrationConstant(None, halo.c)
@@ -511,7 +514,7 @@ class RealizationExtensions(object):
                     if t_over_tc is not None:
                         print('WARNING: t_over_tc is specified for evolving_halo=False, which is not the intended '
                               'functionality of this method')
-                    if sidm_halo.t_over_tc < 1.0:
+                    if sidm_halo.t_over_tc < t_over_tc_collapse_threshold:
                         halo.halo_effective_age = halo_effective_age
                         halo.t_over_tc = t_over_tc
                         return halo
@@ -586,9 +589,9 @@ class RealizationExtensions(object):
                                                   halo.unique_tag)
                 halo_effective_age = sidm_halo.halo_effective_age
                 t_over_tc = sidm_halo.t_over_tc
-                if sidm_halo.t_over_tc < 1.0:
-                    halo.halo_effective_age = halo_effective_age
-                    halo.t_over_tc = t_over_tc
+                if sidm_halo.t_over_tc < t_over_tc_collapse_threshold:
+                    halo.halo_effective_age = deepcopy(halo_effective_age)
+                    halo.t_over_tc = deepcopy(t_over_tc)
                     return halo
                 elif collapse_probability < np.random.rand():
                     halo.halo_effective_age = halo_effective_age
@@ -612,7 +615,8 @@ class RealizationExtensions(object):
                                   halo_profile='TNFWC',
                                   gamma_inner=2.5,
                                   scale_match_r=2.0,
-                                  log_slope_match=-2.0
+                                  log_slope_match=-2.0,
+                                  t_over_tc_collapse_threshold=1.0,
                                   ):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
@@ -654,7 +658,8 @@ class RealizationExtensions(object):
                                                halo_profile=halo_profile,
                                                gamma_inner=gamma_inner,
                                                scale_match_r=scale_match_r,
-                                               log_slope_match=log_slope_match)
+                                               log_slope_match=log_slope_match,
+                                               t_over_tc_collapse_threshold=t_over_tc_collapse_threshold)
                 sidm_halos.append(new_halo)
             else:
                 sidm_halos.append(halo)

@@ -79,8 +79,8 @@ class TestConcentration(object):
             scatter = False
             concentration_model = ConcentrationDiemerJoyce(self.astropy, scatter)
             c = concentration_model.nfw_concentration(m, z)
-            # this test changed because of a change in colossus 
-            npt.assert_almost_equal(c_true, c, 1)
+            # this test changed because of a change in colossus
+            npt.assert_almost_equal(c_true, c)
 
             scatter = True
             concentration_model = ConcentrationDiemerJoyce(self.astropy, scatter)
