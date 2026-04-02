@@ -194,7 +194,7 @@ class TestSingleRealization(object):
                                       self.realization.lens_cosmo, halos=None, kwargs_halo_model=self.realization.kwargs_halo_model,
                                       mass_sheet_correction=True, rendering_classes=self.realization.rendering_classes)
 
-        r = [self.realization.geometry.cosmo.D_C_transverse(zi) for zi in realization_cdm.redshifts]
+        r = [self.realization.geometry.cosmo.D_C_z(zi) for zi in realization_cdm.redshifts]
 
         x_intercepts_1 = [0.5, 0.1, -0.9, -1.4, 1.2, 0., -1.]
         y_intercepts_1 = [0., 0.9, -1.4, -1., -0.4, 1., 0.9]
@@ -205,22 +205,15 @@ class TestSingleRealization(object):
         ray_interp_x2 = interp1d(r, x_intercepts_2)
         ray_interp_y2 = interp1d(r, y_intercepts_2)
 
-        aperture_radius_front = 0.3
-        aperture_radius_back = 0.3
-        log_mass_allowed_in_aperture_front = 6
-        log_mass_allowed_in_aperture_back = 6
-        log_mass_allowed_global_front = 6
-        log_mass_allowed_global_back = 6
+        aperture_radius = 0.3
+        log_mass_allowed_global = 6
         interpolated_x_angle = [ray_interp_x1, ray_interp_x2]
         interpolated_y_angle = [ray_interp_y1, ray_interp_y2]
 
-        realization_filtered = realization_cdm.filter(aperture_radius_front,
-                   aperture_radius_back,
-                   log_mass_allowed_in_aperture_front,
-                   log_mass_allowed_in_aperture_back,
-                   log_mass_allowed_global_front,
-                   log_mass_allowed_global_back,
-                   interpolated_x_angle, interpolated_y_angle)
+        realization_filtered = realization_cdm.filter(aperture_radius,
+                   log_mass_allowed_global,
+                   interpolated_x_angle,
+                   interpolated_y_angle)
         npt.assert_equal(realization_filtered == realization_cdm, True)
 
         x_intercepts_1 = [1000] * len(x_intercepts_1)
@@ -232,23 +225,15 @@ class TestSingleRealization(object):
         ray_interp_x2 = interp1d(r, x_intercepts_2)
         ray_interp_y2 = interp1d(r, y_intercepts_2)
 
-        aperture_radius_front = 0.3
-        aperture_radius_back = 0.3
-        log_mass_allowed_in_aperture_front = 6
-        log_mass_allowed_in_aperture_back = 6
-        log_mass_allowed_global_front = 10
-        log_mass_allowed_global_back = 10
         interpolated_x_angle = [ray_interp_x1, ray_interp_x2]
         interpolated_y_angle = [ray_interp_y1, ray_interp_y2]
 
-        realization_filtered = realization_cdm.filter(aperture_radius_front,
-                                                      aperture_radius_back,
-                                                      log_mass_allowed_in_aperture_front,
-                                                      log_mass_allowed_in_aperture_back,
-                                                      log_mass_allowed_global_front,
-                                                      log_mass_allowed_global_back,
-                                                      interpolated_x_angle, interpolated_y_angle)
-        npt.assert_equal(len(realization_filtered.halos), 0)
+        log_mass_allowed_global = 9
+        realization_filtered = realization_cdm.filter(aperture_radius,
+                                                      log_mass_allowed_global,
+                                                      interpolated_x_angle,
+                                                      interpolated_y_angle)
+        npt.assert_equal(len(realization_filtered.halos), 1)
 
         x_intercepts_1 = [1000] * len(x_intercepts_1)
         y_intercepts_1 = [1000] * len(x_intercepts_1)
@@ -269,40 +254,28 @@ class TestSingleRealization(object):
         ray_interp_x2 = interp1d(r, x_intercepts_2)
         ray_interp_y2 = interp1d(r, y_intercepts_2)
 
-        aperture_radius_front = 0.3
-        aperture_radius_back = 0.3
-        log_mass_allowed_in_aperture_front = 6.
-        log_mass_allowed_in_aperture_back = 6
-        log_mass_allowed_global_front = 10
-        log_mass_allowed_global_back = 10
         interpolated_x_angle = [ray_interp_x1, ray_interp_x2]
         interpolated_y_angle = [ray_interp_y1, ray_interp_y2]
 
-        realization_filtered = realization_cdm.filter(aperture_radius_front,
-                                                      aperture_radius_back,
-                                                      log_mass_allowed_in_aperture_front,
-                                                      log_mass_allowed_in_aperture_back,
-                                                      log_mass_allowed_global_front,
-                                                      log_mass_allowed_global_back,
-                                                      interpolated_x_angle, interpolated_y_angle)
+        realization_filtered = realization_cdm.filter(aperture_radius,
+                                                      log_mass_allowed_global,
+                                                      interpolated_x_angle,
+                                                      interpolated_y_angle)
+        print('halos', len(realization_filtered.halos))
         new_tags = realization_filtered._tags()
         npt.assert_equal(True, tag in new_tags)
         npt.assert_equal(True, tag2 not in new_tags)
 
-        realization_filtered = realization_cdm.filter(aperture_radius_front,
-                                                      aperture_radius_back,
-                                                      log_mass_allowed_in_aperture_front,
-                                                      log_mass_allowed_in_aperture_back,
-                                                      log_mass_allowed_global_front,
-                                                      log_mass_allowed_global_back,
-                                                      interpolated_x_angle, interpolated_y_angle, aperture_units='MPC')
+        realization_filtered = realization_cdm.filter(aperture_radius,
+                                                      log_mass_allowed_global,
+                                                      interpolated_x_angle,
+                                                      interpolated_y_angle,
+                                                      aperture_units='MPC')
 
         npt.assert_equal(len(realization_filtered.halos) > 0, True)
 
-        args = (aperture_radius_front,aperture_radius_back, log_mass_allowed_in_aperture_front,
-                        log_mass_allowed_in_aperture_back, log_mass_allowed_global_front,
-                        log_mass_allowed_global_back, interpolated_x_angle,
-                interpolated_y_angle, None, None, 'nonsense')
+        args = (aperture_radius, log_mass_allowed_global,
+                        interpolated_x_angle, interpolated_y_angle, 'nonsense')
 
         npt.assert_raises(Exception, realization_cdm.filter, *args)
 
@@ -541,6 +514,11 @@ class TestSingleRealization(object):
         npt.assert_equal(field_halos[0].unique_tag, 1)
         npt.assert_equal(field_halos[1].unique_tag, 3)
 
-if __name__ == '__main__':
-    pytest.main()
+t = TestSingleRealization()
+t.setup_method()
+t.test_filter()
+
+#
+# if __name__ == '__main__':
+#     pytest.main()
 
