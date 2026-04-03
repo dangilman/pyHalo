@@ -242,249 +242,11 @@ class Realization(object):
                                       self.apply_mass_sheet_correction, self.rendering_classes,
                                       self._rendering_center_x, self._rendering_center_y, self.geometry)
 
-    # def filter(self, aperture_radius_front,
-    #            aperture_radius_back,
-    #            log_mass_allowed_in_aperture_front,
-    #            log_mass_allowed_in_aperture_back,
-    #            log_mass_allowed_global_front,
-    #            log_mass_allowed_global_back,
-    #            interpolated_x_angle,
-    #            interpolated_y_angle,
-    #            zmin=None,
-    #            zmax=None,
-    #            aperture_units='ANGLES'):
-    #
-    #     """
-    #
-    #     :param aperture_radius_front: the radius of a circular window around each light ray where halos are halo kept
-    #     if they are more massive than log_mass_allowed_in_aperture_front (applied for z < z_lens)
-    #     :param aperture_radius_back: the radius of a circular window around each light ray where halos are halo kept
-    #     if they are more massive than log_mass_allowed_in_aperture_back (applied for z < z_lens)
-    #     :param log_mass_allowed_in_aperture_front: the minimum halo mass to be kept inside the tube around each light ray
-    #     in the foreground
-    #     :param log_mass_allowed_in_aperture_back: the minimum halo mass to be kept inside the tube around each light ray
-    #     in the background
-    #     :param log_mass_allowed_global_front: The minimum mass to be kept everywhere in the foreground (if this is smaller
-    #     than log_mass_allowed_in_aperture_front, then the argument aperture_radius_front will have no effect)
-    #     :param log_mass_allowed_global_back: The minimum mass to be kept everywhere in the background (if this is smaller
-    #     than log_mass_allowed_in_aperture_back, then the argument aperture_radius_back will have no effect)
-    #     :param interpolated_x_angle: a list of scipy.interp1d that retuns the x angular position of a ray in
-    #     arcsec given a comoving distance
-    #     :param interpolated_y_angle: a list of scipy.interp1d that retuns the y angular position of a ray in
-    #     arcsec given a comoving distance
-    #     :param zmin: only keep halos at z > zmin
-    #     :param zmax: only keep halos at z < zmax
-    #     :param aperture_units: either 'ANGLES' or 'MPC'
-    #
-    #     - If 'ANGLES', then halos are kept inside angular apertures
-    #     around each light ray with size aperture_radius_front/aperture_radius_back.
-    #     - If 'MPC', then halos are kept inside circular apertures with radius
-    #     R = aperture_radius_front/back * mpc_per_arcsec(0.5)
-    #     where D_C(0.5) is the comoving transverse distance at z = 0.5. The unit of R is arcsec * Mpc
-    #
-    #     'ANGLES' is more conservative in that it keeps more halos in the lens model; the rendering area is basically a cone
-    #     since the aperture size is a fixed angle at every redshift, whereas 'MPC' distributes halos in cylindrical
-    #     tubes around each light ray along the line of sight.
-    #
-    #     :return: A new instance of Realization with the cuts on position and mass applied
-    #     """
-    #     halos = []
-    #     if zmax is None:
-    #         zmax = self._zsource
-    #     if zmin is None:
-    #         zmin = 0
-    #     for plane_index, zi in enumerate(self.unique_redshifts):
-    #         if zi < zmin:
-    #             continue
-    #         if zi > zmax:
-    #             continue
-    #         plane_halos, _ = self.halos_at_z(zi)
-    #         inds_at_z = np.where(self.redshifts == zi)[0]
-    #         x_at_z = self.x[inds_at_z]
-    #         y_at_z = self.y[inds_at_z]
-    #         masses_at_z = np.absolute(self.masses[inds_at_z])
-    #         comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(zi)
-    #         if zi <= self._zlens:
-    #             minimum_mass_everywhere = deepcopy(log_mass_allowed_global_front)
-    #             minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_front)
-    #             aperture_radius_arcsec = deepcopy(aperture_radius_front)
-    #         else:
-    #             minimum_mass_everywhere = deepcopy(log_mass_allowed_global_back)
-    #             minimum_mass_in_window = deepcopy(log_mass_allowed_in_aperture_back)
-    #             aperture_radius_arcsec = deepcopy(aperture_radius_back)
-    #         keep_inds_mass = np.where(masses_at_z >= 10 ** minimum_mass_everywhere)[0]
-    #         inds_m_low = np.where(masses_at_z < 10 ** minimum_mass_everywhere)[0]
-    #         keep_inds_dr = []
-    #         for idx in inds_m_low:
-    #             for k, (interp_x, interp_y) in enumerate(zip(interpolated_x_angle, interpolated_y_angle)):
-    #                 dx = x_at_z[idx] - interp_x(comoving_distance_z)
-    #                 dy = y_at_z[idx] - interp_y(comoving_distance_z)
-    #                 if aperture_units == 'ANGLES':
-    #                     dr_cut = aperture_radius_arcsec
-    #                 elif aperture_units == 'MPC':
-    #                     dx *= comoving_distance_z
-    #                     dy *= comoving_distance_z
-    #                     dr_cut = aperture_radius_arcsec * self.lens_cosmo.cosmo.D_C_z(0.5)
-    #                 else:
-    #                     raise Exception('aperture units must be either MPC or ANGLES')
-    #                 dr = np.sqrt(dx ** 2 + dy ** 2)
-    #                 if dr <= dr_cut:
-    #                     keep_inds_dr.append(idx)
-    #                     break
-    #         keep_inds = np.append(keep_inds_mass, np.array(keep_inds_dr)).astype(int)
-    #         tempmasses = np.absolute(masses_at_z[keep_inds])
-    #         keep_inds = keep_inds[np.where(tempmasses >= 10 ** minimum_mass_in_window)[0]]
-    #         for halo_index in keep_inds:
-    #             halos.append(plane_halos[halo_index])
-    #
-    #     return Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model,
-    #                                   self.apply_mass_sheet_correction, self.rendering_classes,
-    #                                   self._rendering_center_x, self._rendering_center_y, self.geometry)
-
-    # def filter(self, aperture_radius_front,
-    #            aperture_radius_back,
-    #            log_mass_allowed_in_aperture_front,
-    #            log_mass_allowed_in_aperture_back,
-    #            log_mass_allowed_global_front,
-    #            log_mass_allowed_global_back,
-    #            interpolated_x_angle,
-    #            interpolated_y_angle,
-    #            zmin=None,
-    #            zmax=None,
-    #            aperture_units='ANGLES'):
-    #
-    #     """
-    #
-    #     :param aperture_radius_front: the radius of a circular window around each light ray where halos are halo kept
-    #     if they are more massive than log_mass_allowed_in_aperture_front (applied for z < z_lens)
-    #     :param aperture_radius_back: the radius of a circular window around each light ray where halos are halo kept
-    #     if they are more massive than log_mass_allowed_in_aperture_back (applied for z < z_lens)
-    #     :param log_mass_allowed_in_aperture_front: the minimum halo mass to be kept inside the tube around each light ray
-    #     in the foreground
-    #     :param log_mass_allowed_in_aperture_back: the minimum halo mass to be kept inside the tube around each light ray
-    #     in the background
-    #     :param log_mass_allowed_global_front: The minimum mass to be kept everywhere in the foreground (if this is smaller
-    #     than log_mass_allowed_in_aperture_front, then the argument aperture_radius_front will have no effect)
-    #     :param log_mass_allowed_global_back: The minimum mass to be kept everywhere in the background (if this is smaller
-    #     than log_mass_allowed_in_aperture_back, then the argument aperture_radius_back will have no effect)
-    #     :param interpolated_x_angle: a list of scipy.interp1d that retuns the x angular position of a ray in
-    #     arcsec given a comoving distance
-    #     :param interpolated_y_angle: a list of scipy.interp1d that retuns the y angular position of a ray in
-    #     arcsec given a comoving distance
-    #     :param zmin: only keep halos at z > zmin
-    #     :param zmax: only keep halos at z < zmax
-    #     :param aperture_units: either 'ANGLES' or 'MPC'
-    #
-    #     - If 'ANGLES', then halos are kept inside angular apertures
-    #     around each light ray with size aperture_radius_front/aperture_radius_back.
-    #     - If 'MPC', then halos are kept inside circular apertures with radius
-    #     R = aperture_radius_front/back * mpc_per_arcsec(0.5)
-    #     where D_C(0.5) is the comoving transverse distance at z = 0.5. The unit of R is arcsec * Mpc
-    #
-    #     'ANGLES' is more conservative in that it keeps more halos in the lens model; the rendering area is basically a cone
-    #     since the aperture size is a fixed angle at every redshift, whereas 'MPC' distributes halos in cylindrical
-    #     tubes around each light ray along the line of sight.
-    #
-    #     :return: A new instance of Realization with the cuts on position and mass applied
-    #     """
-    #     if zmax is None:
-    #         zmax = self._zsource
-    #     if zmin is None:
-    #         zmin = 0
-    #
-    #     # --- Step 1: Build redshift mask ---
-    #     valid_z_mask = (self.redshifts >= zmin) & (self.redshifts <= zmax)
-    #     front_mask = valid_z_mask & (self.redshifts <= self._zlens)
-    #     back_mask = valid_z_mask & (self.redshifts > self._zlens)
-    #
-    #     # --- Step 2: Assign per-halo thresholds based on fore/background ---
-    #     # Shape: (N_halos,)
-    #     minimum_mass_everywhere = np.where(front_mask,
-    #                                        10 ** log_mass_allowed_global_front,
-    #                                        10 ** log_mass_allowed_global_back)
-    #     minimum_mass_in_window = np.where(front_mask,
-    #                                       10 ** log_mass_allowed_in_aperture_front,
-    #                                       10 ** log_mass_allowed_in_aperture_back)
-    #     aperture_radius = np.where(front_mask,
-    #                                aperture_radius_front,
-    #                                aperture_radius_back)
-    #
-    #     # Zero out invalid redshifts so they never pass any cut
-    #     minimum_mass_everywhere[~valid_z_mask] = np.inf
-    #     minimum_mass_in_window[~valid_z_mask] = np.inf
-    #
-    #     masses = np.absolute(self.masses)
-    #
-    #     # --- Step 3: Global mass cut — these halos are kept regardless of position ---
-    #     keep_global = masses >= minimum_mass_everywhere  # (N_halos,)
-    #
-    #     # --- Step 4: Aperture check for halos that fail the global cut ---
-    #     needs_aperture_check = valid_z_mask & ~keep_global  # (N_halos,)
-    #     check_inds = np.where(needs_aperture_check)[0]  # indices into full halo array
-    #
-    #     within_aperture = np.zeros(len(self.masses), dtype=bool)
-    #
-    #     if len(check_inds) > 0:
-    #         # Comoving distances for every halo needing a check: shape (N_check,)
-    #         comoving_distances = np.array([
-    #             self.lens_cosmo.cosmo.D_C_z(z) for z in self.redshifts[check_inds]
-    #         ])
-    #
-    #         # Ray positions at each halo's comoving distance: shape (N_check, N_rays)
-    #         ray_x = np.column_stack([interp_x(comoving_distances) for interp_x in interpolated_x_angle])
-    #         ray_y = np.column_stack([interp_y(comoving_distances) for interp_y in interpolated_y_angle])
-    #
-    #         # Halo positions: shape (N_check, 1) for broadcasting
-    #         halo_x = self.x[check_inds, None]
-    #         halo_y = self.y[check_inds, None]
-    #
-    #         # Distances to each ray: shape (N_check, N_rays)
-    #         dx = halo_x - ray_x
-    #         dy = halo_y - ray_y
-    #
-    #         if aperture_units == 'ANGLES':
-    #             dr_cut = aperture_radius[check_inds, None]  # (N_check, 1) broadcasts over rays
-    #
-    #         elif aperture_units == 'MPC':
-    #             dc_05 = self.lens_cosmo.cosmo.D_C_z(0.5)
-    #             dx *= comoving_distances[:, None]
-    #             dy *= comoving_distances[:, None]
-    #             dr_cut = aperture_radius[check_inds, None] * dc_05
-    #
-    #         else:
-    #             raise Exception('aperture units must be either MPC or ANGLES')
-    #
-    #         dr = np.sqrt(dx ** 2 + dy ** 2)  # (N_check, N_rays)
-    #         within_aperture[check_inds] = np.any(dr <= dr_cut, axis=1)
-    #
-    #     # --- Step 5: Apply minimum_mass_in_window to aperture halos ---
-    #     keep_mask = keep_global | within_aperture
-    #     keep_mask &= masses >= minimum_mass_in_window
-    #
-    #     # --- Step 6: Reconstruct halo list ---
-    #     # We still need plane_halos objects, so one lightweight loop over planes
-    #     halos = []
-    #     keep_inds_global = np.where(keep_mask)[0]
-    #     for zi in self.unique_redshifts:
-    #         if zi < zmin or zi > zmax:
-    #             continue
-    #         plane_halos, _ = self.halos_at_z(zi)
-    #         inds_at_z = np.where(self.redshifts == zi)[0]
-    #         local_keep = np.intersect1d(inds_at_z, keep_inds_global)
-    #         # Map global indices back to local plane indices
-    #         local_plane_inds = np.searchsorted(inds_at_z, local_keep)
-    #         for i in local_plane_inds:
-    #             halos.append(plane_halos[i])
-    #
-    #     return Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model,
-    #                                   self.apply_mass_sheet_correction, self.rendering_classes,
-    #                                   self._rendering_center_x, self._rendering_center_y, self.geometry)
-
     def filter(self, aperture_radius,
                log_mass_allowed_global,
                interpolated_x_angle,
                interpolated_y_angle,
-               aperture_units='ANGLES'):
+               aperture_units='KPC'):
 
         """
         :param aperture_radius: the radius of a circular window around each light ray where halos are halo kept
@@ -495,22 +257,18 @@ class Realization(object):
         arcsec given a comoving distance
         :param interpolated_y_angle: a list of scipy.interp1d that gives the y angular position of a ray in
         arcsec given a comoving distance
-        :param aperture_units: either 'ANGLES' or 'MPC'
+        :param aperture_units: either 'ANGLES' or 'KPC'
 
         - If 'ANGLES', then halos are kept inside angular apertures
         around each light ray with size aperture_radius_front/aperture_radius_back.
-        - If 'MPC', then halos are kept inside circular apertures with radius
-        R = aperture_radius_front/back * mpc_per_arcsec(0.5)
-        where D_C(0.5) is the comoving transverse distance at z = 0.5. The unit of R is arcsec * Mpc
-
+        - If 'KPC', then halos are selected based on a physical separation < aperture radius along the LOS
         'ANGLES' is more conservative in that it keeps more halos in the lens model; the rendering area is basically a cone
-        since the aperture size is a fixed angle at every redshift, whereas 'MPC' distributes halos in cylindrical
+        since the aperture size is a fixed angle at every redshift, whereas 'KPC' distributes halos in cylindrical
         tubes around each light ray along the line of sight.
 
         :return: A new instance of Realization with the cuts on position and mass applied
         """
-
-
+        ARCSEC_TO_RAD = np.pi / (180.0 * 3600.0)
         masses = np.absolute(self.masses)
         global_thresh = 10 ** log_mass_allowed_global
         keep_based_on_mass = masses >= global_thresh
@@ -533,16 +291,15 @@ class Realization(object):
 
             if aperture_units == 'ANGLES':
                 dr_cut = aperture_radius
-            elif aperture_units == 'MPC':
-                dc_05 = self.lens_cosmo.cosmo.D_C_z(0.5)
-                dx *= comoving_distances[:, None]
-                dy *= comoving_distances[:, None]
-                dr_cut = aperture_radius * dc_05
+                dr = np.sqrt(dx ** 2 + dy ** 2)  # (N_check, N_rays)
+                within_aperture[check_distances] = np.any(dr <= dr_cut, axis=1)
+            elif aperture_units == 'KPC':
+                dx_kpc = dx * ARCSEC_TO_RAD * comoving_distances[:, None] * 1e3  # (N_check, N_rays)
+                dy_kpc = dy * ARCSEC_TO_RAD * comoving_distances[:, None] * 1e3
+                dr_kpc = np.sqrt(dx_kpc ** 2 + dy_kpc ** 2)
+                within_aperture[check_distances] = np.any(dr_kpc <= aperture_radius, axis=1)
             else:
-                raise Exception('aperture units must be either MPC or ANGLES')
-
-            dr = np.sqrt(dx ** 2 + dy ** 2)  # (N_check, N_rays)
-            within_aperture[check_distances] = np.any(dr <= dr_cut, axis=1)
+                raise Exception('aperture units must be either KPC or ANGLES')
 
         keep_inds = keep_based_on_mass | within_aperture
         halos = []
@@ -773,8 +530,17 @@ class Realization(object):
         :return: total mass rendered at z
         """
 
-        inds = np.where(self.redshifts == z)
-        m_exact = np.sum(self.masses[inds])
+        if z==self._zlens:
+            m_exact = 0.0
+            halos, _ = self.halos_at_z(z)
+            for halo in halos:
+                if halo.is_subhalo:
+                    m_exact += halo.mass_3d('r200')
+                else:
+                    m_exact += halo.mass
+        else:
+            inds = np.where(self.redshifts == z)
+            m_exact = np.sum(self.masses[inds])
         return m_exact
 
     def number_of_halos_before_redshift(self, z):

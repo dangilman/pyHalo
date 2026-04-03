@@ -213,7 +213,8 @@ class TestSingleRealization(object):
         realization_filtered = realization_cdm.filter(aperture_radius,
                    log_mass_allowed_global,
                    interpolated_x_angle,
-                   interpolated_y_angle)
+                   interpolated_y_angle,
+                    aperture_units='ANGLES')
         npt.assert_equal(realization_filtered == realization_cdm, True)
 
         x_intercepts_1 = [1000] * len(x_intercepts_1)
@@ -232,7 +233,8 @@ class TestSingleRealization(object):
         realization_filtered = realization_cdm.filter(aperture_radius,
                                                       log_mass_allowed_global,
                                                       interpolated_x_angle,
-                                                      interpolated_y_angle)
+                                                      interpolated_y_angle,
+                                                      aperture_units='ANGLES')
         npt.assert_equal(len(realization_filtered.halos), 1)
 
         x_intercepts_1 = [1000] * len(x_intercepts_1)
@@ -260,7 +262,8 @@ class TestSingleRealization(object):
         realization_filtered = realization_cdm.filter(aperture_radius,
                                                       log_mass_allowed_global,
                                                       interpolated_x_angle,
-                                                      interpolated_y_angle)
+                                                      interpolated_y_angle,
+                                                      aperture_units='ANGLES')
         print('halos', len(realization_filtered.halos))
         new_tags = realization_filtered._tags()
         npt.assert_equal(True, tag in new_tags)
@@ -270,7 +273,7 @@ class TestSingleRealization(object):
                                                       log_mass_allowed_global,
                                                       interpolated_x_angle,
                                                       interpolated_y_angle,
-                                                      aperture_units='MPC')
+                                                      aperture_units='KPC')
 
         npt.assert_equal(len(realization_filtered.halos) > 0, True)
 
@@ -514,11 +517,8 @@ class TestSingleRealization(object):
         npt.assert_equal(field_halos[0].unique_tag, 1)
         npt.assert_equal(field_halos[1].unique_tag, 3)
 
-t = TestSingleRealization()
-t.setup_method()
-t.test_filter()
 
-#
-# if __name__ == '__main__':
-#     pytest.main()
+
+if __name__ == '__main__':
+    pytest.main()
 
