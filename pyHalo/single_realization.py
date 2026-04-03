@@ -926,11 +926,6 @@ class Realization(object):
                 model = TNFWSubhalo
             else:
                 model = TNFWFieldHalo
-        elif mdef == 'TNFWC_SIDM':
-            if is_subhalo:
-                model = TNFWCHaloEvolving
-            else:
-                model = TNFWCHaloEvolving
         elif mdef == 'PT_MASS':
             model = BlackHole
         elif mdef == 'PJAFFE':
