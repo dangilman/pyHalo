@@ -243,16 +243,17 @@ class Realization(object):
                                       self._rendering_center_x, self._rendering_center_y, self.geometry)
 
     def filter(self, aperture_radius,
-               log_mass_allowed_global,
+               log10_mass_allowed_global,
                interpolated_x_angle,
                interpolated_y_angle,
-               aperture_units='KPC'):
+               aperture_units='KPC',
+               geometric_weighting=False,
+               w_min=0.1):
 
         """
         :param aperture_radius: the radius of a circular window around each light ray where halos are halo kept
         if they are more massive than log_mass_allowed_in_aperture_front
-        :param log_mass_allowed_global: The minimum mass to be kept everywhere in the foreground (if this is smaller
-        than log_mass_allowed_in_aperture_front, then the argument aperture_radius_front will have no effect)
+        :param log10_mass_allowed_global: the minimum mass to be kept everywhere
         :param interpolated_x_angle: a list of scipy.interp1d that gives the x angular position of a ray in
         arcsec given a comoving distance
         :param interpolated_y_angle: a list of scipy.interp1d that gives the y angular position of a ray in
@@ -261,25 +262,47 @@ class Realization(object):
 
         - If 'ANGLES', then halos are kept inside angular apertures
         around each light ray with size aperture_radius_front/aperture_radius_back.
-        - If 'KPC', then halos are selected based on a physical separation < aperture radius along the LOS
-        'ANGLES' is more conservative in that it keeps more halos in the lens model; the rendering area is basically a cone
-        since the aperture size is a fixed angle at every redshift, whereas 'KPC' distributes halos in cylindrical
-        tubes around each light ray along the line of sight.
-
+        - If 'KPC', then halos are selected based on a transverse comoving separation < aperture_radius along the LOS,
+        where the comoving separation is computed as aperture_radius = angle * comoving_distance. This is conservative
+        relative to using physical (angular diameter) distances by a factor of (1+z).
+        :param geometric_weighting: whether to use geometric weighting on the aperture radius
+        :param w_min: the minimum value of the geometric weight w_eff, as a fraction of the weight at z_lens
         :return: A new instance of Realization with the cuts on position and mass applied
         """
         ARCSEC_TO_RAD = np.pi / (180.0 * 3600.0)
         masses = np.absolute(self.masses)
-        global_thresh = 10 ** log_mass_allowed_global
+        global_thresh = 10 ** log10_mass_allowed_global
         keep_based_on_mass = masses >= global_thresh
         check_distances = np.where(~keep_based_on_mass)[0]
+        redshifts_check = self.redshifts[check_distances]
         within_aperture = np.zeros(len(masses), dtype=bool)
 
         if len(check_distances) > 0:
+
             # Comoving distance for each halo needing a check: shape (N_check,)
             comoving_distances = np.array([
                 self.lens_cosmo.cosmo.D_C_z(z) for z in self.redshifts[check_distances]
             ])
+
+            w_eff = np.ones(len(redshifts_check))
+            if geometric_weighting:
+                # Comoving distances for the main lens and source
+                z_lens = self.lens_cosmo.z_lens
+                z_source = self.lens_cosmo.z_source
+                chi_l = self.lens_cosmo.cosmo.D_C_z(z_lens)
+                chi_s = self.lens_cosmo.cosmo.D_C_z(z_source)
+                chi_ls = chi_s - chi_l
+
+                chi_p = comoving_distances
+                chi_ps = chi_s - chi_p
+
+                # Geometric weight W_eff, normalized to 1 at z_p = z_lens
+                foreground = redshifts_check <= z_lens
+                background = ~foreground
+                w_eff[foreground] = (chi_p[foreground] * chi_ls) / (chi_l * chi_ps[foreground])
+                chi_lp = chi_p - chi_l
+                w_eff[background] = (chi_lp[background] * chi_ls) / (chi_l * chi_ps[background])
+                w_eff = np.clip(w_eff, w_min, 1.0)
 
             # Ray positions at each halo's comoving distance: shape (N_check, N_rays)
             ray_x = np.column_stack([interp_x(comoving_distances) for interp_x in interpolated_x_angle])
@@ -290,14 +313,16 @@ class Realization(object):
             dy = self.y[check_distances, None] - ray_y
 
             if aperture_units == 'ANGLES':
-                dr_cut = aperture_radius
-                dr = np.sqrt(dx ** 2 + dy ** 2)  # (N_check, N_rays)
+                dr = np.sqrt(dx ** 2 + dy ** 2)
+                dr_cut = aperture_radius * w_eff[:, None]
                 within_aperture[check_distances] = np.any(dr <= dr_cut, axis=1)
+
             elif aperture_units == 'KPC':
-                dx_kpc = dx * ARCSEC_TO_RAD * comoving_distances[:, None] * 1e3  # (N_check, N_rays)
+                dx_kpc = dx * ARCSEC_TO_RAD * comoving_distances[:, None] * 1e3
                 dy_kpc = dy * ARCSEC_TO_RAD * comoving_distances[:, None] * 1e3
                 dr_kpc = np.sqrt(dx_kpc ** 2 + dy_kpc ** 2)
-                within_aperture[check_distances] = np.any(dr_kpc <= aperture_radius, axis=1)
+                dr_cut = aperture_radius * w_eff[:, None]
+                within_aperture[check_distances] = np.any(dr_kpc <= dr_cut, axis=1)
             else:
                 raise Exception('aperture units must be either KPC or ANGLES')
 
