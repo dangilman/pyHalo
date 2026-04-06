@@ -72,6 +72,44 @@ class InterpGalacticusKeeley24(object):
         else:
             return np.squeeze(y)
 
+class InterpGalacticusZinfall(object):
+    """
+    This class interpolates output from the semi-analytic model galacticus to predict the bound mass of a subhalo
+    as a function of its infall redshift, concentration, host halo concentration.
+    """
+    def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.johnsonSUparams import a_fit_zinfall, b_fit_zinfall
+        nstep = 15
+        log10c_values = np.linspace(np.log10(2.0), np.log10(384), nstep)
+        t_inf_values = np.linspace(0.0, 8.1, nstep)
+        chost_values = np.linspace(4.0, 9.0, nstep)
+        a_values = np.array(a_fit_zinfall).reshape(nstep, nstep, nstep)
+        b_values = np.array(b_fit_zinfall).reshape(nstep, nstep, nstep)
+        _points = (t_inf_values, log10c_values, chost_values)
+        self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
+                                               fill_value=None)
+        self._b_interp = RegularGridInterpolator(_points, b_values, bounds_error=False,
+                                           fill_value=None)
+
+    def __call__(self, log10_concentration_infall, delta_z_infall, chost):
+        """
+        Evaluates the prediction from galacticus for subhalo bound mass
+        :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
+        :param delta_z_infall: the ellapsed redshift since infall at the deflector redshift
+        :param chost: host halo concentration at z=0.5
+        :return: the log10(bound mass divided by the infall mass), plus scatter
+        """
+        log10_concentration_infall = max(np.log10(2), log10_concentration_infall)
+        log10_concentration_infall = min(np.log10(384), log10_concentration_infall)
+        delta_z_infall = max(0.001, delta_z_infall)
+        delta_z_infall = min(delta_z_infall, 9.5)
+        chost = max(4.0, chost)
+        chost = min(8.0, chost)
+        p = (delta_z_infall, log10_concentration_infall, chost)
+        a, b = self._a_interp(p), self._b_interp(p)
+        output = float(johnsonsu.rvs(a, b))
+        return min(output, 0.0)
+
 class InterpGalacticus(object):
     """
     This class interpolates output from the semi-analytic model galacticus to predict the bound mass of a subhalo

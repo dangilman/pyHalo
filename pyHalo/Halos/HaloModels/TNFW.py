@@ -294,6 +294,7 @@ class TNFWSubhalo(TNFWFieldHalo):
         :return: the mass inside r = c * r_s
         """
         if self._truncation_class.name in ['TruncationGalacticus',
+                                            'TruncationGalacticusZinfall',
                                            'TruncationGalacticusKeeley24',
                                            'TruncationGalacticusApproxCDM']:
             pass

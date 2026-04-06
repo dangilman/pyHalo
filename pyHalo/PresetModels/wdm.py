@@ -129,7 +129,9 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
-    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24', 'TRUNCATION_GALACTICUS']:
+    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24',
+                                     'TRUNCATION_GALACTICUS',
+                                     'TRUNCATION_GALACTICUS_ZINFALL']:
         kwargs_trunc_subs['c_host'] = c_host
     kwargs_trunc_subs['lens_cosmo'] = pyhalo.lens_cosmo
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
@@ -390,7 +392,9 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     kwargs_truncation_model_fieldhalos['lens_cosmo'] = pyhalo.lens_cosmo
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
-    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24', 'TRUNCATION_GALACTICUS']:
+    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24',
+                                     'TRUNCATION_GALACTICUS',
+                                     'TRUNCATION_GALACTICUS_ZINFALL']:
         kwargs_trunc_subs['c_host'] = c_host
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)

@@ -1,7 +1,8 @@
 from pyHalo.Halos.tidal_truncation import (TruncationRN, TruncationRoche, \
-    TruncationSplashBack, TruncateMeanDensity, \
-    TruncationGalacticus, ConstantTruncationArcsec, TruncationGalacticusKeeley24, Multiple_RS, TruncationBoundMassPDF,
-                                           TruncationGalacticusApproxCDM)
+                                           TruncationSplashBack, TruncateMeanDensity, \
+                                           TruncationGalacticus, ConstantTruncationArcsec, TruncationGalacticusKeeley24,
+                                           Multiple_RS, TruncationBoundMassPDF,
+                                           TruncationGalacticusApproxCDM, TruncationGalacticusZinfall)
 
 
 def truncation_models(model_name):
@@ -33,6 +34,8 @@ def truncation_models(model_name):
             return TruncateMeanDensity, kwargs_model
         elif model_name == 'TRUNCATION_GALACTICUS':
             return TruncationGalacticus, kwargs_model
+        elif model_name == 'TRUNCATION_GALACTICUS_ZINFALL':
+            return TruncationGalacticusZinfall, kwargs_model
         elif model_name == 'TRUNCATION_GALACTICUS_KEELEY24':
             return TruncationGalacticusKeeley24, kwargs_model
         elif model_name == 'CONSTANT':
