@@ -23,6 +23,40 @@ class ULDMFieldHalo(Halo):
         super(ULDMFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
+    def density_profile_split(self, r):
+        """
+        Compute the 3D density profile of each component in units M_solar / kpc^3
+        :param r: radius in kpc
+        :return: density of soliton and density of outer NFW envelope
+        """
+        profile_soliton = Uldm()
+        profile_envelope = CNFW()
+        kwargs = self.lenstronomy_params[0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        factor = sigma_crit_kpc / kpc_per_arcsec
+        kwargs_envelope = kwargs[0]
+        kwargs_soliton = kwargs[1]
+        del kwargs_soliton['center_x']
+        del kwargs_soliton['center_y']
+        del kwargs_envelope['center_x']
+        del kwargs_envelope['center_y']
+        density_soliton = factor * profile_soliton.density_lens(r / kpc_per_arcsec,
+                                                                **kwargs_soliton)
+        density_envelope = factor * profile_envelope.density_lens(r / kpc_per_arcsec,
+                                                                  **kwargs_envelope)
+        return density_soliton, density_envelope
+
+    def density_profile_3d(self, r):
+        """
+        Compute the 3D density profile in units M_solar / kpc^3
+        :param r: radius in kpc
+        :return: density
+        """
+        density_soliton, density_envelope = self.density_profile_split(r)
+        return density_soliton + density_envelope
+
     @property
     def lenstronomy_ID(self):
         """
@@ -166,10 +200,12 @@ class ULDMFieldHalo(Halo):
         M_uldm = Uldm().mass_3d_lens(r200,
                     uldm_params['kappa_0']*self._lens_cosmo.sigmacrit, uldm_params['theta_c'])
 
-        if (self._args['scale_nfw']):
-            # When scale_nfw is True rescale alpha_Rs to improve mass accuracy
-            scale = self.mass / (M_nfw+M_uldm)
-            cnfw_params['alpha_Rs'] *= scale
+        scale = self.mass / (M_nfw + M_uldm)
+        cnfw_params['alpha_Rs'] *= scale
+        # if (self._args['scale_nfw']):
+        #     # When scale_nfw is True rescale alpha_Rs to improve mass accuracy
+        #     scale = self.mass / (M_nfw+M_uldm)
+        #     cnfw_params['alpha_Rs'] *= scale
 
         return [cnfw_params, uldm_params]
 
@@ -242,4 +278,3 @@ class ULDMSubhalo(ULDMFieldHalo):
     Defines a composite ULDM+NFW halo that is a subhalo of the host dark matter halo. The only difference
     between the profile classes is that the subhalo will have it's concentration evaluated at infall redshift.
     """
-
