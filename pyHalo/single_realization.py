@@ -246,8 +246,8 @@ class Realization(object):
                log10_mass_allowed_global,
                interpolated_x_angle,
                interpolated_y_angle,
-               aperture_units='KPC',
-               geometric_weighting=False,
+               aperture_units='ANGLES',
+               geometric_weighting=True,
                w_min=0.1):
 
         """

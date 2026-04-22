@@ -90,8 +90,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     mass_function_model_fieldhalos = ShethTormen
 
     # set the density profile definition
-    if halo_mass_profile not in ['NFW', 'TNFW']:
-        raise Exception('halo mass profile must be either NFW or TNFW')
+    if halo_mass_profile not in ['NFW', 'TNFW', 'PT_MASS']:
+        raise Exception('halo mass profile must be either NFW, TNFW, or PT_MASS')
     mdef_subhalos = halo_mass_profile
     mdef_field_halos = halo_mass_profile
 
