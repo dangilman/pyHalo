@@ -214,7 +214,8 @@ class TestSingleRealization(object):
                    log_mass_allowed_global,
                    interpolated_x_angle,
                    interpolated_y_angle,
-                    aperture_units='ANGLES')
+                    aperture_units='ANGLES',
+                    geometric_weighting=False)
         npt.assert_equal(realization_filtered == realization_cdm, True)
 
         x_intercepts_1 = [1000] * len(x_intercepts_1)
@@ -234,7 +235,8 @@ class TestSingleRealization(object):
                                                       log_mass_allowed_global,
                                                       interpolated_x_angle,
                                                       interpolated_y_angle,
-                                                      aperture_units='ANGLES')
+                                                      aperture_units='ANGLES',
+                                                      geometric_weighting=False)
         npt.assert_equal(len(realization_filtered.halos), 1)
 
         x_intercepts_1 = [1000] * len(x_intercepts_1)
@@ -263,7 +265,8 @@ class TestSingleRealization(object):
                                                       log_mass_allowed_global,
                                                       interpolated_x_angle,
                                                       interpolated_y_angle,
-                                                      aperture_units='ANGLES')
+                                                      aperture_units='ANGLES',
+                                                      geometric_weighting=False)
         print('halos', len(realization_filtered.halos))
         new_tags = realization_filtered._tags()
         npt.assert_equal(True, tag in new_tags)

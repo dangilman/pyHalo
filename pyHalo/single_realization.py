@@ -277,6 +277,9 @@ class Realization(object):
         redshifts_check = self.redshifts[check_distances]
         within_aperture = np.zeros(len(masses), dtype=bool)
 
+        z_source = self.lens_cosmo.z_source
+        chi_s = self.lens_cosmo.cosmo.D_C_z(z_source)
+
         if len(check_distances) > 0:
 
             # Comoving distance for each halo needing a check: shape (N_check,)
@@ -286,22 +289,8 @@ class Realization(object):
 
             w_eff = np.ones(len(redshifts_check))
             if geometric_weighting:
-                # Comoving distances for the main lens and source
-                z_lens = self.lens_cosmo.z_lens
-                z_source = self.lens_cosmo.z_source
-                chi_l = self.lens_cosmo.cosmo.D_C_z(z_lens)
-                chi_s = self.lens_cosmo.cosmo.D_C_z(z_source)
-                chi_ls = chi_s - chi_l
-
-                chi_p = comoving_distances
-                chi_ps = chi_s - chi_p
-
-                # Geometric weight W_eff, normalized to 1 at z_p = z_lens
-                foreground = redshifts_check <= z_lens
-                background = ~foreground
-                w_eff[foreground] = (chi_p[foreground] * chi_ls) / (chi_l * chi_ps[foreground])
-                chi_lp = chi_p - chi_l
-                w_eff[background] = (chi_lp[background] * chi_ls) / (chi_l * chi_ps[background])
+                chi_ps = chi_s - comoving_distances
+                w_eff = (comoving_distances * chi_ps) / (chi_s / 2.0) ** 2
                 w_eff = np.clip(w_eff, w_min, 1.0)
 
             # Ray positions at each halo's comoving distance: shape (N_check, N_rays)
