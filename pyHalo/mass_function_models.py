@@ -21,7 +21,7 @@ def preset_mass_function_models(model_name, kwargs_model={}):
     elif model_name == 'LOVELL2020':
         # calibrated for field halos
         # from https://arxiv.org/pdf/2003.01125.pdf
-        kwargs_model_out['a_wdm'] = 1.95
+        kwargs_model_out['a_wdm'] = 1.95 # corrected based on the coefficient appearing outside parenthesis
         kwargs_model_out['b_wdm'] = 0.8
         kwargs_model_out['c_wdm'] = -1.0
         return ShethTormenTurnover, kwargs_model_out

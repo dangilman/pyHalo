@@ -25,6 +25,22 @@ class NFWFieldHalo(Halo):
         super(NFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                             lens_cosmo_instance, args, unique_tag)
 
+    def density_profile_3d_lenstronomy(self, r, profile_args=None):
+        """
+        Computes the 3-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        prof = self._nfw_lenstronomy
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        factor = sigma_crit_kpc / kpc_per_arcsec
+        rhos = prof.alpha2rho0(kwargs_lenstronomy['alpha_Rs'], kwargs_lenstronomy['Rs'])
+        return factor*prof.density(r / kpc_per_arcsec, kwargs_lenstronomy['Rs'],
+                                                    rhos)
+
     def density_profile_3d(self, r, profile_args=None, scaling=1.0):
         """
         Computes the 3-D density profile of the halo
