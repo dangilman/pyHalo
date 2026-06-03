@@ -396,7 +396,9 @@ def CDMBinned(z_lens, z_source,
 
     model_subhalos, kwargs_trunc_subs = truncation_models(truncation_model_subhalos)
     kwargs_trunc_subs.update(kwargs_truncation_model_subhalos)
-    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24', 'TRUNCATION_GALACTICUS']:
+    if truncation_model_subhalos in ['TRUNCATION_GALACTICUS_KEELEY24',
+                                     'TRUNCATION_GALACTICUS',
+                                     'TRUNCATION_GALACTICUS_ZINFALL']:
         kwargs_trunc_subs['c_host'] = c_host
     truncation_model_subhalos = model_subhalos(**kwargs_trunc_subs)
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)

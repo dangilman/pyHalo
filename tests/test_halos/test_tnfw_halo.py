@@ -1,5 +1,6 @@
 import numpy.testing as npt
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo as LensCosmoLenstronomy
+
 from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo, TNFWFieldHalo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
 from pyHalo.Halos.tidal_truncation import TruncationRoche
@@ -299,6 +300,20 @@ class TestTNFWHalos(object):
         r_solution = halo.log_derivative_inverse(gamma_target, rs, rt)
         log_derivative = halo.log_profile_slope(r_solution, rs, rt)
         npt.assert_almost_equal(log_derivative, gamma_target, 5)
+
+    def test_alphar(self):
+
+        mass = 10 ** 8
+        x = 0.0
+        y = 0.0
+        z = 0.5
+        tau = 1000
+        halo = TNFWFieldHalo.simple_setup(mass, x, y, z, tau, self.lens_cosmo)
+        kwargs_lenstronomy = halo.lenstronomy_params[0][0]
+        kpc_per_arcsec = self.lens_cosmo.cosmo.kpc_proper_per_asec(z)
+        r_arcsec = halo.nfw_params[1] / kpc_per_arcsec
+        alpha_r = halo.deflection_angle(r_arcsec)
+        npt.assert_almost_equal(alpha_r, kwargs_lenstronomy['alpha_Rs'])
 
 if __name__ == '__main__':
     pytest.main()

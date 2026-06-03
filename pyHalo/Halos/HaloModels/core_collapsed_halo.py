@@ -1,6 +1,8 @@
 import numpy as np
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 from lenstronomy.LensModel.Profiles.pseudo_double_powerlaw import PseudoDoublePowerlaw
+from lenstronomy.LensModel.Profiles.core_collapsed_halo_bh import CoreCollapsedHaloBH as CoreCollapsedHaloLenstronomyBH
+from lenstronomy.LensModel.Profiles.core_collapsed_halo import CoreCollapsedHalo as CoreCollapsedHaloLenstronomy
 from pyHalo.Halos.halo_base import Halo
 from copy import deepcopy
 
@@ -17,6 +19,7 @@ class CoreCollapsedHalo(Halo):
         """
         self._profile_envelope = TNFW()
         self._profile_center = PseudoDoublePowerlaw()
+        self._profile = CoreCollapsedHaloLenstronomy()
         self._lens_cosmo = lens_cosmo_instance
         self._truncation_class = truncation_class
         self._concentration_class = concentration_class
@@ -48,8 +51,64 @@ class CoreCollapsedHalo(Halo):
         return inner, outer
 
     def density_profile_3d(self, r, kwargs_lenstronomy=None):
+        """
+        Compute the density profile of the halo in 3D
+        :param r:
+        :param kwargs_lenstronomy:
+        :return:
+        """
         inner, outer = self.component_density_profile_3d(r, kwargs_lenstronomy)
         return inner + outer
+
+    def deflection_angle(self, r_arcsec):
+        """
+        Compute the deflection angle as a function of radius in arcseconds
+        :param r: radius in arcseconds
+        :return: alpha(r)
+        """
+
+        lenstronomy_kwargs = self.lenstronomy_params[0][0]
+        x = r_arcsec
+        y = 0
+        alpha_r, _ = self._profile.derivatives(x,
+                                          y,
+                                          lenstronomy_kwargs['Rs_inner'],
+                                          lenstronomy_kwargs['Rs_outer'],
+                                          lenstronomy_kwargs['alpha_Rs_inner'],
+                                          lenstronomy_kwargs['alpha_Rs_outer'],
+                                          lenstronomy_kwargs['r_trunc'],
+                                          lenstronomy_kwargs['gamma_inner'],
+                                          lenstronomy_kwargs['gamma_outer'],
+                                          center_x=0,
+                                          center_y=0)
+        return alpha_r
+
+    def kappa(self, r):
+        """
+        Compute the convergence as a function of radius in arcseconds
+        :param r: radius in kpc
+        :return: convergence(r)
+        """
+        r_arcsec = r / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        alpha_r = self.deflection_angle(r_arcsec)
+        kappa = 0.5 * (alpha_r / r_arcsec + np.gradient(alpha_r, r_arcsec))
+        return kappa
+
+    def mass_2d(self, rmax, num_steps=1000):
+        """
+        Computes the 2-D density profile of the halo
+        :param r: distance from center of halo [kpc]
+        :return: the density profile in units M_sun / kpc^3
+        """
+        if rmax == 'r200':
+            rmax = self.nfw_params[-1]
+        r = np.logspace(-3, 0.0, num_steps) * rmax
+        kappa = self.kappa(r)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        sigma_crit_arcsec = (sigma_crit_kpc *
+                             self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z) ** 2)
+        return np.trapz(kappa * 2 * np.pi * r, r) * sigma_crit_arcsec
 
     @property
     def c(self):
@@ -164,7 +223,12 @@ class CoreCollapsedHalo(Halo):
             y = np.matmul(M_inverse, x) / sigma_crit_arcsec
             alpha_Rs_envelope, alpha_Rs_center = y[0], y[1]
             if alpha_Rs_center < 0 or alpha_Rs_envelope < 0:
-                raise Exception('alpha_Rs_envelope and alpha_Rs_center cannot be negative')
+                print('alpha_Rs_envelope: ', alpha_Rs_envelope)
+                print('alpha_Rs_center: ', alpha_Rs_center)
+                print(np.log10(self._args['m_target_R']), np.log10(self._args['m_target_r200']),
+                      self._args['Rs_inner_kpc'], self._args['r_match_kpc'])
+                raise Exception('alpha_Rs_envelope and alpha_Rs_center cannot be negative, '
+                                '(a, b, c, d) = '+str(a)+' '+str(b)+' '+str(c)+' '+str(d))
             assert np.isfinite(alpha_Rs_envelope)
             assert np.isfinite(alpha_Rs_center)
             self._profile_args = (alpha_Rs_center, Rs_angle, Rs_angle_inner, gamma_inner,
@@ -200,6 +264,45 @@ class CoreCollapsedHalo(Halo):
         return self.halo_effective_age / self.sidm_timescale
 
 class CoreCollapsedHaloBH(CoreCollapsedHalo):
+
+    def __init__(self, mass, x, y, r3d, z,
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag):
+        """
+        See documentation in base class (Halos/halo_base.py)
+        """
+        super(CoreCollapsedHaloBH, self).__init__(mass, x, y, r3d, z,
+                 sub_flag, lens_cosmo_instance, args, truncation_class, concentration_class, unique_tag)
+        self._profile_center = PseudoDoublePowerlaw()
+        self._profile = CoreCollapsedHaloLenstronomyBH()
+
+    def deflection_angle(self, r_arcsec):
+        """
+        Compute the deflection angle as a function of radius in arcseconds
+        :param r: radius in arcseconds
+        :return: alpha(r)
+        """
+
+        lenstronomy_kwargs = self.lenstronomy_params[0][0]
+        x = r_arcsec
+        y = 0
+        alpha_r, _ = self._profile.derivatives(x,
+                                          y,
+                                          lenstronomy_kwargs['Rs_outer'],
+                                          lenstronomy_kwargs['theta_E_inner'],
+                                          lenstronomy_kwargs['alpha_Rs_outer'],
+                                          lenstronomy_kwargs['r_trunc'],
+                                          center_x=0,
+                                          center_y=0)
+        return alpha_r
+
+    def logarithmic_profile_slope(self, r):
+        """
+        Compute an effective logarithmic profile slope in 3D by differentiating kappa(r), where kappa is computed from the hessian
+        :param r: radius in kpc
+        :return:
+        """
+        raise Exception('the logarithmic profile slope is not '
+                        'defined for a point mass')
 
     @property
     def lenstronomy_params_split(self):
@@ -296,6 +399,8 @@ class CoreCollapsedHaloBH(CoreCollapsedHalo):
             y = np.matmul(M_inverse, x) / sigma_crit_arcsec
             alpha_Rs_envelope, alpha_Rs_center = y[0], y[1]
             if alpha_Rs_center < 0 or alpha_Rs_envelope < 0:
+                print('alpha_Rs_envelope: ', alpha_Rs_envelope)
+                print('alpha_Rs_center: ', alpha_Rs_center)
                 raise Exception('alpha_Rs_envelope and alpha_Rs_center cannot be negative')
             assert np.isfinite(alpha_Rs_envelope)
             assert np.isfinite(alpha_Rs_center)

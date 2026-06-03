@@ -81,11 +81,11 @@ class InterpGalacticusZinfall(object):
         from pyHalo.Halos.galacticus_truncation.johnsonSUparams import a_fit_zinfall, b_fit_zinfall
         nstep = 15
         log10c_values = np.linspace(np.log10(2.0), np.log10(384), nstep)
-        t_inf_values = np.linspace(0.0, 8.1, nstep)
+        zinf_values = np.linspace(0.0, 8.1, nstep)
         chost_values = np.linspace(4.0, 9.0, nstep)
         a_values = np.array(a_fit_zinfall).reshape(nstep, nstep, nstep)
         b_values = np.array(b_fit_zinfall).reshape(nstep, nstep, nstep)
-        _points = (t_inf_values, log10c_values, chost_values)
+        _points = (zinf_values, log10c_values, chost_values)
         self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False,
                                                fill_value=None)
         self._b_interp = RegularGridInterpolator(_points, b_values, bounds_error=False,
@@ -134,7 +134,7 @@ class InterpGalacticus(object):
         """
         Evaluates the prediction from galacticus for subhalo bound mass
         :param log10_concentration_infall: log10(c) where c is the halo concentration at infall
-        :param time_since_infall: the time ellapsed since infall and the deflector redshift
+        :param time_since_infall: the time elapsed since infall and the deflector redshift
         :param chost: host halo concentration at z=0.5
         :return: the log10(bound mass divided by the infall mass), plus scatter
         """
@@ -197,4 +197,107 @@ class InterpGalacticusMW(object):
         output = float(johnsonsu.rvs(a, b))
         return min(output, 0.0)
 
+class InterpGalacticusZinfallZhost03(object):
+    """
+    Interpolates Galacticus semi-analytic model output to predict subhalo bound mass
+    as a function of infall redshift, concentration, and host halo concentration,
+    for a host halo at zhost=0.3.
+    """
+    _DELTAZ_MAX = 4.7
 
+    def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.johnsonSUparams_zhost03 import a_fit_zinfall, b_fit_zinfall
+        nstep = 15
+        zinf_values  = np.linspace(0.0, self._DELTAZ_MAX, nstep)
+        log10c_values = np.linspace(np.log10(2.0), np.log10(256), nstep)
+        chost_values  = np.linspace(3.0, 6.0, nstep)
+        a_values = np.array(a_fit_zinfall).reshape(nstep, nstep, nstep)
+        b_values = np.array(b_fit_zinfall).reshape(nstep, nstep, nstep)
+        _points = (zinf_values, log10c_values, chost_values)
+        self._a_interp = RegularGridInterpolator(_points, a_values, bounds_error=False, fill_value=None)
+        self._b_interp = RegularGridInterpolator(_points, b_values, bounds_error=False, fill_value=None)
+
+    def __call__(self, log10_concentration_infall, delta_z_infall, chost):
+        """
+        :param log10_concentration_infall: log10(c) at infall
+        :param delta_z_infall: elapsed redshift since infall
+        :param chost: host halo concentration at zhost=0.3
+        :return: log10(M_bound / M_infall), sampled from fitted Johnson SU distribution
+        """
+        log10_concentration_infall = np.clip(log10_concentration_infall, np.log10(2), np.log10(256))
+        delta_z_infall = np.clip(delta_z_infall, 0.001, self._DELTAZ_MAX)
+        chost = np.clip(chost, 3.0, 6.0)
+        p = (delta_z_infall, log10_concentration_infall, chost)
+        a, b = self._a_interp(p), self._b_interp(p)
+        return min(float(johnsonsu.rvs(a, b)), 0.0)
+
+
+class InterpGalacticusZinfallZhost05(InterpGalacticusZinfallZhost03):
+    """As above for zhost=0.5."""
+    _DELTAZ_MAX = 5.5
+
+    def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.johnsonSUparams_zhost05 import a_fit_zinfall, b_fit_zinfall
+        nstep = 15
+        zinf_values   = np.linspace(0.0, self._DELTAZ_MAX, nstep)
+        log10c_values = np.linspace(np.log10(2.0), np.log10(256), nstep)
+        chost_values  = np.linspace(3.0, 6.0, nstep)
+        _points = (zinf_values, log10c_values, chost_values)
+        self._a_interp = RegularGridInterpolator(_points, np.array(a_fit_zinfall).reshape(nstep, nstep, nstep),
+                                                 bounds_error=False, fill_value=None)
+        self._b_interp = RegularGridInterpolator(_points, np.array(b_fit_zinfall).reshape(nstep, nstep, nstep),
+                                                 bounds_error=False, fill_value=None)
+
+
+class InterpGalacticusZinfallZhost07(InterpGalacticusZinfallZhost03):
+    """As above for zhost=0.7."""
+    _DELTAZ_MAX = 4.3
+
+    def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.johnsonSUparams_zhost07 import a_fit_zinfall, b_fit_zinfall
+        nstep = 15
+        zinf_values   = np.linspace(0.0, self._DELTAZ_MAX, nstep)
+        log10c_values = np.linspace(np.log10(2.0), np.log10(256), nstep)
+        chost_values  = np.linspace(3.0, 6.0, nstep)
+        _points = (zinf_values, log10c_values, chost_values)
+        self._a_interp = RegularGridInterpolator(_points, np.array(a_fit_zinfall).reshape(nstep, nstep, nstep),
+                                                 bounds_error=False, fill_value=None)
+        self._b_interp = RegularGridInterpolator(_points, np.array(b_fit_zinfall).reshape(nstep, nstep, nstep),
+                                                 bounds_error=False, fill_value=None)
+
+
+class InterpGalacticusZinfallZhost09(InterpGalacticusZinfallZhost03):
+    """As above for zhost=0.9."""
+    _DELTAZ_MAX = 5.1
+
+    def __init__(self):
+        from pyHalo.Halos.galacticus_truncation.johnsonSUparams_zhost09 import a_fit_zinfall, b_fit_zinfall
+        nstep = 15
+        zinf_values   = np.linspace(0.0, self._DELTAZ_MAX, nstep)
+        log10c_values = np.linspace(np.log10(2.0), np.log10(256), nstep)
+        chost_values  = np.linspace(3.0, 6.0, nstep)
+        _points = (zinf_values, log10c_values, chost_values)
+        self._a_interp = RegularGridInterpolator(_points, np.array(a_fit_zinfall).reshape(nstep, nstep, nstep),
+                                                 bounds_error=False, fill_value=None)
+        self._b_interp = RegularGridInterpolator(_points, np.array(b_fit_zinfall).reshape(nstep, nstep, nstep),
+                                                 bounds_error=False, fill_value=None)
+
+
+class InterpGalacticusZinfallZhost(object):
+    """
+    Unified interpolator across zhost in [0.3, 0.5, 0.7, 0.9].
+    Selects the nearest zhost class and delegates to it.
+    """
+    _zhost_values = np.array([0.3, 0.5, 0.7, 0.9])
+    _classes = [InterpGalacticusZinfallZhost03, InterpGalacticusZinfallZhost05,
+                InterpGalacticusZinfallZhost07, InterpGalacticusZinfallZhost09]
+
+    def __init__(self):
+        self._interps = [cls() for cls in self._classes]
+
+    def __call__(self, log10_concentration_infall, delta_z_infall, chost, zhost):
+        """
+        :param zhost: host halo redshift; nearest of [0.3, 0.5, 0.7, 0.9] is selected
+        """
+        idx = np.argmin(np.abs(self._zhost_values - zhost))
+        return self._interps[idx](log10_concentration_infall, delta_z_infall, chost)

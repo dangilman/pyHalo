@@ -20,6 +20,12 @@ class BlackHole(Halo):
                                         lens_cosmo_instance, args, unique_tag,
                                         fixed_position=fixed_position)
 
+    def mass_3d(self, rmax, profile_args=None):
+        """
+        The 3d mass of the point mass is always m
+        """
+        return self.mass
+
     @property
     def lenstronomy_ID(self):
         """

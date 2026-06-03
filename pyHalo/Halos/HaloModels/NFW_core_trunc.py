@@ -467,4 +467,42 @@ def rc_extrapolation(t_over_tc, t0=0.5, c1=0.28):
         rc = 0.0001
     return rc
 
-
+# from pyHalo.Halos.lens_cosmo import LensCosmo
+# from pyHalo.Halos.concentration import ConcentrationConstant
+# import matplotlib.pyplot as plt
+#
+# mass = 10 **8
+# x = 0.0
+# y = 0.0
+# r3d = None
+# z = 0.5
+# sub_flag = False
+# lens_cosmo_instance = LensCosmo(0.5, 2.0)
+#
+# tovertclist = np.linspace(0.1, 1.1, 10)
+# for t_over_tc in tovertclist:
+#
+#     args = {'mass_conservation': mass,
+#             'rt_kpc': 10,
+#             'sidm_timescale': 8.167 / t_over_tc}
+#
+#     truncation_class = None
+#     concentration_class = ConcentrationConstant(lens_cosmo_instance.cosmo, 10.0)
+#     unique_tag = 1.0
+#     halo = TNFWCHaloEvolving(mass, x, y, r3d, z,
+#                      sub_flag, lens_cosmo_instance, args,
+#                      truncation_class, concentration_class, unique_tag)
+#
+#     rhos, rs, _ = halo.nfw_params
+#     rplot = np.logspace(-1, 1, 100) * rs
+#     density_profile = halo.density_profile_3d_lenstronomy(rplot)
+#
+#     xmax = 1.0
+#     r = np.logspace(-2.5, np.log10(xmax), 2000) * rs
+#     rho = halo.density_profile_3d_lenstronomy(r)
+#     mass_enclosed = np.trapz(4*np.pi*rho*r**2, r)
+#     rho_nfw = rhos / ((r/rs) * (1+r/rs)**2)
+#     mass_enclosed_nfw = np.trapz(4*np.pi*rho_nfw*r**2, r)
+#     print(mass_enclosed / 10**8)
+#     plt.loglog(rplot, density_profile)
+# plt.show()
