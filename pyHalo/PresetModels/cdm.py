@@ -386,7 +386,7 @@ def CDMBinned(z_lens, z_source,
 
     model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
                                                                     kwargs_concentration_model)
-    scatter_dex_fieldhalos = 0.2
+
     kwargs_mc_field['scatter_dex'] = concentration_scatter_dex
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
 
