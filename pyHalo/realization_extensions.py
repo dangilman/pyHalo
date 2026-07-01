@@ -617,7 +617,7 @@ class RealizationExtensions(object):
                                   scale_match_r=2.0,
                                   log_slope_match=-2.0,
                                   t_over_tc_collapse_threshold=1.0,
-                                  ):
+                                  sidm_timescale_function=None):
         """
         This takes a CDM relization and transforms it into an SIDM realization. The density profile follows
         https://arxiv.org/pdf/2305.16176.pdf if t / t_c <= 1. For t / t_c > 1 we extrapolate to deeper core collapse.
@@ -635,6 +635,7 @@ class RealizationExtensions(object):
         the log-slope equals log_slope_match
         :param scale_match_r: the scaling factor for mass conservation inside r_match
         :param log_slope_match: the logarithmic slope that determines r_match
+        :param sidm_timescale_function: a function that returns an SIDM collapse timscale in Gyr given rhos, rs, sigma
         :return: a realization of SIDM halos created from the population of CDM halos
         """
         sidm_halos = []
@@ -646,7 +647,10 @@ class RealizationExtensions(object):
             else:
                 raise Exception('halo mass ' + str(np.log10(halo.mass)) + ' not inside the minimum/maximum mass ranges')
             rhos, rs, _ = halo.nfw_params
-            t_c = self._realization.lens_cosmo.sidm_collapse_timescale(rhos, rs, sigma_eff)
+            if sidm_timescale_function is not None:
+                t_c = sidm_timescale_function(rhos, rs, sigma_eff)
+            else:
+                t_c = self._realization.lens_cosmo.sidm_collapse_timescale(rhos, rs, sigma_eff)
             if halo.mdef in ['TNFW', 'NFW']:
                 subhalo_evolution_scaling = 10**log10_subhalo_time_scaling
                 new_halo = self.toSIDM_single_halo(halo,

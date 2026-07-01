@@ -242,6 +242,34 @@ class LensCosmo(object):
         Rs = r200/c
         return rho0, Rs, r200
 
+    @property
+    def _mc_model(self):
+        """
+        Get a concentration mass relation instance, intended for internal use only
+        :param m: mass in solar masses
+        :param z: redshift
+        :return: concentration
+        """
+        if not hasattr(self, '_concentration_mass_relation'):
+            from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
+            self._concentration_mass_relation = ConcentrationDiemerJoyce(self.cosmo, scatter=False)
+        return self._concentration_mass_relation
+
+    def NFW_params_physical_fromMZ(self, m, z, scale_concentration=1.0, pseudo_nfw=False):
+        """
+        returns the NFW parameters in physical units assuming a concentration-mass relation by DiemerJoyce19 with
+        no scatter
+        :param M: physical mass in M_sun
+        :param z: redshift
+        :param scale_concentration: scale the halo concentration
+        :param pseudo_nfw: bool; if False, uses a regular NFW profile, if True, uses an NFW profile
+        with (1+x^2) in the denominator
+        :return: rho0 [Msun/kpc^3], Rs [kpc], r200 [kpc]
+        """
+        mc_relation = self._mc_model
+        c = scale_concentration * mc_relation.nfw_concentration(m, z)
+        return self.NFW_params_physical(m, c, z, pseudo_nfw)
+
     def NFW_params_physical(self, m, c, z, pseudo_nfw=False):
         """
         returns the NFW parameters in physical units
@@ -364,7 +392,7 @@ class LensCosmo(object):
     def halo_dynamical_time(self, m_host, z, c_host):
         """
         This routine computes the dynamical timescale for a halo of mass M defined as
-        t = 0.5427 / sqrt(G*rho)
+        t = 2 * r_vir / v_max
         where G is the gravitational constant and rho is the average density
         :param m_host: host mass in M_sun
         :param z: host redshift
@@ -372,11 +400,11 @@ class LensCosmo(object):
         :return: the dynamical timescale in Gyr
         """
 
-        _, _, rvir = self.NFW_params_physical(m_host, c_host, z)
-        volume = (4/3)*numpy.pi*rvir**3
-        rho_average = m_host / volume
-        g = 4.3e-6
-        return 0.5427 / numpy.sqrt(g*rho_average)
+        rhos, rs, r200 = self.NFW_params_physical(m_host, c_host, z)
+        vmax = self.nfw_vmax(rhos, rs)
+        sec_to_gyr = 3.17 * 10**-17
+        kpc_to_km = 3.086 * 10**16
+        return kpc_to_km * sec_to_gyr * r200 / vmax
 
     def sidm_halo_effective_age(self, z, z_infall, lambda_t, zform=10.0):
         """
@@ -422,3 +450,16 @@ class LensCosmo(object):
         G = 4.3e-6 # kpc / solar mass * (km/sec)^2
         vmax = 1.64 * numpy.sqrt(G * rhos * rs ** 2)
         return vmax
+
+    def mean_free_path(self, density, cross_section):
+        """
+
+        :param density: a characteristic density in solar mass / kpc^3
+        :param cross_section: a characteristic cross section in cm^2 / gram
+        :return: mean free path in kpc
+        """
+        msun_to_gram = 1.99e33
+        kpc_to_cm = 3.086e21
+        rho_cgs = density * msun_to_gram / kpc_to_cm ** 3  # g / cm^3
+        mfp_cm = 1.0 / (rho_cgs * cross_section)  # cm
+        return mfp_cm / kpc_to_cm
