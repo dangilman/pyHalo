@@ -6,6 +6,13 @@ from pyHalo.Halos.lens_cosmo import LensCosmo
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.defaults import cosmo_default
 
+
+"""
+This file contains top-level functions for generating halo realizations with pyHalo. Most users can avoid directly
+working with these methods by loading pyHalo's "preset models" for halo substructure (see preset_models.py and the
+classes in the PresetModels directory"
+"""
+
 _CODE_VERSION = '1.4.3'
 
 def check_code_version(required):
@@ -41,6 +48,9 @@ class pyHalo(object):
 
     @property
     def astropy_cosmo(self):
+        """
+        Returns the astropy cosmology instance for the pyHalo class instance
+        """
         return self.cosmology.astropy
 
     def render(self, population_model_list, mass_function_class_list, kwargs_mass_function_list,
@@ -50,33 +60,34 @@ class pyHalo(object):
 
         """
         Return a list of instances of the SingleRealization class
-        :param population_model_list:
-        :param mass_function_class_list:
-        :param kwargs_mass_function_list:
-        :param spatial_distribution_class_list:
-        :param kwargs_spatial_distribution_list:
-        :param geometry_class:
-        :param mdef_subhalos:
-        :param mdef_field_halos:
-        :param kwargs_halo_model:
-        :param two_halo_Lazar_correction:
-        :param scale_2halo_boost_factor:
-        :param nrealizations:
-        :return:
+        :param population_model_list: a list of pyHalo population models (see classes in Rendering)
+        :param mass_function_class_list: a list of pyHalo mass functions (see classes in Rendering/MassFunctions)
+        :param kwargs_mass_function_list: a list of keyword arguments for the mass functions
+        :param spatial_distribution_class_list: a list of spatial distribution classes (see classes in
+        Rendering/SpatialDistributions)
+        :param kwargs_spatial_distribution_list: a list of keyword arguments for the spatial distributions
+        :param geometry_class: an instance of the Geometry class (see Cosmology/geometry)
+        :param mdef_subhalos: mass definition for subhalos
+        :param mdef_field_halos: mass definition for field halos
+        :param kwargs_halo_model: keyword arguments for the halo models
+        :param two_halo_Lazar_correction: bool; include the two-halo term suggested by Lazar et al.
+        :param scale_2halo_boost_factor: rescales the two-halo term by this factor
+        :param nrealizations: number of realizations to generate
+        :return: a list of instances of the SingleRealization class
         """
         realization_list = []
         for i in range(0, nrealizations):
-            masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, rendering_classes = self.render_masses_positions(population_model_list,
+            masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, rendering_classes = self._render_masses_positions(population_model_list,
                                 mass_function_class_list,
                                 kwargs_mass_function_list,
                                 spatial_distribution_class_list,
                                 kwargs_spatial_distribution_list,
                                 geometry_class, two_halo_Lazar_correction, scale_2halo_boost_factor)
-            realization_list.append(self.create_realization(masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, rendering_classes,
+            realization_list.append(self._create_realization(masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, rendering_classes,
                                                             geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model))
         return realization_list
 
-    def render_masses_positions(self, population_model_list,
+    def _render_masses_positions(self, population_model_list,
                                 mass_function_class_list,
                                 kwargs_mass_function,
                                 spatial_distribution_class_list,
@@ -86,15 +97,7 @@ class pyHalo(object):
                                 scale_2halo_boost_factor=1.0):
 
         """
-
-        :param population_model_list:
-        :param mass_function_class_list:
-        :param kwargs_mass_function:
-        :param spatial_distribution_class_list:
-        :param kwargs_spatial_distribution:
-        :param geometry_class:
-        :param two_halo_Lazar_correction:
-        :return:
+        Generate halo masses, positions, redshifts, etc
         """
 
         plane_redshifts, redshift_spacing = generate_lens_plane_redshifts(self.zlens, self.zsource)
@@ -112,24 +115,11 @@ class pyHalo(object):
         masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag = population_model.render()
         return masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, population_model.rendering_classes
 
-    def create_realization(self, masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag,
+    def _create_realization(self, masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag,
                            rendering_classes, geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model):
         """
-
-        :param masses:
-        :param x_arcsec:
-        :param y_arcsec:
-        :param r3d:
-        :param redshifts:
-        :param subhalo_flag:
-        :param rendering_classes:
-        :param geometry_class:
-        :param mdef_subhalos:
-        :param mdef_field_halos:
-        :param convergence_sheet_correction:
-        :return:
+        Generate a realization of halos
         """
-
         mdefs = []
         for i in range(0, len(masses)):
             if subhalo_flag[i]:

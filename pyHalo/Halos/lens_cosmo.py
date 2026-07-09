@@ -453,7 +453,7 @@ class LensCosmo(object):
 
     def mean_free_path(self, density, cross_section):
         """
-
+        Calculate the mean free path of a DM partile given a density and a cross section
         :param density: a characteristic density in solar mass / kpc^3
         :param cross_section: a characteristic cross section in cm^2 / gram
         :return: mean free path in kpc
