@@ -16,3 +16,4 @@ mcfit>=0.0.21
 lenstronomy @ git+https://github.com/dangilman/lenstronomy.git
 setuptools==68.2.2
 mpmath
+mcfit
