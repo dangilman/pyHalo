@@ -208,8 +208,8 @@ class TestRealizationExtensions(object):
             r = x * rs
             rho_nfw = cdm_halo.density_profile_3d_lenstronomy(r)
             rho_sidm = sidm_halo.density_profile_3d_lenstronomy(r)
-            mass_nfw = np.trapz(4 * np.pi * r ** 2 * rho_nfw, r)
-            mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_sidm, r)
+            mass_nfw = np.trapezoid(4 * np.pi * r ** 2 * rho_nfw, r)
+            mass_sidm = np.trapezoid(4 * np.pi * r ** 2 * rho_sidm, r)
             ratio = mass_sidm / mass_nfw
             ratio_list.append(ratio)
         # import matplotlib.pyplot as plt
@@ -246,8 +246,8 @@ class TestRealizationExtensions(object):
             r = x * rs
             rho_nfw = cdm_halo.density_profile_3d_lenstronomy(r)
             rho_sidm = sidm_halo.density_profile_3d_lenstronomy(r)
-            mass_nfw = np.trapz(4 * np.pi * r ** 2 * rho_nfw, r)
-            mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_sidm, r)
+            mass_nfw = np.trapezoid(4 * np.pi * r ** 2 * rho_nfw, r)
+            mass_sidm = np.trapezoid(4 * np.pi * r ** 2 * rho_sidm, r)
             ratio = mass_sidm / mass_nfw
             ratio_list.append(ratio)
         # import matplotlib.pyplot as plt
@@ -291,8 +291,8 @@ class TestRealizationExtensions(object):
                 r = x * rs
                 rho_nfw = cdm_halo.density_profile_3d_lenstronomy(r)
                 rho_sidm = sidm_halo.density_profile_3d_lenstronomy(r)
-                mass_nfw = np.trapz(4 * np.pi * r ** 2 * rho_nfw, r)
-                mass_sidm = np.trapz(4 * np.pi * r ** 2 * rho_sidm, r)
+                mass_nfw = np.trapezoid(4 * np.pi * r ** 2 * rho_nfw, r)
+                mass_sidm = np.trapezoid(4 * np.pi * r ** 2 * rho_sidm, r)
                 ratio = mass_sidm / mass_nfw
                 ratio_list.append(ratio)
                 npt.assert_equal(sidm_halo._args['x_core_halo'], x_core_halo)
