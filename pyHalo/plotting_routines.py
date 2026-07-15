@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from pyHalo.single_realization import realization_at_z
-from lenstronomy.Util.analysis_util import azimuthalAverage
+from lenstronomy.Util.analysis_util import azimuthal_average
 from pyHalo.utilities import multiplane_convergence
 
 plt.rcParams['axes.linewidth'] = 2.5
@@ -21,12 +21,11 @@ def plot_subhalo_spatial_distribution(realization, max_range_arcsec=3.0, ax=None
     Plots the azimuthally-averaged radial distribution of subhalos
     :param realization: an instance of Realization that contains subhalos
     :param ax: figure axis
-    :param color:
-    :param kwargs_plot:
-    :param log_mlow:
-    :param log_mhigh:
-    :param nbins:
-    :return:
+    :param color: color of curve showing subhalo number density
+    :param kwargs_plot: keyword arguments passed to matplotlib.pyplot.plot
+    :param log_mlow: minimum halo mass to include in plot
+    :param log_mhigh: maximum halo mass to include in plot
+    :param nbins: number of azimuthally averaged radial distribution bins
     """
 
     if ax is None:
@@ -41,7 +40,7 @@ def plot_subhalo_spatial_distribution(realization, max_range_arcsec=3.0, ax=None
     root2 = np.sqrt(2)
     rangex, rangey = (-max_range_arcsec/root2, max_range_arcsec/root2), (-max_range_arcsec/root2, max_range_arcsec/root2)
     h, binx, biny = np.histogram2d(x_arcsec, y_arcsec, bins=nbins, range=(rangex, rangey))
-    radial_prof, r_bin = azimuthalAverage(h)
+    radial_prof, r_bin = azimuthal_average(h)
     arcsec_per_pixel = max_range_arcsec / len(r_bin)
     r_bin_arcsec = r_bin * arcsec_per_pixel
     ax.plot(r_bin_arcsec, radial_prof, color=color, **kwargs_plot)
@@ -53,17 +52,6 @@ def plot_halo_mass_function(realization, z_eval=None, ax=None, color='k', kwargs
 
     """
     Makes a log-log plot of the halo mass function for a given realization.
-
-    :param realization:
-    :param z_eval:
-    :param ax:
-    :param color:
-    :param kwargs_plot:
-    :param log_mlow:
-    :param log_mhigh:
-    :param nbins:
-    :param show_errorbars:
-    :return:
     """
     if ax is None:
         fig = plt.figure()
