@@ -171,7 +171,7 @@ class TNFWCHaloParametric(Halo):
                            'r_core': r_core_angle,
                            'r_trunc': r_trunc_angle}
             rho = self.density_profile_3d_lenstronomy(r, kwargs_temp)
-            mass_3d = np.trapz(4 * np.pi * r ** 2 * rho, r)
+            mass_3d = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
             alpha_Rs = self._args['mass_conservation'] / mass_3d
             self._profile_args = (alpha_Rs,
                                   rs_kpc,
