@@ -79,7 +79,7 @@ class TNFWCHaloParametric(Halo):
         sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
         sigma_crit_kpc = sigma_crit_mpc * 1e-6
         sigma_crit_arcsec = sigma_crit_kpc * kpc_per_arcsec ** 2
-        return np.trapz(kappa * 2 * np.pi * x, x) * sigma_crit_arcsec
+        return np.trapezoid(kappa * 2 * np.pi * x, x) * sigma_crit_arcsec
 
     def log_slope_2d(self, r):
         """
@@ -265,7 +265,7 @@ class TNFWCHaloEvolving(TNFWCHaloParametric):
                            'r_core': r_core_angle,
                            'r_trunc': r_trunc_angle}
             rho = self.density_profile_3d_lenstronomy(r, kwargs_temp)
-            mass_3d = np.trapz(4 * np.pi * r ** 2 * rho, r)
+            mass_3d = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
             alpha_Rs = self._args['mass_conservation'] / mass_3d
             self._profile_args = (alpha_Rs, rs_kpc, rc_kpc, rt_kpc, r200_kpc)
         return self._profile_args
