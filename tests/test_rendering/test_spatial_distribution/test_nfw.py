@@ -2,8 +2,6 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from pyHalo.Rendering.SpatialDistributions.nfw import ProjectedNFW, CNFW
-from lenstronomy.Util.analysis_util import azimuthalAverage
-import matplotlib.pyplot as plt
 
 
 class TestProjectedNFW(object):
