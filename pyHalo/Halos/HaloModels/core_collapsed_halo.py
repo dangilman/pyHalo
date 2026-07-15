@@ -108,7 +108,7 @@ class CoreCollapsedHalo(Halo):
         sigma_crit_kpc = sigma_crit_mpc * 1e-6
         sigma_crit_arcsec = (sigma_crit_kpc *
                              self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z) ** 2)
-        return np.trapz(kappa * 2 * np.pi * r, r) * sigma_crit_arcsec
+        return np.trapezoid(kappa * 2 * np.pi * r, r) * sigma_crit_arcsec
 
     @property
     def c(self):

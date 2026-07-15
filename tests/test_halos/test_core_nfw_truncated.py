@@ -32,7 +32,7 @@ class TestTNFWC(object):
                                self.lens_cosmo, kwargs_profile, self.truncation_class,
                                self.concentration_class, 1.0)
         r = np.linspace(0.001, tnfwc.c, 10000) * tnfwc.nfw_params[1]
-        mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
+        mass = np.trapezoid(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
 
         npt.assert_almost_equal(mass / mass0, 1, 2)
 
@@ -43,7 +43,7 @@ class TestTNFWC(object):
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
-        mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
+        mass = np.trapezoid(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
         npt.assert_almost_equal(mass / mass0, 1, 2)
 
         kwargs_profile = {'sidm_timescale': 2.5,
@@ -53,7 +53,7 @@ class TestTNFWC(object):
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
-        mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
+        mass = np.trapezoid(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
         npt.assert_array_less(abs(mass / mass0 - 1), 0.016)
 
         kwargs_profile = {'sidm_timescale': 0.5,
@@ -63,7 +63,7 @@ class TestTNFWC(object):
         tnfwc = TNFWCHaloEvolving(mass0, 0.0, 0.0, None, 0.5, False,
                           self.lens_cosmo, kwargs_profile, self.truncation_class,
                           self.concentration_class, 1.0)
-        mass = np.trapz(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
+        mass = np.trapezoid(4*np.pi*r**2*tnfwc.density_profile_3d_lenstronomy(r),r)
         npt.assert_array_less(abs(mass / mass0 - 1), 0.016)
 
     def test_vmax(self):
@@ -120,7 +120,7 @@ class TestTNFWC(object):
         r = np.logspace(-4, np.log10(tnfw_subhalo.c), 1000) * rs
         density_profile_sidm = sidm_halo.density_profile_3d_lenstronomy(r)
         mass3d_tnfw = tnfw_subhalo.mass_3d('r200')
-        mass3d_sidm = np.trapz(4 * np.pi * r ** 2 * density_profile_sidm, r)
+        mass3d_sidm = np.trapezoid(4 * np.pi * r ** 2 * density_profile_sidm, r)
         npt.assert_array_less(abs(mass3d_sidm / mass3d_tnfw - 1), 5)
 
 

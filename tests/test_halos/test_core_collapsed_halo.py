@@ -57,8 +57,8 @@ class TestCoreCollapsedHalo(object):
         density_inner, density_outer = halo.component_density_profile_3d(r)
         total_density = density_inner + density_outer
         density_nfw = tnfw_halo.density_profile_3d(r)
-        mass_cc_r200 = np.trapz(4 * np.pi * r ** 2 * total_density, r)
-        mass_nfw_r200 = np.trapz(4 * np.pi * r ** 2 * density_nfw, r)
+        mass_cc_r200 = np.trapezoid(4 * np.pi * r ** 2 * total_density, r)
+        mass_nfw_r200 = np.trapezoid(4 * np.pi * r ** 2 * density_nfw, r)
         npt.assert_almost_equal(mass_nfw_r200 / mass, 1,2)
         npt.assert_almost_equal(mass_cc_r200 / mass, 1, 2)
 
@@ -66,8 +66,8 @@ class TestCoreCollapsedHalo(object):
         density_inner, density_outer = halo.component_density_profile_3d(r)
         total_density = density_inner + density_outer
         density_nfw = tnfw_halo.density_profile_3d(r)
-        mass_cc_rmatch = np.trapz(4 * np.pi * r ** 2 * total_density, r)
-        mass_nfw_rmatch = scale_match_m * np.trapz(4 * np.pi * r ** 2 * density_nfw, r)
+        mass_cc_rmatch = np.trapezoid(4 * np.pi * r ** 2 * total_density, r)
+        mass_nfw_rmatch = scale_match_m * np.trapezoid(4 * np.pi * r ** 2 * density_nfw, r)
         npt.assert_almost_equal(mass_cc_rmatch / mass_nfw_rmatch, 1, 2)
 
     def test_field_halo_lowc(self):
@@ -109,8 +109,8 @@ class TestCoreCollapsedHalo(object):
         density_inner, density_outer = halo.component_density_profile_3d(r)
         total_density = density_inner + density_outer
         density_nfw = tnfw_halo.density_profile_3d(r)
-        mass_cc_r200 = np.trapz(4 * np.pi * r ** 2 * total_density, r)
-        mass_nfw_r200 = np.trapz(4 * np.pi * r ** 2 * density_nfw, r)
+        mass_cc_r200 = np.trapezoid(4 * np.pi * r ** 2 * total_density, r)
+        mass_nfw_r200 = np.trapezoid(4 * np.pi * r ** 2 * density_nfw, r)
         npt.assert_almost_equal(mass_nfw_r200 / mass, 1,2)
         npt.assert_almost_equal(mass_cc_r200 / mass, 1, 2)
 
@@ -118,8 +118,8 @@ class TestCoreCollapsedHalo(object):
         density_inner, density_outer = halo.component_density_profile_3d(r)
         total_density = density_inner + density_outer
         density_nfw = tnfw_halo.density_profile_3d(r)
-        mass_cc_rmatch = np.trapz(4 * np.pi * r ** 2 * total_density, r)
-        mass_nfw_rmatch = scale_match_m * np.trapz(4 * np.pi * r ** 2 * density_nfw, r)
+        mass_cc_rmatch = np.trapezoid(4 * np.pi * r ** 2 * total_density, r)
+        mass_nfw_rmatch = scale_match_m * np.trapezoid(4 * np.pi * r ** 2 * density_nfw, r)
         npt.assert_almost_equal(mass_cc_rmatch / mass_nfw_rmatch, 1, 2)
 
     def test_subhalo_high_fbound(self):
@@ -157,12 +157,12 @@ class TestCoreCollapsedHalo(object):
 
         r = np.logspace(-3.5, np.log10(tnfw_subhalo.c), 1000) * rs
         density_inner, density_outer = halo.component_density_profile_3d(r)
-        m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
+        m_num = np.trapezoid(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1+m_num / m_target_r200), 0.07)
 
         r = np.logspace(-3.5, np.log10(r_match_kpc / rs), 100) * rs
         density_inner, density_outer = halo.component_density_profile_3d(r)
-        m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
+        m_num = np.trapezoid(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1+m_num / m_target_R), 0.03)
 
     def test_subhalo_low_fbound(self):
@@ -200,12 +200,12 @@ class TestCoreCollapsedHalo(object):
 
         r = np.logspace(-3.5, np.log10(tnfw_subhalo.c), 1000) * rs
         density_inner, density_outer = halo.component_density_profile_3d(r)
-        m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
+        m_num = np.trapezoid(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1+m_num / m_target_r200), 0.03)
 
         r = np.logspace(-3.5, np.log10(r_match_kpc / rs), 1000) * rs
         density_inner, density_outer = halo.component_density_profile_3d(r)
-        m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
+        m_num = np.trapezoid(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1+m_num / m_target_R), 0.04)
 
     def test_BH(self):
@@ -289,12 +289,12 @@ class TestCoreCollapsedHalo(object):
 
         r = np.logspace(-3.5, np.log10(tnfw_subhalo.c), 1000) * rs
         density_inner, density_outer = halo.component_density_profile_3d(r)
-        m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
+        m_num = np.trapezoid(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1 + m_num / m_target_r200), 0.03)
 
         r = np.logspace(-3.5, np.log10(r_match_kpc / rs), 1000) * rs
         density_inner, density_outer = halo.component_density_profile_3d(r)
-        m_num = np.trapz(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
+        m_num = np.trapezoid(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1 + m_num / m_target_R), 0.04)
 
     def test_through_realization_extensions_BH(self):

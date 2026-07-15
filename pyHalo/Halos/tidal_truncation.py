@@ -513,7 +513,7 @@ class TruncationGalacticusApproxCDM(object):
         a_trunc = -10
         b_trunc = 0.0
         a, b = (a_trunc - self._loc) / self._scale, (b_trunc - self._loc) / self._scale
-        log10f_bound = truncnorm.rvs(a=a, b=b, scale=self._scale, loc=self._loc, size=1)
+        log10f_bound = truncnorm.rvs(a=a, b=b, scale=self._scale, loc=self._loc, size=1)[0]
         return 10**float(log10f_bound)
 
     def calculate_mbound(self, halo):

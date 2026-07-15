@@ -1,5 +1,4 @@
 import pytest
-from scipy.interpolate import interp1d
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt

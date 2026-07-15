@@ -69,19 +69,19 @@ class TestGlobularClusters(object):
         kpc_per_lightyear = 0.000306
         r = np.linspace(0.00001, 1.0, 100000) * args['gc_size_lightyear'] * kpc_per_lightyear
         rho = profile.density_profile_3d_lenstronomy(r)
-        m = np.trapz(4 * np.pi * r ** 2 * rho, r)
+        m = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
         npt.assert_almost_equal(m / 10**logM, 1, 4)
 
         # the total mass will be slightly larger
         r = np.linspace(0.00001, 10.0, 2000000) * args['gc_size_lightyear'] * kpc_per_lightyear
         rho = profile.density_profile_3d_lenstronomy(r)
-        m_total = np.trapz(4 * np.pi * r ** 2 * rho, r)
+        m_total = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
         npt.assert_almost_equal(m_total / 10**logM, 1.5918, 4)
 
         # test the average mass, rather than central density
         r = np.linspace(0.00001, 1.0, 100000) * args['gc_size_lightyear'] * kpc_per_lightyear
         rho = profile.density_profile_3d_lenstronomy(r)
-        m_total = np.trapz(4 * np.pi * r ** 2 * rho, r)
+        m_total = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
         volume = 4*np.pi/3 * (args['gc_size_lightyear'])**3
         average_density = m_total / volume
         npt.assert_almost_equal(average_density, 0.2387, 4)

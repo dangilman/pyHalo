@@ -83,8 +83,8 @@ class TestCNFWHalos(object):
         rho_sidm = cnfw_halo.density_profile_3d(r)
         rho_cdm = cdm_halo.density_profile_3d(r)
 
-        m_3d = np.trapz(4*np.pi*rho_sidm *r**2, r)
-        m_3d_nfw = np.trapz(4 * np.pi * rho_cdm * r ** 2, r)
+        m_3d = np.trapezoid(4*np.pi*rho_sidm *r**2, r)
+        m_3d_nfw = np.trapezoid(4 * np.pi * rho_cdm * r ** 2, r)
         npt.assert_equal(m_3d / m_3d_nfw < 1, True)
 
 

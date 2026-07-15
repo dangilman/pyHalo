@@ -148,7 +148,7 @@ class TestTNFWHalos(object):
         rs = tnfw_halo.nfw_params[1]
         r = np.linspace(0.001, tnfw_halo.c, 10000) * rs
         rho = tnfw_halo.density_profile_3d_lenstronomy(r)
-        m_exact = np.trapz(4 * np.pi * rho * r ** 2, r)
+        m_exact = np.trapezoid(4 * np.pi * rho * r ** 2, r)
         m_class = tnfw_halo.mass_3d('r200')
         npt.assert_almost_equal(m_class/ m_exact,1,3)
 
@@ -157,7 +157,7 @@ class TestTNFWHalos(object):
         rs = tnfw_halo.nfw_params[1]
         r = np.linspace(0.0001, tnfw_halo.c, 100000) * rs
         rho = tnfw_halo.density_profile_3d_lenstronomy(r)
-        m_exact = np.trapz(4 * np.pi * rho * r ** 2, r)
+        m_exact = np.trapezoid(4 * np.pi * rho * r ** 2, r)
         m_class = tnfw_halo.mass_3d('r200')
         npt.assert_almost_equal(m_class / m_exact, 1, 3)
 
@@ -235,11 +235,11 @@ class TestTNFWHalos(object):
         r = np.linspace(r200/500, r200, 4000)
         rt = tnfw_subhalo.profile_args[1]
         density = tnfw_subhalo.density_profile_3d_lenstronomy(r)
-        mass3d = np.trapz(4 * np.pi * r**2 * density, r)
+        mass3d = np.trapezoid(4 * np.pi * r**2 * density, r)
         x = r/rs
         tau = rt/rs
         density = rescale_norm * rhos * tau**2 / (x * (1+x)**2) / (x**2 + tau**2)
-        mass3d_analytic = np.trapz(4*np.pi*density * r**2, r)
+        mass3d_analytic = np.trapezoid(4*np.pi*density * r**2, r)
         npt.assert_almost_equal(mass3d/ tnfw_subhalo.mass_3d('r200'),1, 2)
         npt.assert_almost_equal(mass3d / mass3d_analytic, 1, 2)
 

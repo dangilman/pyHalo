@@ -162,7 +162,7 @@ class TestGeneralNFW(object):
         rmax = rs * 2.5
         mass_3d = gnfw.mass_3d(rmax)
         r = np.logspace(-4, np.log10(2.5), 10000) * rs
-        mass_3d_numerical = np.trapz(4*np.pi*r**2*gnfw.density_profile_3d(r),r)
+        mass_3d_numerical = np.trapezoid(4*np.pi*r**2*gnfw.density_profile_3d(r),r)
         npt.assert_almost_equal(mass_3d / mass_3d_numerical, 1, 3)
 
 if __name__ == '__main__':
