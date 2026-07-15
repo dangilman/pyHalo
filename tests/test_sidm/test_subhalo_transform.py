@@ -47,8 +47,8 @@ class TestSubhaloTransform(object):
         r = np.linspace(0.001 * r200, r200, 1000)
         density_nfw = tnfw_subhalo.density_profile_3d_lenstronomy(r)
         density_sidm = sidm_subhalo.density_profile_3d_lenstronomy(r)
-        mass_analytic_tnfw = np.trapz(4 * np.pi * r ** 2 * density_nfw, r)
-        mass_analytic_sidm = np.trapz(4 * np.pi * r ** 2 * density_sidm, r)
+        mass_analytic_tnfw = np.trapezoid(4 * np.pi * r ** 2 * density_nfw, r)
+        mass_analytic_sidm = np.trapezoid(4 * np.pi * r ** 2 * density_sidm, r)
         npt.assert_almost_equal(mass_analytic_tnfw / mass_analytic_sidm, 1, 2)
 
     def test_transform_light_stripping(self):
@@ -86,8 +86,8 @@ class TestSubhaloTransform(object):
         r = np.linspace(0.001 * r200, r200, 1000)
         density_nfw = tnfw_subhalo.density_profile_3d_lenstronomy(r)
         density_sidm = sidm_subhalo.density_profile_3d_lenstronomy(r)
-        mass_analytic_tnfw = np.trapz(4 * np.pi * r ** 2 * density_nfw, r)
-        mass_analytic_sidm = np.trapz(4 * np.pi * r ** 2 * density_sidm, r)
+        mass_analytic_tnfw = np.trapezoid(4 * np.pi * r ** 2 * density_nfw, r)
+        mass_analytic_sidm = np.trapezoid(4 * np.pi * r ** 2 * density_sidm, r)
         npt.assert_almost_equal(mass_analytic_tnfw / mass_analytic_sidm, 1, 2)
 
 if __name__ == '__main__':
