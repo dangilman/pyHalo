@@ -258,7 +258,7 @@ class TNFWFieldHalo(Halo):
             else:
                 return abs(-gamma - 5 + (2 / (1 + x)) + 2 * tau ** 2 / (tau ** 2 + x ** 2))
         opt = minimize(_func_to_minimize, x0=2.0, method='Nelder-Mead')
-        return float(opt['x']) * rs
+        return float(opt['x'][0]) * rs
 
     @staticmethod
     def log_profile_slope(r, rs, rt):
