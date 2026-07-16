@@ -1,18 +1,18 @@
 pip>=23.1
-bumpversion==0.5.3
-wheel==0.38.1
-watchdog==0.8.3
-flake8==3.5.0
-tox==4.12.1
+bump2version
+wheel
+watchdog>=4.0
+flake8
+tox
 coverage
-Sphinx==1.7.1
-twine==1.10.0
+Sphinx
+twine
+setuptools
 numpy>=2.0
 astropy>=8.0
 scipy
 colossus>=1.3.1
 h5py>=3.9.0
-lenstronomy @ git+https://github.com/dangilman/lenstronomy.git
-setuptools==68.2.2
 mpmath
 mcfit
+lenstronomy @ git+https://github.com/dangilman/lenstronomy.git
