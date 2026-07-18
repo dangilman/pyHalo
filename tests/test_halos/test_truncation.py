@@ -96,6 +96,7 @@ class TestTruncation(object):
                 self.z = z
                 self.z_eval = z
                 self.c = 16.0
+                self.time_since_infall = 3.0
 
         halo = DummyHalo(10 ** 8, 0.4)
         median_rt_over_rs = 2.0
@@ -176,6 +177,9 @@ class TestTruncation(object):
                 self.z_eval = z
                 self.f = None
                 self.c = 16
+                self.time_since_infall = 3.0
+                self.z_infall = 4.0
+
             def rescale_normalization(self, factor):
                 self.f = factor
 
