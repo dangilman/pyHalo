@@ -125,7 +125,7 @@ class TNFWFieldHalo(Halo):
             c, rt = self.profile_args
         else:
             c, rt = profile_args
-        rhos, rs, _ = self.lens_cosmo.NFW_params_physical(self.mass, self.c, self.z_eval)
+        rhos, rs, _ = self.nfw_params
         tau = rt / rs
         x = r / rs
         rho_nfw = rhos / x / (1 + x) ** 2
