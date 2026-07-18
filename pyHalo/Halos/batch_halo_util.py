@@ -588,7 +588,7 @@ def precompute_sidm_evolving_profiles(halos, n_r=250):
 def precompute_realization(realization, kwargs_halo_model=None):
     """
     Evaluate cached properties of each TNFW/NFW halo in a realization.
-    
+
     :param realization: an instance of Realization
     :param kwargs_halo_model: the kwargs_halo_model dictionary used to create
         the realization (used to locate the truncation classes); defaults to
@@ -605,8 +605,6 @@ def precompute_realization(realization, kwargs_halo_model=None):
 
     tnfw_subs = [h for h in realization.halos if h.mdef == 'TNFW' and h.is_subhalo]
     tnfw_field = [h for h in realization.halos if h.mdef == 'TNFW' and not h.is_subhalo]
-    tnfwc = [h for h in realization.halos if h.mdef == 'TNFWC'
-             and 'sidm_timescale' in getattr(h, '_args', {})]
     nfw = [h for h in realization.halos if h.mdef == 'NFW']
 
     t_sub = _truncation_for(True)
@@ -616,7 +614,5 @@ def precompute_realization(realization, kwargs_halo_model=None):
     t_field = _truncation_for(False)
     if len(tnfw_field) > 0 and t_field is not None:
         precompute_tnfw_field_halos(tnfw_field, t_field)
-    if len(tnfwc) > 0:
-        precompute_sidm_evolving_profiles(tnfwc)
     if len(nfw) > 0:
         precompute_nfw_params(nfw)
