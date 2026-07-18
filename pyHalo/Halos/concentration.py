@@ -62,6 +62,112 @@ class _ConcentrationCDM(object):
         raise Exception(
             'Custom concentration class must have a method evaluate_concentration with inputs mass, redshift')
 
+    # ------------------------------------------------------------------
+    # internal interpolation table for the median c(m, z) relation, shared
+    # by subclasses that define _evaluate_concentration_colossus and opt in
+    # with use_interpolation_table=True (ConcentrationDiemerJoyce,
+    # ConcentrationLudlow). The table is uniform in (log10 m, log10(1 + z)),
+    # coordinates in which log10 c is nearly bilinear, so the interpolation
+    # error is ~1e-4 (relative) at the resolution below. It is built lazily
+    # on the first evaluation, padded around the queried range, and rebuilt
+    # automatically (ranges only ever grow) if a query falls outside it.
+    # ------------------------------------------------------------------
+    _use_interpolation_table = False
+    _table = None
+    _table_n_per_dex_m = 16
+    _table_n_per_dex_zp1 = 60
+    _table_pad_m = 0.5
+    _table_pad_zp1 = 0.1
+    # default range the table covers on first build; queries outside trigger a
+    # rebuild over the union of ranges, so builds happen at most a few times
+    _table_log10m_default = (5.0, 11.5)
+    _table_u_default = (0.0, 1.05)  # u = log10(1 + z), covers z <= ~10.2
+
+    def _build_table(self, log10m_min, log10m_max, u_min, u_max):
+        """
+        Tabulates log10(c_median) from exact colossus evaluations on a grid
+        uniform in (log10 m, u) with u = log10(1 + z); one colossus call with
+        an array of masses per grid redshift
+        """
+        n_m = max(4, int((log10m_max - log10m_min) * self._table_n_per_dex_m) + 1)
+        n_u = max(4, int((u_max - u_min) * self._table_n_per_dex_zp1) + 1)
+        log10m = numpy.linspace(log10m_min, log10m_max, n_m)
+        u = numpy.linspace(u_min, u_max, n_u)
+        log10c = numpy.empty((n_m, n_u))
+        m_grid = 10 ** log10m
+        for j in range(n_u):
+            zj = float(10 ** u[j] - 1.0)
+            log10c[:, j] = numpy.log10(self._evaluate_concentration_colossus(m_grid, zj))
+        self._table = (log10m, u, log10c)
+
+    def _evaluate_concentration_from_table(self, M, z):
+        """
+        Evaluates the median concentration by bilinear interpolation of the
+        internal table, (re)building the table if any (M, z) query falls
+        outside its current range
+
+        :param M: halo mass (float or array)
+        :param z: redshift (float, or array with the same length as M)
+        :return: halo concentration
+        """
+        scalar_input = isinstance(M, float) or isinstance(M, int)
+        if scalar_input and self._table is not None:
+            # fast pure-scalar bilinear evaluation (the halo classes evaluate
+            # one halo at a time, so this is the hot path)
+            import math
+            log10m, u, table = self._table
+            x = math.log10(M)
+            y = math.log10(1.0 + z)
+            if log10m[0] <= x <= log10m[-1] and u[0] <= y <= u[-1]:
+                dm = log10m[1] - log10m[0]
+                du = u[1] - u[0]
+                i = min(int((x - log10m[0]) / dm), len(log10m) - 2)
+                j = min(int((y - u[0]) / du), len(u) - 2)
+                tm = (x - log10m[0] - i * dm) / dm
+                tu = (y - u[0] - j * du) / du
+                log10c = (table[i, j] * (1 - tm) * (1 - tu)
+                          + table[i + 1, j] * tm * (1 - tu)
+                          + table[i, j + 1] * (1 - tm) * tu
+                          + table[i + 1, j + 1] * tm * tu)
+                return float(10 ** log10c)
+        m_arr = numpy.atleast_1d(numpy.asarray(M, dtype=float))
+        z_arr = numpy.atleast_1d(numpy.asarray(z, dtype=float))
+        if len(z_arr) == 1 and len(m_arr) > 1:
+            z_arr = numpy.full(len(m_arr), z_arr[0])
+        x = numpy.log10(m_arr)
+        y = numpy.log10(1.0 + z_arr)
+        rebuild = self._table is None
+        if not rebuild:
+            log10m, u, _ = self._table
+            if x.min() < log10m[0] or x.max() > log10m[-1] or \
+                    y.min() < u[0] or y.max() > u[-1]:
+                rebuild = True
+        if rebuild:
+            lm_lo = min(x.min() - self._table_pad_m, self._table_log10m_default[0])
+            lm_hi = max(x.max() + self._table_pad_m, self._table_log10m_default[1])
+            u_lo = min(max(0.0, y.min() - self._table_pad_zp1), self._table_u_default[0])
+            u_hi = max(y.max() + self._table_pad_zp1, self._table_u_default[1])
+            if self._table is not None:
+                log10m, u, _ = self._table
+                lm_lo, lm_hi = min(lm_lo, log10m[0]), max(lm_hi, log10m[-1])
+                u_lo, u_hi = min(u_lo, u[0]), max(u_hi, u[-1])
+            self._build_table(lm_lo, lm_hi, u_lo, u_hi)
+        log10m, u, table = self._table
+        dm = log10m[1] - log10m[0]
+        du = u[1] - u[0]
+        i = numpy.clip(((x - log10m[0]) / dm).astype(int), 0, len(log10m) - 2)
+        j = numpy.clip(((y - u[0]) / du).astype(int), 0, len(u) - 2)
+        tm = (x - log10m[i]) / dm
+        tu = (y - u[j]) / du
+        log10c = (table[i, j] * (1 - tm) * (1 - tu)
+                  + table[i + 1, j] * tm * (1 - tu)
+                  + table[i, j + 1] * (1 - tm) * tu
+                  + table[i + 1, j + 1] * tm * tu)
+        c = 10 ** log10c
+        if scalar_input:
+            return float(c[0])
+        return c
+
 class _ConcentrationTurnover(object):
     _universal_minimum = 1.2
     def __init__(self, cdm_concentration):
@@ -93,18 +199,38 @@ class ConcentrationDiemerJoyce(_ConcentrationCDM):
 
     name = 'DIEMERJOYCE19'
 
-    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, mdef='200c', *args, **kwargs):
+    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, mdef='200c',
+                 use_interpolation_table=True, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param cosmo: an instance of astropy cosmology
+        :param use_interpolation_table: bool; if True (default), the median
+        concentration-mass relation is evaluated from an internal grid of exact
+        colossus evaluations (see _ConcentrationCDM._evaluate_concentration_from_table),
+        avoiding one colossus call per halo. Set False to call colossus directly.
         """
         self._mdef = mdef
+        self._use_interpolation_table = use_interpolation_table
+        self._table = None
         super(ConcentrationDiemerJoyce, self).__init__(cosmo, scatter, scatter_dex)
 
     def _evaluate_concentration(self, M, z):
 
         """
         Evaluates the concentration of an NFW profile
+
+        :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
+        :param z: redshift; can be a float, or an array with the same length as M
+        :return: halo concentration
+        """
+        if self._use_interpolation_table:
+            return self._evaluate_concentration_from_table(M, z)
+        return self._evaluate_concentration_colossus(M, z)
+
+    def _evaluate_concentration_colossus(self, M, z):
+
+        """
+        Evaluates the concentration of an NFW profile with a direct call to colossus
 
         :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
@@ -130,13 +256,17 @@ class ConcentrationLudlow(_ConcentrationCDM):
 
     name = 'LUDLOW2016'
 
-    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, mdef='200c', *args, **kwargs):
+    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, mdef='200c',
+                 use_interpolation_table=True, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param cosmo: an instance of astropy cosmology
+        :param use_interpolation_table: bool; see ConcentrationDiemerJoyce
         """
         self._cosmo = cosmo
         self._mdef = mdef
+        self._use_interpolation_table = use_interpolation_table
+        self._table = None
         super(ConcentrationLudlow, self).__init__(cosmo, scatter, scatter_dex)
 
     def _evaluate_concentration(self, M, z):
@@ -144,9 +274,26 @@ class ConcentrationLudlow(_ConcentrationCDM):
         """
         Evaluates the concentration of an NFW profile
         :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
+        :param z: redshift; can be a float, or an array with the same length as M
+        :return: halo concentration
+        """
+        if self._use_interpolation_table:
+            return self._evaluate_concentration_from_table(M, z)
+        return self._evaluate_concentration_colossus(M, z)
+
+    def _evaluate_concentration_colossus(self, M, z):
+
+        """
+        Evaluates the concentration of an NFW profile with a direct call to colossus
+        :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
         :param z: redshift
         :return: halo concentration
         """
+        if isinstance(M, numpy.ndarray) and isinstance(z, (numpy.ndarray, list)):
+            assert len(z) == len(M)
+            c = numpy.array([concentration(mi * self._cosmo.h, mdef=self._mdef, model='ludlow16', z=zi)
+                             for (mi, zi) in zip(M, z)])
+            return c
         M_h = M * self._cosmo.h
         c = concentration(M_h, mdef=self._mdef, model='ludlow16', z=z)
         return c

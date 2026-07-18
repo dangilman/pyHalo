@@ -347,6 +347,9 @@ class TestPresetModels(object):
 
     def test_CDM_binned(self):
 
+        seed = 1991
+        np.random.seed(seed)
+
         cdmbinned = CDMBinned(0.5, 1.5, sigma_sub=0.02, LOS_normalization=1.0)
         cdm = CDM(0.5, 1.5, sigma_sub=0.02, LOS_normalization=1.0, log_mhigh=10.7)
         kwargs_mass_sheet_binned = {'kappa_scale_subhalos': 0.1}

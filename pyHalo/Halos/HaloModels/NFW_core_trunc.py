@@ -162,7 +162,7 @@ class TNFWCHaloParametric(Halo):
             r_core_kpc = rs_kpc * 0.99
             x = np.logspace(-4,
                             np.log10(r_match_kpc / rs_kpc0),
-                            1000)
+                            250)
             r = x * rs_kpc0
             rs_angle = rs_kpc / kpc_per_arcsec
             r_core_angle = r_core_kpc / kpc_per_arcsec
@@ -258,7 +258,7 @@ class TNFWCHaloEvolving(TNFWCHaloParametric):
             r_trunc_angle = rt_kpc / kpc_per_arcsec
             x = np.logspace(-4,
                             np.log10(self.c),
-                            1000)
+                            250)
             r = x * rs_0
             kwargs_temp = {'alpha_Rs': 1.0,
                            'Rs': Rs_angle,

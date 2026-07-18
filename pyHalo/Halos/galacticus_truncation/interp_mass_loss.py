@@ -107,7 +107,7 @@ class InterpGalacticusZinfall(object):
         chost = min(8.0, chost)
         p = (delta_z_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
-        output = float(johnsonsu.rvs(a, b))
+        output = float(np.sinh((np.random.normal() - a) / b))
         return min(output, 0.0)
 
 class InterpGalacticus(object):
@@ -146,7 +146,7 @@ class InterpGalacticus(object):
         chost = min(8.0, chost)
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
-        output = float(johnsonsu.rvs(a, b))
+        output = float(np.sinh((np.random.normal() - a) / b))
         return min(output, 0.0)
 
 class InterpGalacticusMW(object):
@@ -194,7 +194,7 @@ class InterpGalacticusMW(object):
         chost = min(12.0, chost)
         p = (time_since_infall, log10_concentration_infall, chost)
         a, b = self._a_interp(p), self._b_interp(p)
-        output = float(johnsonsu.rvs(a, b))
+        output = float(np.sinh((np.random.normal() - a) / b))
         return min(output, 0.0)
 
 class InterpGalacticusZinfallZhost03(object):
