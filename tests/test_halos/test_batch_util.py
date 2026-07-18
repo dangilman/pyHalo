@@ -8,18 +8,20 @@ from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce, ConcentrationConstant
 from pyHalo.Halos.tidal_truncation import TruncationGalacticus
-from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo
+from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo, TNFWFieldHalo
+from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
+from pyHalo.Halos.HaloModels.powerlaw import GlobularCluster
 from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving
 from pyHalo.Halos.galacticus_truncation.transfer_function_density_profile import compute_r_te_and_f_t
 from pyHalo.Halos.batch_halo_util import (nfw_params_physical_vectorized,
-                                     compute_r_te_and_f_t_vectorized,
-                                     precompute_concentrations,
-                                     precompute_infall_times,
-                                     precompute_tnfw_subhalos,
-                                     precompute_tnfw_bound_masses,
-                                     precompute_sidm_evolving_profiles,
-                                     precompute_realization)
-
+                                          compute_r_te_and_f_t_vectorized,
+                                          precompute_concentrations,
+                                          precompute_infall_times,
+                                          precompute_tnfw_subhalos,
+                                          precompute_tnfw_bound_masses,
+                                          precompute_sidm_evolving_profiles,
+                                          precompute_realization,
+                                          precompute_nfw_params)
 from pyHalo.single_realization import Realization
 
 
@@ -35,17 +37,51 @@ class TestBatchUtil(object):
         self.concentration_class = ConcentrationDiemerJoyce(self.lens_cosmo.cosmo.astropy, scatter=False)
         self.truncation_class = TruncationGalacticus(self.lens_cosmo, c_host=6.0)
 
-    def _make_subhalos(self, n, seed=42):
+    def _make_subhalos(self, n, seed=42, mdef='TNFW'):
 
         np.random.seed(seed)
         halos = []
         for _ in range(n):
-            m = 10 ** np.random.uniform(7, 10)
+            m = 10 ** np.random.uniform(6, 10.7)
             x, y = np.random.uniform(-2, 2, 2)
-            halos.append(TNFWSubhalo(m, x, y, None, self.zlens, True, self.lens_cosmo,
-                                     {}, self.truncation_class, self.concentration_class,
-                                     np.random.rand()))
+            if mdef == 'TNFW':
+                halos.append(TNFWSubhalo(m, x, y, None, self.zlens, True, self.lens_cosmo,
+                                         {}, self.truncation_class, self.concentration_class,
+                                         np.random.rand()))
+            else:
+                halos.append(NFWSubhhalo(m, x, y, None, self.zlens, True, self.lens_cosmo,
+                                         {}, None, self.concentration_class,
+                                         np.random.rand()))
         return halos
+
+    def _make_fieldhalos(self, n, seed=42, mdef='TNFW'):
+
+        np.random.seed(seed)
+        halos = []
+        for _ in range(n):
+            m = 10 ** np.random.uniform(6, 10.7)
+            x, y = np.random.uniform(-2, 2, 2)
+            if mdef == 'TNFW':
+                halos.append(TNFWFieldHalo(m, x, y, None, self.zlens, False, self.lens_cosmo,
+                                           {}, self.truncation_class, self.concentration_class,
+                                           np.random.rand()))
+            else:
+                halos.append(NFWFieldHalo(m, x, y, None, self.zlens, False, self.lens_cosmo,
+                                          {}, None, self.concentration_class,
+                                          np.random.rand()))
+        return halos
+
+    def _make_globular_clusters(self, n, seed=42):
+
+        np.random.seed(seed)
+        clusters = []
+        kwargs_gc = {'gamma': 2.5, 'gc_size_lightyear': 100.0, 'gc_concentration': 0.05}
+        for _ in range(n):
+            m = 10 ** np.random.uniform(4, 5)
+            x, y = np.random.uniform(-2, 2, 2)
+            clusters.append(GlobularCluster(m, x, y, self.zlens, self.lens_cosmo,
+                                            dict(kwargs_gc), np.random.rand()))
+        return clusters
 
     def test_nfw_params_physical_vectorized(self):
 
@@ -79,8 +115,8 @@ class TestBatchUtil(object):
 
     def test_precompute_concentrations(self):
 
-        halos_batch = self._make_subhalos(50)
-        halos_reference = self._make_subhalos(50)
+        halos_batch = self._make_subhalos(50) + self._make_fieldhalos(50)
+        halos_reference = self._make_subhalos(50) + self._make_fieldhalos(50)
         z_infall = np.random.uniform(self.zlens + 0.01, 4.0, 50)
         for i in range(50):
             halos_batch[i]._z_infall = float(z_infall[i])
@@ -178,20 +214,44 @@ class TestBatchUtil(object):
 
     def test_precompute_realization(self):
 
-        halos = self._make_subhalos(50)
+        # a realization mixing TNFW subhalos with globular clusters; unsupported
+        # profile types must pass through the precompute untouched and still work
+        subhalos = self._make_subhalos(50)
+        globular_clusters = self._make_globular_clusters(20)
         kwargs_halo_model = {'truncation_model_subhalos': self.truncation_class,
                              'truncation_model_field_halos': self.truncation_class,
                              'concentration_model': self.concentration_class,
                              'kwargs_density_profile': {}}
-        realization = Realization.from_halos(halos, self.lens_cosmo, kwargs_halo_model,
-                                             msheet_correction=False, rendering_classes=None)
+        realization = Realization.from_halos(subhalos + globular_clusters, self.lens_cosmo,
+                                             kwargs_halo_model, msheet_correction=False,
+                                             rendering_classes=None)
         precompute_realization(realization)
         for halo in realization.halos:
-            npt.assert_equal(hasattr(halo, '_profile_args'), True)
-            npt.assert_equal(hasattr(halo, '_nfw_params'), True)
+            if halo.mdef == 'TNFW':
+                npt.assert_equal(hasattr(halo, '_profile_args'), True)
+                npt.assert_equal(hasattr(halo, '_nfw_params'), True)
+            else:
+                # globular clusters skipped by the batch routines
+                npt.assert_equal(hasattr(halo, '_profile_args'), False)
         lens_model_list, redshift_array, kwargs_lens, _ = realization.lensing_quantities(
             add_mass_sheet_correction=False)
-        npt.assert_equal(len(lens_model_list), 50)
+        npt.assert_equal(len(lens_model_list), 70)
+
+    def test_precompute_nfw_params(self):
+
+        nfw_halos_batch = self._make_subhalos(50, mdef='NFW') + self._make_fieldhalos(50, mdef='NFW')
+        nfw_halos_reference = self._make_subhalos(50, mdef='NFW') + self._make_fieldhalos(50, mdef='NFW')
+        # pin the (randomly sampled) infall redshifts so z_eval agrees between the
+        # two halo populations
+        z_infall = np.random.uniform(self.zlens + 0.01, 4.0, 50)
+        for i in range(50):
+            nfw_halos_batch[i]._z_infall = float(z_infall[i])
+            nfw_halos_reference[i]._z_infall = float(z_infall[i])
+        precompute_nfw_params(nfw_halos_batch)
+        for hb, hr in zip(nfw_halos_batch, nfw_halos_reference):
+            npt.assert_almost_equal(hb.nfw_params[0] / hr.nfw_params[0], 1, 8)
+            npt.assert_almost_equal(hb.nfw_params[1] / hr.nfw_params[1], 1, 8)
+            npt.assert_almost_equal(hb.nfw_params[2] / hr.nfw_params[2], 1, 8)
 
 
 if __name__ == '__main__':
