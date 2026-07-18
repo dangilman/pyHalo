@@ -1,6 +1,7 @@
 import numpy
 from scipy.interpolate import interp1d
 from scipy.stats import truncnorm
+from scipy.special import ndtr, ndtri
 
 
 class InfallDistributionGalacticus2024(object):
@@ -48,8 +49,9 @@ class InfallDistributionHybrid(object):
         mu = self.z_inf_to_z_host_mean(mass_ratio)
         sig = self.z_inf_to_z_host_std(mass_ratio)
         bounds = [0.0, 15.0]
-        z = float(truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
-                                 loc=mu, scale=sig))
+        _a, _b = (bounds[0] - mu) / sig, (bounds[1] - mu) / sig
+        _u = numpy.random.uniform(ndtr(_a), ndtr(_b))
+        z = float(mu + sig * ndtri(_u))
         return self._z_lens + z
 
     @staticmethod
@@ -112,8 +114,9 @@ class InfallDistributionDirect(object):
         mu = self.z_inf_to_z_host_mean(mass_ratio)
         sig = self.z_inf_to_z_host_std(mass_ratio)
         bounds = [0.0, 15.0]
-        z = float(truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
-                                 loc=mu, scale=sig))
+        _a, _b = (bounds[0] - mu) / sig, (bounds[1] - mu) / sig
+        _u = numpy.random.uniform(ndtr(_a), ndtr(_b))
+        z = float(mu + sig * ndtri(_u))
         return self._z_lens + z
 
     @staticmethod
@@ -187,8 +190,9 @@ class InfallDistributionClusterDirect(object):
         mu = self.z_inf_to_z_host_mean(mass_ratio)
         sig = self.z_inf_to_z_host_std(mass_ratio)
         bounds = [0.0, 15.0]
-        z = float(truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
-                                 loc=mu, scale=sig))
+        _a, _b = (bounds[0] - mu) / sig, (bounds[1] - mu) / sig
+        _u = numpy.random.uniform(ndtr(_a), ndtr(_b))
+        z = float(mu + sig * ndtri(_u))
         return self._z_lens + z
 
     @staticmethod
@@ -299,8 +303,9 @@ class InfallRedshiftDistributionBase(object):
         mu = self.z_inf_to_z_host_mean(mass_ratio)
         sig = self.z_inf_to_z_host_std(mass_ratio)
         bounds = [0.0, 15.0]
-        z = float(truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
-                                 loc=mu, scale=sig))
+        _a, _b = (bounds[0] - mu) / sig, (bounds[1] - mu) / sig
+        _u = numpy.random.uniform(ndtr(_a), ndtr(_b))
+        z = float(mu + sig * ndtri(_u))
         return self._z_lens + z
 
     @staticmethod
