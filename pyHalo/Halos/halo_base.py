@@ -153,8 +153,7 @@ class Halo(ABC):
             print("time since infall is a meaningless concept for field halos")
             return None
         if not hasattr(self, '_time_since_infall'):
-            astropy = self.lens_cosmo.cosmo.astropy
-            self._time_since_infall = astropy.age(self.z).value - astropy.age(self.z_infall).value
+            self._time_since_infall = float(self.lens_cosmo.cosmo.halo_age(self.z, zform=self.z_infall))
             assert self._time_since_infall >= 0
         return self._time_since_infall
 

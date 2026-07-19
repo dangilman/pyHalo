@@ -1,4 +1,5 @@
 import warnings
+from functools import lru_cache
 import numpy as np
 from scipy.special import hyp2f1
 from scipy.integrate import quad
@@ -407,6 +408,7 @@ def _M_enclosed_generalized_NFW_dimensionless(x, alpha=1.0, beta=3.0, gamma=1.0)
     return mass
 
 
+@lru_cache(maxsize=32)
 def _R_max_generalized_NFW_dimensionless(alpha=1.0, beta=3.0, gamma=1.0):
     """
     Return the dimensionless Rmax for the generalized NFW profile.
@@ -669,6 +671,7 @@ gamma_used = None
 delta_used = None
 M_min = np.inf
 M_max = 0.0
+x_M_interp_loglog = None
 
 
 def _Truncation_Radius(M, f_t, alpha=1.0, beta=3.0, gamma=1.0, delta=2.0):
@@ -688,6 +691,7 @@ def _Truncation_Radius(M, f_t, alpha=1.0, beta=3.0, gamma=1.0, delta=2.0):
 
     global N_per_decade, x_min, x_max, N_tab, x_tab, M_tab
     global Mass_table_Initialized, alpha_used, beta_used, gamma_used, delta_used, M_min, M_max
+    global x_M_interp_loglog
 
     M_unnormalized = M / f_t
 
@@ -709,6 +713,10 @@ def _Truncation_Radius(M, f_t, alpha=1.0, beta=3.0, gamma=1.0, delta=2.0):
         N_tab = int(np.log10(x_max / x_min) * N_per_decade)
         x_tab = np.geomspace(x_min, x_max, N_tab)
         M_tab = _M_total_generalized_NFW_Truncated_dimensionless(x_tab, alpha, beta, gamma, delta)
+        # build the inverse interpolation once per (re)tabulation rather than
+        # once per call; constructing the cubic spline dominates the runtime
+        # of this function when called halo-by-halo
+        x_M_interp_loglog = interp1d(np.log(M_tab), np.log(x_tab), kind='cubic')
 
         Mass_table_Initialized = True
         alpha_used = alpha
@@ -716,11 +724,10 @@ def _Truncation_Radius(M, f_t, alpha=1.0, beta=3.0, gamma=1.0, delta=2.0):
         gamma_used = gamma
         delta_used = delta
 
-    x_M_interp_loglog = interp1d(np.log(M_tab), np.log(x_tab), kind='cubic')
-
     return np.exp(x_M_interp_loglog(np.log(M_unnormalized)))
 
 
+@lru_cache(maxsize=32)
 def Convert_to_reference_model(alpha=1.0, beta=3.0, gamma=1.0):
     """
     Compute the conversion factors from parameter y = M_{bound} / M_{mx,0} to parameter

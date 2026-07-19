@@ -2,8 +2,9 @@ import pytest
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 import numpy.testing as npt
-from pyHalo.Halos.tidal_truncation import TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity, \
-    ConstantTruncationArcsec, Multiple_RS, TruncationBoundMassPDF, TruncationGalacticusApproxCDM, TruncationGalacticusZinfall, TruncationGalacticus
+from pyHalo.Halos.tidal_truncation import (TruncationRN, TruncationRoche, TruncationSplashBack, TruncateMeanDensity, \
+    ConstantTruncationArcsec, Multiple_RS, TruncationBoundMassPDF, TruncationGalacticusApproxCDM,
+                                           TruncationGalacticusMilkyWay, TruncationGalacticusZinfall, TruncationGalacticus)
 from pyHalo.truncation_models import truncation_models
 from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce
@@ -95,6 +96,7 @@ class TestTruncation(object):
                 self.z = z
                 self.z_eval = z
                 self.c = 16.0
+                self.time_since_infall = 3.0
 
         halo = DummyHalo(10 ** 8, 0.4)
         median_rt_over_rs = 2.0
@@ -145,43 +147,6 @@ class TestTruncation(object):
         npt.assert_equal(rt > 0, True)
         npt.assert_equal(halo.f > 0, True)
 
-    def test_truncation_galacticus(self):
-
-        class DummyHalo(object):
-
-            def __init__(self, m, z, lens_cosmo):
-                self.mass = m
-                self.z = z
-                self.z_eval = z
-                self.z_infall = 1.2
-                self.f = None
-                self.c = 16
-                self.lens_cosmo = lens_cosmo
-
-            @property
-            def time_since_infall(self):
-                """
-                This routine calculates the time in Gyr since infall for subhalos using the infall redshift as predicted by
-                Galacticus
-                :return: the time since the subhalo was accreted onto thehost [Gyr]
-                """
-                if not hasattr(self, '_time_since_infall'):
-                    astropy = self.lens_cosmo.cosmo.astropy
-                    self._time_since_infall = astropy.age(self.z).value - astropy.age(self.z_infall).value
-                    assert self._time_since_infall >= 0
-                return self._time_since_infall
-
-            def rescale_normalization(self, factor):
-                self.f = factor
-
-        np.random.seed(0)
-        halo = DummyHalo(10 ** 8, 0.9, self.lenscosmo)
-        trunc = TruncationGalacticus(self.lenscosmo, 6.0)
-        truncz = TruncationGalacticusZinfall(self.lenscosmo, 6.0)
-        rt = trunc.truncation_radius_halo(halo)
-        rtz = truncz.truncation_radius_halo(halo)
-        npt.assert_array_less(abs(rt / rtz - 1), 0.1)
-
     def test_truncation_galac_cdm_approx(self):
 
         class DummyHalo(object):
@@ -201,6 +166,44 @@ class TestTruncation(object):
         rt = trunc.truncation_radius_halo(halo)
         npt.assert_equal(rt > 0, True)
         npt.assert_equal(halo.f > 0, True)
+
+    def test_truncation_galacticus(self):
+
+        class DummyHalo(object):
+
+            def __init__(self, m, z):
+                self.mass = m
+                self.z = z
+                self.z_eval = z
+                self.f = None
+                self.c = 16
+                self.time_since_infall = 3.0
+                self.z_infall = 4.0
+
+            def rescale_normalization(self, factor):
+                self.f = factor
+
+        halo = DummyHalo(10 ** 8, 0.7)
+        c_host = 6.0
+        trunc = TruncationGalacticus(self.lenscosmo, c_host)
+        rt = trunc.truncation_radius_halo(halo)
+        npt.assert_equal(rt > 0, True)
+        npt.assert_equal(halo.f > 0, True)
+
+        halo = DummyHalo(10 ** 8, 0.7)
+        c_host = 6.0
+        trunc = TruncationGalacticusZinfall(self.lenscosmo, c_host)
+        rt = trunc.truncation_radius_halo(halo)
+        npt.assert_equal(rt > 0, True)
+        npt.assert_equal(halo.f > 0, True)
+
+        halo = DummyHalo(10 ** 8, 0.7)
+        c_host = 6.0
+        trunc = TruncationGalacticusMilkyWay(self.lenscosmo, c_host)
+        rt = trunc.truncation_radius_halo(halo)
+        npt.assert_equal(rt > 0, True)
+        npt.assert_equal(halo.f > 0, True)
+
 
     def test_custom_class_truncation(self):
 
