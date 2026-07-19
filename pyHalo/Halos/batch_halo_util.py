@@ -1,11 +1,14 @@
 """
 batch_halo_util.py
 
-Vectorized, batched evaluation of per-halo quantities in pyHalo. Every Halo class in pyHalo
-caches quantities in private attributes (_c, _nfw_params, _z_infall,
+Vectorized, batched evaluation of per-halo quantities in pyHalo. The design
+philosophy is "warm the caches": every Halo class in pyHalo already caches
+computed quantities in private attributes (_c, _nfw_params, _z_infall,
 _time_since_infall, _profile_args, ...). These routines compute the same
-quantities for many halos with vectorized numpy operations and then
-store the results in those same attributes.
+quantities for a whole list of halos with vectorized numpy operations and then
+store the results in those same attributes. No Halo class API changes; halos
+that are not precomputed continue to work exactly as before, and downstream
+code (lenstronomy_params, bound_mass, etc.) is unchanged.
 
 Intended usage (e.g. inside pyHalo.Halos.util or a new module pyHalo/Halos/batch_util.py):
 
@@ -23,7 +26,7 @@ not reproducible draw-for-draw against it for a fixed numpy seed.
 """
 import numpy as np
 from scipy.stats import johnsonsu, truncnorm
-from pyHalo.truncation_models import truncation_models
+
 
 # ----------------------------------------------------------------------------
 # 1) NFW parameters (rhos, rs, r200): vectorized version of
@@ -217,18 +220,30 @@ def precompute_infall_times(subhalos, lens_cosmo):
 def _sample_infall_redshifts(model, m, lens_cosmo):
     """
     Vectorized infall-redshift sampling for the galacticus-calibrated
-    Hybrid/Direct models (truncnorm accepts array loc/scale). Falls back to
-    per-halo evaluation for any other model.
+    Hybrid/Direct models (truncnorm accepts array loc/scale). Any other model,
+    or any inconsistency in the vectorized draw (e.g. an infall model whose
+    internals are not array-safe), falls back to the public per-halo API,
+    which is always correct.
     """
+    m = np.atleast_1d(np.asarray(m, dtype=float))
     name = getattr(model, 'name', None)
     if name in ('hybrid', 'direct') and hasattr(model, 'z_inf_to_z_host_mean'):
-        mass_ratio = np.clip(m / model._m_host, 10 ** -5.0, 10 ** -0.5)
-        mu = model.z_inf_to_z_host_mean(mass_ratio)
-        sig = model.z_inf_to_z_host_std(mass_ratio)
-        bounds = [0.0, 15.0]
-        z = truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
-                          loc=mu, scale=sig)
-        return model._z_lens + z
+        try:
+            mass_ratio = np.clip(m / model._m_host, 10 ** -5.0, 10 ** -0.5)
+            mu = np.atleast_1d(np.asarray(model.z_inf_to_z_host_mean(mass_ratio), dtype=float))
+            sig = np.atleast_1d(np.asarray(model.z_inf_to_z_host_std(mass_ratio), dtype=float))
+            if len(mu) not in (1, len(m)) or len(sig) not in (1, len(m)):
+                raise ValueError('infall model returned unexpected shapes')
+            mu = np.broadcast_to(mu, m.shape)
+            sig = np.broadcast_to(sig, m.shape)
+            bounds = [0.0, 15.0]
+            z = truncnorm.rvs((bounds[0] - mu) / sig, (bounds[1] - mu) / sig,
+                              loc=mu, scale=sig, size=len(m))
+            z_inf = np.atleast_1d(model._z_lens + z)
+            if z_inf.shape == m.shape and np.all(np.isfinite(z_inf)):
+                return z_inf
+        except Exception:
+            pass
     return np.array([lens_cosmo.z_accreted_from_zlens(float(mi)) for mi in m])
 
 
@@ -347,6 +362,7 @@ def _truncation_radius_cached(M, f_t):
         tab['logM_min'], tab['logM_max'] = np.log(m_tab[0]), np.log(m_tab[-1])
     return np.exp(tab['interp'](logM))
 
+
 def precompute_tnfw_subhalos(subhalos, truncation_class):
     """
     Full batch precomputation for TNFWSubhalo objects using one of the
@@ -408,6 +424,7 @@ def precompute_tnfw_subhalos(subhalos, truncation_class):
         h.rescale_normalization(f_t[i])
         h._nfw_params = [rhos[i], rs[i], r200[i]]
         h._profile_args = (c[i], r_te[i])
+
 
 def precompute_tnfw_field_halos(field_halos, truncation_class):
     """
@@ -585,9 +602,14 @@ def precompute_sidm_evolving_profiles(halos, n_r=250):
         h._profile_args = (alpha_Rs[i], rs_kpc[i], rc_kpc[i], rt_kpc[i], r200_kpc[i])
 
 
+# ----------------------------------------------------------------------------
+# 7) Convenience driver
+# ----------------------------------------------------------------------------
+
 def precompute_realization(realization, kwargs_halo_model=None):
     """
-    Evaluate cached properties of each TNFW/NFW halo in a realization.
+    Warm the caches of every supported halo type in a realization.
+    Unsupported halo types are left untouched and behave exactly as before.
 
     :param realization: an instance of Realization
     :param kwargs_halo_model: the kwargs_halo_model dictionary used to create
@@ -605,6 +627,8 @@ def precompute_realization(realization, kwargs_halo_model=None):
 
     tnfw_subs = [h for h in realization.halos if h.mdef == 'TNFW' and h.is_subhalo]
     tnfw_field = [h for h in realization.halos if h.mdef == 'TNFW' and not h.is_subhalo]
+    tnfwc = [h for h in realization.halos if h.mdef == 'TNFWC'
+             and 'sidm_timescale' in getattr(h, '_args', {})]
     nfw = [h for h in realization.halos if h.mdef == 'NFW']
 
     t_sub = _truncation_for(True)
@@ -614,5 +638,7 @@ def precompute_realization(realization, kwargs_halo_model=None):
     t_field = _truncation_for(False)
     if len(tnfw_field) > 0 and t_field is not None:
         precompute_tnfw_field_halos(tnfw_field, t_field)
+    if len(tnfwc) > 0:
+        precompute_sidm_evolving_profiles(tnfwc)
     if len(nfw) > 0:
         precompute_nfw_params(nfw)

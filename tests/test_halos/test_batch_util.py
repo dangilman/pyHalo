@@ -214,8 +214,7 @@ class TestBatchUtil(object):
 
     def test_precompute_realization(self):
 
-        # a realization mixing TNFW subhalos with globular clusters; unsupported
-        # profile types must pass through the precompute untouched and still work
+        # a realization mixing TNFW subhalos with globular clusters
         subhalos = self._make_subhalos(50)
         globular_clusters = self._make_globular_clusters(20)
         kwargs_halo_model = {'truncation_model_subhalos': self.truncation_class,
