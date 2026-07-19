@@ -7,13 +7,17 @@ from astropy.cosmology import FlatLambdaCDM
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.Halos.concentration import ConcentrationDiemerJoyce, ConcentrationConstant
-from pyHalo.Halos.tidal_truncation import TruncationGalacticus
+from pyHalo.Halos.tidal_truncation import (TruncationGalacticus, Multiple_RS,
+                                           TruncationRN, ConstantTruncationArcsec)
+from pyHalo.Halos.concentration import ConcentrationWDMPolynomial
 from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo, TNFWFieldHalo
 from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
 from pyHalo.Halos.HaloModels.powerlaw import GlobularCluster
 from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving
 from pyHalo.Halos.galacticus_truncation.transfer_function_density_profile import compute_r_te_and_f_t
 from pyHalo.Halos.batch_halo_util import (nfw_params_physical_vectorized,
+                                          batch_nfw_concentration,
+                                          precompute_tnfw_field_halos,
                                           compute_r_te_and_f_t_vectorized,
                                           precompute_concentrations,
                                           precompute_infall_times,
@@ -214,7 +218,8 @@ class TestBatchUtil(object):
 
     def test_precompute_realization(self):
 
-        # a realization mixing TNFW subhalos with globular clusters
+        # a realization mixing TNFW subhalos with globular clusters; unsupported
+        # profile types must pass through the precompute untouched and still work
         subhalos = self._make_subhalos(50)
         globular_clusters = self._make_globular_clusters(20)
         kwargs_halo_model = {'truncation_model_subhalos': self.truncation_class,
@@ -251,6 +256,79 @@ class TestBatchUtil(object):
             npt.assert_almost_equal(hb.nfw_params[0] / hr.nfw_params[0], 1, 8)
             npt.assert_almost_equal(hb.nfw_params[1] / hr.nfw_params[1], 1, 8)
             npt.assert_almost_equal(hb.nfw_params[2] / hr.nfw_params[2], 1, 8)
+
+
+    def test_precompute_tnfw_field_halos(self):
+
+        # exercise all three branches: Multiple_RS and TruncationRN (fully
+        # vectorized) and the fallback that calls truncation_radius_halo per halo
+        truncation_models = [Multiple_RS(self.lens_cosmo, tau=5.0),
+                             TruncationRN(self.lens_cosmo, LOS_truncation_factor=50),
+                             ConstantTruncationArcsec(self.lens_cosmo, 2.5)]
+        for truncation_class in truncation_models:
+            halos_batch, halos_reference = [], []
+            np.random.seed(3)
+            for _ in range(50):
+                m = 10 ** np.random.uniform(6, 10.7)
+                x, y = np.random.uniform(-2, 2, 2)
+                z = float(np.random.choice([0.3, 0.5, 0.9]))
+                args = (m, x, y, None, z, False, self.lens_cosmo, {},
+                        truncation_class, self.concentration_class)
+                halos_batch.append(TNFWFieldHalo(*args, np.random.rand()))
+                halos_reference.append(TNFWFieldHalo(*args, np.random.rand()))
+            precompute_tnfw_field_halos(halos_batch, truncation_class)
+            for hb, hr in zip(halos_batch, halos_reference):
+                npt.assert_equal(hasattr(hb, '_profile_args'), True)
+                (c_b, rt_b) = hb.profile_args
+                (c_r, rt_r) = hr.profile_args
+                npt.assert_almost_equal(c_b / c_r, 1, 10)
+                npt.assert_almost_equal(rt_b / rt_r, 1, 8)
+                npt.assert_almost_equal(hb.nfw_params[0] / hr.nfw_params[0], 1, 8)
+
+    def test_batch_nfw_concentration(self):
+
+        np.random.seed(5)
+        m = 10 ** np.random.uniform(6, 10.7, 100)
+        z = 0.8
+        # array-safe CDM model (DIEMERJOYCE19), median relation
+        c_batch = batch_nfw_concentration(self.concentration_class, m, z)
+        c_reference = np.array([self.concentration_class.nfw_concentration(float(mi), z) for mi in m])
+        npt.assert_almost_equal(c_batch / c_reference, 1, 10)
+
+        # WDM turnover model wrapping the CDM class: batch evaluates the CDM
+        # class and applies the vectorized suppression
+        wdm = ConcentrationWDMPolynomial(self.lens_cosmo.cosmo.astropy, ConcentrationDiemerJoyce,
+                                         log_mc=7.5, kwargs_cdm={'scatter': False})
+        c_batch = batch_nfw_concentration(wdm, m, z)
+        c_reference = np.array([wdm.nfw_concentration(float(mi), z) for mi in m])
+        npt.assert_almost_equal(c_batch / c_reference, 1, 10)
+
+        # constant model
+        c_const = ConcentrationConstant(None, 9.0)
+        c_batch = batch_nfw_concentration(c_const, m, z)
+        npt.assert_almost_equal(c_batch, 9.0, 10)
+        npt.assert_equal(len(c_batch), len(m))
+
+        # unknown custom model: falls back to the per-halo path
+        class CustomConcentration(object):
+            name = 'CUSTOM'
+            def nfw_concentration(self, m_, z_):
+                return 5.0 + np.log10(m_)
+        custom = CustomConcentration()
+        c_batch = batch_nfw_concentration(custom, m, z)
+        c_reference = np.array([custom.nfw_concentration(float(mi), z) for mi in m])
+        npt.assert_almost_equal(c_batch / c_reference, 1, 10)
+
+        # scatter: one vectorized lognormal draw with the same distribution as
+        # the per-halo draws; check the median tracks the median relation and
+        # the scatter amplitude matches scatter_dex
+        cmodel_scatter = ConcentrationDiemerJoyce(self.lens_cosmo.cosmo.astropy,
+                                                  scatter=True, scatter_dex=0.2)
+        m_fixed = np.full(20000, 10 ** 8)
+        c_scattered = batch_nfw_concentration(cmodel_scatter, m_fixed, z)
+        c_median = cmodel_scatter.nfw_concentration(10 ** 8.0, z, force_no_scatter=True)
+        npt.assert_array_less(abs(np.median(c_scattered) / c_median - 1), 0.02)
+        npt.assert_array_less(abs(np.std(np.log(c_scattered)) / 0.2 - 1), 0.05)
 
 
 if __name__ == '__main__':

@@ -449,9 +449,9 @@ def precompute_tnfw_field_halos(field_halos, truncation_class):
         z = np.array([h.z_eval for h in field_halos])
         h_cosmo = lens_cosmo.cosmo.h
         rhoc_z = lens_cosmo._nfw_param.rhoc * lens_cosmo.cosmo.astropy.efunc(z) ** 2
-        # replicate rN_M(m * h, z, N): note the per-halo code passes m*h as
-        # "M in M_sun/h", i.e. M_h = m * h^2 inside rN_M
-        rn = (3 * m * h_cosmo ** 2 / (4 * np.pi * rhoc_z * truncation_class._N)) ** (1. / 3.) / h_cosmo
+        # replicate TruncationRN.truncation_radius, which evaluates
+        # rN_M(halo_mass * h, z, N) = (3 M / (4 pi rhoc_z N))^(1/3) / h with M = m * h
+        rn = (3 * m * h_cosmo / (4 * np.pi * rhoc_z * truncation_class._N)) ** (1. / 3.) / h_cosmo
         for i, h in enumerate(field_halos):
             h._profile_args = (h.c, rn[i] * 1000)
     else:
