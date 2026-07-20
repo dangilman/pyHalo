@@ -606,6 +606,71 @@ class RealizationExtensions(object):
             else:
                 raise ValueError('halo_profile should be either TNFWC or CC_COMPOSITE')
 
+    def toSIDM_from_timescale(self, mass_bin_list,
+                              log10_tc_binned,
+                              log10_subhalo_time_scaling,
+                              evolving_SIDM_profile=True,
+                              x_core_halo=None,
+                              collapse_probability=1.0,
+                              halo_profile='TNFWC',
+                              gamma_inner=2.5,
+                              scale_match_r=2.0,
+                              log_slope_match=-2.0,
+                              t_over_tc_collapse_threshold=1.0
+                              ):
+        """
+
+        :param mass_bin_list: halo mass bins in log10
+        :param log10_tc_binned: a list of length(mass_bin_list) that specifies the core collapse timescale in each bin
+        :param log10_subhalo_time_scaling: log10 of the linear rate of accelerated subhalo core collapse
+        :param evolving_SIDM_profile: bool; use parametric model for SIDM halo evolution
+        :param x_core_halo: the ratio of the SIDM halo core size to the halo scale radius; only used when
+        evolving_SIDM_profile=False. Otherwise, the profile is determined by the parametric model by Yang et al. (2022)
+        :param evolving_SIDM_profile: toggle time-evoling SIDM profile
+        :param collapse_probability: the probability that an object with an age / time_scale > 1 actually core collapses
+        :param halo_profile: the density profile for a collapsed halo, can be either TNFWC or CC_COMPOSITE
+        :param gamma_inner: the inner halo density profile (with CC_COMPOSITE); if -1, then a black hole is injected at
+        the halo center. The mass of the BH is set by matching the enclosed mass * scale_match_r within the radius where
+        the log-slope equals log_slope_match
+        :param scale_match_r: the scaling factor for mass conservation inside r_match
+        :param log_slope_match: the logarithmic slope that determines r_match
+        :return: a realization of SIDM halos created from the population of CDM halos
+        """
+        sidm_halos = []
+        for halo in self._realization.halos:
+            for bin_index, mass_bin in enumerate(mass_bin_list):
+                if np.log10(halo.mass) >= mass_bin[0] and np.log10(halo.mass) < mass_bin[1]:
+                    core_collapse_timescale = 10 ** log10_tc_binned[bin_index]
+                    break
+            else:
+                raise Exception('halo mass ' + str(np.log10(halo.mass)) + ' not inside the minimum/maximum mass ranges')
+            rhos, rs, _ = halo.nfw_params
+            if halo.mdef in ['TNFW', 'NFW']:
+                subhalo_evolution_scaling = 10 ** log10_subhalo_time_scaling
+                new_halo = self.toSIDM_single_halo(halo,
+                                                   t_c=core_collapse_timescale,
+                                                   x_core_halo=x_core_halo,
+                                                   subhalo_evolution_scaling=subhalo_evolution_scaling,
+                                                   evolving_profile=evolving_SIDM_profile,
+                                                   collapse_probability=collapse_probability,
+                                                   halo_profile=halo_profile,
+                                                   gamma_inner=gamma_inner,
+                                                   scale_match_r=scale_match_r,
+                                                   log_slope_match=log_slope_match,
+                                                   t_over_tc_collapse_threshold=t_over_tc_collapse_threshold)
+                sidm_halos.append(new_halo)
+            else:
+                sidm_halos.append(halo)
+        new_realization = Realization.from_halos(sidm_halos, self._realization.lens_cosmo,
+                                                 self._realization.kwargs_halo_model,
+                                                 self._realization.apply_mass_sheet_correction,
+                                                 self._realization.rendering_classes,
+                                                 self._realization._rendering_center_x,
+                                                 self._realization._rendering_center_y,
+                                                 self._realization.geometry)
+        new_realization._has_been_shifted = self._realization._has_been_shifted
+        return new_realization
+
     def toSIDM_from_cross_section(self, mass_bin_list,
                                   log10_effective_cross_section_list,
                                   log10_subhalo_time_scaling,

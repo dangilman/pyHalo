@@ -549,7 +549,8 @@ class Realization(object):
             halos, _ = self.halos_at_z(z)
             for halo in halos:
                 if halo.is_subhalo:
-                    m_exact += halo.mass_3d('r200')
+                    m_exact += halo.bound_mass
+                    #m_exact += halo.mass_3d('r200')
                 else:
                     m_exact += halo.mass
         else:
