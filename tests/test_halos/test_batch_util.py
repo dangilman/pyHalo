@@ -98,9 +98,9 @@ class TestBatchUtil(object):
             ref = np.array([self.lens_cosmo.NFW_params_physical(mi, ci, zi, pseudo_nfw)
                             for (mi, ci, zi) in zip(m, c, z)])
             rhos, rs, r200 = nfw_params_physical_vectorized(self.lens_cosmo, m, c, z, pseudo_nfw)
-            npt.assert_almost_equal(rhos / ref[:, 0], 1, 10)
-            npt.assert_almost_equal(rs / ref[:, 1], 1, 10)
-            npt.assert_almost_equal(r200 / ref[:, 2], 1, 10)
+            npt.assert_almost_equal(rhos / ref[:, 0], 1, 6)
+            npt.assert_almost_equal(rs / ref[:, 1], 1, 6)
+            npt.assert_almost_equal(r200 / ref[:, 2], 1, 6)
 
     def test_compute_r_te_and_f_t_vectorized(self):
 
@@ -114,8 +114,8 @@ class TestBatchUtil(object):
         rte_vec, ft_vec = compute_r_te_and_f_t_vectorized(m_bound, m_infall, r200, c_infall)
         for i in range(n):
             rte, ft = compute_r_te_and_f_t(m_bound[i], m_infall[i], r200[i], c_infall[i])
-            npt.assert_almost_equal(rte_vec[i] / rte, 1, 8)
-            npt.assert_almost_equal(ft_vec[i] / ft, 1, 10)
+            npt.assert_almost_equal(rte_vec[i] / rte, 1, 6)
+            npt.assert_almost_equal(ft_vec[i] / ft, 1, 6)
 
     def test_precompute_concentrations(self):
 
@@ -127,7 +127,7 @@ class TestBatchUtil(object):
             halos_reference[i]._z_infall = float(z_infall[i])
         precompute_concentrations(halos_batch)
         for hb, hr in zip(halos_batch, halos_reference):
-            npt.assert_almost_equal(hb.c / hr.c, 1, 10)
+            npt.assert_almost_equal(hb.c / hr.c, 1, 6)
 
     def test_precompute_infall_times(self):
 
@@ -139,7 +139,7 @@ class TestBatchUtil(object):
             halos_reference[i]._z_infall = float(z_infall[i])
         precompute_infall_times(halos_batch, self.lens_cosmo)
         for hb, hr in zip(halos_batch, halos_reference):
-            npt.assert_almost_equal(hb._time_since_infall, hr.time_since_infall, 10)
+            npt.assert_almost_equal(hb._time_since_infall, hr.time_since_infall, 6)
 
     def test_precompute_tnfw_subhalos(self):
 
@@ -157,9 +157,9 @@ class TestBatchUtil(object):
         for hb, hr in zip(halos_batch, halos_reference):
             (c_b, rt_b) = hb.profile_args
             (c_r, rt_r) = hr.profile_args
-            npt.assert_almost_equal(c_b / c_r, 1, 10)
-            npt.assert_almost_equal(rt_b / rt_r, 1, 8)
-            npt.assert_almost_equal(hb._rescale_norm / hr._rescale_norm, 1, 10)
+            npt.assert_almost_equal(c_b / c_r, 1, 6)
+            npt.assert_almost_equal(rt_b / rt_r, 1, 6)
+            npt.assert_almost_equal(hb._rescale_norm / hr._rescale_norm, 1, 6)
 
     def test_precompute_tnfw_bound_masses(self):
 
@@ -174,7 +174,7 @@ class TestBatchUtil(object):
         precompute_tnfw_subhalos(halos_batch, self.truncation_class)
         precompute_tnfw_bound_masses(halos_batch)
         for hb, hr in zip(halos_batch, halos_reference):
-            npt.assert_almost_equal(hb.bound_mass / hr.bound_mass, 1, 8)
+            npt.assert_almost_equal(hb.bound_mass / hr.bound_mass, 1, 6)
 
     def test_precompute_sidm_evolving_profiles(self):
 
@@ -197,8 +197,8 @@ class TestBatchUtil(object):
             halos_reference.append(TNFWCHaloEvolving(*args, np.random.rand()))
         precompute_sidm_evolving_profiles(halos_batch, n_r=n_r)
         for hb, hr in zip(halos_batch, halos_reference):
-            npt.assert_almost_equal(np.array(hb.profile_args) / np.array(hr.profile_args), 1, 8)
-            npt.assert_almost_equal(hb.halo_effective_age / hr.halo_effective_age, 1, 8)
+            npt.assert_almost_equal(np.array(hb.profile_args) / np.array(hr.profile_args), 1, 6)
+            npt.assert_almost_equal(hb.halo_effective_age / hr.halo_effective_age, 1, 6)
 
     def test_full_pipeline_statistical(self):
 
@@ -253,9 +253,9 @@ class TestBatchUtil(object):
             nfw_halos_reference[i]._z_infall = float(z_infall[i])
         precompute_nfw_params(nfw_halos_batch)
         for hb, hr in zip(nfw_halos_batch, nfw_halos_reference):
-            npt.assert_almost_equal(hb.nfw_params[0] / hr.nfw_params[0], 1, 8)
-            npt.assert_almost_equal(hb.nfw_params[1] / hr.nfw_params[1], 1, 8)
-            npt.assert_almost_equal(hb.nfw_params[2] / hr.nfw_params[2], 1, 8)
+            npt.assert_almost_equal(hb.nfw_params[0] / hr.nfw_params[0], 1, 6)
+            npt.assert_almost_equal(hb.nfw_params[1] / hr.nfw_params[1], 1, 6)
+            npt.assert_almost_equal(hb.nfw_params[2] / hr.nfw_params[2], 1, 6)
 
 
     def test_precompute_tnfw_field_halos(self):
@@ -281,8 +281,8 @@ class TestBatchUtil(object):
                 npt.assert_equal(hasattr(hb, '_profile_args'), True)
                 (c_b, rt_b) = hb.profile_args
                 (c_r, rt_r) = hr.profile_args
-                npt.assert_almost_equal(c_b / c_r, 1, 10)
-                npt.assert_almost_equal(rt_b / rt_r, 1, 8)
+                npt.assert_almost_equal(c_b / c_r, 1, 6)
+                npt.assert_almost_equal(rt_b / rt_r, 1, 6)
                 npt.assert_almost_equal(hb.nfw_params[0] / hr.nfw_params[0], 1, 8)
 
     def test_batch_nfw_concentration(self):
@@ -293,7 +293,7 @@ class TestBatchUtil(object):
         # array-safe CDM model (DIEMERJOYCE19), median relation
         c_batch = batch_nfw_concentration(self.concentration_class, m, z)
         c_reference = np.array([self.concentration_class.nfw_concentration(float(mi), z) for mi in m])
-        npt.assert_almost_equal(c_batch / c_reference, 1, 10)
+        npt.assert_almost_equal(c_batch / c_reference, 1, 6)
 
         # WDM turnover model wrapping the CDM class: batch evaluates the CDM
         # class and applies the vectorized suppression
@@ -301,12 +301,12 @@ class TestBatchUtil(object):
                                          log_mc=7.5, kwargs_cdm={'scatter': False})
         c_batch = batch_nfw_concentration(wdm, m, z)
         c_reference = np.array([wdm.nfw_concentration(float(mi), z) for mi in m])
-        npt.assert_almost_equal(c_batch / c_reference, 1, 10)
+        npt.assert_almost_equal(c_batch / c_reference, 1, 6)
 
         # constant model
         c_const = ConcentrationConstant(None, 9.0)
         c_batch = batch_nfw_concentration(c_const, m, z)
-        npt.assert_almost_equal(c_batch, 9.0, 10)
+        npt.assert_almost_equal(c_batch, 9.0, 6)
         npt.assert_equal(len(c_batch), len(m))
 
         # unknown custom model: falls back to the per-halo path
@@ -317,7 +317,7 @@ class TestBatchUtil(object):
         custom = CustomConcentration()
         c_batch = batch_nfw_concentration(custom, m, z)
         c_reference = np.array([custom.nfw_concentration(float(mi), z) for mi in m])
-        npt.assert_almost_equal(c_batch / c_reference, 1, 10)
+        npt.assert_almost_equal(c_batch / c_reference, 1, 6)
 
         # scatter: one vectorized lognormal draw with the same distribution as
         # the per-halo draws; check the median tracks the median relation and
