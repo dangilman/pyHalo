@@ -208,8 +208,8 @@ class RealizationExtensions(object):
             m = mfunc.draw()
             uniform_spatial_distribution = Uniform(rendering_radius_arcsec, self._realization.geometry)
             x_kpc, y_kpc = uniform_spatial_distribution.draw(len(m), z, 1.0, x_center, y_center)
-            x = x_kpc / self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
-            y = y_kpc / self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
+            x = np.array(x_kpc) / self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
+            y = np.array(y_kpc) / self._realization.lens_cosmo.cosmo.kpc_proper_per_asec(z)
             GCS = []
             for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
                 unique_tag = np.random.rand()
