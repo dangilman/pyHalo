@@ -91,7 +91,7 @@ class Cosmology(object):
             zf = float(z)
             v = self._cache_kpc.get(zf)
             if v is None:
-                v = float(self._kpc_per_asec_interp(zf))
+                v = np.float64(self._kpc_per_asec_interp(zf))   # numpy scalar, not float()
                 self._cache_kpc[zf] = v
             return v
         return self._kpc_per_asec_interp(z)
