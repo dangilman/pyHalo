@@ -56,7 +56,7 @@ class pyHalo(object):
     def render(self, population_model_list, mass_function_class_list, kwargs_mass_function_list,
                    spatial_distribution_class_list, kwargs_spatial_distribution_list,
                geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model, two_halo_Lazar_correction=True,
-               scale_2halo_boost_factor=1.0, nrealizations=1):
+               scale_2halo_boost_factor=1.0, nrealizations=1, lens_plane_spacing=None):
 
         """
         Return a list of instances of the SingleRealization class
@@ -73,6 +73,7 @@ class pyHalo(object):
         :param two_halo_Lazar_correction: bool; include the two-halo term suggested by Lazar et al.
         :param scale_2halo_boost_factor: rescales the two-halo term by this factor
         :param nrealizations: number of realizations to generate
+        :param lens_plane_spacing: spacing between line-of-sight lens planes, if None uses the default value LensConeDefaults
         :return: a list of instances of the SingleRealization class
         """
         realization_list = []
@@ -82,7 +83,7 @@ class pyHalo(object):
                                 kwargs_mass_function_list,
                                 spatial_distribution_class_list,
                                 kwargs_spatial_distribution_list,
-                                geometry_class, two_halo_Lazar_correction, scale_2halo_boost_factor)
+                                geometry_class, two_halo_Lazar_correction, scale_2halo_boost_factor, lens_plane_spacing)
             realization_list.append(self._create_realization(masses, x_arcsec, y_arcsec, r3d, redshifts, subhalo_flag, rendering_classes,
                                                             geometry_class, mdef_subhalos, mdef_field_halos, kwargs_halo_model))
         return realization_list
@@ -94,13 +95,14 @@ class pyHalo(object):
                                 kwargs_spatial_distribution,
                                 geometry_class,
                                 two_halo_Lazar_correction=True,
-                                scale_2halo_boost_factor=1.0):
+                                scale_2halo_boost_factor=1.0,
+                                lens_plane_spacing=None):
 
         """
         Generate halo masses, positions, redshifts, etc
         """
 
-        plane_redshifts, redshift_spacing = generate_lens_plane_redshifts(self.zlens, self.zsource)
+        plane_redshifts, redshift_spacing = generate_lens_plane_redshifts(self.zlens, self.zsource, lens_plane_spacing)
         population_model = HaloPopulation(population_model_list,
                                               mass_function_class_list,
                                               kwargs_mass_function,

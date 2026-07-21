@@ -1,4 +1,6 @@
 import numpy as np
+
+from pyHalo import defaults
 from pyHalo.defaults import lenscone_default
 from scipy.interpolate import interp1d
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -72,20 +74,21 @@ def inverse_transform_sampling_from_cdf(x, cdf, n_samples):
     u = np.random.uniform(cdf[0], cdf[-1], n_samples)
     return cdf_inverse(u)
 
-def generate_lens_plane_redshifts(zlens, zsource):
+def generate_lens_plane_redshifts(zlens, zsource, lens_plane_spacing=None):
     """
     This routine sets up the redshift planes along the line of sight in the lens system
     :param zlens: main deflector plane redshift (if there is no main lens plane, then this can be set as None)
     :param zsource: source plane redshift
     :return: lens plane redshifts and the thickness of each slice
     """
+    if lens_plane_spacing is None:
+        lens_plane_spacing = lenscone_default.default_z_step
     zmin = lenscone_default.default_zstart
-    zstep = lenscone_default.default_z_step
     if zlens is None:
-        redshifts = np.arange(zmin, zsource, zstep)
+        redshifts = np.arange(zmin, zsource, lens_plane_spacing)
     else:
-        front_z = np.arange(zmin, zlens, zstep)
-        back_z = np.arange(zlens, zsource, zstep)
+        front_z = np.arange(zmin, zlens, lens_plane_spacing)
+        back_z = np.arange(zlens, zsource, lens_plane_spacing)
         redshifts = np.append(front_z, back_z)
     delta_zs = []
     for i in range(0, len(redshifts) - 1):

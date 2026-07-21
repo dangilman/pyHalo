@@ -58,3 +58,32 @@ def tau_mf_interpolation():
     interp_points = (log10_c, np.log10(mass_fraction_1d))
     interpolator = RegularGridInterpolator(interp_points, log10tau_2d, bounds_error=False, fill_value=None)
     return interpolator
+
+
+def cubic_real_roots(a, b, c, d):
+    """Real roots of a x^3 + b x^2 + c x + d (analytic; avoids np.roots' eigvals).
+    Used to solve for the radius where the logarithmic profile slope equals some value (see TNFW class)
+    """
+    if abs(a) < 1e-14:  # degenerate -> quadratic / linear
+        if abs(b) < 1e-14:
+            return [] if abs(c) < 1e-14 else [-d / c]
+        disc = c * c - 4 * b * d
+        if disc < 0:
+            return []
+        s = disc ** 0.5
+        return [(-c + s) / (2 * b), (-c - s) / (2 * b)]
+    b /= a;
+    c /= a;
+    d /= a
+    p = c - b * b / 3.0
+    q = 2 * b ** 3 / 27.0 - b * c / 3.0 + d
+    off = -b / 3.0
+    disc = (q / 2) ** 2 + (p / 3) ** 3
+    if disc > 0:  # one real root
+        s = disc ** 0.5
+        return [np.cbrt(-q / 2 + s) + np.cbrt(-q / 2 - s) + off]
+    r = (-(p / 3)) ** 0.5 if p < 0 else 0.0  # three real roots (trig form)
+    if r == 0:
+        return [off] * 3
+    phi = np.arccos(max(-1.0, min(1.0, (-q / 2) / r ** 3)))
+    return [2 * r * np.cos((phi + 2 * np.pi * k) / 3.0) + off for k in range(3)]

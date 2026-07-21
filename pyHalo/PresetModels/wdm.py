@@ -23,7 +23,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
         mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
         host_scaling_factor=0.55, redshift_scaling_factor=0.37, two_halo_Lazar_correction=True,
         draw_poisson=True, c_host=None, add_globular_clusters=False, kwargs_globular_clusters=None,
-        include_prompt_cusps=False, mass_threshold_sis=None):
+        include_prompt_cusps=False, mass_threshold_sis=None, lens_plane_spacing=None):
 
     """
     This class generates realizations of dark matter structure in Warm Dark Matter
@@ -82,6 +82,8 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
     :param add_globular_clusters: bool; include a population of globular clusters around image positions
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
     :param include_prompt_cusps: bool; include prompt cusps inside halos
+    :param mass_threshold_sis: add SIS halos above this scale
+    :param lens_plane_spacing: sets the spacing between LOS lens planes, if None reverts to default value of 0.02
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
     pyhalo = pyHalo(z_lens, z_source, kwargs_cosmo)
@@ -202,7 +204,7 @@ def WDM(z_lens, z_source, log_mc, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction, scale_2halo_boost_factor=1.0,
-                                     nrealizations=1)[0]
+                                     nrealizations=1, lens_plane_spacing=lens_plane_spacing)[0]
     if add_globular_clusters:
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)

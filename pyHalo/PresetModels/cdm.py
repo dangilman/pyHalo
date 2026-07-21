@@ -22,7 +22,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
         redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
         add_globular_clusters=False, kwargs_globular_clusters=None, mass_threshold_sis=None,
-        galaxy_model='GNFW', halo_mass_profile='TNFW'):
+        galaxy_model='GNFW', halo_mass_profile='TNFW', lens_plane_spacing=None):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -74,6 +74,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param mass_threshold_sis: the mass threshold above which NFW profiles become SIS/GNFW
     :param galaxy_model: the profile of massive line-of-sight galaxies; either SIS or GNFW
     :param halo_mass_profile: sets the subhalo mass profile for field halos and subhalos (must be either NFW or TNFW)
+    :param lens_plane_spacing: sets the spacing between LOS lens planes, if None reverts to default value of 0.02
     :return: a realization of dark matter halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -192,7 +193,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction, scale_2halo_boost_factor=1.0,
-                                     nrealizations=1)[0]
+                                     nrealizations=1, lens_plane_spacing=lens_plane_spacing)[0]
     if mass_threshold_sis is not None:
         ext = RealizationExtensions(realization)
         realization = ext.SIS_injection(mass_threshold_sis, galaxy_model)
@@ -300,7 +301,8 @@ def CDMBinned(z_lens, z_source,
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6.0, log_m_host=13.3, LOS_normalization=1.0,
         geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
         redshift_scaling_factor=0.37, c_host=6.0,
-        add_globular_clusters=False, kwargs_globular_clusters=None, halo_mass_profile='TNFW'):
+        add_globular_clusters=False, kwargs_globular_clusters=None, halo_mass_profile='TNFW',
+        lens_plane_spacing=None):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -347,6 +349,7 @@ def CDMBinned(z_lens, z_source,
     :param add_globular_clusters: bool; include a population of globular clusters around image positions
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
     :param halo_mass_profile: sets the subhalo mass profile for field halos and subhalos (must be either NFW or TNFW)
+    :param lens_plane_spacing: sets the spacing between LOS lens planes, if None reverts to default value of 0.02
     :return: a realization of dark matter halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -475,7 +478,7 @@ def CDMBinned(z_lens, z_source,
                                      spatial_distribution_class_list, kwargs_spatial_distribution_list,
                                      geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model,
                                      two_halo_Lazar_correction, scale_2halo_boost_factor=1.0,
-                                     nrealizations=1)[0]
+                                     nrealizations=1, lens_plane_spacing=lens_plane_spacing)[0]
     if add_globular_clusters:
         ext = RealizationExtensions(realization)
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)

@@ -30,28 +30,70 @@ class Cosmology(object):
 
         self._age_today = self.astropy.age(0).value
 
+        self._cache_DAz = {};
+        self._cache_DCz = {}
+        self._cache_kpc = {};
+        self._cache_age = {};
+        self._cache_DA2 = {}
+
         self._DA_interp = self._interp_angular_diamter_distance()
 
         self._DC_interp = self._interp_comoving_distance()
 
         self._kpc_per_asec_interp = self._interp_kpc_per_asec()
 
-    def D_A_z(self, z):
+        self._kpc_per_asec_interp = self._interp_kpc_per_asec()
 
+    def D_A(self, z1, z2):
+        if np.ndim(z1) == 0 and np.ndim(z2) == 0:
+            k = (float(z1), float(z2))
+            v = self._cache_DA2.get(k)
+            if v is None:
+                v = self.astropy.angular_diameter_distance_z1z2(z1, z2).value
+                self._cache_DA2[k] = v
+            return v
+        return self.astropy.angular_diameter_distance_z1z2(z1, z2).value
+
+    def D_A_z(self, z):
+        if np.ndim(z) == 0:
+            zf = float(z)
+            v = self._cache_DAz.get(zf)
+            if v is None:
+                try:
+                    v = float(self._DA_interp(zf))
+                except:
+                    v = self.D_A(0, zf)
+                self._cache_DAz[zf] = v
+            return v
         try:
             return self._DA_interp(z)
         except:
             return self.D_A(0, z)
 
     def D_C_z(self, z):
-
+        if np.ndim(z) == 0:
+            zf = float(z)
+            v = self._cache_DCz.get(zf)
+            if v is None:
+                try:
+                    v = float(self._DC_interp(zf))
+                except:
+                    v = self.D_A_z(zf) / self.scale_factor(zf)
+                self._cache_DCz[zf] = v
+            return v
         try:
             return self._DC_interp(z)
         except:
             return self.D_A_z(z) / self.scale_factor(z)
 
     def kpc_proper_per_asec(self, z):
-
+        if np.ndim(z) == 0:
+            zf = float(z)
+            v = self._cache_kpc.get(zf)
+            if v is None:
+                v = float(self._kpc_per_asec_interp(zf))
+                self._cache_kpc[zf] = v
+            return v
         return self._kpc_per_asec_interp(z)
 
     @property
@@ -59,7 +101,14 @@ class Cosmology(object):
         return self._colossus_cosmo
 
     def halo_age(self, z, zform=10):
-
+        if np.ndim(z) == 0:
+            key = (float(z), float(zform))
+            v = self._cache_age.get(key)
+            if v is None:
+                halo_form = self._halo_age_interp(zform)
+                v = 0.0 if z > zform else float(self._halo_age_interp(z) - halo_form)
+                self._cache_age[key] = v
+            return v
         halo_form = self._halo_age_interp(zform)
         if z > zform:
             return 0
@@ -78,10 +127,6 @@ class Cosmology(object):
     def scale_factor(self, z):
 
         return (1 + z) ** -1
-
-    def D_A(self, z1, z2):
-
-        return self.astropy.angular_diameter_distance_z1z2(z1, z2).value
 
     def D_C_transverse(self, z):
 

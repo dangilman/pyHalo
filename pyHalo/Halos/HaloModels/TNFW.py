@@ -1,6 +1,6 @@
 from pyHalo.Halos.halo_base import Halo
 import numpy as np
-from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction
+from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction, cubic_real_roots
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
 
@@ -243,18 +243,11 @@ class TNFWFieldHalo(Halo):
 
     @staticmethod
     def log_derivative_inverse(gamma, rs, rt):
-        """
-        Find the radius where the logarithmic profile slope equals gamma.
-
-        :param gamma: log-profile slope, must lie in (-5, -1)
-        :param rs: scale radius
-        :param rt: truncation radius
-        :return: the coordinate r where the log-slope equals gamma
-        """
+        """Find the radius where the log profile slope equals gamma."""
         tau = rt / rs
         A = -gamma - 5.0
-        roots = np.roots([A, A + 2.0, (A + 2.0) * tau ** 2, (A + 4.0) * tau ** 2])
-        x = roots[(np.abs(roots.imag) < 1e-8 * np.abs(roots.real)) & (roots.real > 0)].real
+        roots = cubic_real_roots(A, A + 2.0, (A + 2.0) * tau ** 2, (A + 4.0) * tau ** 2)
+        x = [r for r in roots if r > 0]
         return float(x[0]) * rs
 
     @staticmethod

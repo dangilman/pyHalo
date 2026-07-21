@@ -393,7 +393,6 @@ class Realization(object):
                                       centerx, centery, self.geometry)
 
     def shift_background_to_source(self, ray_interp_x, ray_interp_y, min_shift_redshift=0):
-
         """
         This routine shifts the entire relation along a path specified by ray_interp_x/y. This routine is intended
         to be used in situations where the source is significantly offset from the origin, and you want to align the
@@ -405,32 +404,76 @@ class Realization(object):
         :param min_shift_redshift: only apply shift when halo redshift exceeds min_shift_redshift
         :return:
         """
-
         if self._has_been_shifted:
             return self
 
-        halos = []
-
+        halos_out = []
+        to_shift = []
         for halo in self.halos:
-
             if halo.fixed_position:
-                halos.append(halo)
+                halos_out.append(halo)
                 continue
             if halo.z < min_shift_redshift:
                 continue
+            to_shift.append(halo)
+            halos_out.append(halo)
 
-            comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(halo.z)
-            xshift, yshift = ray_interp_x(comoving_distance_z), ray_interp_y(comoving_distance_z)
-            halo.x += xshift
-            halo.y += yshift
-            halos.append(halo)
+        if to_shift:
+            # D_C_z is memoized, so this loop is cheap; the win is evaluating the ray
+            # interpolators on the whole array at once (interp1d is ~100x faster batched)
+            Dc = np.array([self.lens_cosmo.cosmo.D_C_z(h.z) for h in to_shift])
+            xshift = np.atleast_1d(ray_interp_x(Dc))
+            yshift = np.atleast_1d(ray_interp_y(Dc))
+            for halo, xs, ys in zip(to_shift, xshift, yshift):
+                halo.x += float(xs)
+                halo.y += float(ys)
 
-        new_realization = Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model, self.apply_mass_sheet_correction,
-                                                 self.rendering_classes, ray_interp_x, ray_interp_y, self.geometry)
-
+        new_realization = Realization.from_halos(halos_out, self.lens_cosmo, self.kwargs_halo_model,
+                                                 self.apply_mass_sheet_correction,
+                                                 self.rendering_classes, ray_interp_x, ray_interp_y,
+                                                 self.geometry)
         new_realization._has_been_shifted = True
-
         return new_realization
+
+    # def shift_background_to_source(self, ray_interp_x, ray_interp_y, min_shift_redshift=0):
+    #
+    #     """
+    #     This routine shifts the entire relation along a path specified by ray_interp_x/y. This routine is intended
+    #     to be used in situations where the source is significantly offset from the origin, and you want to align the
+    #     center of the rendering volume such that tracks the path of the light.
+    #
+    #     :param ray_interp_x: instance of scipy.interp1d, returns the angular position of a ray
+    #     fired through the lens center given a comoving distance
+    #     :param ray_interp_y: same but for the y coordinate
+    #     :param min_shift_redshift: only apply shift when halo redshift exceeds min_shift_redshift
+    #     :return:
+    #     """
+    #
+    #     if self._has_been_shifted:
+    #         return self
+    #
+    #     halos = []
+    #
+    #     for halo in self.halos:
+    #
+    #         if halo.fixed_position:
+    #             halos.append(halo)
+    #             continue
+    #         if halo.z < min_shift_redshift:
+    #             continue
+    #
+    #         comoving_distance_z = self.lens_cosmo.cosmo.D_C_z(halo.z)
+    #         xshift, yshift = ray_interp_x(comoving_distance_z), ray_interp_y(comoving_distance_z)
+    #         halo.x += xshift
+    #         halo.y += yshift
+    #         halos.append(halo)
+    #
+    #     new_realization = Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model, self.apply_mass_sheet_correction,
+    #                                              self.rendering_classes, ray_interp_x, ray_interp_y, self.geometry)
+    #
+    #     new_realization._has_been_shifted = True
+    #
+    #     return new_realization
 
     def lensing_quantities(self, add_mass_sheet_correction=True,
                            use_class_mass_ranges=False,
