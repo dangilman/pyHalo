@@ -608,6 +608,7 @@ class RealizationExtensions(object):
 
     def toSIDM_from_timescale(self, mass_bin_list,
                               log10_tc_binned,
+                              log10_tc_sigma_binned,
                               log10_subhalo_time_scaling,
                               evolving_SIDM_profile=True,
                               x_core_halo=None,
@@ -619,9 +620,11 @@ class RealizationExtensions(object):
                               t_over_tc_collapse_threshold=1.0
                               ):
         """
-
+        Generate a realization of SIDM by specifying the core collapse timescales in two mass bins
         :param mass_bin_list: halo mass bins in log10
-        :param log10_tc_binned: a list of length(mass_bin_list) that specifies the core collapse timescale in each bin
+        :param log10_tc_binned: a list of length(mass_bin_list) that specifies the mean core collapse timescale in
+        each mass bin
+        :param log10_tc_sigma_binned: a list that specifies the scatter of the log10-normal scatter in tc in each bin
         :param log10_subhalo_time_scaling: log10 of the linear rate of accelerated subhalo core collapse
         :param evolving_SIDM_profile: bool; use parametric model for SIDM halo evolution
         :param x_core_halo: the ratio of the SIDM halo core size to the halo scale radius; only used when
@@ -640,11 +643,14 @@ class RealizationExtensions(object):
         for halo in self._realization.halos:
             for bin_index, mass_bin in enumerate(mass_bin_list):
                 if np.log10(halo.mass) >= mass_bin[0] and np.log10(halo.mass) < mass_bin[1]:
-                    core_collapse_timescale = 10 ** log10_tc_binned[bin_index]
+                    if log10_tc_sigma_binned is None:
+                        core_collapse_timescale = 10 ** log10_tc_binned[bin_index]
+                    else:
+                        log10tc = np.random.normal(log10_tc_binned[bin_index], log10_tc_sigma_binned[bin_index])
+                        core_collapse_timescale = 10 ** log10tc
                     break
             else:
                 raise Exception('halo mass ' + str(np.log10(halo.mass)) + ' not inside the minimum/maximum mass ranges')
-            rhos, rs, _ = halo.nfw_params
             if halo.mdef in ['TNFW', 'NFW']:
                 subhalo_evolution_scaling = 10 ** log10_subhalo_time_scaling
                 new_halo = self.toSIDM_single_halo(halo,

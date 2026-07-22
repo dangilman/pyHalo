@@ -1050,15 +1050,31 @@ class TestRealizationExtensions(object):
         ext = RealizationExtensions(cdm)
         mass_bin_list = [[6, 8], [8, 10.7]]
         log10_tc_list = [-1, 2]
+        log10_tc_sigma = [0.001, 0.001]
         log10_subhalo_time_scaling = 0.0
         sidm = ext.toSIDM_from_timescale(mass_bin_list,
                                              log10_tc_list,
+                                             log10_tc_sigma,
                                              log10_subhalo_time_scaling,
                                              evolving_SIDM_profile=False,
                                              halo_profile='CC_COMPOSITE')
 
         for halo in sidm.halos:
             if halo.mass < 10**8:
+                npt.assert_string_equal(halo.mdef, 'CORE_COLLAPSED')
+            else:
+                npt.assert_string_equal(halo.mdef, 'TNFW')
+
+        log10_tc_sigma = None
+        sidm = ext.toSIDM_from_timescale(mass_bin_list,
+                                         log10_tc_list,
+                                         log10_tc_sigma,
+                                         log10_subhalo_time_scaling,
+                                         evolving_SIDM_profile=False,
+                                         halo_profile='CC_COMPOSITE')
+
+        for halo in sidm.halos:
+            if halo.mass < 10 ** 8:
                 npt.assert_string_equal(halo.mdef, 'CORE_COLLAPSED')
             else:
                 npt.assert_string_equal(halo.mdef, 'TNFW')
