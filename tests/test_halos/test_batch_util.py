@@ -12,7 +12,7 @@ from pyHalo.Halos.tidal_truncation import (TruncationGalacticus, Multiple_RS,
 from pyHalo.Halos.concentration import ConcentrationWDMPolynomial
 from pyHalo.Halos.HaloModels.TNFW import TNFWSubhalo, TNFWFieldHalo
 from pyHalo.Halos.HaloModels.NFW import NFWSubhhalo, NFWFieldHalo
-from pyHalo.Halos.HaloModels.powerlaw import GlobularCluster
+from pyHalo.Halos.HaloModels.globular_cluster import GlobularCluster
 from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving
 from pyHalo.Halos.galacticus_truncation.transfer_function_density_profile import compute_r_te_and_f_t
 from pyHalo.Halos.batch_halo_util import (nfw_params_physical_vectorized,
@@ -79,7 +79,7 @@ class TestBatchUtil(object):
 
         np.random.seed(seed)
         clusters = []
-        kwargs_gc = {'gamma': 2.5, 'gc_size_lightyear': 100.0, 'gc_concentration': 0.05}
+        kwargs_gc = {'gamma': 6.0, 'gc_size_pc': 100.0, 'gc_concentration': 20.0}
         for _ in range(n):
             m = 10 ** np.random.uniform(4, 5)
             x, y = np.random.uniform(-2, 2, 2)

@@ -1,7 +1,8 @@
 import numpy as np
 from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving, TNFWCHaloParametric
 from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
-from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo, GlobularCluster
+from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
+from pyHalo.Halos.HaloModels.globular_cluster import GlobularCluster
 from pyHalo.Halos.HaloModels.generalized_nfw import GeneralNFWSubhalo, GeneralNFWFieldHalo
 from pyHalo.Halos.HaloModels.core_collapsed_halo import CoreCollapsedHalo, CoreCollapsedHaloBH
 from pyHalo.single_realization import Realization
@@ -167,9 +168,10 @@ class RealizationExtensions(object):
         return mbh_realization
 
     def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec,
-                              gc_density_profile='PJAFFE',
-                              gc_concentration_mean=5.0, gc_concentration_sigma=1.0,
-                              gc_size_mean=3.0, gc_size_sigma=1.0, gc_surface_mass_density=10 ** 5.6,
+                              gc_density_profile='SPL_CORE',
+                              gamma_mean=6.0, gamma_sigma=0.3,
+                              gc_size_mean=3.0, gc_size_sigma=1.0,
+                              gc_surface_mass_density=10 ** 5.6,
                               center_x=0, center_y=0):
         """
         Add globular clusters at main deflector redshift following a log-normal mass distribution
@@ -177,18 +179,20 @@ class RealizationExtensions(object):
         :param log10_mgc_sigma: the standard deviation of the Gaussian mass function for log10(m)
         :param rendering_radius_arcsec [arcsec]: sets the area around (center_x, center_y) where the GC's appear; GC's are
         distributed uniformly in a circle centered at (center_x, center_y) with this radius
-        :param gc_density_profile: either PJAFFE (pseudo-Jaffe / dual pseudo-isothermal) or PTMASS
-        :param gc_concentration_mean: the ratio of the GC truncation (total) radius to the core radius, Rs/Ra, where the
-        total size is defined as the radius enclosing the stated mass of the GC
-        :param gc_concentration_sigma: half the width of the uniform distribution around gc_concentration_mean
-        :param gc_size_mean: the typical radial extent (truncation radius) of a 10^5 M_sun GC in parsecs
-        (the mass is defined as the mass inside this radius); the size of each GC is scaled as (m/10^5)^(1/3)
-        :param gc_size_sigma: half the width of the uniform distribution of gc size [pc]
+        :param gc_density_profile: either SPL_CORE (cored, steep-outer-slope power law) or PTMASS
+        :param gamma_mean: mean logarithmic density slope outside the core (rho ~ r^-gamma); use ~6 to
+        mimic the sharp tidal truncation of a King profile (must be > 3 for finite mass)
+        :param gamma_sigma: half the width of the uniform distribution of gamma
+        :param gc_size_mean: the core radius of a 10^5 M_sun GC in parsecs. For the steep default slope
+        the core radius is essentially the projected half-mass radius, so this is the GC's physical size.
+        The size of each GC scales as (m/10^5)^(1/3).
+        :param gc_size_sigma: half the width of the uniform distribution of the core radius [pc]
         :param gc_surface_mass_density: the surface mass density of GCs in units of M_sun / kpc^2
         :param center_x: center of rendering area in arcsec
         :param center_y: center of rendering area in arcsec
         :return: an instance of Realization that includes the GC's
         """
+
         if isinstance(center_x, int) or isinstance(center_x, float):
             center_x = [center_x]
             center_y = [center_y]
@@ -201,7 +205,7 @@ class RealizationExtensions(object):
         # integral equivalent to 10 ** (log10_mgc_mean + log10_mgc_sigma ** 2 * np.log(10) / 2)
         integral = np.exp(np.log(10 ** log10_mgc_mean) + np.log(10 ** log10_mgc_sigma) ** 2 / 2)
         mass_in_gc = np.pi * gc_surface_mass_density * (rendering_radius_arcsec * kpc_per_arcsec) ** 2
-        n = np.random.poisson(mass_in_gc/integral)
+        n = np.random.poisson(mass_in_gc / integral)
         mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
         for x_center, y_center in zip(center_x, center_y):
             m = mfunc.draw()
@@ -212,16 +216,21 @@ class RealizationExtensions(object):
             GCS = []
             for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
                 unique_tag = np.random.rand()
-                if gc_density_profile == 'PJAFFE':
-                    gc_concentration = np.random.uniform(gc_concentration_mean - gc_concentration_sigma,
-                                                         gc_concentration_mean + gc_concentration_sigma)
-                    gc_size = np.random.uniform(gc_size_mean - gc_size_sigma, gc_size_mean + gc_size_sigma)
-                    gc_size_pc = gc_size * (m_gc / 10 ** 5) ** (1 / 3)
-                    gc_profile_args = {'gc_size_pc': gc_size_pc,
-                                       'gc_concentration': gc_concentration}
+                if gc_density_profile == 'SPL_CORE':
+                    gamma = np.random.uniform(gamma_mean - gamma_sigma, gamma_mean + gamma_sigma)
+                    r_core_pc = np.random.uniform(gc_size_mean - gc_size_sigma, gc_size_mean + gc_size_sigma) \
+                                * (m_gc / 10 ** 5) ** (1 / 3)
+                    # The SPL_CORE mass is defined within a "size" radius; we set that radius to a fixed large
+                    # multiple of the core radius so it encloses ~all the mass (>99.9% for gamma >~ 6), making the
+                    # core radius the only size parameter. r_core ~ half-mass radius for a steep slope.
+                    size_to_core_ratio = 20.0
+                    gc_profile_args = {'gamma': gamma,
+                                       'gc_size_pc': size_to_core_ratio * r_core_pc,
+                                       'gc_concentration': size_to_core_ratio}
                     profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
                                               gc_profile_args, unique_tag)
                     GCS.append(profile)
+
                 elif gc_density_profile == 'PTMASS':
                     r3d = None
                     sub_flag = False
@@ -229,12 +238,12 @@ class RealizationExtensions(object):
                     truncation_class = None
                     concentration_class = None
                     profile = BlackHole(m_gc, x_center_gc, y_center_gc, r3d, z,
-                                         sub_flag, lens_cosmo, args,
-                                         truncation_class, concentration_class, unique_tag,
-                                         fixed_position=True)
+                                        sub_flag, lens_cosmo, args,
+                                        truncation_class, concentration_class, unique_tag,
+                                        fixed_position=True)
                     GCS.append(profile)
                 else:
-                    raise Exception('Unknown gc density profile '+str(gc_density_profile))
+                    raise Exception('Unknown gc density profile ' + str(gc_density_profile))
             gcs_realization = Realization.from_halos(GCS, self._realization.lens_cosmo,
                                                      self._realization.kwargs_halo_model,
                                                      self._realization.apply_mass_sheet_correction,

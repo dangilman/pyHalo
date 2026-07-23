@@ -1,7 +1,7 @@
 import numpy.testing as npt
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from lenstronomy.LensModel.Profiles.splcore import SPLCORE
-from pyHalo.Halos.HaloModels.powerlaw import GlobularCluster
+from pyHalo.Halos.HaloModels.globular_cluster import GlobularCluster
 import pytest
 import numpy as np
 
@@ -19,7 +19,7 @@ class TestGlobularClusters(object):
 
         mass = 10 ** 5
         args = {'gamma': 2.5,
-                'gc_size_lightyear': 100,
+                'gc_size_pc': 100,
                 'gc_concentration': 50}
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
                                   args, 1)
@@ -31,7 +31,7 @@ class TestGlobularClusters(object):
         logM = 5.0
         mass = 10 ** logM
         args = {'gamma': 2.5,
-                'gc_size_lightyear': 100,
+                'gc_size_pc': 100,
                 'gc_concentration': 50}
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
                                   args, 1)
@@ -42,7 +42,7 @@ class TestGlobularClusters(object):
         logM = 6.0
         mass = 10 ** logM
         args = {'gamma': 3.2,
-                'gc_size_lightyear': 100,
+                'gc_size_pc': 100,
                 'gc_concentration': 15.0}
         profile = GlobularCluster(mass, 0.0, 0.0, self.zhalo, self.lens_cosmo,
                                   args, 1)
@@ -62,30 +62,28 @@ class TestGlobularClusters(object):
         r_max = profile_args[1] / kpc_per_arcsec
         sigma_crit_mpc = profile.lens_cosmo.get_sigma_crit_lensing(profile.z, profile.lens_cosmo.z_source)
         sigma_crit_arcsec = sigma_crit_mpc * (0.001 * kpc_per_arcsec) ** 2
-        total_mass = profile._prof.mass_3d(r_max, sigma0/rcore, rcore, gamma) * sigma_crit_arcsec
+        total_mass = profile._prof.mass_3d(r_max, sigma0 / rcore, rcore, gamma) * sigma_crit_arcsec
         npt.assert_almost_equal(total_mass / mass, 1, 1)
 
         # test using the lenstronomy density method
-        kpc_per_lightyear = 0.000306
-        r = np.linspace(0.00001, 1.0, 100000) * args['gc_size_lightyear'] * kpc_per_lightyear
+        r = np.linspace(0.00001, 1.0, 100000) * args['gc_size_pc'] * 1e-3
         rho = profile.density_profile_3d_lenstronomy(r)
         m = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
-        npt.assert_almost_equal(m / 10**logM, 1, 4)
+        npt.assert_almost_equal(m / 10 ** logM, 1, 4)
 
         # the total mass will be slightly larger
-        r = np.linspace(0.00001, 10.0, 2000000) * args['gc_size_lightyear'] * kpc_per_lightyear
+        r = np.linspace(0.00001, 10.0, 2000000) * args['gc_size_pc'] * 1e-3
         rho = profile.density_profile_3d_lenstronomy(r)
         m_total = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
-        npt.assert_almost_equal(m_total / 10**logM, 1.5918, 4)
+        npt.assert_almost_equal(m_total / 10 ** logM, 1.5918, 4)
 
         # test the average mass, rather than central density
-        r = np.linspace(0.00001, 1.0, 100000) * args['gc_size_lightyear'] * kpc_per_lightyear
+        r = np.linspace(0.00001, 1.0, 100000) * args['gc_size_pc'] * 1e-3
         rho = profile.density_profile_3d_lenstronomy(r)
         m_total = np.trapezoid(4 * np.pi * r ** 2 * rho, r)
-        volume = 4*np.pi/3 * (args['gc_size_lightyear'])**3
+        volume = 4 * np.pi / 3 * (args['gc_size_pc']) ** 3
         average_density = m_total / volume
         npt.assert_almost_equal(average_density, 0.2387, 4)
-
 
 if __name__ == '__main__':
     pytest.main()
