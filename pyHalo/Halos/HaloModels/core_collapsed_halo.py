@@ -242,7 +242,8 @@ class CoreCollapsedHalo(Halo):
             if self.is_subhalo:
                 self._halo_effective_age = self.lens_cosmo.sidm_halo_effective_age(self.z,
                                                                                    self.z_infall,
-                                                                                   self._args['lambda_t'])
+                                                                                   self._args['lambda_t'],
+                                                                                   )
             else:
                 self._halo_effective_age = self.halo_age
         return self._halo_effective_age
