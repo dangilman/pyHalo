@@ -205,7 +205,7 @@ class RealizationExtensions(object):
         # integral equivalent to 10 ** (log10_mgc_mean + log10_mgc_sigma ** 2 * np.log(10) / 2)
         integral = np.exp(np.log(10 ** log10_mgc_mean) + np.log(10 ** log10_mgc_sigma) ** 2 / 2)
         mass_in_gc = np.pi * gc_surface_mass_density * (rendering_radius_arcsec * kpc_per_arcsec) ** 2
-        n = np.random.poisson(mass_in_gc / integral)
+        n = int(mass_in_gc / integral)
         mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
         for x_center, y_center in zip(center_x, center_y):
             m = mfunc.draw()
