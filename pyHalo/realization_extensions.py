@@ -166,9 +166,10 @@ class RealizationExtensions(object):
                                    self._realization.geometry)
         return mbh_realization
 
-    def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec, gc_density_profile='POWERLAW',
-                              gamma_mean=3.25, gamma_sigma=0.25, gc_concentration_mean=50, gc_concentration_sigma=10,
-                              gc_size_mean=100, gc_size_sigma=10, gc_surface_mass_density=10 ** 5.3,
+    def add_globular_clusters(self, log10_mgc_mean, log10_mgc_sigma, rendering_radius_arcsec,
+                              gc_density_profile='PJAFFE',
+                              gc_concentration_mean=5.0, gc_concentration_sigma=1.0,
+                              gc_size_mean=3.0, gc_size_sigma=1.0, gc_surface_mass_density=10 ** 5.6,
                               center_x=0, center_y=0):
         """
         Add globular clusters at main deflector redshift following a log-normal mass distribution
@@ -176,15 +177,13 @@ class RealizationExtensions(object):
         :param log10_mgc_sigma: the standard deviation of the Gaussian mass function for log10(m)
         :param rendering_radius_arcsec [arcsec]: sets the area around (center_x, center_y) where the GC's appear; GC's are
         distributed uniformly in a circle centered at (center_x, center_y) with this radius
-        :param gc_density_profile: either POWERLAW or PTMASS
-        :param gamma_mean: the mean logarithmic power-law slope for the GCs
-        :param gamma_sigma: half the width of the slope distribution around gamma mean, assuming a uniform distribution
-        :param gc_concentration_mean: the ratio of the GC core size to the total size, where the total size is defined as
-        the radius enclosing the stated mass of the GC
-        :param gc_concentration_sigma: half the width of the distribution around gc_concentration_mean
-        :param gc_size_mean: the typical radial extend of the GC in light years
-        (the mass is defined as the mass inside this radius)
-        :param gc_size_sigma: half the width of the uniform distribution of gc size
+        :param gc_density_profile: either PJAFFE (pseudo-Jaffe / dual pseudo-isothermal) or PTMASS
+        :param gc_concentration_mean: the ratio of the GC truncation (total) radius to the core radius, Rs/Ra, where the
+        total size is defined as the radius enclosing the stated mass of the GC
+        :param gc_concentration_sigma: half the width of the uniform distribution around gc_concentration_mean
+        :param gc_size_mean: the typical radial extent (truncation radius) of a 10^5 M_sun GC in parsecs
+        (the mass is defined as the mass inside this radius); the size of each GC is scaled as (m/10^5)^(1/3)
+        :param gc_size_sigma: half the width of the uniform distribution of gc size [pc]
         :param gc_surface_mass_density: the surface mass density of GCs in units of M_sun / kpc^2
         :param center_x: center of rendering area in arcsec
         :param center_y: center of rendering area in arcsec
@@ -213,14 +212,12 @@ class RealizationExtensions(object):
             GCS = []
             for (m_gc, x_center_gc, y_center_gc) in zip(m, x, y):
                 unique_tag = np.random.rand()
-                if gc_density_profile == 'POWERLAW':
-                    gamma = np.random.uniform(gamma_mean - gamma_sigma, gamma_mean + gamma_sigma)
+                if gc_density_profile == 'PJAFFE':
                     gc_concentration = np.random.uniform(gc_concentration_mean - gc_concentration_sigma,
                                                          gc_concentration_mean + gc_concentration_sigma)
                     gc_size = np.random.uniform(gc_size_mean - gc_size_sigma, gc_size_mean + gc_size_sigma)
-                    gc_size_lightyear = gc_size * (m_gc / 10 ** 5) ** (1/3)
-                    gc_profile_args = {'gamma': gamma,
-                                       'gc_size_lightyear': gc_size_lightyear,
+                    gc_size_pc = gc_size * (m_gc / 10 ** 5) ** (1 / 3)
+                    gc_profile_args = {'gc_size_pc': gc_size_pc,
                                        'gc_concentration': gc_concentration}
                     profile = GlobularCluster(m_gc, x_center_gc, y_center_gc, lens_cosmo.z_lens, lens_cosmo,
                                               gc_profile_args, unique_tag)
