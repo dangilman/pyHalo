@@ -219,25 +219,14 @@ class Realization(object):
         :param y_coords: listof y coordinates in arcsec
         :return: a realization with the subhalos meeting the above selection cuts removed
         """
-        halos = []
-        for halo in self.halos:
-            if halo.is_subhalo:
-                if halo.mass > 10 ** log10_mass_minimum:
-                    keep = True
-                else:
-                    for (xi, yi) in zip(x_coords, y_coords):
-                        dx = xi - halo.x
-                        dy = yi - halo.y
-                        dr = np.hypot(dx, dy)
-                        if dr < aperture_radius_arcsec:
-                            keep = True
-                            break
-                    else:
-                        keep = False
-            else:
-                keep = True
-            if keep:
-                halos.append(halo)
+        is_sub = np.array(self.subhalo_flags, dtype=bool)
+        keep = ~is_sub | (np.absolute(self.masses) > 10 ** log10_mass_minimum)
+        check = np.where(~keep)[0]
+        if len(check):
+            dx = self.x[check, None] - np.asarray(x_coords)[None, :]
+            dy = self.y[check, None] - np.asarray(y_coords)[None, :]
+            keep[check] = np.any(np.hypot(dx, dy) < aperture_radius_arcsec, axis=1)
+        halos = [self.halos[i] for i in np.where(keep)[0]]
         return Realization.from_halos(halos, self.lens_cosmo, self.kwargs_halo_model,
                                       self.apply_mass_sheet_correction, self.rendering_classes,
                                       self._rendering_center_x, self._rendering_center_y, self.geometry)
@@ -805,31 +794,18 @@ class Realization(object):
         :return:
         """
 
-        self.x = []
-        self.y = []
-        self.masses = []
-        self.redshifts = []
-        self.r3d = []
-        self.mdefs = []
-        self._halo_tags = []
-        self.subhalo_flags = []
-
-        for halo in self.halos:
-            self.masses.append(halo.mass)
-            self.x.append(halo.x)
-            self.y.append(halo.y)
-            self.redshifts.append(halo.z)
-            self.r3d.append(halo.r3d)
-            self.mdefs.append(halo.mdef)
-            self._halo_tags.append(halo.unique_tag)
-            self.subhalo_flags.append(halo.is_subhalo)
-
-        self.masses = np.array(self.masses)
-        self.x = np.array(self.x)
-        self.y = np.array(self.y)
-        self.r3d = np.array(self.r3d)
-        self.redshifts = np.array(self.redshifts)
-
+        if self.halos:
+            (masses, x, y, redshifts, r3d, self.mdefs, self._halo_tags,
+             self.subhalo_flags) = map(list, zip(*[(h.mass, h.x, h.y, h.z, h.r3d, h.mdef,
+                                                    h.unique_tag, h.is_subhalo) for h in self.halos]))
+        else:
+            masses = x = y = redshifts = r3d = []
+            self.mdefs, self._halo_tags, self.subhalo_flags = [], [], []
+        self.masses = np.array(masses);
+        self.x = np.array(x);
+        self.y = np.array(y)
+        self.r3d = np.array(r3d);
+        self.redshifts = np.array(redshifts)
         self.unique_redshifts = np.sort(np.unique(self.redshifts))
 
     def __eq__(self, other_reealization):

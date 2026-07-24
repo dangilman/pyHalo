@@ -3,6 +3,7 @@ import numpy as np
 from pyHalo.Halos.tnfw_halo_util import tnfw_mass_fraction, cubic_real_roots
 from lenstronomy.LensModel.Profiles.tnfw import TNFW
 
+_TNFW_PROF = TNFW()
 
 class TNFWFieldHalo(Halo):
     # we use the pseudo nfw methods to normalize profile
@@ -19,7 +20,7 @@ class TNFWFieldHalo(Halo):
         self._lens_cosmo = lens_cosmo_instance
         self._concentration_class = concentration_class
         self._truncation_class = truncation_class
-        self.tnfw_lenstronomy = TNFW()
+        self.tnfw_lenstronomy = _TNFW_PROF
         mdef = 'TNFW'
         super(TNFWFieldHalo, self).__init__(mass, x, y, r3d, mdef, z, sub_flag,
                                            lens_cosmo_instance, args, unique_tag)
@@ -205,10 +206,10 @@ class TNFWFieldHalo(Halo):
             Rs_angle, theta_Rs = self._lens_cosmo.nfw_physical2angle_fromNFWparams(rhos_mpc,
                                                                                    rs_mpc,
                                                                                    self.z)
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
-            Rs_angle = np.round(Rs_angle, 10)
-            theta_Rs = np.round(theta_Rs, 10)
-            r_trunc_arcsec = rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            x, y = round(float(self.x), 4), round(float(self.y), 4)
+            Rs_angle = round(float(Rs_angle), 10)
+            theta_Rs = round(float(theta_Rs), 10)
+            r_trunc_arcsec = round(float(rt / self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)),10)
             kwargs = [{'alpha_Rs': self._rescale_norm * theta_Rs, 'Rs': Rs_angle,
                       'center_x': x, 'center_y': y, 'r_trunc': r_trunc_arcsec}]
             self._kwargs_lenstronomy = kwargs

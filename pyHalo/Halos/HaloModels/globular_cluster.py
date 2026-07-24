@@ -1,4 +1,3 @@
-import numpy as np
 from scipy.optimize import brentq
 from pyHalo.Halos.halo_base import Halo
 from lenstronomy.LensModel.Profiles.splcore import SPLCORE

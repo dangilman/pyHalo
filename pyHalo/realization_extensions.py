@@ -430,16 +430,16 @@ class RealizationExtensions(object):
                 if args['gamma_inner'] == -1.0:
                     args['gamma_inner'] = 2.6
                     sidm_halo = CoreCollapsedHaloBH(halo.mass,
-                                                  halo.x,
-                                                  halo.y,
-                                                  halo.r3d,
-                                                  halo.z,
-                                                  halo.is_subhalo,
-                                                  halo.lens_cosmo,
-                                                  args,
-                                                  truncation_class,
-                                                  concentration_class,
-                                                  halo.unique_tag)
+                                                    halo.x,
+                                                    halo.y,
+                                                    halo.r3d,
+                                                    halo.z,
+                                                    halo.is_subhalo,
+                                                    halo.lens_cosmo,
+                                                    args,
+                                                    truncation_class,
+                                                    concentration_class,
+                                                    halo.unique_tag)
                 else:
                     sidm_halo = CoreCollapsedHalo(halo.mass,
                                                   halo.x,
@@ -500,6 +500,11 @@ class RealizationExtensions(object):
                                               truncation_class,
                                               concentration_class,
                                               halo.unique_tag)
+                # set the infall redshift/bound mass BEFORE evaluating halo_effective_age;
+                # otherwise the z_infall property re-samples a random infall redshift
+                if halo.is_subhalo:
+                    sidm_halo.set_infall_redshift(halo.z_eval)
+                    sidm_halo.set_bound_mass(halo.bound_mass)
                 halo_effective_age = sidm_halo.halo_effective_age
                 t_over_tc = sidm_halo.t_over_tc
                 if evolving_profile:
@@ -512,9 +517,6 @@ class RealizationExtensions(object):
                         halo.t_over_tc = t_over_tc
                         return halo
                     else:
-                        if sidm_halo.is_subhalo:
-                            sidm_halo.set_bound_mass(halo.bound_mass)
-                            sidm_halo.set_infall_redshift(halo.z_eval)
                         return sidm_halo
                 else:
                     if t_over_tc is not None:
@@ -543,11 +545,12 @@ class RealizationExtensions(object):
                                                         truncation_class,
                                                         concentration_class,
                                                         halo.unique_tag)
-                        sidm_halo.t_over_tc = t_over_tc
-                        sidm_halo.halo_effective_age = halo_effective_age
+                        # new object: set infall state first, then attach the derived quantities
                         if sidm_halo.is_subhalo:
                             sidm_halo.set_infall_redshift(halo.z_eval)
                             sidm_halo.set_bound_mass(halo.bound_mass)
+                        sidm_halo.t_over_tc = t_over_tc
+                        sidm_halo.halo_effective_age = halo_effective_age
                         return sidm_halo
             elif halo_profile == 'CC_COMPOSITE':
                 _, rs, r200 = halo.nfw_params
@@ -571,16 +574,16 @@ class RealizationExtensions(object):
                 if args['gamma_inner'] == -1.0:
                     args['gamma_inner'] = 2.6
                     sidm_halo = CoreCollapsedHaloBH(halo.mass,
-                                                  halo.x,
-                                                  halo.y,
-                                                  halo.r3d,
-                                                  halo.z,
-                                                  halo.is_subhalo,
-                                                  halo.lens_cosmo,
-                                                  args,
-                                                  truncation_class,
-                                                  concentration_class,
-                                                  halo.unique_tag)
+                                                    halo.x,
+                                                    halo.y,
+                                                    halo.r3d,
+                                                    halo.z,
+                                                    halo.is_subhalo,
+                                                    halo.lens_cosmo,
+                                                    args,
+                                                    truncation_class,
+                                                    concentration_class,
+                                                    halo.unique_tag)
                 else:
                     sidm_halo = CoreCollapsedHalo(halo.mass,
                                                   halo.x,
@@ -593,20 +596,22 @@ class RealizationExtensions(object):
                                                   truncation_class,
                                                   concentration_class,
                                                   halo.unique_tag)
+                # set the infall redshift/bound mass BEFORE evaluating halo_effective_age;
+                # otherwise the z_infall property re-samples a random infall redshift
+                if halo.is_subhalo:
+                    sidm_halo.set_infall_redshift(halo.z_eval)
+                    sidm_halo.set_bound_mass(halo.bound_mass)
                 halo_effective_age = sidm_halo.halo_effective_age
                 t_over_tc = sidm_halo.t_over_tc
                 if sidm_halo.t_over_tc < t_over_tc_collapse_threshold:
-                    halo.halo_effective_age = deepcopy(halo_effective_age)
-                    halo.t_over_tc = deepcopy(t_over_tc)
+                    halo.halo_effective_age = halo_effective_age
+                    halo.t_over_tc = t_over_tc
                     return halo
                 elif collapse_probability < np.random.rand():
                     halo.halo_effective_age = halo_effective_age
                     halo.t_over_tc = t_over_tc
                     return halo
                 else:
-                    if halo.is_subhalo:
-                        sidm_halo.set_infall_redshift(halo.z_eval)
-                        sidm_halo.set_bound_mass(halo.bound_mass)
                     return sidm_halo
 
             else:

@@ -159,12 +159,12 @@ class CoreCollapsedHalo(Halo):
             (alpha_Rs_center, Rs_angle, Rs_angle_inner, gamma_inner,
              gamma_outer, alpha_Rs_envelope, Rs_angle, r_trunc_arcsec) = self.profile_args
 
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
-            Rs_angle = np.round(Rs_angle, 10)
-            alpha_Rs_center = np.round(alpha_Rs_center, 10)
-            Rs_angle_inner = np.round(Rs_angle_inner, 10)
-            r_trunc_arcsec = np.round(r_trunc_arcsec, 10)
-            alpha_Rs_envelope = np.round(alpha_Rs_envelope, 10)
+            x, y = round(float(self.x), 4), round(float(self.y), 4)
+            Rs_angle = round(float(Rs_angle), 10)
+            alpha_Rs_center = round(float(alpha_Rs_center), 10)
+            Rs_angle_inner = round(float(Rs_angle_inner), 10)
+            r_trunc_arcsec = round(float(r_trunc_arcsec), 10)
+            alpha_Rs_envelope = round(float(alpha_Rs_envelope), 10)
             kwargs = {'center_x': x, 'center_y': y, 'Rs_inner': Rs_angle_inner, 'Rs_outer': Rs_angle,
                       'alpha_Rs_inner': alpha_Rs_center, 'alpha_Rs_outer': alpha_Rs_envelope,
                       'r_trunc': r_trunc_arcsec, 'gamma_inner': gamma_inner, 'gamma_outer': gamma_outer}
@@ -313,11 +313,11 @@ class CoreCollapsedHaloBH(CoreCollapsedHalo):
         if not hasattr(self, '_lenstronomy_args_split'):
             (theta_E_inner, Rs_angle, alpha_Rs_envelope, Rs_angle, r_trunc_arcsec) = self.profile_args
 
-            x, y = np.round(self.x, 4), np.round(self.y, 4)
-            Rs_angle = np.round(Rs_angle, 10)
-            r_trunc_arcsec = np.round(r_trunc_arcsec, 10)
-            alpha_Rs_envelope = np.round(alpha_Rs_envelope, 10)
-            theta_E_inner = np.round(theta_E_inner, 10)
+            x, y = round(float(self.x), 4), round(float(self.y), 4)
+            Rs_angle = round(float(Rs_angle), 10)
+            r_trunc_arcsec = round(float(r_trunc_arcsec), 10)
+            alpha_Rs_envelope = round(float(alpha_Rs_envelope), 10)
+            theta_E_inner = round(float(theta_E_inner), 10)
             kwargs_envelope = {'center_x': x,
                                'center_y': y,
                                'Rs': Rs_angle,
