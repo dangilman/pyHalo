@@ -4,7 +4,14 @@ from scipy.integrate import quad
 class Geometry(object):
 
     _delta_z_min = 1e-4
-
+    # (geometry signature, z, delta_z, radius) -> comoving volume element.
+    # Shared across instances on purpose: a new Geometry is built for every realization,
+    # but the lens-plane redshifts are the same every time, so without this the same
+    # ~130 quad integrations are repeated once per realization.
+    _volume_element_cache = {}
+    """
+    NOTE: This class is only meant to work with a flat cosmology
+    """
     def __init__(self, cosmology, z_lens, z_source, opening_angle, geometry_type,
                  angle_pad=0.95):
 
@@ -44,6 +51,16 @@ class Geometry(object):
         self._arcsec = self.cosmo.arcsec
         self.kpc_per_arcsec_zlens = self.cosmo.kpc_proper_per_asec(self._zlens)
         self._reduced_to_phys = self._geometrytype._reduced_to_phys
+        # identifies everything volume_element_comoving depends on: the geometry
+        # (via the constructor args) and the cosmology. repr() of an astropy cosmology
+        # spells out every defining parameter (H0, Om0, Ode0, Tcmb0, Neff, m_nu, w0...),
+        # so this stays correct for non-flat and non-LambdaCDM cosmologies too.
+        self._cache_signature = (
+            geometry_type,
+            round(float(z_lens), 8), round(float(z_source), 8),
+            round(float(opening_angle), 10), round(float(angle_pad), 10),
+            repr(cosmology.astropy),
+        )
 
     @property
     def volume_MPC3(self):
@@ -88,16 +105,21 @@ class Geometry(object):
         :param radius: angular radius of the rendering area in arcseconds
         :return: volume element in comoving Mpc for small delta_z
         """
-
         if radius is None:
             # note that the rendering scale is handled in the angle to co-moving radius function
-            radius = 0.5*self.cone_opening_angle
-        if delta_z > self._delta_z_min:
-            func = self._volume_integrand_comoving
-            volume_element = quad(func, z, z+delta_z, args=(radius))[0]
-        else:
-            volume_element = self._volume_integrand_comoving(z, radius) * delta_z
-
+            radius = 0.5 * self.cone_opening_angle
+        key = (self._cache_signature, round(float(z), 8),
+               round(float(delta_z), 10), round(float(radius), 10))
+        volume_element = Geometry._volume_element_cache.get(key)
+        if volume_element is None:
+            if delta_z > self._delta_z_min:
+                func = self._volume_integrand_comoving
+                volume_element = quad(func, z, z + delta_z, args=(radius))[0]
+            else:
+                volume_element = self._volume_integrand_comoving(z, radius) * delta_z
+            Geometry._volume_element_cache[key] = volume_element
+        if len(Geometry._volume_element_cache) > 50000:
+            Geometry._volume_element_cache.clear()
         return volume_element
 
     def _volume_integrand_comoving(self, z, radius_arcsec):
