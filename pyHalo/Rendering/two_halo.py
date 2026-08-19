@@ -112,8 +112,24 @@ def two_halo_enhancement_factor(z_lens, z_step, lens_cosmo, overdensity_m200, r2
     :param scale_2halo_boost_factor: factor by which to rescale the two-halo enhancement factor
     :return: the enhancement of the background density per unit length
     """
-    rmax = lens_cosmo.cosmo.D_C_transverse(z_lens + z_step) - lens_cosmo.cosmo.D_C_transverse(z_lens)
-    rmin = min(rmax, 0.5)
-    args = (overdensity_m200, z_lens, r200_host, lens_cosmo, use_Lazar_correction)
-    two_halo_boost = 2 * quad(_boost_integrand, rmin, rmax, args=args)[0] / (rmax - rmin)
+    # the quad() below costs ~900 colossus twoHaloTerm evaluations, and this function is
+    # called more than once per realization with byte-identical arguments, so the unscaled
+    # integral is memoized. The cache lives on the lens_cosmo instance rather than at module
+    # level so that it cannot outlive (or be shared between) cosmologies, and
+    # scale_2halo_boost_factor is applied outside it because it is a pure linear prefactor.
+    cache = getattr(lens_cosmo, '_two_halo_boost_cache', None)
+    if cache is None:
+        cache = {}
+        lens_cosmo._two_halo_boost_cache = cache
+    key = (float(z_lens), float(z_step), float(overdensity_m200), float(r200_host),
+           bool(use_Lazar_correction))
+    two_halo_boost = cache.get(key)
+    if two_halo_boost is None:
+        rmax = lens_cosmo.cosmo.D_C_transverse(z_lens + z_step) - lens_cosmo.cosmo.D_C_transverse(z_lens)
+        rmin = min(rmax, 0.5)
+        args = (overdensity_m200, z_lens, r200_host, lens_cosmo, use_Lazar_correction)
+        two_halo_boost = 2 * quad(_boost_integrand, rmin, rmax, args=args)[0] / (rmax - rmin)
+        if len(cache) > 4096:  # bound the cache for very long production runs
+            cache.clear()
+        cache[key] = two_halo_boost
     return scale_2halo_boost_factor * two_halo_boost

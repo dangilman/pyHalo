@@ -34,12 +34,35 @@ def tnfw_mass_fraction(tau, c):
     nfw_func = np.log(1 + c) - c/(1+c)
     return m/nfw_func
 
-def tau_mf_interpolation():
+_TAU_MF_INTERPOLATION_CACHE = None
+
+
+def tau_mf_interpolation(force_rebuild=False):
 
     """
     This function interpolates solutions for the truncation radius of a truncated NFW profile given the concentration
     and final bound mass
+
+    The table depends on nothing -- it is a fixed 100x100 grid costing ~0.15 s to build --
+    but every truncation class builds its own copy in __init__, so it was rebuilt once per
+    realization. It is cached at module level and shared; the returned
+    RegularGridInterpolator is only ever called, never mutated.
+
+    :param force_rebuild: bool; discard the cached table and rebuild it
     :return: an instance of RegularGridInterpolator that returns (r_t / r_s) given a final mass and concentration
+    """
+    global _TAU_MF_INTERPOLATION_CACHE
+    if _TAU_MF_INTERPOLATION_CACHE is None or force_rebuild:
+        _TAU_MF_INTERPOLATION_CACHE = _build_tau_mf_interpolation()
+    return _TAU_MF_INTERPOLATION_CACHE
+
+
+def _build_tau_mf_interpolation():
+
+    """
+    Builds the tau(concentration, mass loss) interpolation table; see tau_mf_interpolation
+
+    :return: an instance of RegularGridInterpolator
     """
     N = 100
     tau = np.logspace(-4.1, 2.3, N)

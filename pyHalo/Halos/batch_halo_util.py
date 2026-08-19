@@ -93,10 +93,12 @@ def precompute_nfw_params(halos):
 # concentration models whose _evaluate_concentration accepts an array of
 # masses at fixed z (verified against pyHalo/Halos/concentration.py):
 # DiemerJoyce and Ludlow pass M straight to colossus, PeakHeight uses
-# colossus peaks.peakHeight, all array-safe. BinnedHaloMass is NOT (requires
-# scalar M), and custom user classes are unknown, so anything not listed
-# falls back to the per-halo loop.
-_ARRAY_SAFE_CONCENTRATION_MODELS = ('DIEMERJOYCE19', 'LUDLOW2016', 'PEAK_HEIGHT_POWERLAW')
+# colossus peaks.peakHeight, and BinnedHaloMass buckets the mass array and
+# evaluates one PeakHeight model per occupied bin, all array-safe. Custom user
+# classes are unknown, so anything not listed falls back to the per-halo loop.
+# Keep this in sync with the _supports_array_mass flag on the classes.
+_ARRAY_SAFE_CONCENTRATION_MODELS = ('DIEMERJOYCE19', 'LUDLOW2016', 'PEAK_HEIGHT_POWERLAW',
+                                    'BINNED_HALO_MASS')
 
 
 def batch_nfw_concentration(c_class, m, z, force_no_scatter=False):

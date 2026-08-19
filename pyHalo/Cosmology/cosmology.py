@@ -6,6 +6,11 @@ from pyHalo.defaults import *
 
 cosmo_defaults = CosmoDefaults()
 
+# fast path for the scalar-redshift test in the distance getters below; np.floating covers
+# np.float64 values pulled out of halo arrays, which is the common case
+_SCALAR_TYPES = (float, int, np.floating, np.integer)
+
+
 class Cosmology(object):
 
     M_sun = 1.98847 * 10 ** 30  # solar mass in [kg]
@@ -45,7 +50,8 @@ class Cosmology(object):
         self._kpc_per_asec_interp = self._interp_kpc_per_asec()
 
     def D_A(self, z1, z2):
-        if np.ndim(z1) == 0 and np.ndim(z2) == 0:
+        if (isinstance(z1, _SCALAR_TYPES) and isinstance(z2, _SCALAR_TYPES)) or \
+                (np.ndim(z1) == 0 and np.ndim(z2) == 0):
             k = (float(z1), float(z2))
             v = self._cache_DA2.get(k)
             if v is None:
@@ -55,7 +61,10 @@ class Cosmology(object):
         return self.astropy.angular_diameter_distance_z1z2(z1, z2).value
 
     def D_A_z(self, z):
-        if np.ndim(z) == 0:
+        # these are called ~1e6 times per iteration and the cache hit itself is cheap, so
+        # the scalar test is done with isinstance rather than np.ndim (which is ~5x slower
+        # and was the single most-called function in the profile)
+        if isinstance(z, _SCALAR_TYPES) or np.ndim(z) == 0:
             zf = float(z)
             v = self._cache_DAz.get(zf)
             if v is None:
@@ -71,7 +80,7 @@ class Cosmology(object):
             return self.D_A(0, z)
 
     def D_C_z(self, z):
-        if np.ndim(z) == 0:
+        if isinstance(z, _SCALAR_TYPES) or np.ndim(z) == 0:
             zf = float(z)
             v = self._cache_DCz.get(zf)
             if v is None:

@@ -265,5 +265,34 @@ class TestConcentration(object):
         npt.assert_almost_equal(concentration_model_binned.nfw_concentration(10 ** 8, 0.3), 10)
         npt.assert_almost_equal(concentration_model_binned.nfw_concentration(10 ** 9, 0.3), 1000)
 
+    def test_concentration_from_table(self):
+        scatter = False
+        concentration_model_cdm = ConcentrationDiemerJoyce(self.astropy, scatter, use_interpolation_table=False)
+        concentration_model_cdm_with_interp = ConcentrationDiemerJoyce(self.astropy, scatter, use_interpolation_table=True)
+
+        m = 10**np.random.uniform(6, 10, 100)
+        c1 = concentration_model_cdm.nfw_concentration(m, 0.0)
+        c2 = concentration_model_cdm.nfw_concentration(m, 0.0)
+        c_tabel1 = concentration_model_cdm_with_interp.nfw_concentration(m, 0.0)
+        c_tabel2 = concentration_model_cdm_with_interp.nfw_concentration(m, 0.0)
+        npt.assert_almost_equal(c1, c2, decimal=2)
+        npt.assert_almost_equal(c_tabel1, c_tabel2, decimal=2)
+        npt.assert_almost_equal(c1, c_tabel1, decimal=2)
+        npt.assert_almost_equal(c2, c_tabel2, decimal=2)
+
+        concentration_model_cdm = ConcentrationLudlow(self.astropy, scatter, use_interpolation_table=False)
+        concentration_model_cdm_with_interp = ConcentrationLudlow(self.astropy, scatter,
+                                                                       use_interpolation_table=True)
+
+        m = 10 ** np.random.uniform(6, 10, 100)
+        c1 = concentration_model_cdm.nfw_concentration(m, 0.0)
+        c2 = concentration_model_cdm.nfw_concentration(m, 0.0)
+        c_tabel1 = concentration_model_cdm_with_interp.nfw_concentration(m, 0.0)
+        c_tabel2 = concentration_model_cdm_with_interp.nfw_concentration(m, 0.0)
+        npt.assert_almost_equal(c1, c2, decimal=2)
+        npt.assert_almost_equal(c_tabel1, c_tabel2, decimal=2)
+        npt.assert_almost_equal(c1, c_tabel1, decimal=2)
+        npt.assert_almost_equal(c2, c_tabel2, decimal=2)
+
 if __name__ == '__main__':
     pytest.main()

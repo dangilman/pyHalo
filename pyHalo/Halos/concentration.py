@@ -20,6 +20,10 @@ class ConcentrationConstant(object):
 
 class _ConcentrationCDM(object):
     _universal_minimum = 1.2 # no concentrations less than this
+    # subclasses whose _evaluate_concentration accepts an array of masses at
+    # fixed z set this True; nfw_concentration then hands the whole array over
+    # in one call instead of looping one mass at a time
+    _supports_array_mass = False
     def __init__(self, cosmo, scatter=True, scatter_dex=0.2, scatter_dex_z_dep=0.0, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
@@ -43,6 +47,12 @@ class _ConcentrationCDM(object):
         """
         if isinstance(m, float) or isinstance(m, int):
             c = float(self._evaluate_concentration(m, z))
+        elif self._supports_array_mass:
+            # one vectorized evaluation for the whole mass array; the scatter
+            # draw below is already vectorized, so this returns the same values
+            # (and consumes the RNG stream in the same order) as the loop
+            c = numpy.asarray(self._evaluate_concentration(numpy.asarray(m, dtype=float), z),
+                              dtype=float)
         else:
             c = numpy.array([self._evaluate_concentration(mi, z) for mi in m])
         if self._scatter:
@@ -62,16 +72,6 @@ class _ConcentrationCDM(object):
         raise Exception(
             'Custom concentration class must have a method evaluate_concentration with inputs mass, redshift')
 
-    # ------------------------------------------------------------------
-    # internal interpolation table for the median c(m, z) relation, shared
-    # by subclasses that define _evaluate_concentration_colossus and opt in
-    # with use_interpolation_table=True (ConcentrationDiemerJoyce,
-    # ConcentrationLudlow). The table is uniform in (log10 m, log10(1 + z)),
-    # coordinates in which log10 c is nearly bilinear, so the interpolation
-    # error is ~1e-4 (relative) at the resolution below. It is built lazily
-    # on the first evaluation, padded around the queried range, and rebuilt
-    # automatically (ranges only ever grow) if a query falls outside it.
-    # ------------------------------------------------------------------
     _use_interpolation_table = False
     _table = None
     _table_n_per_dex_m = 16
@@ -301,9 +301,11 @@ class ConcentrationLudlow(_ConcentrationCDM):
 class ConcentrationPeakHeight(_ConcentrationCDM):
 
     name = 'PEAK_HEIGHT_POWERLAW'
+    _supports_array_mass = True
 
     def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.2,
-                 redshift_evolution='PEAK_HEIGHT', m_pivot=10**8):
+                 redshift_evolution='PEAK_HEIGHT', m_pivot=10**8,
+                 use_interpolation_table=True):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param cosmo: an instance of astropy cosmology
@@ -314,11 +316,19 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :param scatter_dex: scatter in concentration in dex
         :param redshift_evolution: the redshift evolution model; either PEAK_HEIGHT or RHO_CRIT
         :param m_pivot: pivot scale for the power law in peak height
+        :param use_interpolation_table: bool; if True (default), the median relation is evaluated
+        from the internal (log10 m, log10(1+z)) grid of exact evaluations rather than calling
+        colossus peakHeight once per halo. Halos carry a continuous range of infall redshifts, so
+        there is nothing to batch on z and this is what makes the evaluation cheap. Set False to
+        evaluate the closed-form relation directly.
         """
         self._c0 = c0
         self._zeta = zeta
         self._beta = beta
         self._m_pivot = m_pivot
+        self._nu_ref_cache = {}
+        self._use_interpolation_table = use_interpolation_table
+        self._table = None
         if redshift_evolution == 'PEAK_HEIGHT':
             self._redshift_evolution = _zEvolutionPeakHeight(cosmo)
         elif redshift_evolution == 'RHO_CRIT':
@@ -336,13 +346,43 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
         :param z: redshift
         :return: halo concentratioon
         """
+        if self._use_interpolation_table:
+            return self._evaluate_concentration_from_table(M, z)
+        return self._evaluate_concentration_colossus(M, z)
+
+    def _evaluate_concentration_colossus(self, M, z):
+
+        """
+        Evaluates the concentration of an NFW profile directly from the closed-form
+        peak-height power law, one colossus peakHeight call per distinct (M, z) query
+
+        :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
+        :param z: redshift
+        :return: halo concentratioon
+        """
         M_h = M * self._cosmo.h
         Mref_h = self._m_pivot * self._cosmo.h
         nu = peaks.peakHeight(M_h, z)
-        nu_ref = peaks.peakHeight(Mref_h, z)
+        nu_ref = self._peak_height_reference(Mref_h, z)
         redshift_factor = self._redshift_evolution(M, z)
         c = self._c0 * (nu / nu_ref) ** -self._beta * redshift_factor ** self._zeta
         return c
+
+    def _peak_height_reference(self, Mref_h, z):
+        """
+        nu at the pivot mass; a function of z alone, so it is memoized on z.
+        Array-valued z bypasses the cache.
+
+        :param Mref_h: pivot mass in units of M_sun / h
+        :param z: redshift (float, or array)
+        :return: peak height at the pivot mass
+        """
+        if isinstance(z, numpy.ndarray) or isinstance(z, list):
+            return peaks.peakHeight(Mref_h, z)
+        z = float(z)
+        if z not in self._nu_ref_cache:
+            self._nu_ref_cache[z] = peaks.peakHeight(Mref_h, z)
+        return self._nu_ref_cache[z]
 
 class ConcentrationWDMPolynomial(_ConcentrationTurnover):
 
@@ -540,6 +580,7 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
 
 class BinnedHaloMass(_ConcentrationCDM):
     name = 'BINNED_HALO_MASS'
+    _supports_array_mass = True
     """
     This model evaluates concentrations in fixed halo mass bins
     """
@@ -551,7 +592,8 @@ class BinnedHaloMass(_ConcentrationCDM):
                  zeta_list,
                  redshift_evolution='RHO_CRIT',
                  scatter = True,
-                 scatter_dex = 0.2):
+                 scatter_dex = 0.2,
+                 use_interpolation_table=True):
         """
         Evaluate the concentration-mass relation as a power-law in peak height at different halo mass bins
         :param cosmo: instance of astropy cosmology
@@ -566,6 +608,9 @@ class BinnedHaloMass(_ConcentrationCDM):
         super(BinnedHaloMass, self).__init__(cosmo, scatter, scatter_dex)
         self._log10_mass_bins = log10_mass_bins
         self._model_list = []
+        # one model, and therefore one independent interpolation table, per mass
+        # bin: the binned relation is discontinuous at the bin edges, so a single
+        # table spanning all bins would smear the jumps
         for i in range(0, len(self._log10_mass_bins)):
             model = ConcentrationPeakHeight(cosmo,
                                           normalization_list[i],
@@ -573,14 +618,15 @@ class BinnedHaloMass(_ConcentrationCDM):
                                           beta_list[i],
                                           scatter,
                                           scatter_dex,
-                                          redshift_evolution
+                                          redshift_evolution,
+                                          use_interpolation_table=use_interpolation_table
                                           )
             self._model_list.append(model)
 
     def _check_in_bounds(self, M):
         """
         Check that the halo mass in inside a bin
-        :param M: halo mass
+        :param M: halo mass (float or array)
         :return: bool
         """
         if isinstance(M, float) or isinstance(M, int):
@@ -590,6 +636,16 @@ class BinnedHaloMass(_ConcentrationCDM):
             elif M > 10 ** self._log10_mass_bins[-1][1]:
                 raise ValueError('Halo mass ' + str(numpy.log10(M)) + ' is above the maximum halo '
                                                                       'mass bin: ', self._log10_mass_bins[-1])
+        else:
+            M = numpy.asarray(M, dtype=float)
+            m_min = 10 ** self._log10_mass_bins[0][0]
+            m_max = 10 ** self._log10_mass_bins[-1][1]
+            if numpy.any(M < m_min):
+                raise ValueError('Halo mass ' + str(numpy.log10(M[M < m_min].min())) + ' is below the minimum halo '
+                                                                  'mass bin: ', self._log10_mass_bins[0])
+            elif numpy.any(M > m_max):
+                raise ValueError('Halo mass ' + str(numpy.log10(M[M > m_max].max())) + ' is above the maximum halo '
+                                                                      'mass bin: ', self._log10_mass_bins[-1])
         return
 
     def _evaluate_concentration(self, M, z):
@@ -597,21 +653,38 @@ class BinnedHaloMass(_ConcentrationCDM):
         """
         Evaluates the concentration of an NFW profile
 
-        :param M: halo mass; m200 with respect to critical density of the Universe at redshift z
+        :param M: halo mass; m200 with respect to critical density of the Universe at redshift z; float or array
         :param z: redshift
         :return: halo concentration
         """
         if isinstance(M, float) or isinstance(M, int):
-            pass
-        else:
-            raise ValueError('M is not a float or int')
+            self._check_in_bounds(M)
+            for bin_number in range(0, len(self._log10_mass_bins)):
+                if M < 10 ** self._log10_mass_bins[bin_number][1]:
+                    return float(self._model_list[bin_number]._evaluate_concentration(M, z))
+            else:
+                raise ValueError('M  did not fall inside any specified mass bins! log10(M) = '+str(numpy.log10(M))+' '
+                            'mass bins: '+str(self._log10_mass_bins))
+        # array of masses: assign each mass to its bin, then evaluate each bin's
+        # model once on the whole sub-array. Bin assignment reproduces the
+        # scalar rule (first bin whose upper edge strictly exceeds M) exactly.
+        M = numpy.asarray(M, dtype=float)
         self._check_in_bounds(M)
-        for bin_number in range(0, len(self._log10_mass_bins)):
-            if M < 10 ** self._log10_mass_bins[bin_number][1]:
-                return float(self._model_list[bin_number]._evaluate_concentration(M, z))
-        else:
-            raise ValueError('M  did not fall inside any specified mass bins! log10(M) = '+str(numpy.log10(M))+' '
-                        'mass bins: '+str(self._log10_mass_bins))
+        upper_edges = numpy.array([10 ** b[1] for b in self._log10_mass_bins], dtype=float)
+        bin_index = numpy.searchsorted(upper_edges, M, side='right')
+        if numpy.any(bin_index >= len(self._log10_mass_bins)):
+            bad = M[bin_index >= len(self._log10_mass_bins)]
+            raise ValueError('M  did not fall inside any specified mass bins! log10(M) = ' +
+                             str(numpy.log10(bad)) + ' mass bins: ' + str(self._log10_mass_bins))
+        c = numpy.empty(M.shape, dtype=float)
+        z_arr = None
+        if isinstance(z, numpy.ndarray) or isinstance(z, list):
+            z_arr = numpy.asarray(z, dtype=float)
+        for bin_number in numpy.unique(bin_index):
+            mask = bin_index == bin_number
+            z_bin = z if z_arr is None else z_arr[mask]
+            c[mask] = self._model_list[bin_number]._evaluate_concentration(M[mask], z_bin)
+        return c
 
 
 class _zEvolutionPeakHeight(object):
@@ -636,6 +709,12 @@ class _zEvolutionRhoCrit(object):
 
     def __init__(self, cosmo):
         self._cosmo = cosmo
+        # this model is independent of m, so the factor is a function of z
+        # alone and is cached instead of recomputed once per halo; each
+        # astropy critical_density call returns a Quantity and the unit
+        # machinery dominates the cost when it is called per halo
+        self._rho_crit_z0 = float(cosmo.critical_density(0.0).value)
+        self._cache = {}
 
     def __call__(self, m, z):
         """
@@ -644,8 +723,12 @@ class _zEvolutionRhoCrit(object):
         :param z: redshift
         :return: the relative evolution of the critical density between z=0 and z=z
         """
-        redshift_factor = self._cosmo.critical_density(z).value / self._cosmo.critical_density(0.0).value
-        return redshift_factor
+        if isinstance(z, numpy.ndarray) or isinstance(z, list):
+            return self._cosmo.critical_density(z).value / self._rho_crit_z0
+        z = float(z)
+        if z not in self._cache:
+            self._cache[z] = float(self._cosmo.critical_density(z).value) / self._rho_crit_z0
+        return self._cache[z]
 
 class _zEvolutionBose2016(object):
 
