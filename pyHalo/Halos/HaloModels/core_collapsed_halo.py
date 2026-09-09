@@ -60,6 +60,28 @@ class CoreCollapsedHalo(Halo):
         inner, outer = self.component_density_profile_3d(r, kwargs_lenstronomy)
         return inner + outer
 
+    def density_profile_2d(self, r):
+        """
+        Computes the projected (2-D) mass density profile of the halo with lenstronomy
+        :param r: projected distance from center of halo [kpc]
+        :return: the projected mass density in units M_sun / kpc^2
+        """
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        kappa = self._profile.density_2d_lens(r / kpc_per_arcsec, 0.0,
+                                              kwargs_lenstronomy['Rs_inner'],
+                                              kwargs_lenstronomy['Rs_outer'],
+                                              kwargs_lenstronomy['alpha_Rs_inner'],
+                                              kwargs_lenstronomy['alpha_Rs_outer'],
+                                              kwargs_lenstronomy['r_trunc'],
+                                              kwargs_lenstronomy['gamma_inner'],
+                                              kwargs_lenstronomy['gamma_outer'],
+                                              center_x=0,
+                                              center_y=0)
+        return sigma_crit_kpc * kappa
+
     def deflection_angle(self, r_arcsec):
         """
         Compute the deflection angle as a function of radius in arcseconds
@@ -96,19 +118,26 @@ class CoreCollapsedHalo(Halo):
 
     def mass_2d(self, rmax, num_steps=1000):
         """
-        Computes the 2-D density profile of the halo
-        :param r: distance from center of halo [kpc]
-        :return: the density profile in units M_sun / kpc^3
+        Computes the projected mass enclosed inside a cylinder of radius rmax
+        :param rmax: the cylinder radius [kpc], or 'r200'
+        :param num_steps: not used; retained for backwards compatibility
+        :return: the projected mass enclosed in units M_sun
         """
         if rmax == 'r200':
             rmax = self.nfw_params[-1]
-        r = np.logspace(-3, 0.0, num_steps) * rmax
-        kappa = self.kappa(r)
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
         sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
-        sigma_crit_kpc = sigma_crit_mpc * 1e-6
-        sigma_crit_arcsec = (sigma_crit_kpc *
-                             self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z) ** 2)
-        return np.trapezoid(kappa * 2 * np.pi * r, r) * sigma_crit_arcsec
+        sigma_crit_arcsec = sigma_crit_mpc * 1e-6 * kpc_per_arcsec ** 2
+        m2d = self._profile.mass_2d_lens(rmax / kpc_per_arcsec,
+                                          kwargs_lenstronomy['Rs_inner'],
+                                          kwargs_lenstronomy['Rs_outer'],
+                                          kwargs_lenstronomy['alpha_Rs_inner'],
+                                          kwargs_lenstronomy['alpha_Rs_outer'],
+                                          kwargs_lenstronomy['r_trunc'],
+                                          kwargs_lenstronomy['gamma_inner'],
+                                          kwargs_lenstronomy['gamma_outer'])
+        return sigma_crit_arcsec * m2d
 
     @property
     def c(self):
@@ -304,6 +333,39 @@ class CoreCollapsedHaloBH(CoreCollapsedHalo):
         """
         raise Exception('the logarithmic profile slope is not '
                         'defined for a point mass')
+
+    def density_profile_2d(self, r):
+        """
+        The projected mass density is not defined for this profile because the central component is a point mass
+        :param r: projected distance from center of halo [kpc]
+        :return:
+        """
+        raise Exception('the projected mass density is not '
+                        'defined for a point mass')
+
+    def mass_2d(self, rmax, num_steps=1000):
+        """
+        Computes the projected mass enclosed inside a cylinder of radius rmax. The central point mass contributes
+        its full mass at any radius, so only the envelope is integrated
+        :param rmax: the cylinder radius [kpc], or 'r200'
+        :param num_steps: not used; retained for backwards compatibility
+        :return: the projected mass enclosed in units M_sun
+        """
+        if rmax == 'r200':
+            rmax = self.nfw_params[-1]
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_arcsec = sigma_crit_mpc * 1e-6 * kpc_per_arcsec ** 2
+        rho0 = self._profile_envelope.alpha2rho0(kwargs_lenstronomy['alpha_Rs_outer'],
+                                                 kwargs_lenstronomy['Rs_outer'])
+        m2d_envelope = self._profile_envelope.mass_2d(rmax / kpc_per_arcsec,
+                                                      kwargs_lenstronomy['Rs_outer'],
+                                                      rho0,
+                                                      kwargs_lenstronomy['r_trunc'])
+        m_point = (kwargs_lenstronomy['theta_E_inner'] /
+                   self._lens_cosmo.point_mass_factor_z(self.z)) ** 2
+        return m_point + sigma_crit_arcsec * m2d_envelope
 
     @property
     def lenstronomy_params_split(self):

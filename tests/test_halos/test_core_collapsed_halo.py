@@ -8,6 +8,7 @@ from pyHalo.concentration_models import ConcentrationConstant
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.single_realization import Realization
 from pyHalo.realization_extensions import RealizationExtensions
+from scipy.integrate import quad
 import pytest
 
 
@@ -207,6 +208,67 @@ class TestCoreCollapsedHalo(object):
         density_inner, density_outer = halo.component_density_profile_3d(r)
         m_num = np.trapezoid(4 * np.pi * r ** 2 * (density_inner + density_outer), r)
         npt.assert_array_less(abs(-1+m_num / m_target_R), 0.04)
+
+    def test_density_profile_2d(self):
+
+        mass = 10 ** 8
+        x = 0.0
+        y = 0.0
+        r3d = None
+        z = 0.5
+        sub_flag = False
+        lens_cosmo = LensCosmo(z, 2.0)
+        unique_tag = 1.0
+        tau = 2000
+        tnfw_halo = TNFWFieldHalo.simple_setup(mass, x, y, z, tau, lens_cosmo,
+                                               concentration_model='DIEMERJOYCE19')
+        tnfw_halo._c = 25.0
+        _, rs, r200 = tnfw_halo.nfw_params
+        rt_kpc = tnfw_halo.profile_args[1]
+        r_match_kpc = tnfw_halo.log_derivative_inverse(-2.0, rs, rt_kpc)
+        scale_match_m = 1.6
+        args = {'gamma_inner': 2.5, 'gamma_outer': 6.0, 'rt_kpc': rt_kpc,
+                'm_target_r200': mass, 'm_target_R': scale_match_m * tnfw_halo.mass_3d(r_match_kpc),
+                'Rs_inner_kpc': r_match_kpc, 'r_match_kpc': r_match_kpc}
+        concentration_class = ConcentrationConstant(None, tnfw_halo.c)
+        halo = CoreCollapsedHalo(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
+                                 None, concentration_class, unique_tag)
+
+        # the projected density must equal the line of sight integral of the 3d density
+        def sigma_los(radius):
+            integrand = lambda zcoord: halo.density_profile_3d(np.sqrt(radius ** 2 + zcoord ** 2))
+            return 2 * quad(integrand, 0.0, 100 * r200, limit=200)[0]
+
+        r = np.array([0.005, 0.05, 0.5, 3.0]) * rs
+        sigma_class = halo.density_profile_2d(r)
+        npt.assert_equal(len(sigma_class), len(r))
+        for i, ri in enumerate(r):
+            npt.assert_almost_equal(sigma_class[i] / sigma_los(ri), 1.0, 4)
+
+        # the total must equal the sum of the projected inner and outer components
+        kwargs_lenstronomy = halo.lenstronomy_params[0][0]
+        kpc_per_arcsec = lens_cosmo.cosmo.kpc_proper_per_asec(z)
+        sigma_crit_kpc = lens_cosmo.get_sigma_crit_lensing(z, lens_cosmo.z_source) * 1e-6
+        kwargs_inner, kwargs_outer = halo._profile.split_kwargs(**kwargs_lenstronomy)
+        rho0_inner = halo._profile_center.alpha2rho0(kwargs_inner['alpha_Rs'], kwargs_inner['Rs'],
+                                                     kwargs_inner['gamma_inner'], kwargs_inner['gamma_outer'])
+        rho0_outer = halo._profile_envelope.alpha2rho0(kwargs_outer['alpha_Rs'], kwargs_outer['Rs'])
+        sigma_inner = halo._profile_center.density_2d(r / kpc_per_arcsec, 0.0, kwargs_inner['Rs'], rho0_inner,
+                                                      kwargs_inner['gamma_inner'], kwargs_inner['gamma_outer'])
+        sigma_outer = halo._profile_envelope.density_2d(r / kpc_per_arcsec, 0.0, kwargs_outer['Rs'], rho0_outer,
+                                                        kwargs_outer['r_trunc'])
+        npt.assert_allclose(sigma_class, sigma_crit_kpc * (sigma_inner + sigma_outer))
+
+        # projecting through the halo must enclose more mass than the sphere of the same radius
+        r_integrate = np.logspace(-5, 0.0, 200000) * r200
+        m2d = np.trapezoid(halo.density_profile_2d(r_integrate) * 2 * np.pi * r_integrate, r_integrate)
+        npt.assert_equal(True, m2d > args['m_target_r200'])
+        npt.assert_almost_equal(m2d / halo.mass_2d(r200), 1.0, 2)
+
+        # the projected density is not defined for a central point mass
+        halo_bh = CoreCollapsedHaloBH(mass, x, y, r3d, z, sub_flag, lens_cosmo, args,
+                                      None, concentration_class, unique_tag)
+        npt.assert_raises(Exception, halo_bh.density_profile_2d, r)
 
     def test_BH(self):
 

@@ -9,10 +9,20 @@ from pyHalo.Halos.galacticus_util.galacticus_filter import nodedata_filter_subha
 import h5py
 
 
-def DMFromGalacticus(galacticus_hdf5,z_source,cone_opening_angle_arcsec,tree_index,log_mlow_galacticus,log_mhigh_galacticus,
-                     mass_range_is_bound=True, proj_angle_theta=0, proj_angle_phi=0,
-                     nodedata_filter=None, galacticus_utilities=None, galacticus_params_additional=None,
-                     galacticus_tabulate_tnfw_params=None, preset_model_los="CDM", **kwargs_los):
+def DMFromGalacticus(galacticus_hdf5, z_source,
+                     cone_opening_angle_arcsec,
+                     tree_index,
+                     log_mlow_galacticus,
+                     log_mhigh_galacticus,
+                     mass_range_is_bound=True,
+                     proj_angle_theta=0,
+                     proj_angle_phi=0,
+                     nodedata_filter=None,
+                     galacticus_utilities=None,
+                     galacticus_params_additional=None,
+                     galacticus_tabulate_tnfw_params=None,
+                     preset_model_los="CDM",
+                     **kwargs_los):
     """
     This generates a realization of halos using subhalo parameters provided from a specified tree in the galacticus file.
     See https://github.com/galacticusorg/galacticus/ for information on the galacticus galaxy formation model.

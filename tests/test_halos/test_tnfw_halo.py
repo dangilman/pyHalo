@@ -12,6 +12,7 @@ import numpy as np
 from pyHalo.PresetModels.cdm import CDM
 from colossus.cosmology import cosmology
 from colossus.halo import mass_so
+from scipy.integrate import quad
 
 class TestTNFWHalos(object):
 
@@ -160,6 +161,36 @@ class TestTNFWHalos(object):
         m_exact = np.trapezoid(4 * np.pi * rho * r ** 2, r)
         m_class = tnfw_halo.mass_3d('r200')
         npt.assert_almost_equal(m_class / m_exact, 1, 3)
+
+    def test_density_profile_2d(self):
+
+        m = 10 ** 8
+        tau = 20.0
+        halo = TNFWFieldHalo.simple_setup(m, 0.0, 0.0, self.zhalo, tau, self.lens_cosmo)
+        _, rs, r200 = halo.nfw_params
+
+        # the projected density must equal the line of sight integral of the 3d density
+        def sigma_los(radius):
+            integrand = lambda z: halo.density_profile_3d(np.sqrt(radius ** 2 + z ** 2))
+            return 2 * quad(integrand, 0.0, 100 * r200)[0]
+
+        r = np.array([0.01, 0.1, 1.0, 5.0]) * rs
+        sigma_class = halo.density_profile_2d(r)
+        npt.assert_equal(len(sigma_class), len(r))
+        for i, ri in enumerate(r):
+            npt.assert_almost_equal(sigma_class[i] / sigma_los(ri), 1.0, 4)
+
+        # projecting through the halo must enclose more mass than the sphere of the same radius
+        r_integrate = np.logspace(-5, 0.0, 200000) * r200
+        m2d = np.trapezoid(halo.density_profile_2d(r_integrate) * 2 * np.pi * r_integrate, r_integrate)
+        m3d = halo.mass_3d(r200)
+        npt.assert_equal(True, m2d > m3d)
+        npt.assert_almost_equal(m2d / halo.mass_2d(r200), 1.0, 2)
+
+        # the normalization must track rescale_norm
+        halo_rescaled = TNFWFieldHalo.simple_setup(m, 0.0, 0.0, self.zhalo, tau, self.lens_cosmo)
+        halo_rescaled._rescale_norm = 0.25
+        npt.assert_allclose(halo_rescaled.density_profile_2d(r), 0.25 * sigma_class)
 
     def test_vmax(self):
 

@@ -406,13 +406,11 @@ def rs_evolution(tr):
     else:
         return rs_extrapolation(tr)
 
-
 def rc_evolution(tr):
     if tr <= 1.0:
         return _rc_evolution(tr)
     else:
         return rc_extrapolation(tr)
-
 
 def rho_s_evolution(tr):
     """

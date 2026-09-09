@@ -76,25 +76,24 @@ class TNFWFieldHalo(Halo):
 
     def mass_2d(self, rmax, num_steps=1000):
         """
-        Computes the 2-D density profile of the halo
-        :param r: distance from center of halo [kpc]
-        :return: the density profile in units M_sun / kpc^3
+        Computes the projected mass enclosed inside a cylinder of radius rmax
+        :param rmax: the cylinder radius [kpc], or 'r200'
+        :param num_steps: not used; retained for backwards compatibility
+        :return: the projected mass enclosed in units M_sun
         """
         if rmax == 'r200':
             rmax = self.nfw_params[-1]
         kwargs_lenstronomy = self.lenstronomy_params[0][0]
         kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
-        x = np.logspace(-3.5, 0.0, num_steps) * rmax / kpc_per_arcsec
-        y = 0
-        fxx, _, _, fyy = self.tnfw_lenstronomy.hessian(x, y,
-                                                        kwargs_lenstronomy['Rs'],
-                                                        kwargs_lenstronomy['alpha_Rs'],
-                                                        kwargs_lenstronomy['r_trunc'])
-        kappa = 0.5 * (fxx + fyy)
         sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
         sigma_crit_kpc = sigma_crit_mpc * 1e-6
         sigma_crit_arcsec = sigma_crit_kpc * kpc_per_arcsec ** 2
-        return np.trapz(kappa * 2 * np.pi * x, x) * sigma_crit_arcsec
+        rhos = self.tnfw_lenstronomy.alpha2rho0(kwargs_lenstronomy['alpha_Rs'], kwargs_lenstronomy['Rs'])
+        m2d = self.tnfw_lenstronomy.mass_2d(rmax / kpc_per_arcsec,
+                                            kwargs_lenstronomy['Rs'],
+                                            rhos,
+                                            kwargs_lenstronomy['r_trunc'])
+        return sigma_crit_arcsec * m2d
 
     def deflection_angle(self, r_arcsec):
         """
@@ -161,6 +160,26 @@ class TNFWFieldHalo(Halo):
         return factor*prof.density(r / kpc_per_arcsec, kwargs_lenstronomy['Rs'],
                                                     rhos,
                                                     kwargs_lenstronomy['r_trunc'])
+
+    def density_profile_2d(self, r):
+        """
+        Computes the projected (2-D) mass density profile of the halo with lenstronomy
+        :param r: projected distance from center of halo [kpc]
+        :return: the projected mass density in units M_sun / kpc^2
+        """
+        prof = self.tnfw_lenstronomy
+        kwargs_lenstronomy = self.lenstronomy_params[0][0]
+        kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+        sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+        sigma_crit_kpc = sigma_crit_mpc * 1e-6
+        rhos = prof.alpha2rho0(kwargs_lenstronomy['alpha_Rs'], kwargs_lenstronomy['Rs'])
+        kappa = prof.density_2d(r / kpc_per_arcsec, 0.0,
+                                kwargs_lenstronomy['Rs'],
+                                rhos,
+                                kwargs_lenstronomy['r_trunc'],
+                                center_x=0,
+                                center_y=0)
+        return sigma_crit_kpc * kappa
 
     @property
     def lenstronomy_ID(self):
