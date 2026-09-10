@@ -293,6 +293,9 @@ def CDMBinned(z_lens, z_source,
         beta=0.7,
         zeta=-0.4,
         concentration_scatter_dex=0.2,
+        log_mlow=5.7,
+        log_mhigh=10.7,
+        log_msplit=7.7,
         concentration_model_subhalos='BINNED_HALO_MASS',
         concentration_model_fieldhalos='BINNED_HALO_MASS',
         truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
@@ -380,7 +383,7 @@ def CDMBinned(z_lens, z_source,
     kwargs_concentration_model['zeta_list'] = [zeta,
                                                zeta]
     kwargs_concentration_model['redshift_evolution'] = 'RHO_CRIT'
-    log10_mass_ranges = [[6, 8], [8, 10.7]]
+    log10_mass_ranges = [[log_mlow, log_msplit], [log_msplit, log_mhigh]]
     kwargs_concentration_model['log10_mass_bins'] = log10_mass_ranges
     model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
                                                                  kwargs_concentration_model)
@@ -407,7 +410,7 @@ def CDMBinned(z_lens, z_source,
     model_fieldhalos, kwargs_trunc_field = truncation_models(truncation_model_fieldhalos)
     kwargs_trunc_field.update(kwargs_truncation_model_fieldhalos)
     truncation_model_fieldhalos = model_fieldhalos(**kwargs_trunc_field)
-    mass_function_scale_low = 10 ** (log10_mc_low - 1.3)
+
     # NOW THAT THE CLASSES ARE SPECIFIED, WE SORT THE KEYWORD ARGUMENTS AND CLASSES INTO LISTS
     population_model_list = ['SUBHALOS', 'SUBHALOS', 'LINE_OF_SIGHT', 'LINE_OF_SIGHT']
     mass_function_class_list = [mass_function_model_subhalos, mass_function_model_subhalos,
@@ -483,3 +486,5 @@ def CDMBinned(z_lens, z_source,
         ext = RealizationExtensions(realization)
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
     return realization
+
+
