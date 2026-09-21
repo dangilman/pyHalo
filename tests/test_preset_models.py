@@ -350,7 +350,8 @@ class TestPresetModels(object):
         seed = 1991
         np.random.seed(seed)
 
-        cdmbinned = CDMBinned(0.5, 1.5, sigma_sub=0.02, LOS_normalization=1.0)
+        cdmbinned = CDMBinned(0.5, 1.5, sigma_sub=0.02, LOS_normalization=1.0,
+                              log_mlow=6.0, log_mhigh=10.7, log_msplit=8.0)
         cdm = CDM(0.5, 1.5, sigma_sub=0.02, LOS_normalization=1.0, log_mhigh=10.7)
         kwargs_mass_sheet_binned = {'kappa_scale_subhalos': 0.1}
         kwargs_mass_sheet = {'log_mlow_sheets': 6.0, 'log_mhigh_sheets': 10.7, 'kappa_scale_subhalos': 0.1}

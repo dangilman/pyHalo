@@ -129,13 +129,13 @@ class GlobularClusterKing(Halo):
 
     def density_profile_2d(self, r):
         """
-
-        :param r:
-        :return:
+        Computes the projected (2-D) mass density profile of the cluster with lenstronomy
+        :param r: projected distance from center of the cluster [kpc]
+        :return: the projected mass density in units M_sun / kpc^2
         """
-
         sigma0_pc, r_h_pc, c = self.profile_args
-        return self._prof.density_2d(r, 0.0, sigma0_pc, r_h_pc, c)
+        sigma_pc = self._prof.density_2d(1e3 * r, 0.0, sigma0_pc, r_h_pc, c)
+        return 1e6 * sigma_pc
 
     @property
     def profile_args(self):

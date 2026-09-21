@@ -186,9 +186,18 @@ class TNFWCHaloParametric(Halo):
         See documentation in base class (Halos/halo_base.py)
         """
         if not hasattr(self, '_params_physical'):
-            [rho_s, rs_kpc, rc_kpc, rt_kpc, r200_kpc] = self.profile_args
+            [alpha_Rs, rs_kpc, rc_kpc, rt_kpc, r200_kpc] = self.profile_args
+            kpc_per_arcsec = self._lens_cosmo.cosmo.kpc_proper_per_asec(self.z)
+            sigma_crit_mpc = self._lens_cosmo.get_sigma_crit_lensing(self.z, self._lens_cosmo.z_source)
+            sigma_crit_kpc = sigma_crit_mpc * 1e-6
+            factor = sigma_crit_kpc / kpc_per_arcsec
+            rho_s = factor * self.tnfwc_lenstronomy.alpha2rho0(alpha_Rs,
+                                                               rs_kpc / kpc_per_arcsec,
+                                                               rc_kpc / kpc_per_arcsec,
+                                                               rt_kpc / kpc_per_arcsec)
             self._params_physical = {'rhos': rho_s * self._rescale_norm,
-                                     'rs': rs_kpc, 'r200': r200_kpc,
+                                     'rs': rs_kpc,
+                                     'r200': r200_kpc,
                                      'r_trunc_kpc': rt_kpc,
                                      'r_core_kpc': rc_kpc}
         return self._params_physical
@@ -204,7 +213,6 @@ class TNFWCHaloParametric(Halo):
             _ = self.profile_args
             self._vmax = self._lens_cosmo.nfw_vmax(self._rescale_norm * rhos, rs)
         return self._vmax
-
 
 class TNFWCHaloEvolving(TNFWCHaloParametric):
     """
@@ -270,6 +278,23 @@ class TNFWCHaloEvolving(TNFWCHaloParametric):
             self._profile_args = (alpha_Rs, rs_kpc, rc_kpc, rt_kpc, r200_kpc)
         return self._profile_args
 
+class TNFWCHaloEvolvingFixedTc(TNFWCHaloEvolving):
+
+    @property
+    def t_over_tc(self):
+        """
+        Computes the dimensionless timescale for the halo evolution
+        :return:
+        """
+        return self._args['t_over_tc']
+
+    @property
+    def sidm_timescale(self):
+        """
+        Computes the timescale given by Equation 2.2 in https://arxiv.org/pdf/2305.16176.pdf
+        :return:
+        """
+        return self.halo_effective_age / self.t_over_tc
 
 class Hybrid(Halo):
 

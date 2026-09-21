@@ -284,8 +284,8 @@ def CDMCorrelatedStructure(z_lens, z_source, log_mlow=6., log_mhigh=10.,
     return realization
 
 def CDMBinned(z_lens, z_source,
-          sigma_sub=0.1,
-          log10_sigma_sub=None,
+      sigma_sub=0.1,
+      log10_sigma_sub=None,
         log10_mc_low=1.3,
         log10_mc_high=1.15,
         scale_mass_function_low=1.0,

@@ -1,5 +1,5 @@
 import numpy as np
-from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving, TNFWCHaloParametric
+from pyHalo.Halos.HaloModels.NFW_core_trunc import TNFWCHaloEvolving, TNFWCHaloParametric, TNFWCHaloEvolvingFixedTc
 from pyHalo.Halos.HaloModels.sis import SIS, MassiveGalaxy
 from pyHalo.Halos.HaloModels.powerlaw import PowerLawSubhalo, PowerLawFieldHalo
 from pyHalo.Halos.HaloModels.globular_cluster import GlobularClusterKing
@@ -207,7 +207,7 @@ class RealizationExtensions(object):
         # integral equivalent to 10 ** (log10_mgc_mean + log10_mgc_sigma ** 2 * np.log(10) / 2)
         integral = np.exp(np.log(10 ** log10_mgc_mean) + np.log(10 ** log10_mgc_sigma) ** 2 / 2)
         mass_in_gc = np.pi * gc_surface_mass_density * (rendering_radius_arcsec * kpc_per_arcsec) ** 2
-        n = int(mass_in_gc / integral)
+        n = np.round(mass_in_gc / integral) # this is the mean of a Poisson distribution draw
         mfunc = Gaussian(n, log10_mgc_mean, log10_mgc_sigma)
         for x_center, y_center in zip(center_x, center_y):
             m = mfunc.draw()
@@ -257,13 +257,13 @@ class RealizationExtensions(object):
         new_realization = self._realization.join(GC_realization)
         return new_realization
 
-    def add_cored_halos(self, halo_index_list, beta, core_density_profile='CNFW'):
+    def add_cored_halos(self, halo_index_list, beta, core_density_profile='CNFW', t_over_tc=None):
         """
         Replace objects in the lens model with cored NFW profiles
         :param halo_index_list: a list of indexes specifying which objects to replace with cored halos
         :param core_density_profile: name of the density profile, either CNFW or TNFWC
         :param beta: core size in units of scale radius (used with CNFW profile)
-        :param cnfw_mass_conservation: bool; conserve mass within r200 for CNFW profile
+        :param t_over_tc: halo age over collapse timescale
         :return: realization with objects replaced by cored halos
         """
         from pyHalo.Halos.HaloModels.NFW_core import CoreNFWHalo
@@ -271,28 +271,39 @@ class RealizationExtensions(object):
         truncation_class = None
         args = {'beta': beta}
         for i, halo in enumerate(self._realization.halos):
+            if i not in halo_index_list:
+                new_halo_list.append(halo)
+                continue
             concentration_class = ConcentrationConstant(self._realization.lens_cosmo.cosmo,
                                                         halo.c)
             if core_density_profile == 'CNFW':
-                if i in halo_index_list:
-                    r3d = None
-                    new_halo = CoreNFWHalo(halo.mass, halo.x, halo.y, r3d, halo.z,
-                                           halo.is_subhalo, self._realization.lens_cosmo, args,
-                                           truncation_class, concentration_class, halo.unique_tag)
-                    if halo.is_subhalo:
-                        new_halo.set_bound_mass(halo.bound_mass)
-                        new_halo.set_infall_redshift(halo.z_infall)
-                    new_halo_list.append(new_halo)
-                else:
-                    new_halo_list.append(halo)
-            else:
-                new_halo = self.toSIDM_single_halo(halo,
-                                                   None,
-                                                   subhalo_evolution_scaling=1.0,
-                                                   x_core_halo=beta,
-                                                   evolving_profile=False,
-                                                   halo_profile='TNFWC')
+                r3d = None
+                new_halo = CoreNFWHalo(halo.mass, halo.x, halo.y, r3d, halo.z,
+                                       halo.is_subhalo, self._realization.lens_cosmo, args,
+                                       truncation_class, concentration_class, halo.unique_tag)
+                if halo.is_subhalo:
+                    new_halo.set_bound_mass(halo.bound_mass)
+                    new_halo.set_infall_redshift(halo.z_infall)
                 new_halo_list.append(new_halo)
+            elif core_density_profile == 'TNFWC':
+                if t_over_tc is not None:
+                    new_halo = self.toSIDM_single_halo(halo,
+                                                       None,
+                                                       subhalo_evolution_scaling=1.0,
+                                                       x_core_halo=None,
+                                                       evolving_profile=True,
+                                                       halo_profile='TNFWC',
+                                                       t_over_tc=t_over_tc)
+                else:
+                    new_halo = self.toSIDM_single_halo(halo,
+                                                       None,
+                                                       subhalo_evolution_scaling=1.0,
+                                                       x_core_halo=beta,
+                                                       evolving_profile=False,
+                                                       halo_profile='TNFWC')
+                new_halo_list.append(new_halo)
+            else:
+                raise Exception('Unknown density profile ' + str(core_density_profile))
         new_realization = Realization.from_halos(new_halo_list, self._realization.lens_cosmo,
                                                  self._realization.kwargs_halo_model,
                                                  self._realization.apply_mass_sheet_correction,
@@ -371,7 +382,7 @@ class RealizationExtensions(object):
                            t_c=None,
                            subhalo_evolution_scaling=None,
                            x_core_halo=None,
-                           t_over_tc_cut=0.15,
+                           t_over_tc_cut=0.1,
                            evolving_profile=True,
                            collapse_probability=1.0,
                            halo_profile='TNFWC',
@@ -482,22 +493,22 @@ class RealizationExtensions(object):
             if halo_profile == 'TNFWC':
                 mass_conservation = halo.mass_3d('r200')
                 if t_over_tc is None:
+                    profile_class = TNFWCHaloEvolving
                     kwargs_profile = {'sidm_timescale': t_c}
                     if halo.is_subhalo:
                         kwargs_profile['lambda_t'] = subhalo_evolution_scaling
                     else:
                         kwargs_profile['lambda_t'] = 1.0
                 else:
-                    kwargs_profile = {'sidm_timescale': halo.halo_age / t_over_tc}
-                    kwargs_profile['lambda_t'] = 1.0
+                    profile_class = TNFWCHaloEvolvingFixedTc
+                    kwargs_profile = {'t_over_tc': t_over_tc, 'lambda_t': 1.0}
                 kwargs_profile['mass_conservation'] = mass_conservation
                 kwargs_profile['rt_kpc'] = rt_kpc
-                sidm_halo = TNFWCHaloEvolving(halo.mass, halo.x, halo.y, halo.r3d,
-                                              halo.z, halo.is_subhalo,
-                                              halo.lens_cosmo, kwargs_profile,
-                                              truncation_class,
-                                              concentration_class,
-                                              halo.unique_tag)
+                sidm_halo = profile_class(halo.mass, halo.x, halo.y, halo.r3d,
+                                          halo.z, halo.is_subhalo,
+                                          halo.lens_cosmo, kwargs_profile,
+                                          truncation_class, concentration_class,
+                                          halo.unique_tag)
                 # set the infall redshift/bound mass BEFORE evaluating halo_effective_age;
                 # otherwise the z_infall property re-samples a random infall redshift
                 if halo.is_subhalo:
