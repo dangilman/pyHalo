@@ -26,7 +26,10 @@ not reproducible draw-for-draw against it for a fixed numpy seed.
 """
 import numpy as np
 from scipy.stats import johnsonsu, truncnorm
-
+try:
+    from numpy import trapezoid as _trapezoid
+except ImportError:  # numpy < 2.0
+    from numpy import trapz as _trapezoid
 
 # ----------------------------------------------------------------------------
 # 1) NFW parameters (rhos, rs, r200): vectorized version of
