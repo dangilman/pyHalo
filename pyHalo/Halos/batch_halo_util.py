@@ -599,7 +599,7 @@ def precompute_sidm_evolving_profiles(halos, n_r=250):
                             rc_angle[:, None],
                             rt_angle[:, None])
     rho = factor[:, None] * rho_lens
-    mass_3d = np.trapezoid(4 * np.pi * r ** 2 * rho, r, axis=1)
+    mass_3d = _trapezoid(4 * np.pi * r ** 2 * rho, r, axis=1)
     alpha_Rs = m_target / mass_3d
 
     for i, h in enumerate(halos):
