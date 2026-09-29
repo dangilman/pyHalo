@@ -33,12 +33,14 @@ The purpose of this code is to quickly render full populations of dark matter su
     - https://arxiv.org/abs/1909.02573
     - https://ui.adsabs.harvard.edu/abs/2022MNRAS.512.3163G/abstract
     - https://ui.adsabs.harvard.edu/abs/2023MNRAS.518.5843D/abstract
+    - https://ui.adsabs.harvard.edu/abs/2026PhRvL.137g1001N/abstract
 
 2) warm dark matter
     - https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
     - https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.6159K/abstract
     - https://ui.adsabs.harvard.edu/abs/2024arXiv240303253G/abstract
     - https://ui.adsabs.harvard.edu/abs/2024arXiv240501620K/abstract
+    - https://ui.adsabs.harvard.edu/abs/2026PhRvL.137h1004G/abstract
 
 3) self-interacting dark matter
     - https://ui.adsabs.harvard.edu/abs/2021MNRAS.507.2432G/abstract
