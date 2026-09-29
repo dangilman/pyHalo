@@ -18,6 +18,7 @@ class TestConcentration(object):
     def test_concentration_ludlow_wdm(self):
 
         scatter = False
+
         z = 0.0
         log_mc = 7.0
         slope = -1.0
@@ -25,8 +26,8 @@ class TestConcentration(object):
 
         concentration_model_cdm = ConcentrationLudlow(self.astropy, scatter)
         concentration_model_wdm = ConcentrationLudlowWDM(self.astropy, log_mc, slope, scatter)
-        a_true, b_true = 0.473, 0.739
-        a_model, b_model = concentration_model_wdm.suppression_fit(log_mc, slope, z)
+        a_true, b_true = 0.090, 0.990
+        a_model, b_model = concentration_model_wdm.suppression_fit(slope, z)
         npt.assert_almost_equal(a_model, a_true, 2)
         npt.assert_almost_equal(b_model, b_true, 2)
         arg = (np.log10(m / 10 ** log_mc) - a_model) / (2 * b_model)
@@ -35,7 +36,7 @@ class TestConcentration(object):
         c_wdm = concentration_model_wdm.nfw_concentration(m, z)
         c_cdm = concentration_model_cdm.nfw_concentration(m, z)
         ratio = c_wdm / c_cdm
-        npt.assert_almost_equal(ratio, 0.50968, 3)
+        npt.assert_almost_equal(ratio, 0.60208, 3)
         npt.assert_almost_equal(c_wdm, c_cdm * suppression, 3)
 
         z = 1.0
@@ -45,8 +46,8 @@ class TestConcentration(object):
 
         concentration_model_cdm = ConcentrationLudlow(self.astropy, scatter)
         concentration_model_wdm = ConcentrationLudlowWDM(self.astropy, log_mc, slope, scatter)
-        a_true, b_true = 0.42797, 0.464066
-        a_model, b_model = concentration_model_wdm.suppression_fit(log_mc, slope, z)
+        a_true, b_true = -0.230, 0.709
+        a_model, b_model = concentration_model_wdm.suppression_fit(slope, z)
         npt.assert_almost_equal(a_model, a_true, 2)
         npt.assert_almost_equal(b_model, b_true, 2)
         arg = (np.log10(m / 10 ** log_mc) - a_model) / (2 * b_model)
@@ -55,21 +56,30 @@ class TestConcentration(object):
         c_wdm = concentration_model_wdm.nfw_concentration(m, z)
         c_cdm = concentration_model_cdm.nfw_concentration(m, z)
         ratio = c_wdm / c_cdm
-        npt.assert_almost_equal(ratio, 0.28453, 3)
+        npt.assert_almost_equal(ratio, 0.58040, 3)
         npt.assert_almost_equal(c_wdm, c_cdm * suppression, 3)
 
-        log10_mhm_eval, dlogT_dlogk_eval, z_eval = 9.0, -4.5, 4.5
-        log10_mhm_eval, dlogT_dlogk_eval, z_eval = concentration_model_wdm._make_in_bounds(log10_mhm_eval, dlogT_dlogk_eval, z_eval)
-        npt.assert_equal(log10_mhm_eval, 8.0)
+        # the calibration no longer has a half-mode mass axis; (a, b) must be
+        # independent of log_mc, and log_mc is no longer clamped to [6, 8]
+        for log_mc_i in [4.0, 7.0, 9.5]:
+            model_i = ConcentrationLudlowWDM(self.astropy, log_mc_i, slope, scatter)
+            npt.assert_equal(model_i.suppression_fit(slope, z), (a_model, b_model))
+
+        # dlogT_dlogk is clamped to [1, 4] and z to [0, 4]
+        dlogT_dlogk_eval, z_eval = concentration_model_wdm._make_in_bounds(-4.5, 4.5)
         npt.assert_equal(dlogT_dlogk_eval, 4.0)
         npt.assert_equal(z_eval, 4.0)
 
-        log10_mhm_eval, dlogT_dlogk_eval, z_eval = 5.6, -0.5, 4.0
-        log10_mhm_eval, dlogT_dlogk_eval, z_eval = concentration_model_wdm._make_in_bounds(log10_mhm_eval,
-                                                                                           dlogT_dlogk_eval, z_eval)
-        npt.assert_equal(log10_mhm_eval, 6.0)
+        dlogT_dlogk_eval, z_eval = concentration_model_wdm._make_in_bounds(-0.5, 4.0)
         npt.assert_equal(dlogT_dlogk_eval, 1.0)
         npt.assert_equal(z_eval, 4.0)
+
+        dlogT_dlogk_eval, z_eval = concentration_model_wdm._make_in_bounds(-2.0, -1.0)
+        npt.assert_equal(dlogT_dlogk_eval, 2.0)
+        npt.assert_equal(z_eval, 0.0)
+
+        npt.assert_raises(Exception, ConcentrationLudlowWDM,
+                          self.astropy, log_mc, 1.0, scatter)
 
     def test_concentration_diemer_joyce(self):
 
