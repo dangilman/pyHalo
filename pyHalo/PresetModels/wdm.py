@@ -296,17 +296,35 @@ def WDM_mixed(z_lens, z_source, log_mc, mixed_DM_frac, sigma_sub=0.025, log_mlow
     return WDM(**kwargs_wdm)
 
 
-def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=6., log_mhigh=10.,
-            log10_sigma_sub=None, log10_dNdA=None,
-        truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
-        truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
-        infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
-        subhalo_spatial_distribution='PROJECTED_NFW',
-        shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3, r_tidal=0.25,
-        LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None,
-        mdef_subhalos='TNFW', mdef_field_halos='TNFW', kwargs_density_profile={},
-        host_scaling_factor=0.55, redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, c_host=None,
-        add_globular_clusters=False, kwargs_globular_clusters=None, include_prompt_cusps=False, mass_threshold_sis=5*10**10):
+def WDMGeneral(z_lens, z_source,
+               log_mc,
+               dlogT_dlogk,
+               sigma_sub=0.025,
+               log_mlow=6.,
+               log_mhigh=10.,
+               log10_sigma_sub=None,
+               log10_dNdA=None,
+               truncation_model_subhalos='TRUNCATION_GALACTICUS_ZINFALL',
+               kwargs_truncation_model_subhalos={},
+                truncation_model_fieldhalos='TRUNCATION_RN',
+               kwargs_truncation_model_fieldhalos={},
+            infall_redshift_model='HYBRID_INFALL',
+               kwargs_infall_model={},
+            shmf_log_slope=-1.9,
+               cone_opening_angle_arcsec=6.,
+               log_m_host=13.3,
+            LOS_normalization=1.0,
+               geometry_type='DOUBLE_CONE',
+               kwargs_cosmo=None,
+            mdef_subhalos='TNFW',
+               mdef_field_halos='TNFW',
+               kwargs_density_profile={},
+            host_scaling_factor=0.55,
+               redshift_scaling_factor=0.37,
+               two_halo_Lazar_correction=True,
+               c_host=None,
+        add_globular_clusters=False,
+               kwargs_globular_clusters=None):
 
     """
     This preset model implements a generalized treatment of warm dark matter, or any theory that produces a cutoff in
@@ -323,8 +341,8 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param z_lens: the lens redshift
     :param z_source: source redshift
     :param log_mc: the log (base 10) of the half-mode mass
-    :param dlogT_dlogk: the absolute value of the logarithmic derivative of the transfer function at k_1/2; the model
-    is calibrated for values between ~1 and ~3
+    :param dlogT_dlogk: the logarithmic derivative of the transfer function at k_1/2; the model
+    is calibrated for values between -1 and -4
     :param sigma_sub: amplitude of the subhalo mass function
     :param log_mlow: minimum halo mass to render
     :param log_mhigh: maximum halo mass to render
@@ -340,7 +358,6 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param cone_opening_angle_arcsec: the opening angle of the rendering volume
     :param subhalo_spatial_distribution: the spatial distribution model for subhalos
     :param log_m_host: the log (base 10) of the host halo mass
-    :param r_tidal: the core size in units of the scale radius of the host halo; subhalos are rendered uniformly in 3D
     inside this radius
     :param LOS_normalization: the amplitude of the LOS mass function relative to Sheth-Tormen
     :param geometry_type: CONE, DOUBLE_CONE, CYLINDER - sets the geometry of the rendering volume
@@ -355,8 +372,6 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
     :param c_host: manually fix the host halo concentration
     :param add_globular_clusters: bool; include a population of globular clusters around image positions
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
-    :param include_prompt_cusps: bool; include prompt cusps inside halos
-    :param mass_threshold_sis: the mass threshold above which NFW profiles become SIS
     :return:
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -434,18 +449,10 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
                   'log_mc': log_mc})
     kwargs_mass_function_list = [kwargs_mfunc_subs, kwargs_mfunc_field, kwargs_mfunc_field]
     # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
-    if subhalo_spatial_distribution == 'UNIFORM':
-        subhalo_spatial_distribution = Uniform
-        kwargs_subhalos_spatial = {'rmax2d_arcsec': cone_opening_angle_arcsec / 2,
-                                   'geometry': geometry
-                                   }
-    elif subhalo_spatial_distribution == 'PROJECTED_NFW':
-        subhalo_spatial_distribution = ProjectedNFW
-        kwargs_subhalos_spatial = {'m_host': 10 ** log_m_host, 'zlens': z_lens, 'c_host': c_host,
-                                   'rmax2d_arcsec': cone_opening_angle_arcsec / 2, 'r_core_units_rs': r_tidal,
-                                   'lens_cosmo': pyhalo.lens_cosmo}
-    else:
-        raise Exception('subhalo spatial distribution must be either UNIFORM OR PROJECTED_NFW')
+    subhalo_spatial_distribution = Uniform
+    kwargs_subhalos_spatial = {'rmax2d_arcsec': cone_opening_angle_arcsec / 2,
+                               'geometry': geometry
+                               }
     fieldhalo_spatial_distribution = LensConeUniform
     spatial_distribution_class_list = [subhalo_spatial_distribution, fieldhalo_spatial_distribution, fieldhalo_spatial_distribution]
     kwargs_los_spatial = {'cone_opening_angle': cone_opening_angle_arcsec, 'geometry': geometry}
@@ -466,12 +473,4 @@ def WDMGeneral(z_lens, z_source, log_mc, dlogT_dlogk, sigma_sub=0.025, log_mlow=
         from pyHalo.realization_extensions import RealizationExtensions
         ext = RealizationExtensions(realization)
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
-    if mass_threshold_sis is not None:
-        from pyHalo.realization_extensions import RealizationExtensions
-        ext = RealizationExtensions(realization)
-        realization = ext.SIS_injection(mass_threshold_sis)
-    if include_prompt_cusps:
-        from pyHalo.realization_extensions import RealizationExtensions
-        ext = RealizationExtensions(realization)
-        realization = ext.add_prompt_cusps(a=0.04, b=-0.8, c=0.15)
     return realization
