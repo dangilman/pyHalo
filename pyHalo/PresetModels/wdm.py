@@ -396,15 +396,16 @@ def WDMGeneral(z_lens, z_source,
 
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     concentration_model = 'LUDLOW_WDM'
+    kwargs_model_dlogT_dlogk_mc = {'dlogT_dlogk': dlogT_dlogk}
     model_subhalos, kwargs_concentration_model_subhalos = preset_concentration_models(concentration_model,
-                                                                                      kwargs_model_dlogT_dlogk)
+                                                                                      kwargs_model_dlogT_dlogk_mc)
 
     kwargs_concentration_model_subhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_subhalos['log_mc'] = log_mc
     concentration_model_subhalos = model_subhalos(**kwargs_concentration_model_subhalos)
 
     model_fieldhalos, kwargs_concentration_model_fieldhalos = preset_concentration_models(concentration_model,
-                                                                                          kwargs_model_dlogT_dlogk)
+                                                                                          kwargs_model_dlogT_dlogk_mc)
     kwargs_concentration_model_fieldhalos['cosmo'] = pyhalo.astropy_cosmo
     kwargs_concentration_model_fieldhalos['log_mc'] = log_mc
 
