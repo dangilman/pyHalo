@@ -323,7 +323,8 @@ def WDMGeneral(z_lens, z_source,
                redshift_scaling_factor=0.37,
                two_halo_Lazar_correction=True,
                c_host=None,
-        add_globular_clusters=False,
+                shmf_z_eval_offset=3.6,
+            add_globular_clusters=False,
                kwargs_globular_clusters=None):
 
     """
@@ -370,6 +371,7 @@ def WDMGeneral(z_lens, z_source,
     :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
     main deflector presented by Lazar et al. (2021)
     :param c_host: manually fix the host halo concentration
+    :param shmf_z_eval: evaluate the suppression of the subhalo mass function at this redshift
     :param add_globular_clusters: bool; include a population of globular clusters around image positions
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
     :return:
@@ -383,9 +385,15 @@ def WDMGeneral(z_lens, z_source,
         kwargs_infall_model['log_m_host'] = log_m_host
     pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
 
-    kwargs_model_dlogT_dlogk = {'dlogT_dlogk': dlogT_dlogk}
-    mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models('STUCKER_SHMF', kwargs_model_dlogT_dlogk)
-    mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models('STUCKER', kwargs_model_dlogT_dlogk)
+    kwargs_model_dlogT_dlogk = {'dlogT_dlogk': dlogT_dlogk,
+                                'z_eval_suppression': None}
+    kwargs_model_dlogT_dlogk_sub = {'dlogT_dlogk': dlogT_dlogk,
+                                    'z_eval_suppression': z_lens + shmf_z_eval_offset}
+    mass_function_model_fieldhalos, kwargs_mfunc_field = preset_mass_function_models(
+        'BENSON', kwargs_model_dlogT_dlogk)
+    mass_function_model_subhalos, kwargs_mfunc_subs = preset_mass_function_models(
+        'BENSON_SHMF', kwargs_model_dlogT_dlogk_sub)
+
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     concentration_model = 'LUDLOW_WDM'
     model_subhalos, kwargs_concentration_model_subhalos = preset_concentration_models(concentration_model,

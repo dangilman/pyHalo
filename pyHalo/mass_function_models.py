@@ -1,5 +1,6 @@
 from pyHalo.Rendering.MassFunctions.mass_function_base import *
 from pyHalo.Rendering.MassFunctions.density_peaks import *
+from pyHalo.Rendering.MassFunctions.benson import ShethTormenTurnoverBenson, benson_suppression_params
 from copy import deepcopy
 
 
@@ -59,6 +60,29 @@ def preset_mass_function_models(model_name, kwargs_model={}):
         return MixedWDMPowerLaw, kwargs_model_out
     elif model_name == 'MIXED_WDM_TURNOVER':
         return ShethTormenMixedWDM, kwargs_model_out
+    elif model_name in ['BENSON', 'BENSON_SHMF']:
+        # uses the halo mass function calibration of https://arxiv.org/abs/2606.12137
+        if 'dlogT_dlogk' not in kwargs_model.keys():
+            raise Exception('Must specify dlogT_dlogk (the signed, negative logarithmic '
+                            'derivative of the transfer function) when using the BENSON model.')
+        for key in ['a_wdm', 'b_wdm', 'c_wdm']:
+            if key in kwargs_model.keys():
+                raise Exception('Cannot specify ' + key + ' with the Benson model.')
+        if model_name == 'BENSON':
+            # evaluate the turnover at each lens plane
+            return ShethTormenTurnoverBenson, kwargs_model_out
+        else:
+            # for subhalos, evaluate the turnover at a fixed reshift
+            z_eval = kwargs_model_out.pop('z_eval_suppression', None)
+            if z_eval is None:
+                raise Exception('z_eval_suppression cannot be None for BENSON_SHMF; the subhalo '
+                                'renderer constructs the mass function without a redshift.')
+            a_wdm, b_wdm, c_wdm = benson_suppression_params(kwargs_model_out['dlogT_dlogk'], z_eval)
+            kwargs_model_out['a_wdm'] = a_wdm
+            kwargs_model_out['b_wdm'] = b_wdm
+            kwargs_model_out['c_wdm'] = c_wdm
+            del kwargs_model_out['dlogT_dlogk']
+            return WDMPowerLaw, kwargs_model_out
     elif model_name in ['STUCKER_SHMF', 'STUCKER']:
         if 'dlogT_dlogk' not in kwargs_model.keys():
             raise Exception('Must specify |dlogT_dlogk| (absolute value of the ' \
