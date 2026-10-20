@@ -13,7 +13,7 @@ from pyHalo.realization_extensions import RealizationExtensions
 def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sigma_sub=None,
         log10_dNdA=None, concentration_model_subhalos='LUDLOW2016', kwargs_concentration_model_subhalos={},
         concentration_model_fieldhalos='LUDLOW2016', kwargs_concentration_model_fieldhalos={},
-        truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_GALACTICUS_ZINFALL', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         subhalo_spatial_distribution='UNIFORM',
@@ -298,7 +298,7 @@ def CDMBinned(z_lens, z_source,
         log_msplit=8.0,
         concentration_model_subhalos='BINNED_HALO_MASS',
         concentration_model_fieldhalos='BINNED_HALO_MASS',
-        truncation_model_subhalos='TRUNCATION_GALACTICUS', kwargs_truncation_model_subhalos={},
+        truncation_model_subhalos='TRUNCATION_GALACTICUS_ZINFALL', kwargs_truncation_model_subhalos={},
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         infall_redshift_model='HYBRID_INFALL', kwargs_infall_model={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6.0, log_m_host=13.3, LOS_normalization=1.0,
@@ -486,5 +486,3 @@ def CDMBinned(z_lens, z_source,
         ext = RealizationExtensions(realization)
         realization = ext.add_globular_clusters(**kwargs_globular_clusters)
     return realization
-
-

@@ -81,12 +81,15 @@ class Subhalos(RenderingClassBase):
         kwargs_model['power_law_index'] = self._kwargs_mass_function['power_law_index'] + \
                                           kwargs_model['delta_power_law_index']
         if 'sigma_sub' in kwargs_model.keys():
+            print(kwargs_model['redshift_scaling_factor'])
             kwargs_model['normalization'] = normalization_sigmasub(kwargs_model['sigma_sub'],
                                                                kwargs_model['host_m200'], self._lens_cosmo.z_lens,
                                                                kpc_per_asec_zlens, self._geometry.cone_opening_angle,
                                                                kwargs_model['power_law_index'], kwargs_model['m_pivot'],
                                                                 kwargs_model['host_scaling_factor'],
                                                                    kwargs_model['redshift_scaling_factor'])
+            print(kwargs_model['normalization'])
+            exit(1)
         elif 'dndA' in kwargs_model.keys():
             R_kpc = kpc_per_asec_zlens * (0.5 * self._geometry.cone_opening_angle)
             area = np.pi * R_kpc ** 2
@@ -122,7 +125,7 @@ class Subhalos(RenderingClassBase):
         redshifts_out = [self._lens_cosmo.z_lens]
         return kwargs_out, profile_name_out, redshifts_out
 
-def host_scaling_function(mhalo, z, host_scaling_factor=0.88, redshift_scaling_factor=1.7):
+def host_scaling_function(mhalo, z, host_scaling_factor, redshift_scaling_factor):
     """
     This function implements a scaling of the projected number density of subhalos with host halo mass and redshift.
     The function form for the rescaling factor F is given by
