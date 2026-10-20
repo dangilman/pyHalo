@@ -322,7 +322,7 @@ def WDMGeneral(z_lens, z_source,
                redshift_scaling_factor=0.37,
                two_halo_Lazar_correction=True,
                c_host=None,
-                shmf_z_eval_offset=3.6,
+                shmf_z_eval_offset=3.3,
             add_globular_clusters=False,
                kwargs_globular_clusters=None):
 
@@ -370,7 +370,8 @@ def WDMGeneral(z_lens, z_source,
     :param two_halo_Lazar_correction: bool; if True, adds the correction to the two-halo contribution from around the
     main deflector presented by Lazar et al. (2021)
     :param c_host: manually fix the host halo concentration
-    :param shmf_z_eval: evaluate the suppression of the subhalo mass function at this redshift
+    :param shmf_z_eval_offset: evaluate the suppression of the subhalo mass function at this redshift; chosen as the median
+    of the InfallDistributionHybrid model
     :param add_globular_clusters: bool; include a population of globular clusters around image positions
     :param kwargs_globular_clusters: keyword arguments for the GC population; see documentation in RealizationExtensions
     :return:
