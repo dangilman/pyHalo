@@ -88,8 +88,6 @@ class Subhalos(RenderingClassBase):
                                                                kwargs_model['power_law_index'], kwargs_model['m_pivot'],
                                                                 kwargs_model['host_scaling_factor'],
                                                                    kwargs_model['redshift_scaling_factor'])
-            print(kwargs_model['normalization'])
-            exit(1)
         elif 'dndA' in kwargs_model.keys():
             R_kpc = kpc_per_asec_zlens * (0.5 * self._geometry.cone_opening_angle)
             area = np.pi * R_kpc ** 2
