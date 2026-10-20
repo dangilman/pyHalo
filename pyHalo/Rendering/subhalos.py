@@ -81,7 +81,6 @@ class Subhalos(RenderingClassBase):
         kwargs_model['power_law_index'] = self._kwargs_mass_function['power_law_index'] + \
                                           kwargs_model['delta_power_law_index']
         if 'sigma_sub' in kwargs_model.keys():
-            print(kwargs_model['redshift_scaling_factor'])
             kwargs_model['normalization'] = normalization_sigmasub(kwargs_model['sigma_sub'],
                                                                kwargs_model['host_m200'], self._lens_cosmo.z_lens,
                                                                kpc_per_asec_zlens, self._geometry.cone_opening_angle,
