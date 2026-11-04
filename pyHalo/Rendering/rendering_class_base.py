@@ -48,9 +48,9 @@ class RenderingClassBase(object):
     @staticmethod
     def _redshift_dependent_normalization(z, normalization):
         """
-        Evaluates a possibly redshift-dependent line-of-sight mass function normalization
+        Evaluates a possibly redshift-dependent line-of-sight mass function or convergence sheet normalization
         :param z: redshift
-        :param normalization: the normalization passed to create the realization
+        :param normalization: a rescaling factor that can be a callable function of redshift
         :return:
         """
         if callable(normalization):

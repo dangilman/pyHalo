@@ -69,6 +69,8 @@ class LineOfSight(LineOfSightNoSheet):
 
         """
         this routine applies the negative convergence sheet correction for lens planes along the line of sight
+        :param kappa_scale: rescales the amplitude of the convergence sheets; either a number or a callable function
+        that returns the rescaling factor as a function of z (see e.g. Rendering/convergence_sheet_rescaling.py)
         :param use_defined_mass_ranges: if True, will use log_mlow / log_mhigh as stored in the class
         :param kwargs_mass_sheets: keyword arguments that overwrite whatever the default settings for the mass sheet
         are - leave it as None for most applications
@@ -103,7 +105,7 @@ class LineOfSight(LineOfSightNoSheet):
             first_moment = mass_function_model.first_moment
             kappa = self._convergence_at_z(z, self._geometry, self._lens_cosmo, first_moment)
             if kappa > 0:
-                kwargs_out.append({'kappa': - kappa_scale * kappa})
+                kwargs_out.append({'kappa': - self._redshift_dependent_normalization(z, kappa_scale) * kappa})
                 profile_names_out += ['CONVERGENCE']
                 redshifts.append(z)
         return kwargs_out, profile_names_out, redshifts

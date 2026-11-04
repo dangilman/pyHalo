@@ -650,7 +650,9 @@ class Realization(object):
         :param subtract_exact_sheets: bool; if True, will calculate the mass in each lens plane and subtract the
         corresponding amount of convergence
         :param kappa_scale_subhalos: scales the mass sheets added in the main lens plane
-        :param kappa_scale: rescales the amplitude negative mass convergence sheets
+        :param kappa_scale: rescales the amplitude negative mass convergence sheets; either a number, a callable
+        function that takes z as input, or 'FROM_REALIZATION' to compute the redshift-dependent rescaling from the
+        rendering classes and halo model of this realization (see Rendering/convergence_sheet_rescaling.py)
         (specifying subtract_exact_sheets=True will cause this to have no effect)
         :param log_mlow_sheets: sets the minimum halo mass to subtract mass
         :param log_mhigh_sheets: sets the maximum halo mass to subtract mass
@@ -673,6 +675,23 @@ class Realization(object):
                 kwargs_mass_sheets_out.append(kwargs_sheet)
             profiles_out = ['CONVERGENCE'] * len(kwargs_mass_sheets_out)
         else:
+            if isinstance(kappa_scale, str):
+                if kappa_scale != 'FROM_REALIZATION':
+                    raise Exception("kappa_scale must be a number, a callable function of redshift, or "
+                                    "'FROM_REALIZATION'")
+                # the rescaling depends on the mass range subtracted by the sheets; store one for each mass range
+                if use_class_mass_ranges:
+                    mass_range = (None, None)
+                else:
+                    mass_range = (log_mlow_sheets, log_mhigh_sheets)
+                if not hasattr(self, '_kappa_scale_from_realization'):
+                    self._kappa_scale_from_realization = {}
+                if mass_range not in self._kappa_scale_from_realization:
+                    # imported here to avoid a circular import (convergence_sheet_rescaling imports pyhalo.py)
+                    from pyHalo.Rendering.convergence_sheet_rescaling import ConvergenceSheetRescaling
+                    self._kappa_scale_from_realization[mass_range] = ConvergenceSheetRescaling.from_realization(
+                        self, *mass_range)
+                kappa_scale = self._kappa_scale_from_realization[mass_range]
             for i, rendering_class in enumerate(rendering_classes):
                 if rendering_class is None:
                     continue

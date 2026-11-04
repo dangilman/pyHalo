@@ -76,6 +76,18 @@ class TestLineOfSight(object):
         npt.assert_equal(len(kwargs_out), len(profile_names_out))
         npt.assert_equal(len(profile_names_out), len(redshifts))
 
+    def test_sheets_callable_kappa_scale(self):
+        kwargs_out, _, redshifts = self.model.convergence_sheet_correction(kappa_scale=1.0,
+                                                                           log_mlow=6.0,
+                                                                           log_mhigh=10.0)
+        kappa_scale = lambda z: 1 + z
+        kwargs_out_scaled, _, redshifts_scaled = self.model.convergence_sheet_correction(kappa_scale=kappa_scale,
+                                                                                         log_mlow=6.0,
+                                                                                         log_mhigh=10.0)
+        npt.assert_array_equal(redshifts, redshifts_scaled)
+        for z, kw, kw_scaled in zip(redshifts, kwargs_out, kwargs_out_scaled):
+            npt.assert_almost_equal(kw_scaled['kappa'], (1 + z) * kw['kappa'])
+
 if __name__ == '__main__':
     pytest.main()
 
