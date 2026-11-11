@@ -24,8 +24,9 @@ class TestLinearPowerSpectrum(object):
 
     def test_sigma_tophat(self):
 
+        # a freshly computed colossus sigma table is accurate to ~4e-4 (pyHalo's sigma to ~4e-5)
         for z in [0.0, 1.0, 3.0]:
-            npt.assert_allclose(self.ps.sigma(self.m, z), self.colossus.sigma(self.radius_h, z), rtol=1e-4)
+            npt.assert_allclose(self.ps.sigma(self.m, z), self.colossus.sigma(self.radius_h, z), rtol=1e-3)
         npt.assert_allclose(self.ps.sigma8_tophat, self.colossus.sigma8, rtol=1e-3)
         npt.assert_equal(isinstance(self.ps.sigma(1e8, 0.5), float), True)
 
