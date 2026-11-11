@@ -3,13 +3,17 @@ from colossus.halo.concentration import concentration, peaks
 import warnings
 import numpy
 from scipy.interpolate import RegularGridInterpolator
+from scipy.special import erfc, gammainc
+from pyHalo.Cosmology.power_spectrum import DELTA_COLLAPSE
 
 warnings.filterwarnings("ignore")
 
 __all__ = ['ConcentrationDiemerJoyce',
            'ConcentrationWDMHyperbolic',
            'ConcentrationWDMPolynomial',
-           'ConcentrationPeakHeight']
+           'ConcentrationPeakHeight',
+           'ConcentrationTabulated',
+           'ConcentrationLudlowPowerSpectrum']
 
 class ConcentrationConstant(object):
     name = 'CONSTANT'
@@ -19,18 +23,20 @@ class ConcentrationConstant(object):
         return self._c
 
 class _ConcentrationCDM(object):
-    _universal_minimum = 1.2 # no concentrations less than this
+    # no concentrations less than this: about the floor of the Ludlow et al. (2016) model, c_200c = 1.9, reached when
+    # a halo forms at the redshift it is observed (mean density inside r_-2 = 650 rho_crit(z))
+    _universal_minimum = 2.0
     # subclasses whose _evaluate_concentration accepts an array of masses at
     # fixed z set this True; nfw_concentration then hands the whole array over
     # in one call instead of looping one mass at a time
     _supports_array_mass = False
-    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, scatter_dex_z_dep=0.0, *args, **kwargs):
+    def __init__(self, cosmo, scatter=True, scatter_dex=0.15, scatter_dex_z_dep=0.0, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
         :param lens_cosmo: an instance of LensCosmo
         :param scatter: include scatter the concentration
-        :param scatter_dex: scatter the concentration
-        :param scatter_dex_z_dep: redshift dependence of the scatter
+        :param scatter_dex: the lognormal scatter in the concentration at fixed mass, in dex (log10)
+        :param scatter_dex_z_dep: redshift dependence of the scatter [dex per unit redshift]
         """
         self._cosmo = cosmo
         self._scatter = scatter
@@ -60,7 +66,8 @@ class _ConcentrationCDM(object):
                 pass
             else:
                 log_c = numpy.log(c)
-                sigma = self._scatter_dex + self._scatter_dex_z_dep * z
+                # the scatter is specified in dex; numpy.random.lognormal takes the width in ln(c)
+                sigma = (self._scatter_dex + self._scatter_dex_z_dep * z) * numpy.log(10)
                 c = numpy.random.lognormal(log_c, sigma)
         if isinstance(c, float):
             c = max(c, self._universal_minimum)
@@ -169,7 +176,7 @@ class _ConcentrationCDM(object):
         return c
 
 class _ConcentrationTurnover(object):
-    _universal_minimum = 1.2
+    _universal_minimum = 2.0   # see _ConcentrationCDM
     def __init__(self, cdm_concentration):
         """
 
@@ -199,7 +206,7 @@ class ConcentrationDiemerJoyce(_ConcentrationCDM):
 
     name = 'DIEMERJOYCE19'
 
-    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, mdef='200c',
+    def __init__(self, cosmo, scatter=True, scatter_dex=0.15, mdef='200c',
                  use_interpolation_table=True, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
@@ -256,7 +263,7 @@ class ConcentrationLudlow(_ConcentrationCDM):
 
     name = 'LUDLOW2016'
 
-    def __init__(self, cosmo, scatter=True, scatter_dex=0.2, mdef='200c',
+    def __init__(self, cosmo, scatter=True, scatter_dex=0.15, mdef='200c',
                  use_interpolation_table=True, *args, **kwargs):
         """
         This class handles concentrations of the mass-concentration relation for NFW profiles
@@ -303,7 +310,7 @@ class ConcentrationPeakHeight(_ConcentrationCDM):
     name = 'PEAK_HEIGHT_POWERLAW'
     _supports_array_mass = True
 
-    def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.2,
+    def __init__(self, cosmo, c0, zeta, beta, scatter=True, scatter_dex=0.15,
                  redshift_evolution='PEAK_HEIGHT', m_pivot=10**8,
                  use_interpolation_table=True):
         """
@@ -390,7 +397,7 @@ class ConcentrationWDMPolynomial(_ConcentrationTurnover):
 
     def __init__(self, cosmo, concentration_cdm_class, log_mc, c_scale=60.0,
                  c_power=-0.17, c_power_inner=1.0, mc_suppression_redshift_evolution=True, scatter=True,
-                 scatter_dex=0.2, kwargs_cdm={}):
+                 scatter_dex=0.15, kwargs_cdm={}):
         """
 
         :param cosmo: an instance of astropy cosmology
@@ -440,7 +447,7 @@ class ConcentrationWDMPolynomial(_ConcentrationTurnover):
 class ConcentrationWDMHyperbolic(_ConcentrationTurnover):
     name = 'WDM_HYPERBOLIC'
     def __init__(self, cosmo, concentration_cdm_class, log_mc, a,  b, scatter=True,
-                 scatter_dex=0.2, kwargs_cdm={}):
+                 scatter_dex=0.15, kwargs_cdm={}):
         """
 
         :param cosmo:
@@ -483,7 +490,7 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
     Whatever maps a power spectrum onto log_mc must use the same convention.
     """
     name = 'LUDLOW_WDM'
-    _universal_minimum = 1.2  # no concentrations less than this
+    _universal_minimum = 2.0  # no concentrations less than this; see _ConcentrationCDM
     points = (numpy.array([1.0, 2.0, 2.7, 3.2, 4.0]),
               numpy.array([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]))
     values_a = numpy.array([0.090, 0.039, -0.018, -0.087, -0.167, -0.256, -0.352, -0.454,
@@ -500,7 +507,7 @@ class ConcentrationLudlowWDM(_ConcentrationTurnover):
     interp_a = RegularGridInterpolator(points, values_a.reshape(5, 9))
     interp_b = RegularGridInterpolator(points, values_b.reshape(5, 9))
 
-    def __init__(self, cosmo, log_mc, dlogT_dlogk, scatter=True, scatter_dex=0.2, mdef='200c'):
+    def __init__(self, cosmo, log_mc, dlogT_dlogk, scatter=True, scatter_dex=0.15, mdef='200c'):
         """
         :param cosmo: an instance of astropy cosmology
         :param log_mc: log10 half-mode mass [Msun]
@@ -566,7 +573,7 @@ class BinnedHaloMass(_ConcentrationCDM):
                  zeta_list,
                  redshift_evolution='RHO_CRIT',
                  scatter = True,
-                 scatter_dex = 0.2,
+                 scatter_dex = 0.15,
                  use_interpolation_table=True):
         """
         Evaluate the concentration-mass relation as a power-law in peak height at different halo mass bins
@@ -717,3 +724,191 @@ class _zEvolutionBose2016(object):
         redshift_factor = (1 + z) ** (0.026 * z - 0.04)
         return redshift_factor
 
+
+
+class ConcentrationTabulated(_ConcentrationCDM):
+    """
+    A non-parametric concentration-mass relation: the median concentration is tabulated on a grid of halo mass and
+    redshift and interpolated bilinearly in (log10(m), log10(1+z)) on log10(c). Scatter is added around the median as for
+    the other concentration-mass relations (see _ConcentrationCDM). Halo masses or redshifts outside the table raise an
+    exception.
+    """
+    name = 'TABULATED'
+    _supports_array_mass = True
+
+    def __init__(self, cosmo, log10m_table, z_table, c_table, scatter=True, scatter_dex=0.15):
+        """
+
+        :param cosmo: an instance of astropy cosmology
+        :param log10m_table: increasing array of log10(halo mass) [M_sun], with masses in the 200c definition
+        :param z_table: increasing array of redshifts; a single redshift makes the relation independent of redshift
+        :param c_table: the median concentration with shape (len(log10m_table), len(z_table))
+        :param scatter: bool; whether to include scatter in the concentration-mass relation
+        :param scatter_dex: scatter in concentration
+        """
+        log10m_table = numpy.asarray(log10m_table, dtype=float)
+        z_table = numpy.atleast_1d(numpy.asarray(z_table, dtype=float))
+        c_table = numpy.asarray(c_table, dtype=float)
+        if c_table.ndim == 1:
+            c_table = c_table[:, numpy.newaxis]
+        if c_table.shape != (len(log10m_table), len(z_table)):
+            raise ValueError('c_table must have shape (len(log10m_table), len(z_table))')
+        if len(log10m_table) < 2 or numpy.any(numpy.diff(log10m_table) <= 0) or numpy.any(numpy.diff(z_table) <= 0):
+            raise ValueError('log10m_table (at least two entries) and z_table must be strictly increasing')
+        if numpy.any(c_table <= 0) or not numpy.all(numpy.isfinite(c_table)):
+            raise ValueError('c_table must be positive and finite')
+        self._log10m_table = log10m_table
+        self._z_table = z_table
+        self._log10c_table = numpy.log10(c_table)
+        if len(z_table) > 1:
+            self._interp = RegularGridInterpolator((log10m_table, numpy.log10(1 + z_table)), self._log10c_table,
+                                                   method='linear', bounds_error=True)
+        super(ConcentrationTabulated, self).__init__(cosmo, scatter, scatter_dex)
+
+    def _evaluate_concentration(self, M, z):
+        """
+        Evaluates the median concentration
+
+        :param M: halo mass [M_sun]; float or array
+        :param z: redshift; float, or an array with the same length as M
+        :return: halo concentration
+        """
+        scalar = numpy.ndim(M) == 0
+        log10m = numpy.log10(numpy.atleast_1d(numpy.asarray(M, dtype=float)))
+        z = numpy.broadcast_to(numpy.asarray(z, dtype=float), log10m.shape)
+        if numpy.any(log10m < self._log10m_table[0]) or numpy.any(log10m > self._log10m_table[-1]):
+            raise ValueError('halo mass outside the range of the concentration table, log10(M) in [%.3f, %.3f]'
+                             % (self._log10m_table[0], self._log10m_table[-1]))
+        if len(self._z_table) == 1:
+            log10c = numpy.interp(log10m, self._log10m_table, self._log10c_table[:, 0])
+        else:
+            if numpy.any(z < self._z_table[0]) or numpy.any(z > self._z_table[-1]):
+                raise ValueError('redshift outside the range of the concentration table, z in [%.3f, %.3f]'
+                                 % (self._z_table[0], self._z_table[-1]))
+            log10c = self._interp(numpy.column_stack((log10m, numpy.log10(1 + z))))
+        c = 10 ** log10c
+        if scalar:
+            return float(c[0])
+        return c
+
+
+class ConcentrationLudlowPowerSpectrum(_ConcentrationCDM):
+    """
+    The concentration-mass relation of Ludlow et al. (2016) computed from a linear power spectrum, following the
+    implementation of the ludlow16 model in colossus: the concentration solves their Equations 6 and 7 for an Einasto
+    profile with alpha = 0.18, f = 0.02 and C = 650. With a LCDM power spectrum and the top-hat window this reproduces
+    ConcentrationLudlow (LUDLOW2016).
+
+    Where colossus finds no solution in 1 <= c <= 100 it returns an invalid concentration; this class instead returns
+    the end of that range the solution lies beyond (c = 1 when every concentration forms too early, c = 100 when every
+    concentration forms too late), before the universal minimum concentration is applied.
+    """
+    name = 'LUDLOW2016_PK'
+    _supports_array_mass = True
+    _f = 0.02
+    _C = 650.0
+    _alpha_einasto = 0.18
+
+    def __init__(self, cosmo, power_spectrum, scatter=True, scatter_dex=0.15, filter='TOPHAT',
+                 use_interpolation_table=True):
+        """
+
+        :param cosmo: an instance of astropy cosmology
+        :param power_spectrum: an instance of LinearPowerSpectrum (pyHalo.Cosmology.power_spectrum)
+        :param scatter: bool; whether to include scatter in the concentration-mass relation
+        :param scatter_dex: scatter in concentration
+        :param filter: the window function used to compute sigma(M); the Ludlow et al. (2016) model is calibrated with
+        the top-hat window
+        :param use_interpolation_table: bool; if True (default), the median relation is evaluated from an internal grid of
+        exact evaluations (see _ConcentrationCDM._evaluate_concentration_from_table)
+        """
+        self._power_spectrum = power_spectrum
+        self._filter = filter
+        self._use_interpolation_table = use_interpolation_table
+        self._table = None
+        c_array = numpy.logspace(0, 2, 200)
+        # enclosed mass of an Einasto profile within r_s relative to the mass within c r_s
+        s = 3.0 / self._alpha_einasto
+        x = 2.0 / self._alpha_einasto
+        mass_ratio = gammainc(s, x) / gammainc(s, x * c_array ** self._alpha_einasto)
+        self._c_array = c_array
+        self._mass_ratio = mass_ratio
+        # formation density in units of the critical density at the halo redshift
+        self._rho_f_rho_c = 200.0 * c_array ** 3 * mass_ratio / self._C
+        super(ConcentrationLudlowPowerSpectrum, self).__init__(cosmo, scatter, scatter_dex)
+
+    def _evaluate_concentration(self, M, z):
+        """
+        Evaluates the median concentration
+
+        :param M: halo mass; m200 with respect to the critical density at redshift z [M_sun]
+        :param z: redshift; can be a float, or an array with the same length as M
+        :return: halo concentration
+        """
+        if self._use_interpolation_table:
+            return self._evaluate_concentration_from_table(M, z)
+        return self._evaluate_concentration_exact(M, z)
+
+    def _evaluate_concentration_colossus(self, M, z):
+        """
+        The exact evaluation used by _ConcentrationCDM._build_table to fill the interpolation table; this model does
+        not call colossus
+        """
+        return self._evaluate_concentration_exact(M, z)
+
+    def _evaluate_concentration_exact(self, M, z):
+        """
+        Solves for the concentration
+
+        :param M: halo mass [M_sun]; float or array
+        :param z: redshift; float, or an array with the same length as M
+        :return: halo concentration
+        """
+        scalar = numpy.ndim(M) == 0
+        m = numpy.atleast_1d(numpy.asarray(M, dtype=float))
+        if numpy.ndim(z) == 0:
+            c = self._solve(m, float(z))
+        else:
+            z = numpy.asarray(z, dtype=float)
+            assert len(z) == len(m)
+            c = numpy.empty(len(m))
+            z_unique, inverse = numpy.unique(z, return_inverse=True)
+            for i, zi in enumerate(z_unique):
+                c[inverse == i] = self._solve(m[inverse == i], float(zi))
+        if scalar:
+            return float(c[0])
+        return c
+
+    def _solve(self, m, z):
+        """
+        :param m: array of halo masses [M_sun]
+        :param z: redshift
+        :return: the concentration at each mass
+        """
+        ps = self._power_spectrum
+        # the formation redshift where the critical density is rho_f_rho_c times the critical density at z, for a flat
+        # LCDM cosmology without radiation (as in colossus)
+        t1 = (self._rho_f_rho_c * (ps.Om0 * (1.0 + z) ** 3 + ps.Ode0) - ps.Ode0) / ps.Om0
+        z_form = numpy.full(len(t1), -10.0)
+        z_form[t1 > 0] = t1[t1 > 0] ** (1.0 / 3.0) - 1.0
+        keep = (z_form > ps.z_min) & (z_form < ps.z_max)
+        z_form, c_array, mass_ratio = z_form[keep], self._c_array[keep], self._mass_ratio[keep]
+        sigma2_fm = ps.sigma(self._f * m, 0.0, self._filter) ** 2
+        sigma2_m = ps.sigma(m, 0.0, self._filter) ** 2
+        # where sigma(M) is flat (far below a cutoff in the power spectrum) the difference can round to zero or below
+        dsigma2 = numpy.maximum(sigma2_fm - sigma2_m, 1e-300)
+        delta_z = DELTA_COLLAPSE / ps.growth_factor(z)
+        delta_z_form = DELTA_COLLAPSE / ps.growth_factor(z_form)
+        rhs = erfc(numpy.outer(delta_z_form - delta_z, 1.0 / numpy.sqrt(2.0 * dsigma2)))
+        c = numpy.empty(len(m))
+        for i in range(len(m)):
+            lhs_rhs = mass_ratio - rhs[:, i]
+            finite = numpy.isfinite(lhs_rhs)
+            lhs_rhs, c_i = lhs_rhs[finite], c_array[finite]
+            if numpy.all(lhs_rhs > 0):
+                c[i] = c_i[0]
+            elif numpy.all(lhs_rhs < 0):
+                c[i] = c_i[-1]
+            else:
+                c[i] = numpy.interp(0.0, lhs_rhs, c_i)
+        return c

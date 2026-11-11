@@ -329,7 +329,7 @@ class TestBatchUtil(object):
         c_scattered = batch_nfw_concentration(cmodel_scatter, m_fixed, z)
         c_median = cmodel_scatter.nfw_concentration(10 ** 8.0, z, force_no_scatter=True)
         npt.assert_array_less(abs(np.median(c_scattered) / c_median - 1), 0.02)
-        npt.assert_array_less(abs(np.std(np.log(c_scattered)) / 0.2 - 1), 0.05)
+        npt.assert_array_less(abs(np.std(np.log10(c_scattered)) / 0.2 - 1), 0.05)
 
 
 if __name__ == '__main__':

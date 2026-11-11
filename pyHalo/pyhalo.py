@@ -125,9 +125,9 @@ class pyHalo(object):
         mdefs = []
         for i in range(0, len(masses)):
             if subhalo_flag[i]:
-                mdefs += [mdef_field_halos]
-            else:
                 mdefs += [mdef_subhalos]
+            else:
+                mdefs += [mdef_field_halos]
         realization = Realization(masses, x_arcsec, y_arcsec, r3d, mdefs, redshifts, subhalo_flag, self.lens_cosmo,
                                   kwargs_halo_model=kwargs_halo_model,
                                   mass_sheet_correction=True,

@@ -20,9 +20,11 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6.,
         log_m_host=13.3,  r_tidal=0.25, LOS_normalization=1.0, two_halo_contribution=True,
         delta_power_law_index=0.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
-        redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
+        redshift_scaling_factor=1.1, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
         add_globular_clusters=False, kwargs_globular_clusters=None, mass_threshold_sis=None,
-        galaxy_model='GNFW', halo_mass_profile='TNFW', lens_plane_spacing=None):
+        galaxy_model='GNFW', halo_mass_profile='TNFW', lens_plane_spacing=None,
+        mass_function_model_fieldhalos=None, kwargs_mass_function_fieldhalos=None,
+        mass_function_model_subhalos=None, kwargs_mass_function_subhalos=None):
     """
     This class generates realizations of dark matter structure in Cold Dark Matter
 
@@ -75,6 +77,12 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     :param galaxy_model: the profile of massive line-of-sight galaxies; either SIS or GNFW
     :param halo_mass_profile: sets the subhalo mass profile for field halos and subhalos (must be either NFW or TNFW)
     :param lens_plane_spacing: sets the spacing between LOS lens planes, if None reverts to default value of 0.02
+    :param mass_function_model_fieldhalos: the mass function class (not an instance) for field halos and the two-halo
+    term; defaults to ShethTormen
+    :param kwargs_mass_function_fieldhalos: additional keyword arguments for the field halo and two-halo mass function
+    (for example, the power spectrum for PowerSpectrumMassFunction)
+    :param mass_function_model_subhalos: the mass function class (not an instance) for subhalos; defaults to CDMPowerLaw
+    :param kwargs_mass_function_subhalos: additional keyword arguments for the subhalo mass function
     :return: a realization of dark matter halos
     """
     # FIRST WE CREATE AN INSTANCE OF PYHALO, WHICH SETS THE COSMOLOGY
@@ -87,8 +95,10 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     pyhalo.lens_cosmo.setup_infall_model(infall_redshift_model, kwargs_infall_model)
     # NOW WE SET THE MASS FUNCTION CLASSES FOR SUBHALOS AND FIELD HALOS
     # NOTE: MASS FUNCTION CLASSES SHOULD NOT BE INSTANTIATED HERE
-    mass_function_model_subhalos = CDMPowerLaw
-    mass_function_model_fieldhalos = ShethTormen
+    if mass_function_model_subhalos is None:
+        mass_function_model_subhalos = CDMPowerLaw
+    if mass_function_model_fieldhalos is None:
+        mass_function_model_fieldhalos = ShethTormen
 
     # set the density profile definition
     if halo_mass_profile not in ['NFW', 'TNFW', 'PT_MASS']:
@@ -102,13 +112,13 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
     # SET THE CONCENTRATION-MASS RELATION FOR SUBHALOS AND FIELD HALOS
     model_subhalos, kwargs_mc_subs = preset_concentration_models(concentration_model_subhalos,
                                                                  kwargs_concentration_model_subhalos)
-    scatter_dex_subhalos = 0.2
+    scatter_dex_subhalos = 0.15
     kwargs_mc_subs['scatter_dex'] = scatter_dex_subhalos
     concentration_model_subhalos = model_subhalos(**kwargs_mc_subs)
 
     model_fieldhalos, kwargs_mc_field = preset_concentration_models(concentration_model_fieldhalos,
                                                                     kwargs_concentration_model_fieldhalos)
-    scatter_dex_fieldhalos = 0.2
+    scatter_dex_fieldhalos = 0.15
     kwargs_mc_field['scatter_dex'] = scatter_dex_fieldhalos
     concentration_model_fieldhalos = model_fieldhalos(**kwargs_mc_field)
     if c_host is None:
@@ -150,6 +160,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
             kwargs_subhalos['sigma_sub'] = 10 ** log10_sigma_sub
         else:
             kwargs_subhalos['sigma_sub'] = sigma_sub
+    if kwargs_mass_function_subhalos is not None:
+        kwargs_subhalos.update(kwargs_mass_function_subhalos)
     kwargs_los = {'log_mlow': log_mlow,
                        'log_mhigh': log_mhigh,
                   'LOS_normalization': LOS_normalization,
@@ -157,6 +169,8 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
                        'delta_power_law_index': delta_power_law_index,
                        'log_m_host': log_m_host,
                     'draw_poisson': draw_poisson}
+    if kwargs_mass_function_fieldhalos is not None:
+        kwargs_los.update(kwargs_mass_function_fieldhalos)
     kwargs_mass_function_list = [kwargs_subhalos, kwargs_los]
     # SET THE SPATIAL DISTRIBUTION MODELS FOR SUBHALOS AND FIELD HALOS:
     if subhalo_spatial_distribution == 'UNIFORM':
@@ -182,7 +196,7 @@ def CDM(z_lens, z_source, sigma_sub=0.025, log_mlow=6., log_mhigh=10., log10_sig
         kwargs_mass_function_list += [kwargs_two_halo]
         spatial_distribution_class_list += [LensConeUniform]
         kwargs_spatial_distribution_list += [kwargs_los_spatial]
-        mass_function_class_list += [ShethTormen]
+        mass_function_class_list += [mass_function_model_fieldhalos]
 
     kwargs_halo_model = {'truncation_model_subhalos': truncation_model_subhalos,
                          'concentration_model_subhalos': concentration_model_subhalos,
@@ -292,7 +306,7 @@ def CDMBinned(z_lens, z_source,
         scale_mass_function_high=1.0,
         beta=0.7,
         zeta=-0.4,
-        concentration_scatter_dex=0.2,
+        concentration_scatter_dex=0.15,
         log_mlow=6.0,
         log_mhigh=10.7,
         log_msplit=8.0,

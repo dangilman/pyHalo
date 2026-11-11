@@ -43,7 +43,7 @@ class TestpyHalo(object):
         kwargs_los_spatial = {'cone_opening_angle': 6.0, 'geometry': geometry}
         kwargs_spatial_distribution_list = [kwargs_subhalos_spatial, kwargs_los_spatial,
                                        kwargs_los_spatial, kwargs_los_spatial]
-        mdef_subhalos = 'TNFW'
+        mdef_subhalos = 'NFW'
         mdef_field_halos = 'TNFW'
         kwargs_halo_model = {'truncation_model_subhalos': TruncationRoche(pyhalo.lens_cosmo),
                              'concentration_model_subhalos': ConcentrationDiemerJoyce(pyhalo.lens_cosmo),
@@ -57,6 +57,12 @@ class TestpyHalo(object):
                                          kwargs_spatial_distribution_list,
                geometry, mdef_subhalos, mdef_field_halos, kwargs_halo_model, nrealizations=2)
         npt.assert_equal(len(realization_list), 2)
+        # subhalos and field halos are assigned their own mass definitions
+        for realization in realization_list:
+            subhalo_mdefs = set([halo.mdef for halo in realization.halos if halo.is_subhalo])
+            field_halo_mdefs = set([halo.mdef for halo in realization.halos if not halo.is_subhalo])
+            npt.assert_equal(subhalo_mdefs, {mdef_subhalos})
+            npt.assert_equal(field_halo_mdefs, {mdef_field_halos})
 
     def test_cosmology_setup_from_default(self):
         pyhalo = pyHalo(0.5, 2.)

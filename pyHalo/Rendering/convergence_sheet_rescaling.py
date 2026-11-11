@@ -47,9 +47,8 @@ class ConvergenceSheetRescaling(object):
     def from_realization(cls, realization, log_mlow=None, log_mhigh=None, n_mass=25):
         """
         Computes the rescaling with the line-of-sight mass functions, rendering geometry, concentration-mass relation,
-        and truncation model of an existing realization (for example, one created with CDMBinned). For realizations
-        with more than one line-of-sight population, compute the sheets with use_class_mass_ranges=True so that each
-        population subtracts its own mass range.
+        and truncation model of an existing realization. For realizations with more than one line-of-sight population,
+        compute the sheets with use_class_mass_ranges=True so that each population subtracts its own mass range.
 
         :param realization: an instance of Realization
         :param log_mlow: log10 of the minimum halo mass subtracted by the sheets (log_mlow_sheets); if None, uses the
@@ -62,6 +61,8 @@ class ConvergenceSheetRescaling(object):
         los_classes = [rc for rc in realization.rendering_classes if rc is not None and rc.name == 'LINE_OF_SIGHT']
         if len(los_classes) == 0:
             raise Exception('realization has no LINE_OF_SIGHT rendering classes')
+        # the rescaling is computed with TNFW profiles; check the field halos actually rendered in the realization
+
         mass_function_components = []
         for rendering_class in los_classes:
             # same mass range and mass function model as LineOfSight.convergence_sheet_correction

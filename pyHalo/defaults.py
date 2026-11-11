@@ -74,7 +74,7 @@ class DMHaloDefaults(object):
         self.evaluate_mc_at_zlens = False
 
         self.scatter = True
-        self.c_scatter_dex = 0.2
+        self.c_scatter_dex = 0.15
 
 class RealizationDefaults(object):
 

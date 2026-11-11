@@ -11,7 +11,7 @@ def SIDM_core_collapse(z_lens, z_source, mass_ranges_subhalos, mass_ranges_field
         truncation_model_fieldhalos='TRUNCATION_RN', kwargs_truncation_model_fieldhalos={},
         shmf_log_slope=-1.9, cone_opening_angle_arcsec=6., log_m_host=13.3,  r_tidal=0.25,
         LOS_normalization=1.0, geometry_type='DOUBLE_CONE', kwargs_cosmo=None, host_scaling_factor=0.55,
-        redshift_scaling_factor=0.37, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
+        redshift_scaling_factor=1.1, two_halo_Lazar_correction=True, draw_poisson=True, c_host=6.0,
         add_globular_clusters=False, kwargs_globular_clusters=None, mass_threshold_sis=5*10**10,
         galaxy_model='GNFW', collapsed_halo_profile='TNFWC', **kwargs_halo_profile):
 

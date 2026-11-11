@@ -126,7 +126,8 @@ def batch_nfw_concentration(c_class, m, z, force_no_scatter=False):
     if name in _ARRAY_SAFE_CONCENTRATION_MODELS:
         c = np.atleast_1d(np.asarray(c_class._evaluate_concentration(m, z), dtype=float))
         if c_class._scatter and not force_no_scatter:
-            sigma = c_class._scatter_dex + c_class._scatter_dex_z_dep * z
+            # the scatter is specified in dex; np.random.lognormal takes the width in ln(c)
+            sigma = (c_class._scatter_dex + c_class._scatter_dex_z_dep * z) * np.log(10)
             c = np.random.lognormal(np.log(c), sigma)
         c[c < c_class._universal_minimum] = c_class._universal_minimum
         return c

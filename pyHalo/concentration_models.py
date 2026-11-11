@@ -1,6 +1,6 @@
 from pyHalo.Halos.concentration import (ConcentrationLudlow, ConcentrationDiemerJoyce, \
     ConcentrationPeakHeight, ConcentrationWDMHyperbolic, ConcentrationWDMPolynomial, ConcentrationLudlowWDM, ConcentrationConstant,
-                                        BinnedHaloMass)
+                                        BinnedHaloMass, ConcentrationTabulated, ConcentrationLudlowPowerSpectrum)
 from copy import deepcopy
 import numpy as np
 
@@ -75,5 +75,14 @@ def preset_concentration_models(model_name, kwargs_model=None):
         return custom_mc_relation_class, kwargs_model_return
     elif model_name == 'CONSTANT':
         return ConcentrationConstant, kwargs_model_return
+    elif model_name == 'TABULATED':
+        # a non-parametric concentration-mass relation: log10m_table, z_table, c_table
+        return ConcentrationTabulated, kwargs_model_return
+    elif model_name == 'LUDLOW2016_PK':
+        # Ludlow et al. (2016) computed from a linear power spectrum (an instance of LinearPowerSpectrum)
+        if 'power_spectrum' not in kwargs_model_return.keys():
+            raise Exception('Must specify power_spectrum (an instance of LinearPowerSpectrum) when using the '
+                            'LUDLOW2016_PK model.')
+        return ConcentrationLudlowPowerSpectrum, kwargs_model_return
     else:
         raise Exception('model name '+str(model_name)+' not recognized')

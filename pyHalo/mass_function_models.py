@@ -1,6 +1,8 @@
 from pyHalo.Rendering.MassFunctions.mass_function_base import *
 from pyHalo.Rendering.MassFunctions.density_peaks import *
 from pyHalo.Rendering.MassFunctions.benson import ShethTormenTurnoverBenson, benson_suppression_params
+from pyHalo.Rendering.MassFunctions.tabulated import TabulatedMassFunction
+from pyHalo.Rendering.MassFunctions.power_spectrum import PowerSpectrumMassFunction
 from copy import deepcopy
 
 
@@ -103,6 +105,26 @@ def preset_mass_function_models(model_name, kwargs_model={}):
             return ShethTormenTurnover, kwargs_model_out
         else:
             return WDMPowerLaw, kwargs_model_out
+    elif model_name == 'TABULATED':
+        # a non-parametric mass function: log10m_table, z_table, dndm_comoving_table
+        for key in ['log10m_table', 'z_table', 'dndm_comoving_table']:
+            if key not in kwargs_model.keys():
+                raise Exception('Must specify ' + key + ' when using the TABULATED model.')
+        return TabulatedMassFunction, kwargs_model_out
+    elif model_name in ['BENSON_PK', 'SHETH_TORMEN_PK']:
+        # the mass function computed from a linear power spectrum (an instance of LinearPowerSpectrum); BENSON_PK uses
+        # the mass function and window function of https://arxiv.org/abs/2606.12137, SHETH_TORMEN_PK uses the
+        # Sheth-Tormen mass function with a top-hat window
+        if 'power_spectrum' not in kwargs_model.keys():
+            raise Exception('Must specify power_spectrum (an instance of LinearPowerSpectrum) when using the '
+                            + model_name + ' model.')
+        if 'multiplicity_function' in kwargs_model.keys():
+            raise Exception('Cannot specify multiplicity_function with the ' + model_name + ' model.')
+        if model_name == 'BENSON_PK':
+            kwargs_model_out['multiplicity_function'] = 'BENSON2026'
+        else:
+            kwargs_model_out['multiplicity_function'] = 'SHETH_TORMEN'
+        return PowerSpectrumMassFunction, kwargs_model_out
     else:
         raise Exception('model name '+str(model_name)+' not recognized')
 

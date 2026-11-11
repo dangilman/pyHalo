@@ -48,6 +48,9 @@ def preset_model_from_name(name, custom_function=None):
     elif name == 'CDM_plus_BH':
         from pyHalo.PresetModels.mbh import CDM_plus_BH
         return CDM_plus_BH
+    elif name == 'BinnedPowerSpectrum':
+        from pyHalo.PresetModels.power_spectrum import BinnedPowerSpectrum
+        return BinnedPowerSpectrum
     elif name == 'CUSTOM':
         return custom_function
     elif name == 'JointLOSWithEmulator':
