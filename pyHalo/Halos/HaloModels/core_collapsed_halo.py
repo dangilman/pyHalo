@@ -334,6 +334,24 @@ class CoreCollapsedHaloBH(CoreCollapsedHalo):
         raise Exception('the logarithmic profile slope is not '
                         'defined for a point mass')
 
+    def component_density_profile_3d(self, r, profile_args=None):
+        """
+        The 3D mass density is not defined for this profile because the central component is a point mass
+        :param r: distance from center of halo [kpc]
+        :return:
+        """
+        raise Exception('the 3D mass density is not '
+                        'defined for a point mass')
+
+    def density_profile_3d(self, r, kwargs_lenstronomy=None):
+        """
+        The 3D mass density is not defined for this profile because the central component is a point mass
+        :param r: distance from center of halo [kpc]
+        :return:
+        """
+        raise Exception('the 3D mass density is not '
+                        'defined for a point mass')
+
     def density_profile_2d(self, r):
         """
         The projected mass density is not defined for this profile because the central component is a point mass
@@ -385,9 +403,9 @@ class CoreCollapsedHaloBH(CoreCollapsedHalo):
                                'Rs': Rs_angle,
                         'alpha_Rs': alpha_Rs_envelope,
                         'r_trunc': r_trunc_arcsec}
-            kwargs_center = {'theta_E': theta_E_inner, 'center_x': x, 'cetner_y': y}
-            self._lenstronomy_args = [kwargs_center, kwargs_envelope]
-        return self._lenstronomy_args, None
+            kwargs_center = {'theta_E': theta_E_inner, 'center_x': x, 'center_y': y}
+            self._lenstronomy_args_split = [kwargs_center, kwargs_envelope]
+        return self._lenstronomy_args_split, None
 
     @property
     def lenstronomy_params(self):

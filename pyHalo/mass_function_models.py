@@ -3,6 +3,7 @@ from pyHalo.Rendering.MassFunctions.density_peaks import *
 from pyHalo.Rendering.MassFunctions.benson import ShethTormenTurnoverBenson, benson_suppression_params
 from pyHalo.Rendering.MassFunctions.tabulated import TabulatedMassFunction
 from pyHalo.Rendering.MassFunctions.power_spectrum import PowerSpectrumMassFunction
+from pyHalo.Rendering.MassFunctions.node_ratio import NodeRatioMassFunction, NodeRatioSubhaloMassFunction
 from copy import deepcopy
 
 
@@ -125,6 +126,14 @@ def preset_mass_function_models(model_name, kwargs_model={}):
         else:
             kwargs_model_out['multiplicity_function'] = 'SHETH_TORMEN'
         return PowerSpectrumMassFunction, kwargs_model_out
+    elif model_name in ['NODE_RATIO', 'NODE_RATIO_SHMF']:
+        # a CDM mass function times a ratio n / n_CDM specified at mass nodes (see pyHalo.node_ratios); NODE_RATIO for
+        # field halos, NODE_RATIO_SHMF for subhalos
+        if 'log10_n_ratio_nodes' not in kwargs_model.keys():
+            raise Exception('Must specify log10_n_ratio_nodes when using the ' + model_name + ' model.')
+        if model_name == 'NODE_RATIO':
+            return NodeRatioMassFunction, kwargs_model_out
+        return NodeRatioSubhaloMassFunction, kwargs_model_out
     else:
         raise Exception('model name '+str(model_name)+' not recognized')
 

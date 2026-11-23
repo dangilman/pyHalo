@@ -84,5 +84,13 @@ def preset_concentration_models(model_name, kwargs_model=None):
             raise Exception('Must specify power_spectrum (an instance of LinearPowerSpectrum) when using the '
                             'LUDLOW2016_PK model.')
         return ConcentrationLudlowPowerSpectrum, kwargs_model_return
+    elif model_name == 'NODE_RATIO':
+        # a CDM relation times a ratio c / c_CDM specified at mass nodes (see pyHalo.node_ratios); imported here to
+        # avoid a circular import
+        from pyHalo.Halos.concentration_node_ratio import ConcentrationNodeRatio
+        for key in ['concentration_cdm_class', 'log10_c_ratio_nodes']:
+            if key not in kwargs_model_return.keys():
+                raise Exception('Must specify ' + key + ' when using the NODE_RATIO model.')
+        return ConcentrationNodeRatio, kwargs_model_return
     else:
         raise Exception('model name '+str(model_name)+' not recognized')

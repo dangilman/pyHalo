@@ -51,6 +51,9 @@ def preset_model_from_name(name, custom_function=None):
     elif name == 'BinnedPowerSpectrum':
         from pyHalo.PresetModels.power_spectrum import BinnedPowerSpectrum
         return BinnedPowerSpectrum
+    elif name == 'HMFConcentrationNodes':
+        from pyHalo.PresetModels.nodes import HMFConcentrationNodes
+        return HMFConcentrationNodes
     elif name == 'CUSTOM':
         return custom_function
     elif name == 'JointLOSWithEmulator':
