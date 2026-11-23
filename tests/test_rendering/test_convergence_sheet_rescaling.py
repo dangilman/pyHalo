@@ -5,6 +5,7 @@ from lenstronomy.LensModel.lens_model import LensModel
 from pyHalo.Rendering.convergence_sheet_rescaling import ConvergenceSheetRescaling, \
     ConvergenceSheetRescalingShethTormen
 from pyHalo.PresetModels.cdm import CDM, CDMBinned
+from pyHalo.PresetModels.nodes import HMFConcentrationNodes
 
 
 class TestConvergenceSheetRescalingShethTormen(object):
@@ -187,6 +188,55 @@ class TestMassSheetSubtraction(object):
         # the rescaled sheets remove the mean convergence of the halos
         npt.assert_array_less(abs(mean_rescaled), 3 * standard_error)
         npt.assert_array_less(abs(mean_rescaled), abs(mean_default))
+
+
+class TestMassSheetSubtractionNodes(object):
+    """
+    As TestMassSheetSubtraction, for the HMFConcentrationNodes preset model with the mass function and concentration
+    ratios to CDM varying at different mass scales: the rescaling computed from the realization (which uses its node
+    mass function and concentration-mass relation) removes the mean convergence of the halos, while the rescaling for
+    CDM halos and the default sheets do not.
+    """
+
+    def setup_method(self):
+
+        TestMassSheetSubtraction.setup_method(self)
+        self.kwargs_nodes = {'log10_n_ratio_6': 0.5, 'log10_n_ratio_8': -0.4, 'log10_n_ratio_10': 0.3,
+                             'log10_c_ratio_6': 0.4, 'log10_c_ratio_8': -0.2, 'log10_c_ratio_10': 0.1}
+
+    _convergence = TestMassSheetSubtraction._convergence
+
+    def test_rescaled_sheets_subtract_mean_convergence(self):
+
+        np.random.seed(5)
+        rescaling_cdm = ConvergenceSheetRescalingShethTormen(self.zlens, self.zsource, log_mlow=7.0, log_mhigh=10.0,
+                                                             cone_opening_angle_arcsec=6.0)
+        n_realizations = 100
+        kappa_default, kappa_rescaled, kappa_rescaled_cdm = [], [], []
+        for i in range(n_realizations):
+            realization = HMFConcentrationNodes(self.zlens, self.zsource, **self.kwargs_nodes, **self.kwargs_model)
+            if i == 0:
+                # the nodes change the rescaling relative to CDM
+                rescaling = ConvergenceSheetRescaling.from_realization(realization, 7.0, 10.0)
+                ratio = rescaling.rescaling_factor / rescaling_cdm(rescaling.redshifts)
+                npt.assert_array_less(np.max(np.abs(ratio - 1)), 1.0)
+                npt.assert_array_less(0.1, np.max(np.abs(ratio - 1)))
+            kappa_default.append(self._convergence(realization, self.kwargs_mass_sheet))
+            kappa_rescaled.append(self._convergence(realization,
+                                                    dict(self.kwargs_mass_sheet, kappa_scale='FROM_REALIZATION')))
+            kappa_rescaled_cdm.append(self._convergence(realization,
+                                                        dict(self.kwargs_mass_sheet, kappa_scale=rescaling_cdm)))
+        mean_default, mean_rescaled = np.mean(kappa_default), np.mean(kappa_rescaled)
+        mean_rescaled_cdm = np.mean(kappa_rescaled_cdm)
+        standard_error = np.std(kappa_default, ddof=1) / np.sqrt(n_realizations)
+
+        # the default sheets subtract more mass than the halos deposit near the center of the rendering area
+        npt.assert_array_less(mean_default, -3 * standard_error)
+        # the rescaling from the realization removes the mean convergence of the halos
+        npt.assert_array_less(abs(mean_rescaled), 3 * standard_error)
+        # and does better than the rescaling computed for CDM halos
+        npt.assert_array_less(abs(mean_rescaled), abs(mean_rescaled_cdm))
+        npt.assert_array_less(abs(mean_rescaled_cdm), abs(mean_default))
 
 
 if __name__ == '__main__':
